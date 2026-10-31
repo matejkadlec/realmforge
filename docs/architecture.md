@@ -3564,14 +3564,16 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
       grows and the bonuses of a milestone it reaches. Below, an inner panel sets the other stats apart in two columns
       without a heading in two columns (Matěj, 2026-10-31): luck, Stamina right below it, entity reach and block reach;
       mining speed, movement speed, swimming speed, the XP multiplier, and any stat of ours no column names.
-    - **Offense** (RLM-235; Matěj's layout of 2026-10-31, no stat shown twice): Physical (attack damage and speed,
-      Apothic Attributes' Arrow Damage, Draw Speed and Arrow Velocity while it is loaded, armor pierce and shred:
-      melee and ranged together, as a Warrior uses a bow and a Hunter a melee weapon) with Critical Hits under it
+    - **Offense** (RLM-235; Matěj's layout of 2026-10-31, no stat shown twice, two columns on every stat tab so the
+      panel stays narrow): Physical (attack damage and speed, armor pierce and shred, then Apothic Attributes' Arrow
+      Damage, Draw Speed and Arrow Velocity while it is loaded: melee and ranged together, as a Warrior uses a bow and
+      a Hunter a melee weapon) with Critical Hits under it
       (crit chance and damage, for melee hits, fully drawn shots and spells alike), and Magic (max mana, mana
       regeneration, spell power, cast time and cooldown reduction, then each school's power in the school's colour;
       RLM-535's Spell Penetration after spell power).
-    - **Defense**: Mitigation (armor, armor toughness, magic shield, dodge, knockback resistance), Health (max health,
-      health regeneration, Apothic Attributes' Healing Received, lifesteal, overheal) and Resistances: a row per
+    - **Defense**: Mitigation (armor, armor toughness, magic shield, dodge, knockback resistance) with Health under it
+      (max health, health regeneration, Apothic Attributes' Healing Received, lifesteal, overheal), and Resistances: a
+      row per
       `combat/DamageKind` (Physical, Projectile, Explosion, Fall, Fire, Magic), each the share of such a hit the
       player does not take, 1 − (1 − stats) × (1 − enchantments) (Matěj, 2026-10-31). The stats are RLM-233's damage
       type resistances whose tag the kind's damage type is in (an arrow: Physical and Projectile Resistance), combined

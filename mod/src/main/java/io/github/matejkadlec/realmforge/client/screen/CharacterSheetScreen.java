@@ -55,9 +55,9 @@ import org.lwjgl.glfw.GLFW;
  * for each milestone, gold once reached. While stat points are unspent, a small {@code +} ends each primary stat's row:
  * hovered, it says what the point gives, in the headings' yellow, aligned right under the stat's name; a click sends
  * {@link SpendStatPointPayload}, which the server checks, and the sheet shows the result on the next tick (RLM-196).
- * Below them an inner panel sets the other stats apart in two columns, without a heading. Offense and Defense: columns
- * of equal width (Offense two, Defense three), each a section under its heading or, for Physical and Critical Hits,
- * two one under the other.
+ * Below them an inner panel sets the other stats apart in two columns, without a heading. Offense and Defense: two
+ * columns of equal width each (Matěj, 2026-10-31: a third column made every tab wide), each a section under its heading
+ * or two one under the other (Physical over Critical Hits, Mitigation over Health).
  */
 public final class CharacterSheetScreen extends Screen {
     private static final int PADDING = 10;

@@ -49,8 +49,9 @@ import net.neoforged.neoforge.common.NeoForgeMod;
  *   stats, one compact row each with a mark for each milestone, filled once reached, and the {@code +} that spends a
  *   stat point (RLM-196), what they give in their tooltips; then the other stats in two columns.</li>
  *   <li><b>Offense</b> (RLM-235; Matěj, 2026-10-31): Physical, with Critical Hits under it, and Magic.</li>
- *   <li><b>Defense</b>: Mitigation, Health and Resistances, a row per {@link DamageKind}: what the player's
- *   resistance stats (RLM-233) and protection enchantments block of such a hit together ({@link #resistanceRows}).</li>
+ *   <li><b>Defense</b>: Mitigation with Health under it, and Resistances, a row per {@link DamageKind}: what the
+ *   player's resistance stats (RLM-233) and protection enchantments block of such a hit together
+ *   ({@link #resistanceRows}). Two columns on every stat tab, so the panel stays narrow (Matěj, 2026-10-31).</li>
  * </ul>
  * No stat shows twice (Matěj, 2026-10-31). Every row has a tooltip: what the stat does, one text per stat
  * ({@code stat_tooltip.realmforge.<path>}, {@link #description}), which the guide (M4) can reuse; a primary stat's adds
@@ -235,13 +236,11 @@ public record CharacterSheetView(Component title, CharacterTab character, List<S
             entry(GeneratedStats.XP_MULTIPLIER));
     /**
      * Offense's Physical column, melee and ranged together (Matěj, 2026-10-31: a Warrior uses a bow, a Hunter a melee
-     * weapon): Apothic Attributes' Arrow Damage, Draw Speed and Arrow Velocity ({@link #APOTHIC_RANGED}) go between
-     * the two lists.
+     * weapon), in his order: these, then Apothic Attributes' Arrow Damage, Draw Speed and Arrow Velocity
+     * ({@link #APOTHIC_RANGED}).
      */
-    private static final List<Entry> PHYSICAL_BEFORE = List.of(entry(Attributes.ATTACK_DAMAGE),
-            entry(Attributes.ATTACK_SPEED));
-    private static final List<Entry> PHYSICAL_AFTER = List.of(entry(GeneratedStats.ARMOR_PIERCE),
-            entry(GeneratedStats.ARMOR_SHRED));
+    private static final List<Entry> PHYSICAL = List.of(entry(Attributes.ATTACK_DAMAGE),
+            entry(Attributes.ATTACK_SPEED), entry(GeneratedStats.ARMOR_PIERCE), entry(GeneratedStats.ARMOR_SHRED));
     /** Under Physical: our crit counts for melee hits, fully drawn shots and spells alike (architecture 9.1). */
     private static final List<Entry> CRITICAL = List.of(entry(GeneratedStats.CRIT_CHANCE),
             entry(GeneratedStats.CRIT_DAMAGE));
@@ -370,8 +369,8 @@ public record CharacterSheetView(Component title, CharacterTab character, List<S
                         section(GeneratedTexts.GUI_CRITICAL_HITS, rows(CRITICAL, value, base)))),
                 new Column(List.of(section(GeneratedTexts.GUI_MAGIC, magic)))));
         StatTab defense = new StatTab(Component.translatable(GeneratedTexts.GUI_TAB_DEFENSE), List.of(
-                new Column(List.of(section(GeneratedTexts.GUI_MITIGATION, rows(MITIGATION, value, base)))),
-                new Column(List.of(section(GeneratedTexts.GUI_HEALTH, rows(health(), value, base)))),
+                new Column(List.of(section(GeneratedTexts.GUI_MITIGATION, rows(MITIGATION, value, base)),
+                        section(GeneratedTexts.GUI_HEALTH, rows(health(), value, base)))),
                 new Column(List.of(section(GeneratedTexts.GUI_RESISTANCES,
                         resistanceRows(value, registries, enchantmentProtection))))));
         return new CharacterSheetView(title, characterTab, List.of(offense, defense));
@@ -530,9 +529,8 @@ public record CharacterSheetView(Component title, CharacterTab character, List<S
     }
 
     private static List<Entry> physical() {
-        List<Entry> entries = new ArrayList<>(PHYSICAL_BEFORE);
+        List<Entry> entries = new ArrayList<>(PHYSICAL);
         APOTHIC_RANGED.forEach(path -> apothic(path).ifPresent(attribute -> entries.add(entry(attribute))));
-        entries.addAll(PHYSICAL_AFTER);
         return entries;
     }
 

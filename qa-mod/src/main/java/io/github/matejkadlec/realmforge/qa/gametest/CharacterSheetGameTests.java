@@ -63,8 +63,16 @@ public final class CharacterSheetGameTests {
                 List.of("Character", "Offense", "Defense"), "the sheet's tabs (Matěj, 2026-10-30)");
         helper.assertValueEqual(headings(view, 0), List.of(List.of("Physical", "Critical Hits"), List.of("Magic")),
                 "Offense's columns (Matěj, 2026-10-31)");
-        helper.assertValueEqual(headings(view, 1), List.of(List.of("Mitigation"), List.of("Health"),
-                List.of("Resistances")), "Defense's columns");
+        helper.assertValueEqual(headings(view, 1), List.of(List.of("Mitigation", "Health"), List.of("Resistances")),
+                "Defense's columns: two, as on every stat tab");
+        List<String> physical = ids(view.statTabs().getFirst().columns().getFirst().sections().getFirst().rows());
+        List<String> physicalOrder = ids(Attributes.ATTACK_DAMAGE, Attributes.ATTACK_SPEED, GeneratedStats.ARMOR_PIERCE,
+                GeneratedStats.ARMOR_SHRED);
+        for (String path : List.of("arrow_damage", "draw_speed", "arrow_velocity")) {
+            physicalOrder.add(BuiltInRegistries.ATTRIBUTE.get(Identifier.fromNamespaceAndPath("apothic_attributes",
+                    path)).orElseThrow().value().getDescriptionId());
+        }
+        helper.assertValueEqual(physical, physicalOrder, "Physical's order (Matěj, 2026-10-31)");
         helper.assertValueEqual(ids(view.character().other().getFirst()), ids(Attributes.LUCK, GeneratedStats.STAMINA,
                 Attributes.ENTITY_INTERACTION_RANGE, Attributes.BLOCK_INTERACTION_RANGE), "the other stats' left column");
         helper.assertValueEqual(ids(view.character().other().get(1)), ids(Attributes.BLOCK_BREAK_SPEED,
