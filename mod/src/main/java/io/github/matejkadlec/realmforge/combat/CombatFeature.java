@@ -38,6 +38,7 @@ public final class CombatFeature {
                 DamageOverTime::onEffectExpired);
         NeoForge.EVENT_BUS.addListener(PlayerTickEvent.Post.class, HealthRegeneration::onPlayerTick);
         NeoForge.EVENT_BUS.addListener(PlayerTickEvent.Post.class, MagicShields::onPlayerTick);
+        NeoForge.EVENT_BUS.addListener(PlayerTickEvent.Post.class, EnchantmentProtection::onPlayerTick);
         NeoForge.EVENT_BUS.addListener(MobEffectEvent.Added.class, MagicShields::onEffectAdded);
         NeoForge.EVENT_BUS.addListener(ServerTickEvent.Post.class, WeaponBlocks::onServerTick);
         NeoForge.EVENT_BUS.addListener(PlayerTickEvent.Post.class, WeaponBlocks::onPlayerTick);

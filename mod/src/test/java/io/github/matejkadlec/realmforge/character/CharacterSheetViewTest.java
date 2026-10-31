@@ -121,6 +121,19 @@ class CharacterSheetViewTest {
                 Optional.empty()), "a rule that gives nothing lists nothing");
     }
 
+    /**
+     * RLM-235 (Matěj, 2026-10-31): a Resistances row's stats and enchantments each block a share of what the other
+     * leaves, 1 - (1 - stats) x (1 - enchantments).
+     */
+    @Test
+    void resistanceStatsAndEnchantmentsCombine() {
+        assertEquals(0.6, CharacterSheetView.combined(0.5, 0.2), 1e-9, "half, then a fifth of the other half");
+        assertEquals(0.2, CharacterSheetView.combined(0, 0.2), 1e-9, "enchantments only (Fire, Magic)");
+        assertEquals(0.75, CharacterSheetView.combined(0.75, 0), 1e-9, "stats only");
+        assertEquals(0, CharacterSheetView.combined(0, 0), 1e-9);
+        assertEquals(1, CharacterSheetView.combined(1.5, -0.2), 1e-9, "each part kept between 0 and 1");
+    }
+
     /** The amount of each "+1% Attack Damage" line: its translation's first argument. */
     private static List<String> amounts(List<Component> gains) {
         return gains.stream().map(CharacterSheetViewTest::amount).toList();

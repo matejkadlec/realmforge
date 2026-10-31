@@ -125,6 +125,9 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.create_character} from {@code content/texts/gui.yaml}: "Create Character" */
     public static final String GUI_CREATE_CHARACTER = "gui.realmforge.create_character";
 
+    /** {@code gui.realmforge.critical_hits} from {@code content/texts/gui.yaml}: "Critical Hits" */
+    public static final String GUI_CRITICAL_HITS = "gui.realmforge.critical_hits";
+
     /** {@code gui.realmforge.entity_reach} from {@code content/texts/gui.yaml}: "Entity Reach" */
     public static final String GUI_ENTITY_REACH = "gui.realmforge.entity_reach";
 
@@ -152,8 +155,8 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.known_spells} from {@code content/texts/gui.yaml}: "Known Spells" */
     public static final String GUI_KNOWN_SPELLS = "gui.realmforge.known_spells";
 
-    /** {@code gui.realmforge.melee} from {@code content/texts/gui.yaml}: "Melee" */
-    public static final String GUI_MELEE = "gui.realmforge.melee";
+    /** {@code gui.realmforge.magic} from {@code content/texts/gui.yaml}: "Magic" */
+    public static final String GUI_MAGIC = "gui.realmforge.magic";
 
     /** {@code gui.realmforge.mining_speed} from {@code content/texts/gui.yaml}: "Mining Speed" */
     public static final String GUI_MINING_SPEED = "gui.realmforge.mining_speed";
@@ -176,6 +179,9 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.option_value} from {@code content/texts/gui.yaml}: "Value: %1$s" */
     public static final String GUI_OPTION_VALUE = "gui.realmforge.option_value";
 
+    /** {@code gui.realmforge.physical} from {@code content/texts/gui.yaml}: "Physical" */
+    public static final String GUI_PHYSICAL = "gui.realmforge.physical";
+
     /** {@code gui.realmforge.primary_stats} from {@code content/texts/gui.yaml}: "Primary Stats" */
     public static final String GUI_PRIMARY_STATS = "gui.realmforge.primary_stats";
 
@@ -191,11 +197,35 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.racial_ability} from {@code content/texts/gui.yaml}: "Racial Ability" */
     public static final String GUI_RACIAL_ABILITY = "gui.realmforge.racial_ability";
 
-    /** {@code gui.realmforge.ranged} from {@code content/texts/gui.yaml}: "Ranged" */
-    public static final String GUI_RANGED = "gui.realmforge.ranged";
-
     /** {@code gui.realmforge.reset_position} from {@code content/texts/gui.yaml}: "Reset Position" */
     public static final String GUI_RESET_POSITION = "gui.realmforge.reset_position";
+
+    /** {@code gui.realmforge.resistance_explosion} from {@code content/texts/gui.yaml}: "Explosion" */
+    public static final String GUI_RESISTANCE_EXPLOSION = "gui.realmforge.resistance_explosion";
+
+    /** {@code gui.realmforge.resistance_fall} from {@code content/texts/gui.yaml}: "Fall" */
+    public static final String GUI_RESISTANCE_FALL = "gui.realmforge.resistance_fall";
+
+    /** {@code gui.realmforge.resistance_fire} from {@code content/texts/gui.yaml}: "Fire" */
+    public static final String GUI_RESISTANCE_FIRE = "gui.realmforge.resistance_fire";
+
+    /** {@code gui.realmforge.resistance_from_enchantments} from {@code content/texts/gui.yaml}: "From enchantments: %1$s" */
+    public static final String GUI_RESISTANCE_FROM_ENCHANTMENTS = "gui.realmforge.resistance_from_enchantments";
+
+    /** {@code gui.realmforge.resistance_from_stats} from {@code content/texts/gui.yaml}: "From stats: %1$s" */
+    public static final String GUI_RESISTANCE_FROM_STATS = "gui.realmforge.resistance_from_stats";
+
+    /** {@code gui.realmforge.resistance_magic} from {@code content/texts/gui.yaml}: "Magic" */
+    public static final String GUI_RESISTANCE_MAGIC = "gui.realmforge.resistance_magic";
+
+    /** {@code gui.realmforge.resistance_physical} from {@code content/texts/gui.yaml}: "Physical" */
+    public static final String GUI_RESISTANCE_PHYSICAL = "gui.realmforge.resistance_physical";
+
+    /** {@code gui.realmforge.resistance_projectile} from {@code content/texts/gui.yaml}: "Projectile" */
+    public static final String GUI_RESISTANCE_PROJECTILE = "gui.realmforge.resistance_projectile";
+
+    /** {@code gui.realmforge.resistances} from {@code content/texts/gui.yaml}: "Resistances" */
+    public static final String GUI_RESISTANCES = "gui.realmforge.resistances";
 
     /** {@code gui.realmforge.save} from {@code content/texts/gui.yaml}: "Save" */
     public static final String GUI_SAVE = "gui.realmforge.save";
@@ -235,9 +265,6 @@ public final class GeneratedTexts {
 
     /** {@code gui.realmforge.spellbook_hint} from {@code content/texts/gui.yaml}: "Click a spell, then a slot. Right-click a slot to empty it." */
     public static final String GUI_SPELLBOOK_HINT = "gui.realmforge.spellbook_hint";
-
-    /** {@code gui.realmforge.spells} from {@code content/texts/gui.yaml}: "Spells" */
-    public static final String GUI_SPELLS = "gui.realmforge.spells";
 
     /** {@code gui.realmforge.spells_queue_size} from {@code content/texts/gui.yaml}: "Spells Queue Size" */
     public static final String GUI_SPELLS_QUEUE_SIZE = "gui.realmforge.spells_queue_size";
@@ -590,7 +617,7 @@ public final class GeneratedTexts {
     /** {@code stat_tooltip.realmforge.crit_chance} from {@code content/texts/stat_tooltip.yaml}: "The chance that your melee hits, fully drawn shots and spells are critical. Chance above 100% becomes extra crit damage." */
     public static final String STAT_TOOLTIP_CRIT_CHANCE = "stat_tooltip.realmforge.crit_chance";
 
-    /** {@code stat_tooltip.realmforge.crit_damage} from {@code content/texts/stat_tooltip.yaml}: "How much more a critical hit deals than a normal one. 50% means a crit deals 150%." */
+    /** {@code stat_tooltip.realmforge.crit_damage} from {@code content/texts/stat_tooltip.yaml}: "How much more a critical hit deals than a normal one, for melee hits, fully drawn shots and spells alike. 50% means a crit deals 150%." */
     public static final String STAT_TOOLTIP_CRIT_DAMAGE = "stat_tooltip.realmforge.crit_damage";
 
     /** {@code stat_tooltip.realmforge.dexterity} from {@code content/texts/stat_tooltip.yaml}: "Speed and precision. Raises your crit chance and your attack speed, or your cooldown reduction for casters." */
@@ -626,6 +653,9 @@ public final class GeneratedTexts {
     /** {@code stat_tooltip.realmforge.intellect} from {@code content/texts/stat_tooltip.yaml}: "Magical aptitude. Raises your spell power, mana regeneration and cast speed." */
     public static final String STAT_TOOLTIP_INTELLECT = "stat_tooltip.realmforge.intellect";
 
+    /** {@code stat_tooltip.realmforge.knockback_resistance} from {@code content/texts/stat_tooltip.yaml}: "How much less hits knock you back. 100% means they never do." */
+    public static final String STAT_TOOLTIP_KNOCKBACK_RESISTANCE = "stat_tooltip.realmforge.knockback_resistance";
+
     /** {@code stat_tooltip.realmforge.lifesteal} from {@code content/texts/stat_tooltip.yaml}: "Heals you by this share of the damage your melee and ranged hits deal. Spells never heal this way." */
     public static final String STAT_TOOLTIP_LIFESTEAL = "stat_tooltip.realmforge.lifesteal";
 
@@ -655,6 +685,24 @@ public final class GeneratedTexts {
 
     /** {@code stat_tooltip.realmforge.projectile_resistance} from {@code content/texts/stat_tooltip.yaml}: "Lowers the damage you take from arrows, tridents, fireballs and other projectiles by this share, up to 75%. It multiplies with Physical Resistance, and together they block at most 75%." */
     public static final String STAT_TOOLTIP_PROJECTILE_RESISTANCE = "stat_tooltip.realmforge.projectile_resistance";
+
+    /** {@code stat_tooltip.realmforge.resistance_explosion} from {@code content/texts/stat_tooltip.yaml}: "How much less damage you take from explosions, from Explosion Resistance and your protection enchantments together. Armor is not counted." */
+    public static final String STAT_TOOLTIP_RESISTANCE_EXPLOSION = "stat_tooltip.realmforge.resistance_explosion";
+
+    /** {@code stat_tooltip.realmforge.resistance_fall} from {@code content/texts/stat_tooltip.yaml}: "How much less damage you take from falls, from Fall Resistance and your protection enchantments together." */
+    public static final String STAT_TOOLTIP_RESISTANCE_FALL = "stat_tooltip.realmforge.resistance_fall";
+
+    /** {@code stat_tooltip.realmforge.resistance_fire} from {@code content/texts/stat_tooltip.yaml}: "How much less damage you take from fire and lava, from your protection enchantments. Armor is not counted." */
+    public static final String STAT_TOOLTIP_RESISTANCE_FIRE = "stat_tooltip.realmforge.resistance_fire";
+
+    /** {@code stat_tooltip.realmforge.resistance_magic} from {@code content/texts/stat_tooltip.yaml}: "How much less damage you take from spells of the magic schools, from your protection enchantments." */
+    public static final String STAT_TOOLTIP_RESISTANCE_MAGIC = "stat_tooltip.realmforge.resistance_magic";
+
+    /** {@code stat_tooltip.realmforge.resistance_physical} from {@code content/texts/stat_tooltip.yaml}: "How much less damage you take from melee hits, projectiles and physical spells, from Physical Resistance and your protection enchantments together. Armor is not counted." */
+    public static final String STAT_TOOLTIP_RESISTANCE_PHYSICAL = "stat_tooltip.realmforge.resistance_physical";
+
+    /** {@code stat_tooltip.realmforge.resistance_projectile} from {@code content/texts/stat_tooltip.yaml}: "How much less damage you take from arrows, tridents and other projectiles, from Physical and Projectile Resistance and your protection enchantments together. Armor is not counted." */
+    public static final String STAT_TOOLTIP_RESISTANCE_PROJECTILE = "stat_tooltip.realmforge.resistance_projectile";
 
     /** {@code stat_tooltip.realmforge.spell_power} from {@code content/texts/stat_tooltip.yaml}: "Adds to the damage and healing of your magic spells. Each spell adds its own share of it." */
     public static final String STAT_TOOLTIP_SPELL_POWER = "stat_tooltip.realmforge.spell_power";

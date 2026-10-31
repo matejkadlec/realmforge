@@ -4,9 +4,11 @@ import io.github.matejkadlec.realmforge.character.CharacterSheetView;
 import io.github.matejkadlec.realmforge.character.CharacterSheetView.Mark;
 import io.github.matejkadlec.realmforge.character.CharacterSheetView.PrimaryStat;
 import io.github.matejkadlec.realmforge.character.CharacterSheetView.Row;
-import io.github.matejkadlec.realmforge.character.CharacterSheetView.Section;
 import io.github.matejkadlec.realmforge.character.StatNumbers;
+import io.github.matejkadlec.realmforge.combat.CombatAttachments;
 import io.github.matejkadlec.realmforge.combat.CombatRegistries;
+import io.github.matejkadlec.realmforge.combat.DamageKind;
+import io.github.matejkadlec.realmforge.combat.EnchantmentProtection;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.qa.command.StatsCommands;
 import java.util.ArrayList;
@@ -16,6 +18,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextColor;
@@ -24,17 +27,23 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.neoforged.neoforge.common.NeoForgeMod;
 
 /**
- * RLM-136, RLM-509, RLM-235: the character sheet shows the player's name, level and attributes on three tabs:
- * Character with the primary stats (what they give in their tooltips) and the other stats, Stamina right below Luck
- * (RLM-170); Offense with Melee, Ranged and Spells, a stat that counts for several in each; Defense with Health and
- * Mitigation. Every stat of ours shows, the mob-only resistances never (RLM-233), Apothic Attributes' ranged stats and
- * Healing Received do, and every row has its tooltip text. Values with one decimal (RLM-530). The sheet's view model is
- * common code ({@link CharacterSheetView}), so the test builds it for a fake player on the server after {@code /qa
- * stats} set Strength, and compares it with the attributes the stat rules produced.
+ * RLM-136, RLM-509, RLM-235, RLM-233: the character sheet shows the player's name, level and attributes on three tabs
+ * (Matěj's layout of 2026-10-31): Character with the primary stats (what they give in their tooltips) and the other
+ * stats in two columns, Stamina right below Luck (RLM-170); Offense with Physical, Critical Hits under it, and Magic;
+ * Defense with Mitigation, Health and Resistances, a row per kind of hit from resistance stats and protection
+ * enchantments together. No stat shows twice; every stat of ours shows, the mob-only resistances never, Apothic
+ * Attributes' ranged stats and Healing Received do, and every row has its tooltip text. Values with one decimal
+ * (RLM-530). The sheet's view model is common code ({@link CharacterSheetView}), so the test builds it for a fake
+ * player on the server after {@code /qa stats} set Strength, and compares it with the attributes the stat rules
+ * produced.
  */
 public final class CharacterSheetGameTests {
     private CharacterSheetGameTests() {
@@ -52,35 +61,39 @@ public final class CharacterSheetGameTests {
         helper.assertValueEqual(view.title().getString(), "qa-sheet · Lv. 1", "the sheet's heading");
         helper.assertValueEqual(view.tabNames().stream().map(Component::getString).toList(),
                 List.of("Character", "Offense", "Defense"), "the sheet's tabs (Matěj, 2026-10-30)");
-        helper.assertValueEqual(headings(view, 0), List.of("Melee", "Ranged", "Spells"), "Offense's columns");
-        helper.assertValueEqual(headings(view, 1), List.of("Health", "Mitigation"), "Defense's columns");
+        helper.assertValueEqual(headings(view, 0), List.of(List.of("Physical", "Critical Hits"), List.of("Magic")),
+                "Offense's columns (Matěj, 2026-10-31)");
+        helper.assertValueEqual(headings(view, 1), List.of(List.of("Mitigation"), List.of("Health"),
+                List.of("Resistances")), "Defense's columns");
+        helper.assertValueEqual(ids(view.character().other().getFirst()), ids(Attributes.LUCK, GeneratedStats.STAMINA,
+                Attributes.ENTITY_INTERACTION_RANGE, Attributes.BLOCK_INTERACTION_RANGE), "the other stats' left column");
+        helper.assertValueEqual(ids(view.character().other().get(1)), ids(Attributes.BLOCK_BREAK_SPEED,
+                Attributes.MOVEMENT_SPEED, NeoForgeMod.SWIM_SPEED, GeneratedStats.XP_MULTIPLIER),
+                "the other stats' right column");
         helper.assertTrue(view.character().identity().parts().isEmpty(), "no character: no race or class");
         helper.assertTrue(view.character().xp().isEmpty(), "no character: no XP bar");
 
-        // Every stat of ours shows, the mob-only resistances never; no column lists a stat twice.
-        Set<String> mobOnly = new HashSet<>(Set.of(GeneratedStats.SPELL_RESISTANCE.value().getDescriptionId()));
+        // Every stat of ours shows once, the mob-only resistances never, and the damage type resistances in the
+        // Resistances rows instead of their own; no row shows twice (Matěj, 2026-10-31).
+        Set<String> hidden = new HashSet<>(Set.of(GeneratedStats.SPELL_RESISTANCE.value().getDescriptionId()));
         server.registryAccess().lookupOrThrow(CombatRegistries.SPELL_SCHOOL).listElements().forEach(school ->
-                school.value().resistance().ifPresent(stat -> mobOnly.add(stat.value().getDescriptionId())));
+                school.value().resistance().ifPresent(stat -> hidden.add(stat.value().getDescriptionId())));
+        GeneratedStats.DAMAGE_RESISTANCES.forEach(resistance -> hidden.add(resistance.stat().value()
+                .getDescriptionId()));
         for (Holder<Attribute> stat : GeneratedStats.ALL) {
             String id = stat.value().getDescriptionId();
             long shown = view.rows().stream().filter(row -> row.id().equals(id)).count();
-            if (mobOnly.contains(id)) {
-                helper.assertValueEqual(shown, 0L, stat.getRegisteredName() + " is mob-only (RLM-233)");
+            if (hidden.contains(id)) {
+                helper.assertValueEqual(shown, 0L, stat.getRegisteredName() + " has no row of its own");
             } else {
-                helper.assertTrue(shown >= 1, stat.getRegisteredName() + " shows on the sheet");
+                helper.assertValueEqual(shown, 1L, stat.getRegisteredName() + " shows once");
                 assertValue(helper, view, stat, player.getAttributeValue(stat));
             }
         }
-        for (List<Row> column : columns(view)) {
-            List<String> ids = column.stream().map(Row::id).toList();
-            helper.assertValueEqual(new HashSet<>(ids).size(), ids.size(), "a column lists a stat once: " + ids);
-        }
-        // Stats that count for several show in each column they affect (RLM-235): our crit counts for a fully drawn
-        // shot too.
-        String critChance = GeneratedStats.CRIT_CHANCE.value().getDescriptionId();
-        helper.assertValueEqual(view.statTabs().getFirst().columns().stream()
-                .filter(column -> column.rows().stream().anyMatch(row -> row.id().equals(critChance))).count(), 3L,
-                "crit chance under Melee, Ranged and Spells");
+        List<String> allIds = view.rows().stream().map(Row::id).toList();
+        helper.assertValueEqual(new HashSet<>(allIds).size(), allIds.size(), "no row shows twice: " + allIds);
+        helper.assertValueEqual(row(helper, view, Attributes.KNOCKBACK_RESISTANCE).value(), "0%",
+                "knockback resistance, a share");
         // Apothic Attributes' ranged stats and Healing Received, which the GameTest server loads as a pack mod.
         for (String path : List.of("arrow_damage", "draw_speed", "arrow_velocity", "healing_received")) {
             Holder<Attribute> attribute = BuiltInRegistries.ATTRIBUTE.get(Identifier.fromNamespaceAndPath(
@@ -110,10 +123,10 @@ public final class CharacterSheetGameTests {
         helper.assertValueEqual(row(helper, view, Attributes.BLOCK_INTERACTION_RANGE).value(), "4.5", "block reach");
         helper.assertValueEqual(row(helper, view, GeneratedStats.XP_MULTIPLIER).value(), "100%", "XP multiplier");
         // Stamina sits right below Luck among the other stats (RLM-170), and Vitality's milestone at 10 gives it 10.
-        List<Row> other = view.character().other();
+        List<Row> other = view.character().other().getFirst();
         List<String> otherIds = other.stream().map(Row::id).toList();
         int luck = otherIds.indexOf(Attributes.LUCK.value().getDescriptionId());
-        helper.assertTrue(luck >= 0, "the other stats list Luck: " + otherIds);
+        helper.assertTrue(luck >= 0, "the other stats' left column lists Luck: " + otherIds);
         helper.assertValueEqual(otherIds.get(luck + 1), GeneratedStats.STAMINA.value().getDescriptionId(),
                 "the row below Luck");
         helper.assertValueEqual(other.get(luck + 1).value(), "10", "10 Vitality's Stamina");
@@ -182,16 +195,84 @@ public final class CharacterSheetGameTests {
         helper.succeed();
     }
 
-    private static List<String> headings(CharacterSheetView view, int tab) {
-        return view.statTabs().get(tab).columns().stream().map(column -> column.title().getString()).toList();
+    /**
+     * RLM-235, RLM-233 (Matěj, 2026-10-31): a Resistances row per kind of hit shows what the player's resistance stats
+     * and protection enchantments block of it together, 1 − (1 − stats) × (1 − enchantments), the enchantments' part
+     * from the game's own protection rules; the tooltip splits the two parts, and Fire and Magic have enchantments
+     * only. The server keeps the synced copy the client reads current.
+     */
+    @QaGameTest
+    public static void resistancesCombineStatsAndEnchantments(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-sheet-resist");
+        player.doTick();
+        StatsCommands.setBase(player, GeneratedStats.PHYSICAL_RESISTANCE, 0.5);
+        CharacterSheetView bare = CharacterSheetView.of(player);
+        List<Row> rows = resistances(bare);
+        helper.assertValueEqual(rows.stream().map(row -> row.label().getString()).toList(),
+                List.of("Physical", "Projectile", "Explosion", "Fall", "Fire", "Magic"), "a row per kind of hit");
+        helper.assertValueEqual(rows.stream().map(Row::value).toList(), List.of("50%", "50%", "0%", "0%", "0%", "0%"),
+                "no armor: 50% Physical Resistance counts for melee hits and projectiles");
+        helper.assertValueEqual(tooltip(rows.getFirst()), List.of("From stats: 50%", "From enchantments: 0%"),
+                "Physical's split");
+        helper.assertValueEqual(tooltip(rows.getLast()), List.of("From enchantments: 0%"), "Magic: enchantments only");
+        helper.assertValueEqual(tooltip(rows.get(4)), List.of("From enchantments: 0%"), "Fire: enchantments only");
+
+        ItemStack chest = new ItemStack(Items.DIAMOND_CHESTPLATE);
+        chest.enchant(server.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.PROTECTION),
+                4);
+        player.setItemSlot(EquipmentSlot.CHEST, chest);
+        StatsCommands.setBase(player, GeneratedStats.PROJECTILE_RESISTANCE, 0.5);
+        EnchantmentProtection protection = EnchantmentProtection.compute(helper.getLevel(), player);
+        for (DamageKind kind : DamageKind.values()) {
+            helper.assertTrue(protection.share(kind) > 0, "Protection IV counts against " + kind);
+        }
+        List<Row> enchanted = resistances(CharacterSheetView.of(player));
+        double physical = protection.share(DamageKind.PHYSICAL);
+        helper.assertValueEqual(enchanted.getFirst().value(), StatNumbers.share(1 - 0.5 * (1 - physical)),
+                "Physical: 1 - (1 - 50%) x (1 - Protection's share)");
+        helper.assertValueEqual(tooltip(enchanted.getFirst()), List.of("From stats: 50%",
+                "From enchantments: " + StatNumbers.share(physical)), "the split");
+        helper.assertValueEqual(tooltip(enchanted.get(1)).getFirst(), "From stats: 75%",
+                "Projectile: 50% Physical and 50% Projectile multiply to 75%, the cap");
+        helper.assertValueEqual(enchanted.getLast().value(), StatNumbers.share(protection.share(DamageKind.MAGIC)),
+                "Magic: Protection alone");
+
+        // The client's sheet reads the copy the server keeps current every half second.
+        for (int tick = 0; tick < 10; tick++) {
+            player.doTick();
+        }
+        helper.assertValueEqual(player.getData(CombatAttachments.ENCHANTMENT_PROTECTION), protection,
+                "the synced shares");
+        server.getPlayerList().remove(player);
+        helper.succeed();
     }
 
-    /** Every list of rows the sheet shows: the other stats, then each column of the stat tabs. */
-    private static List<List<Row>> columns(CharacterSheetView view) {
-        List<List<Row>> columns = new ArrayList<>();
-        columns.add(view.character().other());
-        view.statTabs().forEach(tab -> tab.columns().stream().map(Section::rows).forEach(columns::add));
-        return columns;
+    private static List<Row> resistances(CharacterSheetView view) {
+        return view.rows().stream().filter(row -> row.id().startsWith("resistance/")).toList();
+    }
+
+    /** A row's tooltip after its description. */
+    private static List<String> tooltip(Row row) {
+        return row.tooltip().stream().skip(1).map(Component::getString).toList();
+    }
+
+    private static List<List<String>> headings(CharacterSheetView view, int tab) {
+        return view.statTabs().get(tab).columns().stream().map(column -> column.sections().stream()
+                .map(section -> section.title().getString()).toList()).toList();
+    }
+
+    private static List<String> ids(List<Row> rows) {
+        return rows.stream().map(Row::id).toList();
+    }
+
+    @SafeVarargs
+    private static List<String> ids(Holder<Attribute>... attributes) {
+        List<String> ids = new ArrayList<>();
+        for (Holder<Attribute> attribute : attributes) {
+            ids.add(attribute.value().getDescriptionId());
+        }
+        return ids;
     }
 
     private static void assertValue(GameTestHelper helper, CharacterSheetView view, Holder<Attribute> attribute,

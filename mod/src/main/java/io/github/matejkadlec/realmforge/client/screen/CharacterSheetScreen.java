@@ -2,6 +2,7 @@ package io.github.matejkadlec.realmforge.client.screen;
 
 import io.github.matejkadlec.realmforge.character.CharacterSheetView;
 import io.github.matejkadlec.realmforge.character.CharacterSheetView.CharacterTab;
+import io.github.matejkadlec.realmforge.character.CharacterSheetView.Column;
 import io.github.matejkadlec.realmforge.character.CharacterSheetView.Part;
 import io.github.matejkadlec.realmforge.character.CharacterSheetView.PrimaryStat;
 import io.github.matejkadlec.realmforge.character.CharacterSheetView.Row;
@@ -54,8 +55,9 @@ import org.lwjgl.glfw.GLFW;
  * for each milestone, gold once reached. While stat points are unspent, a small {@code +} ends each primary stat's row:
  * hovered, it says what the point gives, in the headings' yellow, aligned right under the stat's name; a click sends
  * {@link SpendStatPointPayload}, which the server checks, and the sheet shows the result on the next tick (RLM-196).
- * Below them an inner panel sets the other stats apart in two columns, without a heading. Offense and Defense: a column
- * of equal width per section, each under its heading.
+ * Below them an inner panel sets the other stats apart in two columns, without a heading. Offense and Defense: columns
+ * of equal width (Offense two, Defense three), each a section under its heading or, for Physical and Critical Hits,
+ * two one under the other.
  */
 public final class CharacterSheetScreen extends Screen {
     private static final int PADDING = 10;
@@ -328,12 +330,10 @@ public final class CharacterSheetScreen extends Screen {
 
         Flex<Paint> top = Flex.<Paint>row().gap(COLUMN_GAP)
                 .add(Flex.leaf(MODEL_WIDTH, MODEL_HEIGHT, new Model()), right);
-        List<Row> other = tab.other();
-        int half = (other.size() + 1) / 2;
+        List<Flex<Paint>> otherColumns = new ArrayList<>();
+        tab.other().forEach(rows -> otherColumns.add(rowsColumn(rows)));
         Flex<Paint> otherPanel = Flex.<Paint>row().gap(COLUMN_GAP).padding(Insets.of(INNER_PADDING - 2, INNER_PADDING))
-                .payload(new Fill(INNER_PANEL, 0))
-                .addAll(equalColumns(List.of(statColumn(null, other.subList(0, half)),
-                        statColumn(null, other.subList(half, other.size())))));
+                .payload(new Fill(INNER_PANEL, 0)).addAll(equalColumns(otherColumns));
         return Flex.<Paint>column().gap(SECTION_GAP).align(Align.STRETCH).add(top, otherPanel);
     }
 
@@ -350,10 +350,14 @@ public final class CharacterSheetScreen extends Screen {
                         text(Component.literal(row.value()), row.color(), ROW), marks, spend);
     }
 
-    /** Offense or Defense: a column of equal width per section. */
+    /** Offense or Defense: columns of equal width, each its sections one under another. */
     private Flex<Paint> statBody(StatTab tab) {
         List<Flex<Paint>> columns = new ArrayList<>();
-        tab.columns().forEach(section -> columns.add(statColumn(section, section.rows())));
+        for (Column column : tab.columns()) {
+            Flex<Paint> sections = Flex.<Paint>column().gap(SECTION_GAP).align(Align.STRETCH);
+            column.sections().forEach(section -> sections.add(sectionColumn(section)));
+            columns.add(sections);
+        }
         return Flex.<Paint>row().gap(COLUMN_GAP).addAll(equalColumns(columns));
     }
 
@@ -364,12 +368,16 @@ public final class CharacterSheetScreen extends Screen {
         return columns;
     }
 
-    /** A column of stat rows, under its section's heading unless {@code section} is null. */
-    private Flex<Paint> statColumn(@Nullable Section section, List<Row> rows) {
+    /** A section: its heading, then its rows. */
+    private Flex<Paint> sectionColumn(Section section) {
+        return Flex.<Paint>column().align(Align.STRETCH)
+                .add(text(underlined(section.title()), CharacterSheetView.TITLE, HEADING_ROW))
+                .add(rowsColumn(section.rows()));
+    }
+
+    /** Stat rows one under another. */
+    private Flex<Paint> rowsColumn(List<Row> rows) {
         Flex<Paint> column = Flex.<Paint>column().align(Align.STRETCH);
-        if (section != null) {
-            column.add(text(underlined(section.title()), CharacterSheetView.TITLE, HEADING_ROW));
-        }
         for (Row row : rows) {
             column.add(Flex.<Paint>row().payload(new Hover(row.label(), row.tooltip()))
                     .add(text(row.label(), row.color(), ROW), Flex.<Paint>leaf(VALUE_GAP, 0, null).grow(1),

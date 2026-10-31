@@ -18,7 +18,8 @@ texts:
   xp_bar_level:
     en_us: Lv. %1$s
   # The tabs (Matěj, 2026-10-30: Character, Offense and Defense; RLM-509, RLM-235), and the headings over their
-  # columns. The Character tab's other stats have no heading: a panel sets them apart (RLM-560).
+  # columns (Matěj, 2026-10-31: Offense's Physical with Critical Hits under it and Magic; Defense's Mitigation, Health
+  # and Resistances). The Character tab's other stats have no heading: a panel sets them apart (RLM-560).
   tab_character:
     en_us: Character
   tab_offense:
@@ -27,16 +28,36 @@ texts:
     en_us: Defense
   primary_stats:
     en_us: Primary Stats
-  melee:
-    en_us: Melee
-  ranged:
-    en_us: Ranged
-  spells:
-    en_us: Spells
-  health:
-    en_us: Health
+  physical:
+    en_us: Physical
+  critical_hits:
+    en_us: Critical Hits
+  magic:
+    en_us: Magic
   mitigation:
     en_us: Mitigation
+  health:
+    en_us: Health
+  resistances:
+    en_us: Resistances
+  # The Resistances rows, one per kind of hit (combat/DamageKind; Matěj, 2026-10-31), and their tooltips' split of the
+  # value: what the resistance stats block and what the protection enchantments block (%1$s the share, "20%").
+  resistance_physical:
+    en_us: Physical
+  resistance_projectile:
+    en_us: Projectile
+  resistance_explosion:
+    en_us: Explosion
+  resistance_fall:
+    en_us: Fall
+  resistance_fire:
+    en_us: Fire
+  resistance_magic:
+    en_us: Magic
+  resistance_from_stats:
+    en_us: "From stats: %1$s"
+  resistance_from_enchantments:
+    en_us: "From enchantments: %1$s"
   # The Character tab's XP bar (RLM-509): the XP toward the next level, "350 / 1200 XP" (%1$s the XP gained since the
   # level began, %2$s the XP the next level needs), and what it reads while the level cap holds the player.
   xp_progress:

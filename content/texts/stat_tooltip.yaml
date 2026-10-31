@@ -33,7 +33,7 @@ texts:
     en_us: How fast you swim, compared with a player's normal speed.
   xp_multiplier:
     en_us: Multiplies the character XP you gain. 100% is normal.
-  # Offense: Melee, Ranged and Spells.
+  # Offense: Physical, Critical Hits and Magic.
   attack_damage:
     en_us: The damage of your melee hits before crits and the target's armor, in half hearts.
   attack_speed:
@@ -41,7 +41,7 @@ texts:
   crit_chance:
     en_us: The chance that your melee hits, fully drawn shots and spells are critical. Chance above 100% becomes extra crit damage.
   crit_damage:
-    en_us: How much more a critical hit deals than a normal one. 50% means a crit deals 150%.
+    en_us: How much more a critical hit deals than a normal one, for melee hits, fully drawn shots and spells alike. 50% means a crit deals 150%.
   armor_pierce:
     en_us: Armor points of the target that your melee and ranged hits ignore, before Armor Shred. Armor toughness is never pierced.
   armor_shred:
@@ -72,7 +72,7 @@ texts:
     en_us: More damage and healing for your Fire spells, on top of spell power.
   frost_power:
     en_us: More damage and healing for your Frost spells, on top of spell power.
-  # Defense: Health and Mitigation.
+  # Defense: Mitigation and Health.
   max_health:
     en_us: The most health you can have, in half hearts.
   health_regeneration:
@@ -95,3 +95,19 @@ texts:
     en_us: Lowers the damage you take from explosions (creepers, TNT, fireworks) by this share, up to 75%.
   fall_resistance:
     en_us: Lowers the damage you take from falls and ender pearls by this share, up to 75%.
+  knockback_resistance:
+    en_us: How much less hits knock you back. 100% means they never do.
+  # The Resistances rows (resistance_<kind>, combat/DamageKind; Matěj, 2026-10-31): what a hit of each kind loses to
+  # the resistance stats above and the protection enchantments together. Their tooltips add the split from data.
+  resistance_physical:
+    en_us: How much less damage you take from melee hits, projectiles and physical spells, from Physical Resistance and your protection enchantments together. Armor is not counted.
+  resistance_projectile:
+    en_us: How much less damage you take from arrows, tridents and other projectiles, from Physical and Projectile Resistance and your protection enchantments together. Armor is not counted.
+  resistance_explosion:
+    en_us: How much less damage you take from explosions, from Explosion Resistance and your protection enchantments together. Armor is not counted.
+  resistance_fall:
+    en_us: How much less damage you take from falls, from Fall Resistance and your protection enchantments together.
+  resistance_fire:
+    en_us: How much less damage you take from fire and lava, from your protection enchantments. Armor is not counted.
+  resistance_magic:
+    en_us: How much less damage you take from spells of the magic schools, from your protection enchantments.
