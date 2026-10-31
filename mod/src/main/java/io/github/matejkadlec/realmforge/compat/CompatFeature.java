@@ -1,5 +1,6 @@
 package io.github.matejkadlec.realmforge.compat;
 
+import io.github.matejkadlec.realmforge.compat.apotheosis.ApotheosisCompat;
 import io.github.matejkadlec.realmforge.compat.apothic_attributes.ApothicAttributesCompat;
 import io.github.matejkadlec.realmforge.compat.bettercombat.TwoHandedWeapons;
 import io.github.matejkadlec.realmforge.compat.ftbteams.FtbTeamsParties;
@@ -15,6 +16,9 @@ public final class CompatFeature {
     public static void register(IEventBus modBus) {
         if (ModList.get().isLoaded(ApothicAttributesCompat.MOD_ID)) {
             ApothicAttributesCompat.register(modBus);
+        }
+        if (ModList.get().isLoaded(ApotheosisCompat.MOD_ID)) {
+            ApotheosisCompat.register(modBus);
         }
         if (ModList.get().isLoaded(TwoHandedWeapons.MOD_ID)) {
             TwoHandedWeapons.register();

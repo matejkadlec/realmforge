@@ -10,9 +10,10 @@ from pydantic import Field, StringConstraints
 from realmforge_tools.project import MOD_ID
 from realmforge_tools.schema.common import LocalizedText, StrictModel
 
-TextName = Annotated[str, StringConstraints(pattern=r"^[a-z][a-z0-9_]*$", max_length=64)]
-# Dots allowed, for a key format the game prescribes: Options > Controls reads a key category's name from
-# ``key.category.<namespace>.<path>``, so the group ``key.category`` names ours.
+# Dots allowed in both, for a key format another mod or the game prescribes: Apotheosis reads a loot category's plural
+# from ``loot_category.<namespace>.<path>.plural`` (the name ``wand.plural``), and Options > Controls a key category's
+# name from ``key.category.<namespace>.<path>``, so the group ``key.category`` names ours.
+TextName = Annotated[str, StringConstraints(pattern=r"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*$", max_length=64)]
 TextGroupId = Annotated[
     str,
     StringConstraints(pattern=r"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*$", max_length=64),
@@ -27,7 +28,7 @@ class TextGroupDef(StrictModel):
     id: TextGroupId
     texts: dict[TextName, LocalizedText] = Field(
         min_length=1,
-        description="Text name (lowercase snake_case) -> text; the key is <id>.realmforge.<name>.",
+        description="Text name (lowercase snake_case words joined by dots) -> text; the key is <id>.realmforge.<name>.",
     )
 
 

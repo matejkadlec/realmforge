@@ -335,6 +335,12 @@ public final class GeneratedTexts {
     /** {@code key.category.realmforge.spell_bar} from {@code content/texts/key.category.yaml}: "Realmforge Spell Bar" */
     public static final String KEY_CATEGORY_SPELL_BAR = "key.category.realmforge.spell_bar";
 
+    /** {@code loot_category.realmforge.wand} from {@code content/texts/loot_category.yaml}: "Wand" */
+    public static final String LOOT_CATEGORY_WAND = "loot_category.realmforge.wand";
+
+    /** {@code loot_category.realmforge.wand.plural} from {@code content/texts/loot_category.yaml}: "Wands" */
+    public static final String LOOT_CATEGORY_WAND_PLURAL = "loot_category.realmforge.wand.plural";
+
     /** {@code message.realmforge.bed_only_overworld} from {@code content/texts/message.yaml}: "Beds only work in Overworld" */
     public static final String MESSAGE_BED_ONLY_OVERWORLD = "message.realmforge.bed_only_overworld";
 
