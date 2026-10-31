@@ -6,7 +6,11 @@
     "sha512": "8db33b929de427e0f2154d0007fb13cc6d3a95b30b6b68b8be265c3bd45f099a72284315e19203e3dd2662bbe1447b5c052eae4b014d7fd46b9edaaeb31b258c"
   },
   "source": "https://github.com/Shadows-of-Fire/Apotheosis",
-  "license": "MIT, Copyright (c) Shadows_of_Fire: Apotheosis's own data, unchanged",
+  "license": {
+    "spdx": "MIT",
+    "source": "https://raw.githubusercontent.com/Shadows-of-Fire/Apotheosis/f2e7686/LICENSE",
+    "text": "MIT License\n\nCopyright (c) 2018-2025 Stormraven Studios, LLC\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+  },
   "generated_by": "uv run rf ids apotheosis",
   "affixes": {
     "apotheosis:armor/attribute/adamantine": {
@@ -6434,6 +6438,124 @@
         "pinnacle": {
           "weight": 0
         }
+      }
+    }
+  },
+  "rarity_override": {
+    "apotheosis:apotheosis/shears": {
+      "category": "apotheosis:shears",
+      "overrides": {
+        "apotheosis:common": [
+          {
+            "type": "apotheosis:socket",
+            "min": 0,
+            "max": 1
+          },
+          {
+            "type": "apotheosis:affix",
+            "affix_type": "stat"
+          },
+          {
+            "type": "apotheosis:durability",
+            "min": 0.05,
+            "max": 0.1
+          }
+        ],
+        "apotheosis:uncommon": [
+          {
+            "type": "apotheosis:socket",
+            "min": 1,
+            "max": 1
+          },
+          {
+            "type": "apotheosis:affix",
+            "affix_type": "stat"
+          },
+          {
+            "type": "apotheosis:durability",
+            "min": 0.1,
+            "max": 0.15
+          }
+        ],
+        "apotheosis:rare": [
+          {
+            "type": "apotheosis:socket",
+            "min": 1,
+            "max": 1
+          },
+          {
+            "type": "apotheosis:affix",
+            "affix_type": "stat"
+          },
+          {
+            "type": "apotheosis:affix",
+            "affix_type": "basic_effect"
+          },
+          {
+            "type": "apotheosis:durability",
+            "min": 0.1,
+            "max": 0.25
+          }
+        ],
+        "apotheosis:epic": [
+          {
+            "type": "apotheosis:socket",
+            "min": 1,
+            "max": 1
+          },
+          {
+            "type": "apotheosis:affix",
+            "affix_type": "stat"
+          },
+          {
+            "type": "apotheosis:affix",
+            "affix_type": "basic_effect"
+          },
+          {
+            "type": "apotheosis:affix",
+            "affix_type": "basic_effect"
+          },
+          {
+            "type": "apotheosis:durability",
+            "min": 0.25,
+            "max": 0.55
+          }
+        ],
+        "apotheosis:mythic": [
+          {
+            "type": "apotheosis:socket",
+            "min": 1,
+            "max": 2
+          },
+          {
+            "type": "apotheosis:affix",
+            "affix_type": "stat"
+          },
+          {
+            "type": "apotheosis:affix",
+            "affix_type": "basic_effect"
+          },
+          {
+            "type": "apotheosis:affix",
+            "affix_type": "basic_effect"
+          },
+          {
+            "type": "apotheosis:select",
+            "chance": 0.99,
+            "if_false": {
+              "type": "apotheosis:component",
+              "components": {
+                "!apotheosis:durability_bonus": {},
+                "minecraft:unbreakable": {}
+              }
+            },
+            "if_true": {
+              "type": "apotheosis:durability",
+              "min": 0.45,
+              "max": 0.75
+            }
+          }
+        ]
       }
     }
   },

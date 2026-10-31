@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Elusive: Matěj turned it off in his affix review (RLM-232, 2026-10-16).
+id: elusive
+affix: apotheosis:melee/mob_effect/elusive
+disabled: true

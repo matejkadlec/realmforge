@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Executing (kills a target below a share of its health): Matěj turned it off (RLM-232, 2026-10-16 and
+# 2026-10-29). Nerfed it would be weak, kept against bosses it skips their last phase, and as Apotheosis ships it
+# it is too strong. Giant Slaying stays.
+id: executing
+affix: apotheosis:melee/executing
+disabled: true

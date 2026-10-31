@@ -109,6 +109,29 @@ fine.
   damage reduction in Summit and Pinnacle;
 - **only `max_eterna` is off** (RLM-232): Apothic Enchanting's shelves gate enchanting power instead.
 
+## The affix set
+
+Matěj reviewed all 99 affixes of Apotheosis 9.1.0 on 2026-10-16 (RLM-232) and changed his calls on 2026-10-29,
+2026-10-30 and 2026-10-31; the data comes from `content/apotheosis_affixes/`, `apotheosis_rarities/`,
+`apotheosis_tier_augments/` and `apotheosis_rarity_overrides/` ([architecture 19.4](../architecture.md#194-optional-integrations)).
+
+- **31 affixes off:** the review's 29, Executing (too strong as shipped, too weak nerfed, and it skips a boss's last
+  phase) and Runed (Spell Resistance is a mob-only stat, RLM-233). 68 stay.
+- **Opened to Rare:** Giant Slaying (5–10 %, and no longer Pinnacle-only) and Acidic (2–4 s, Epic 3–6 s, no longer
+  Pinnacle-only), Thunderstruck (2–4), Blighted (Wither I–II for 8–10 s; Epic becomes I–III), Spectral (10–30 %),
+  Catalyzing (5–15 s), Psychic (40–60 %) and Retreating.
+- **Rare's chanced ability slot:** Apotheosis rolls abilities on Epic and Legendary only; Rare gets a 25 % chance of one
+  (Matěj, 2026-10-29), so the 4 % of Rare drops in Haven and 10 % in Frontier can carry an ability early. Magical
+  stays Epic and Legendary.
+- **A category skips the slots it has nothing left for** (Matěj, 2026-10-31): helmets keep no ability (Runed was their
+  only one) and one basic effect (Blinding is off, Deflective is left) at Rare, Epic and Legendary; boots no ability
+  at Rare (Unhurried rolls from Epic); shears one basic effect at Epic and Legendary (Gardening and Leaf-Forming are
+  off, Radial is left). Without that, Apotheosis would log an error and roll one affix fewer.
+- **Executing and Giant Slaying** are no longer exclusive: Executing is off.
+- **Still RLM-232's rules, not data yet:** Unbound (creative flight, Pinnacle only) is off in Skyhearth and in boss
+  arenas (Matěj, 2026-10-29), and Super-Massive and Radial never break protected blocks, with the realm tool tiers
+  (RLM-194) applying to every block they break; RLM-559 carries them.
+
 ## Mob levels and loot
 
 Mob levels follow the player (RLM-240): an open-world mob spawns within 3 levels of the nearest player, never below

@@ -239,6 +239,8 @@
   "key.realmforge.spell_slot_7": "Spell Slot 7",
   "key.realmforge.spell_slot_8": "Spell Slot 8",
   "key.realmforge.spellbook": "Spellbook",
+  "loot_category.realmforge.wand": "Wand",
+  "loot_category.realmforge.wand.plural": "Wands",
   "message.realmforge.bed_only_overworld": "Beds only work in Overworld",
   "message.realmforge.cannot_use_in_combat": "You can't use this in combat.",
   "message.realmforge.dungeon_completed": "You completed the instance and will be automatically teleported out in 5 minutes. Use '/instance leave' to exit immediately.",

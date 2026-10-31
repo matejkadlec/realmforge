@@ -2,7 +2,8 @@
 
 Date: 2026-10-11
 
-Status: Accepted; config overrides noted 2026-10-13 (RLM-151); imported room licenses noted 2026-10-14 (RLM-120)
+Status: Accepted; config overrides noted 2026-10-13 (RLM-151); imported room licenses noted 2026-10-14 (RLM-120);
+Apotheosis's data notice noted 2026-10-31 (RLM-524)
 
 ## Context
 
@@ -21,6 +22,10 @@ This supersedes the report's MIT/CC0 proposal.
     `"MPL-2.0 AND CC-BY-4.0 AND MIT AND CC0-1.0 AND LGPL-3.0-only"` (`mod_license` in `gradle.properties`): the
     rooms keep their sources' licenses, with each source's texts in the jar's `META-INF/third_party/<source>/`
     ([0028](0028-dungeon-rooms-generated-or-imported.md)).
+  - 2026-10-31 (RLM-524): the jar also carries Apotheosis's data, changed by our pipeline
+    ([0063](0063-apotheosis-data-is-fitted-from-a-pinned-snapshot.md)). It is MIT (the jar's metadata keeps Apotheosis's
+    assets, none of which we copy, All Rights Reserved), already in `mod_license`, and its license text and a notice of
+    ours go to `META-INF/third_party/apotheosis/`, as the rooms' do.
 - No third-party mod jars in the repo; the pack holds packwiz metadata only, so third-party licenses (including ARR ones) are not affected.
   - 2026-10-13 (RLM-151): the pack also ships config overrides in `pack/config/` ([0013](0013-modpack-composition.md)), each the mod's own generated config file with only the pack's values changed. Shipping config files is what every modpack does, and the jars themselves still come from their original sources, so third-party licenses stay unaffected.
 - Third-party code is never copied into our MPL-2.0 files unless its license allows it (Spell Engine is GPL-3.0-only, Explorer's Compass CC BY-NC-SA: no reuse; see [0004](0004-build-rpg-systems-in-house.md)).

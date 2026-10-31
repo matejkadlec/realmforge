@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/texts.schema.json
+# Apotheosis's loot categories of ours (compat/apotheosis, RLM-273). Apotheosis reads a category's name from
+# loot_category.<namespace>.<path> and its plural from <that>.plural, in gem tooltips ("Wands: ...") and the reforging
+# screens.
+id: loot_category
+texts:
+  wand:
+    en_us: Wand
+  wand.plural:
+    en_us: Wands

@@ -30,10 +30,10 @@
       "type": "string"
     },
     "texts": {
-      "description": "Text name (lowercase snake_case) -> text; the key is <id>.realmforge.<name>.",
+      "description": "Text name (lowercase snake_case words joined by dots) -> text; the key is <id>.realmforge.<name>.",
       "minProperties": 1,
       "patternProperties": {
-        "^[a-z][a-z0-9_]*$": {
+        "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$": {
           "$ref": "#/$defs/LocalizedText"
         }
       },

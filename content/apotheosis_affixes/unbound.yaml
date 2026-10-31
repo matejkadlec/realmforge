@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Unbound (creative flight, Pinnacle only) stays, but without Winged in its exclusive set: Winged is off (RLM-232), and
+# Apotheosis logs an error for an exclusive set that names an affix it does not have.
+id: unbound
+affix: apotheosis:armor/attribute/unbound
+replace:
+  definition:
+    affix_type: stat
+    exclusive_set: []
+    weights:
+      pinnacle:
+        quality: 0.2
+        weight: 1

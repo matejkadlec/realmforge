@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Leaf-Forming: Matěj turned it off in his affix review (RLM-232, 2026-10-16).
+id: leafforming
+affix: apotheosis:shears/effect/leafforming
+disabled: true

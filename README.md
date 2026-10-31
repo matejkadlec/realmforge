@@ -154,6 +154,11 @@ The repository contains two products with different licenses:
   - MIT: Stonevaults (TheGrimsey), DungeonZ (Globox_Z, Zura), Desert Dungeon (D1scoball, Globox_Z);
   - CC0 1.0: Dungeon Now Loading (Hexnowloading);
   - LGPL-3.0: Mo' Structures (Frqnny).
+
+  The jar also carries Apotheosis's data, fitted to our stats (`data/apotheosis/`, from
+  [Apotheosis](https://github.com/Shadows-of-Fire/Apotheosis) by Shadows_of_Fire, MIT, Copyright (c) 2018-2025
+  Stormraven Studios, LLC), with its license and a notice in `META-INF/third_party/apotheosis/`
+  ([ADR 0063](docs/decisions/0063-apotheosis-data-is-fitted-from-a-pinned-snapshot.md)).
 - **The Realmforge modpack** (`pack/`: pack definition, configuration, quests): **All Rights Reserved**, no
   redistribution. See [pack/LICENSE](pack/LICENSE).
 

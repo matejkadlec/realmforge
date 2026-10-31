@@ -109,16 +109,16 @@ So the proposal, for RLM-273's Java (a category is a registry entry) and RLM-272
 
 | Category | Items | Slot | How |
 | --- | --- | --- | --- |
-| `realmforge:wand` | `#realmforge:wands` | main hand | RLM-273, as planned |
+| `realmforge:wand` | `#realmforge:wands` | main hand | RLM-273 (its affixes: RLM-557) |
 | `realmforge:robe_head`, `robe_chest`, `robe_legs`, `robe_feet` | the caster sets (piece names by archetype: Cap, Robes, Pants, Sandals) | the armor slot | new: four categories, each robe mapped in `apotheosis:loot_category_overrides` (generated from the item's `gear`), so the order of the predicates never matters |
-| `realmforge:ring`, `necklace`, `bracelet` | `#curios:ring` and so on | the curio slot | RLM-273, as planned |
+| `realmforge:ring`, `necklace`, `bracelet` | `#curios:ring` and so on | the curio slot | RLM-556, once Curios and our curio items are in the pack |
 | ranged and rogue armor | the first ranged set (Hood, Tunic, Greaves, Tabi) | the armor slot | when that set exists (M3), the same way as robes |
 
 Melee armor, melee weapons, bows, tools, shields and tridents keep Apotheosis's categories.
 
 ### Melee: armor and weapons
 
-Apotheosis's affixes as RLM-232 sets them (70 kept, 30 off, Executing among them), remapped to our stats by RLM-272:
+Apotheosis's affixes as RLM-232 sets them (68 kept, 31 off, Executing and Runed among them; [the affix set](apotheosis.md#the-affix-set)), remapped to our stats by RLM-272:
 crit chance (Intricate), crit damage (Lacerating), armor pierce (Piercing), lifesteal (Vampiric), overheal
 (Berserking), cooldown reduction (Timekeeping), and vanilla's attack damage, attack speed, armor and toughness as
 they are. Warrior spells scale with attack damage, so Violent and Murderous are the Warrior's spell power too.

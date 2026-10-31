@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Prosperous on bows (+Looting): Matěj turned it off in his affix review (RLM-232, 2026-10-16); too strong on top of Looting, which Apothic
+# Enchanting raises above III.
+id: prosperous_ranged
+affix: apotheosis:ranged/enchantment/prosperous
+disabled: true

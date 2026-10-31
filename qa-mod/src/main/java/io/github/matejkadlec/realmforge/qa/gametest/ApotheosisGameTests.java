@@ -34,7 +34,7 @@ import net.minecraft.world.level.GameType;
  * RLM-272: Apotheosis's data, fitted to our stats ({@code content/apotheosis_stat_remaps/}, architecture 19.4), as the
  * game loads it with the pack (ADR 0042). The tests use Apotheosis's own commands ({@code /apoth set_rarity},
  * {@code /apoth affix apply}, {@code /apoth set_world_tier}) and look its attributes, components and recipes up by
- * id, so the QA mod needs no compile-time dependency on it.
+ * id, as a player or a data pack would reach them; {@code ApotheosisLootGameTests} reads its registries directly.
  */
 public final class ApotheosisGameTests {
     private static final Identifier APOTHIC_CRIT_CHANCE = Identifier.parse("apothic_attributes:crit_chance");
@@ -154,7 +154,7 @@ public final class ApotheosisGameTests {
         helper.succeed();
     }
 
-    private static ServerPlayer player(GameTestHelper helper, String name) {
+    static ServerPlayer player(GameTestHelper helper, String name) {
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, name);
         player.setGameMode(GameType.SURVIVAL);
         player.connection.markClientLoaded();
@@ -162,18 +162,18 @@ public final class ApotheosisGameTests {
         return player;
     }
 
-    private static void ticks(ServerPlayer player, int ticks) {
+    static void ticks(ServerPlayer player, int ticks) {
         for (int i = 0; i < ticks; i++) {
             player.doTick();
         }
     }
 
-    private static void run(ServerPlayer player, String command) {
+    static void run(ServerPlayer player, String command) {
         CommandSourceStack source = player.createCommandSourceStack().withPermission(PermissionSet.ALL_PERMISSIONS);
         player.level().getServer().getCommands().performPrefixedCommand(source, command);
     }
 
-    private static void logout(ServerPlayer player) {
+    static void logout(ServerPlayer player) {
         player.level().getServer().getPlayerList().remove(player);
     }
 
@@ -184,7 +184,7 @@ public final class ApotheosisGameTests {
                 "nothing raises " + id + ": " + (instance == null ? "" : instance.getModifiers()));
     }
 
-    private static Holder<Attribute> attribute(Identifier id) {
+    static Holder<Attribute> attribute(Identifier id) {
         return BuiltInRegistries.ATTRIBUTE.get(id)
                 .orElseThrow(() -> new IllegalStateException("Apothic Attributes has no attribute " + id));
     }

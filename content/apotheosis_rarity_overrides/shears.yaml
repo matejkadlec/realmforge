@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_rarity_overrides.schema.json
+# Epic and Legendary shears keep one basic effect slot of Apotheosis's two (Matěj, 2026-10-31, RLM-232: skip the slots
+# a category has nothing left for): Gardening and Leaf-Forming are off, so Radial is the shears' one basic effect. The
+# rest is Apotheosis's own override for shears.
+id: shears
+category: apotheosis:shears
+max_slots:
+  apotheosis:epic: {basic_effect: 1}
+  apotheosis:mythic: {basic_effect: 1}

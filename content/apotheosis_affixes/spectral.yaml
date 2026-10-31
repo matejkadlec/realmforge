@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Spectral (a chance to shoot a second arrow): Matěj's affix review (RLM-232) adds Rare, a 10-30 % chance. An ability,
+# so a Rare bow rolls it only through Rare's chanced ability slot.
+id: spectral
+affix: apotheosis:ranged/spectral
+replace:
+  values:
+    apotheosis:rare:
+      min: 0.1
+      max: 0.3
+    apotheosis:epic:
+      min: 0.2
+      max: 0.5
+    apotheosis:mythic:
+      min: 0.3
+      max: 0.7

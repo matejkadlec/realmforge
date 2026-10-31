@@ -45,6 +45,8 @@ import net.minecraft.world.entity.monster.zombie.Husk;
  */
 public final class QuestGameTests {
     private static final int TIMEOUT = 1200;
+    /** The packages of the compile-only pack mods the lean dev client lacks: FTB's, and Apotheosis's with Placebo. */
+    private static final List<String> PACK_MOD_PACKAGES = List.of("dev.ftb.", "dev.shadowsoffire.");
     private static final BlockPos PORTAL = new BlockPos(2, 1, 4);
 
     private QuestGameTests() {
@@ -196,10 +198,11 @@ public final class QuestGameTests {
     }
 
     /**
-     * No GameTest class names a type of a compile-only pack mod (FTB Quests, FTB Library, FTB Teams) in its methods'
-     * signatures, lambdas included: the QA mod lists those methods when it is constructed ({@link QaGameTests}), which
-     * resolves those types, and the lean dev client ({@code -PleanClient}) has none of these mods, so it would not
-     * start. Such a type belongs in a helper class that a test calls, as {@link QuestBook} is.
+     * No GameTest class names a type of a compile-only pack mod (FTB Quests, FTB Library, FTB Teams; Apotheosis,
+     * Apothic Attributes, Placebo) in its methods' signatures, lambdas included: the QA mod lists those methods when it
+     * is constructed ({@link QaGameTests}), which resolves those types, and the lean dev client ({@code -PleanClient})
+     * has none of these mods, so it would not start. Such a type belongs in a helper class that a test calls, as
+     * {@link QuestBook} and {@link ApotheosisLoot} are.
      */
     @QaGameTest
     public static void gameTestClassesNameNoPackModTypeInTheirMethods(GameTestHelper helper) {
@@ -208,7 +211,7 @@ public final class QuestGameTests {
                 List<Class<?>> types = new ArrayList<>(List.of(method.getParameterTypes()));
                 types.add(method.getReturnType());
                 for (Class<?> type : types) {
-                    helper.assertFalse(type.getTypeName().startsWith("dev.ftb."),
+                    helper.assertFalse(PACK_MOD_PACKAGES.stream().anyMatch(type.getTypeName()::startsWith),
                             holder.getSimpleName() + "#" + method.getName() + " names " + type.getTypeName());
                 }
             }
