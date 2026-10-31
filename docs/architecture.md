@@ -387,7 +387,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | item YAML with a weapon preset | `data/realmforge/weapon_attributes/<item>.json` (Better Combat format) | read by Better Combat |
 | mob YAML | Xaero's Minimap icon files (*verify* format) | read by Xaero's Minimap |
 | `texts/` (exists) | lang keys `<group>.realmforge.<name>`, `GeneratedTexts` constants | translations |
-| `apotheosis_affixes/` (exists, RLM-271), `apotheosis_gems/`, `apotheosis_tier_augments/`, `apotheosis_rarities/`, `apotheosis_stat_remaps/` (exist, RLM-272) | each Apotheosis entry they change, from its snapshot, at Apotheosis's own path `data/apotheosis/apotheosis/<kind>/<path>.json` ([19.4](#194-optional-integrations)) | Apotheosis's affix, gem, tier augment and rarity registries |
+| `apotheosis_affixes/` (exists, RLM-271), `apotheosis_gems/`, `apotheosis_tier_augments/`, `apotheosis_rarities/`, `apotheosis_stat_remaps/` (exist, RLM-272), `apotheosis_rarity_overrides/` (exists, RLM-232) | each Apotheosis entry they change, from its snapshot, at Apotheosis's own path `data/apotheosis/apotheosis/<kind>/<path>.json`, and Apotheosis's MIT `LICENSE` with our `NOTICE` in `META-INF/third_party/apotheosis/` ([19.4](#194-optional-integrations)) | Apotheosis's affix, gem, tier augment, rarity and rarity override registries |
 | `recipe_removals/` (exists, RLM-272) | `data/<namespace>/recipe/<path>.json` per recipe, a file NeoForge skips (`neoforge:never`) | reloadable vanilla data |
 | `recipes/` (exists, RLM-447) | `data/minecraft/recipe/<path>.json`, replacing the vanilla recipe at that path, since the core mod's data pack sits above vanilla's (`generate/recipes.py`) | reloadable vanilla data |
 | every type | `tools/schemas/<type>.schema.json` | editor completion |
@@ -3766,11 +3766,47 @@ NeoForge stacks the mods' data packs in that order, so a file of ours replaces t
   2026-10-29).
 - **Mythic shows as Legendary**: the rarity's name and the two texts that say mythic are in the core mod's
   `assets/apotheosis/lang/en_us.json` (texts of other mods, above).
+- **The affix set of Matěj's review** (RLM-232, [the design](design/apotheosis.md#the-affix-set)): 31 affixes are off,
+  the review's 29, Executing and Runed; Giant Slaying and Acidic lose their Pinnacle-only weight; eight affixes roll
+  from Rare; Rare gets a chanced ability slot, 25 %, next to its rules; every world tier's cap on Apothic
+  Enchanting's max Eterna is off.
+- **Rarity overrides** (RLM-232): Apotheosis rolls a rarity's rules for every loot category unless a rarity override
+  names other rules for one, and an ability slot that finds no ability for the item's category logs `Failed to
+  execute AffixLootRule (no affixes available)` at ERROR and rolls nothing (`LootRule$AffixLootRule#execute`). An
+  entry of `apotheosis_rarity_overrides/` makes a category skip the ability slot at the rarities it lists: their
+  rules are the fitted rarity's (or those of Apotheosis's own override for the category, shears' the only one) without
+  the ability rules, a chanced one included, at `data/apotheosis/apotheosis/rarity_override/<namespace>/<path>.json`,
+  the path Apotheosis reads the category from (`RarityOverrideRegistry#validateItem`). With Runed off, helmets have no
+  ability left and boots none below Epic (Unhurried), so helmets skip the slot at Rare, Epic and Legendary and boots at
+  Rare (Matěj, 2026-10-31).
+- **Apotheosis's license** (RLM-524): Apotheosis is MIT, its code and the data its generators write; the jar's
+  metadata keeps its assets All Rights Reserved, and we copy none of them. MIT asks that its notice goes with every
+  copy, so `rf ids apotheosis` records the license's text in the snapshot (the jar carries no license file: it comes
+  from Apotheosis's repository at the release's commit, `SOURCE_COMMIT`), and `rf gen` writes it with a `NOTICE` of
+  ours to `META-INF/third_party/apotheosis/`, next to the imported rooms' ([15.4](#154-rooms)). `ApotheosisNoticeTest`
+  (JUnit) finds both in the built resources.
 
-`ApotheosisGameTests` check the fitted data in the game, through Apotheosis's own commands and its ids, so the QA mod
-does not compile against it: an Intricate sword raises our crit chance and nothing of Apothic Attributes', a
-switched-off affix cannot be applied, a Summit monster gets our armor pierce and no protection pierce, every mob has
-the three combat stats, a mob's lifesteal heals it, and no potion charm recipe loads.
+**Our loot categories** (RLM-273): `compat/apotheosis/ApotheosisCompat` registers `realmforge:wand` in Apotheosis's
+category registry (`Apoth.BuiltInRegs.LOOT_CATEGORY`, a NeoForge registry) for `#realmforge:wands`, its stats in the
+main hand (`ALObjects.EquipmentSlotGroups.MAINHAND`). Apotheosis files an item under the first category, by priority,
+whose test it passes, unless its data map `apotheosis:loot_category_overrides` names one (`LootCategory#forItem`);
+`melee_weapon` takes anything whose default modifiers give more than 1 attack damage in the main hand, our wands (2 to
+5) too, so the wand category takes Apotheosis's default priority, 1000, before `melee_weapon`'s 2000. Its name and
+plural, which gem tooltips and the reforging screens show, are `loot_category.realmforge.wand` and `.plural`
+(`content/texts/loot_category.yaml`). No affix lists it yet, so a wand never rolls a melee affix, and a wand
+reforged now gets a rarity, sockets and durability, while Apotheosis logs the empty slots' errors; its own affixes are
+the caster affixes (RLM-557), the robes' categories RLM-546's and the curios' RLM-556's. The core mod compiles against
+the pack's Apotheosis, Apothic Attributes and Placebo (`compileOnlyApi` in `mod/build.gradle`, which hands them to
+the QA mod), and registers the category only when Apotheosis is loaded.
+
+`ApotheosisGameTests` check the fitted data in the game, through Apotheosis's own commands and its ids, as a player or
+a data pack reaches them: an Intricate sword raises our crit chance and nothing of Apothic Attributes', a switched-off
+affix cannot be applied, a Summit monster gets our armor pierce and no protection pierce, every mob has the three
+combat stats, a mob's lifesteal heals it, and no potion charm recipe loads. `ApotheosisLootGameTests` read
+Apotheosis's registries and loot code: the review's affixes are off, its Rare rolls apply (Giant Slaying adds its Rare
+value) and Magical stays Epic, about a quarter of Rare swords carry one ability, every loot category of Apotheosis's
+rolls at every rarity at Haven and Pinnacle (the GameTest log then holds no `AffixLootRule` error) with no ability on a
+helmet or a Rare boot, no tier caps max Eterna, and every wand is `realmforge:wand` with no affix to roll.
 - **Apothic Enchanting's stale list of loot modifiers** (`data/neoforge/loot_modifiers/global_loot_modifiers.json`,
   the NeoForge 21.1 format) is replaced by a file in the core mod's resources whose `neoforge:never` condition makes
   NeoForge skip it quietly. NeoForge 26.1 reads every file in `loot_modifiers/` as a modifier and logged an error for
@@ -3789,6 +3825,10 @@ Checked against our systems (RLM-271), with nothing to fix:
 - **Damage-type tags:** Apotheosis adds tags to single damage sources (its Magical arrows and Thunderstruck count
   as magic or lightning and bypass armor). Our school check reads the damage type, not tags, so such a hit is no
   school hit; our armor formula honours `#minecraft:bypasses_armor`, and our dodge still applies to the arrow.
+- **Wands with Better Combat** (RLM-273): Better Combat gives every item whose id matches `staff|wand|sceptre|stave|rod`
+  its `bettercombat:wand` preset (a one-handed stab, `FallbackConfig`), our wands too, and times the swing by the
+  attack speed attribute. With their own loot category no attack speed or reach affix reaches a wand, so nothing
+  changes there.
 
 ### 19.5 Performance
 
