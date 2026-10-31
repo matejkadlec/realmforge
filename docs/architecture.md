@@ -502,6 +502,7 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
 | `realmforge:stat_tracker` | `stats` | players | when the stat modifiers were last recomputed and what a respawn owes the health ([8.2](#82-where-modifiers-come-from)); transient: not saved or copied | not synced |
 | `realmforge:in_combat` | `combat` | living entities that dealt or took a hit | the game time of the last hit dealt to, or taken from, another living entity and when its combat ends ([9.4](#94-in-combat), RLM-348); transient: not saved or copied, so a new entity starts out of combat | the owner (the time, for UI that shows it) |
 | `realmforge:magic_shield` | `combat` | players (any entity with the stat) | the points left in the magic shield and the tick count from which it refills ([9.1](#91-damage-pipeline)); transient: not saved or copied, so a new player entity starts with a full shield | the owner, points only (the HUD bar) |
+| `realmforge:enchantment_protection` | `combat` | players | what the player's protection enchantments block of a hit of each `combat/DamageKind` (`combat/EnchantmentProtection`, RLM-235), which the server works out every half second, as enchantment effects need a server level; transient | the owner (the character sheet's Resistances column, [18](#18-client-code-rendering-gui-input)) |
 | `realmforge:pending_refill` | `mob` | mobs leveled as they spawn | a mark: refill the mob's health to its scaled maximum when it joins the level ([14.1](#141-mob-levels)); saved (a chunk-generation spawn waits in the chunk's data), not copied, removed at the join | not synced |
 
 - Values are immutable records with a `Codec` for saving and a `StreamCodec` for syncing, declared with
@@ -3561,17 +3562,27 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
       "Spend a point on Strength" and beneath it, in the headings' yellow and aligned right under the stat's name
       (`client/tooltip/RightAlignedLines`, a tooltip component), what the point gives: each per-point bonus that still
       grows and the bonuses of a milestone it reaches. Below, an inner panel sets the other stats apart in two columns
-      without a heading (luck, Stamina right below it, mining speed, reach, movement speed, swimming speed, the XP
-      multiplier, and any stat of ours no column names).
-    - **Offense** (RLM-235): Melee (attack damage and speed, crit chance and damage, armor pierce and shred,
-      lifesteal, overheal), Ranged (Apothic Attributes' Arrow Damage, Draw Speed and Arrow Velocity while it is
-      loaded, then crit, which counts for a fully drawn shot too, armor pierce and shred, lifesteal) and Spells (max
-      mana, mana regeneration, spell power, cast time and cooldown reduction, crit, then each school's power in the
-      school's colour). A stat that counts for several shows in each.
-    - **Defense**: Health (max health, health regeneration, Apothic Attributes' Healing Received, magic shield,
-      dodge) and Mitigation (armor, armor toughness, then RLM-233's Physical, Projectile, Explosion and Fall
-      Resistance). Spell Resistance and the schools'
-      resistances are mob-only stats (RLM-233), so the sheet never shows them.
+      without a heading in two columns (Matěj, 2026-10-31): luck, Stamina right below it, entity reach and block reach;
+      mining speed, movement speed, swimming speed, the XP multiplier, and any stat of ours no column names.
+    - **Offense** (RLM-235; Matěj's layout of 2026-10-31, no stat shown twice): Physical (attack damage and speed,
+      Apothic Attributes' Arrow Damage, Draw Speed and Arrow Velocity while it is loaded, armor pierce and shred:
+      melee and ranged together, as a Warrior uses a bow and a Hunter a melee weapon) with Critical Hits under it
+      (crit chance and damage, for melee hits, fully drawn shots and spells alike), and Magic (max mana, mana
+      regeneration, spell power, cast time and cooldown reduction, then each school's power in the school's colour;
+      RLM-535's Spell Penetration after spell power).
+    - **Defense**: Mitigation (armor, armor toughness, magic shield, dodge, knockback resistance), Health (max health,
+      health regeneration, Apothic Attributes' Healing Received, lifesteal, overheal) and Resistances: a row per
+      `combat/DamageKind` (Physical, Projectile, Explosion, Fall, Fire, Magic), each the share of such a hit the
+      player does not take, 1 − (1 − stats) × (1 − enchantments) (Matěj, 2026-10-31). The stats are RLM-233's damage
+      type resistances whose tag the kind's damage type is in (an arrow: Physical and Projectile Resistance), combined
+      as the damage pipeline combines them ([9.1](#91-damage-pipeline)); the enchantments' part is
+      `combat/EnchantmentProtection`, the game's own enchantment step for a hit of that type
+      (`EnchantmentHelper#getDamageProtection`, then `CombatRules#getDamageAfterMagicAbsorb`, whose formula Apothic
+      Attributes replaces), so Apothic Enchanting's levels and RLM-537's Magic Protection count without code of ours.
+      The server works it out every half second and syncs it to the player (`realmforge:enchantment_protection`, [7](#7-player-state)).
+      Armor is not in it, as what it blocks depends on the hit's size. The tooltip splits the value: from stats (where
+      any count; Fire and Magic have none), from enchantments. Spell Resistance and the schools' resistances are
+      mob-only stats (RLM-233), and the four damage type resistances have no rows of their own.
 
     Every stat has a tooltip: its name, then what it does from `content/texts/stat_tooltip.yaml`
     (`stat_tooltip.realmforge.<path of the attribute's id>`, one text per stat, which the guide can reuse); a primary

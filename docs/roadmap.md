@@ -226,7 +226,8 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
 - **Stamina** (RLM-171, after RLM-170). The Stamina stat that RLM-170 adds slows the hunger drain.
 - **Damage-type resistances** (RLM-233). Physical, Projectile, Explosion and Fall resistance and Healing Received
   as our own stats, on the character sheet.
-- **Character sheet tabs** (RLM-235). The stats split into Melee, Ranged, Magic and Defense tabs, with ranged stats.
+- **Character sheet tabs** (RLM-235). Three tabs: Character (RLM-509), Offense and Defense, with ranged stats and a
+  tooltip on every stat.
 - **Character sheet rework** (RLM-225, RLM-254). Our own background, font and layout; the specialization's
   placeholder.
 
