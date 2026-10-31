@@ -4,7 +4,6 @@ import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.character.CharacterCreation;
 import io.github.matejkadlec.realmforge.character.CharacterRegistries;
 import io.github.matejkadlec.realmforge.character.CharacterSheetView;
-import io.github.matejkadlec.realmforge.character.CharacterSheetView.Row;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.qa.command.StatsCommands;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedStatExpectations;
@@ -121,14 +120,14 @@ public final class ClassRoleGameTests {
                 + attribute.getRegisteredName());
     }
 
-    /** The lines under the stat on the player's own sheet name {@code shown} and never {@code hidden}. */
+    /** The stat's tooltip on the player's own sheet (RLM-509) names {@code shown} and never {@code hidden}. */
     private static void assertSheetNames(GameTestHelper helper, ServerPlayer player, Holder<Attribute> stat,
             String shown, String hidden) {
-        String prefix = stat.value().getDescriptionId() + "/";
-        List<String> lines = CharacterSheetView.of(player).rows().stream()
-                .filter(row -> row.id().startsWith(prefix))
-                .map(Row::label)
-                .map(label -> label.getString())
+        String id = stat.value().getDescriptionId();
+        List<String> lines = CharacterSheetView.of(player).character().primary().stream()
+                .filter(primary -> primary.row().id().equals(id))
+                .flatMap(primary -> primary.row().tooltip().stream().skip(1))
+                .map(line -> line.getString())
                 .toList();
         helper.assertTrue(lines.stream().anyMatch(line -> line.endsWith(" " + shown) || line.contains(" " + shown
                 + ",")), player.getPlainTextName() + "'s sheet lists " + shown + " under " + stat.getRegisteredName()

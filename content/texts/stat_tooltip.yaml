@@ -1,0 +1,89 @@
+# yaml-language-server: $schema=../../tools/schemas/texts.schema.json
+# What each stat on the character sheet does, its tooltip there (stat_tooltip.realmforge.<path of the attribute's id>;
+# RLM-235, RLM-509): one text per stat, so the guide's Character section (M4) can reuse them. A text says what the stat
+# does and in which units, plus what a player needs to read the number: what it applies to, a cap, how it stacks
+# (Matěj, 2026-10-30). Mining Speed and Health Regeneration are Matěj's own words. A primary stat's tooltip lists what
+# its points give below its text, from the stat rules. Spell Resistance and the schools' resistances are mob-only
+# stats (RLM-233), so they have none.
+id: stat_tooltip
+texts:
+  # The primary stats (realmforge:strength, ...).
+  strength:
+    en_us: Physical might. Raises your attack damage and lifesteal, and its milestones make your hits land harder.
+  dexterity:
+    en_us: Speed and precision. Raises your crit chance and your attack speed, or your cooldown reduction for casters.
+  vitality:
+    en_us: Toughness. Raises your health and its regeneration, and a defense that suits your class.
+  intellect:
+    en_us: Magical aptitude. Raises your spell power, mana regeneration and cast speed.
+  # The other stats on the Character tab.
+  luck:
+    en_us: Improves the loot you fish up and find in chests.
+  stamina:
+    en_us: Each point lowers the hunger you use up by sprinting, jumping, swimming, fighting, taking damage and mining by 1%, up to 50%.
+  block_break_speed:
+    en_us: The speed at which you mine blocks.
+  block_interaction_range:
+    en_us: How far away, in blocks, you can break and place blocks.
+  entity_interaction_range:
+    en_us: How far away, in blocks, you can hit and use creatures.
+  movement_speed:
+    en_us: How fast you walk and run, compared with a player's normal speed.
+  swim_speed:
+    en_us: How fast you swim, compared with a player's normal speed.
+  xp_multiplier:
+    en_us: Multiplies the character XP you gain. 100% is normal.
+  # Offense: Melee, Ranged and Spells.
+  attack_damage:
+    en_us: The damage of your melee hits before crits and the target's armor, in half hearts.
+  attack_speed:
+    en_us: How many full-strength melee attacks you can make per second.
+  crit_chance:
+    en_us: The chance that your melee hits, fully drawn shots and spells are critical. Chance above 100% becomes extra crit damage.
+  crit_damage:
+    en_us: How much more a critical hit deals than a normal one. 50% means a crit deals 150%.
+  armor_pierce:
+    en_us: Armor points of the target that your melee and ranged hits ignore, before Armor Shred. Armor toughness is never pierced.
+  armor_shred:
+    en_us: The share of the target's remaining armor that your melee and ranged hits ignore, after Armor Pierce.
+  lifesteal:
+    en_us: Heals you by this share of the damage your melee and ranged hits deal. Spells never heal this way.
+  overheal:
+    en_us: Healing beyond your max health becomes absorption, up to this share of your max health. It fades 10 seconds after the last heal that added to it.
+  arrow_damage:
+    en_us: Multiplies the damage of your arrows and thrown tridents. 100% is normal.
+  draw_speed:
+    en_us: How fast you draw bows and crossbows and charge tridents. 100% is normal.
+  arrow_velocity:
+    en_us: How fast your arrows fly. Faster arrows deal more damage. 100% is normal.
+  max_mana:
+    en_us: The size of your mana pool, which pays for your spells.
+  mana_regeneration:
+    en_us: Mana you regain per second.
+  spell_power:
+    en_us: Adds to the damage and healing of your magic spells. Each spell adds its own share of it.
+  cast_time_reduction:
+    en_us: Shortens your spells' cast times. 50% halves a cast. At most 75%.
+  cooldown_reduction:
+    en_us: Shortens your spells' cooldowns. 50% halves a cooldown. At most 75%.
+  arcane_power:
+    en_us: More damage and healing for your Arcane spells, on top of spell power.
+  fire_power:
+    en_us: More damage and healing for your Fire spells, on top of spell power.
+  frost_power:
+    en_us: More damage and healing for your Frost spells, on top of spell power.
+  # Defense: Health and Mitigation.
+  max_health:
+    en_us: The most health you can have, in half hearts.
+  health_regeneration:
+    en_us: Amount of health you regenerate per 5 seconds in addition to natural health regeneration.
+  healing_received:
+    en_us: Multiplies all healing you receive. 100% is normal.
+  magic_shield:
+    en_us: A shield of points that takes damage before your health. It refills 10 seconds after you last took damage.
+  dodge_chance:
+    en_us: The chance to avoid a hit completely.
+  armor:
+    en_us: Lowers the damage of hits, most against small ones. It never blocks more than 80% of a hit.
+  armor_toughness:
+    en_us: Makes your armor hold up against big hits. Armor Pierce and Armor Shred never lower it.

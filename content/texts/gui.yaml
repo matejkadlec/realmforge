@@ -11,33 +11,38 @@ texts:
   character_sheet:
     en_us: Character Sheet
   # The sheet's heading: "Steve · Lv. 12" (%1$s the player's name, %2$s the level; Matěj, 2026-10-14). Race, class
-  # and specialization are on the Origin tab instead, which keeps the heading short.
+  # and specialization are on the Character tab's first line instead, which keeps the heading short.
   character_title:
     en_us: "%1$s · Lv. %2$s"
   # The XP bar above the health and food rows (C2): the character level at its middle (%1$s the level).
   xp_bar_level:
     en_us: Lv. %1$s
-  # The tabs, and the sections each shows in its two columns.
-  tab_stats:
-    en_us: Stats
-  tab_combat:
-    en_us: Combat
-  tab_magic:
-    en_us: Magic
-  tab_origin:
-    en_us: Origin
+  # The tabs (Matěj, 2026-10-30: Character, Offense and Defense; RLM-509, RLM-235), and the headings over their
+  # columns. The Character tab's other stats have no heading: a panel sets them apart (RLM-560).
+  tab_character:
+    en_us: Character
+  tab_offense:
+    en_us: Offense
+  tab_defense:
+    en_us: Defense
   primary_stats:
     en_us: Primary Stats
-  other_stats:
-    en_us: Other
-  offense:
-    en_us: Offense
-  defense:
-    en_us: Defense
+  melee:
+    en_us: Melee
+  ranged:
+    en_us: Ranged
   spells:
     en_us: Spells
-  spell_schools:
-    en_us: Spell Schools
+  health:
+    en_us: Health
+  mitigation:
+    en_us: Mitigation
+  # The Character tab's XP bar (RLM-509): the XP toward the next level, "350 / 1200 XP" (%1$s the XP gained since the
+  # level began, %2$s the XP the next level needs), and what it reads while the level cap holds the player.
+  xp_progress:
+    en_us: "%1$s / %2$s XP"
+  xp_capped:
+    en_us: Level cap reached
   # Vanilla attributes under the names the sheet gives them, on their rows and in the bonuses of the primary
   # stats (Matěj, 2026-10-13 and 2026-10-14).
   mining_speed:
@@ -81,22 +86,11 @@ texts:
     en_us: "%1$s ×%2$s"
   create_character:
     en_us: Create Character
-  # The Origin tab's sections (Matěj, 2026-10-14): "Race: Human", "Class: Warrior" (%1$s the name, or none), and
-  # a placeholder for the specialization until the specialization spell trees exist (C5, RLM-333).
-  origin_race:
-    en_us: "Race: %1$s"
-  origin_class:
-    en_us: "Class: %1$s"
-  # The heading of the race's racial active under its bonuses (C4, RLM-219), in gold over the spell's name in yellow;
-  # the racial passive follows the same way, its name over its tooltip line (Matěj, 2026-10-30).
-  origin_racial_ability:
+  # The heading of the race's racial active in the race's tooltip on the Character tab (C4, RLM-219; RLM-509), in gold
+  # over the spell's name in yellow; the racial passive follows the same way, its name over its tooltip line (Matěj,
+  # 2026-10-30).
+  racial_ability:
     en_us: Racial Ability
-  none:
-    en_us: None
-  specialization_wip:
-    en_us: "Specialization: WIP"
-  specialization_wip_description:
-    en_us: Lorem ipsum dolor sit amet, consectetur adipiscing elit.
   # The spellbook (C3b, RLM-25, client/screen/SpellbookScreen): the player's known spells and the spell bar's layout.
   spellbook:
     en_us: Spellbook

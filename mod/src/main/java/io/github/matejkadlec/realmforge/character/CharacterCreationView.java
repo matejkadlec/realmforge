@@ -65,7 +65,7 @@ public record CharacterCreationView(List<RaceOption> races) {
         List<Component> lines = new ArrayList<>();
         for (CharacterModifier modifier : modifiers) {
             lines.add(Component.translatable(GeneratedTexts.GUI_STAT_BONUS,
-                    CharacterSheetView.signed(modifier.attribute(), modifier.operation(), modifier.amount()),
+                    StatNumbers.signed(modifier.attribute(), modifier.operation(), modifier.amount()),
                     CharacterSheetView.name(modifier.attribute())));
         }
         return List.copyOf(lines);

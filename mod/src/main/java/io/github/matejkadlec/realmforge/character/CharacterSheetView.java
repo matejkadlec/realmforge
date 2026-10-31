@@ -2,6 +2,9 @@ package io.github.matejkadlec.realmforge.character;
 
 import io.github.matejkadlec.realmforge.combat.CombatRegistries;
 import io.github.matejkadlec.realmforge.combat.SpellSchool;
+import io.github.matejkadlec.realmforge.core.CoreRegistries;
+import io.github.matejkadlec.realmforge.core.Curve;
+import io.github.matejkadlec.realmforge.generated.GeneratedCurves;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.generated.GeneratedTexts;
 import io.github.matejkadlec.realmforge.stats.ClassRole;
@@ -9,8 +12,6 @@ import io.github.matejkadlec.realmforge.stats.EntityLevel;
 import io.github.matejkadlec.realmforge.stats.StatRule;
 import io.github.matejkadlec.realmforge.stats.StatsAttachments;
 import io.github.matejkadlec.realmforge.stats.StatsRegistries;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -22,37 +23,44 @@ import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.ai.attributes.Attribute;
-import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.common.NeoForgeMod;
-import net.neoforged.neoforge.common.PercentageAttribute;
 
 /**
  * What the character sheet shows (RLM-136; architecture 18: a thin screen draws a view model computed in common code):
- * the player's name and level, then four tabs of two columns each (Matěj, 2026-10-13 and 2026-10-14). Stats: the
- * primary stats with what they give, and the other attributes. Combat: offense and defense. Magic: spells with mana,
- * and the spell schools' power and resistance. Origin: the race (its description and what it gives) and the class (its
- * description, then a placeholder for the specialization). A player with a character also sees their unspent stat points at
- * the end of the Primary Stats title, and while any are unspent each primary stat's row offers a {@code +} that spends
- * one, with what that point gives (RLM-196; Matěj, 2026-10-16). Built
+ * the player's name and level, then three tabs (Matěj, 2026-10-30), with room for a Pet tab later (RLM-161).
+ * <ul>
+ *   <li><b>Character</b> (RLM-509): the race, specialization and class in one line ({@link Identity}), the race's and
+ *   the class's parts showing what they are and give when hovered; the XP toward the next level; the four primary
+ *   stats, one compact row each with a mark for each milestone, filled once reached, and the {@code +} that spends a
+ *   stat point (RLM-196), what they give in their tooltips; then the other stats.</li>
+ *   <li><b>Offense</b> (RLM-235): Melee, Ranged and Spells. A stat that counts for several shows in each.</li>
+ *   <li><b>Defense</b>: Health and Mitigation.</li>
+ * </ul>
+ * Every stat has a tooltip: what it does, one text per stat ({@code stat_tooltip.realmforge.<path>},
+ * {@link #description}), which the guide (M4) can reuse; a primary stat's adds what its points give the player's class
+ * role. Spell Resistance and the schools' resistances are mob-only stats (Matěj, 2026-10-30, RLM-233), so the sheet
+ * never shows them. Apothic Attributes' ranged stats and Healing Received show when it is loaded, as in the pack. Built
  * from a player's synced attributes, character and level and the synced registries, so the client screen and the
- * GameTests read the same rows. Every label is a translation; values are formatted here, rounded for display only: a
- * percentage to a whole number, any other number to one decimal.
+ * GameTests read the same rows. Values: {@link StatNumbers}.
  *
  * @param title the player's name and level
- * @param tabs the tabs in order
+ * @param character the Character tab
+ * @param statTabs the tabs after it, Offense and Defense
  */
-public record CharacterSheetView(Component title, List<Tab> tabs) {
-    /** The id prefix of the Origin tab's rows, for tests: {@code origin/race/description}, ... */
-    public static final String ORIGIN = "origin/";
+public record CharacterSheetView(Component title, CharacterTab character, List<StatTab> statTabs) {
+    /** The translation key prefix of the stats' tooltips: the path of the attribute's id follows. */
+    public static final String TOOLTIP_PREFIX = "stat_tooltip.realmforge.";
 
     /**
-     * Text colours the screen draws with: section titles, rows, what a primary stat or the race gives in vanilla's
+     * Text colours the screen draws with: column headings, rows, what a primary stat or the race gives in vanilla's
      * yellow ({@code ChatFormatting.YELLOW}), the milestones a stat has reached in vanilla's gold
      * ({@code ChatFormatting.GOLD}) and those still ahead in gray (Matěj, 2026-10-30: the green the bonuses had read
      * badly).
@@ -64,48 +72,118 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
     public static final int AHEAD = 0xFF8C8C8C;
     /** What a choice would give: the {@code +} that spends a stat point, and character creation's bonus lines. */
     public static final int CHOICE = 0xFF7FD97F;
-    /** Descriptions on the Origin tab. */
+    /** Descriptions: what a stat does, a race or a class. */
     public static final int TEXT = 0xFFC8C8C8;
     /**
-     * The Origin tab's racial ability and passive: the heading or name in gold, what it is or gives in yellow, as on a
-     * sword's tooltip (Matěj, 2026-10-30).
+     * The race's racial ability and passive in its tooltip: the heading or name in gold, what it is or gives in yellow,
+     * as on a sword's tooltip (Matěj, 2026-10-30).
      */
     public static final int RACIAL_NAME = 0xFFFFAA00;
     public static final int RACIAL_DETAIL = 0xFFFFFF55;
 
-    /** A tab: its name and the sections of its two columns. */
-    public record Tab(Component name, List<Section> left, List<Section> right) {
+    public CharacterSheetView {
+        statTabs = List.copyOf(statTabs);
     }
 
     /**
-     * A titled group of rows.
+     * The Character tab (RLM-509).
      *
-     * @param title the section's title
-     * @param rows its rows
-     * @param note a short text at the end of the title's line, drawn white unless its parts carry a colour, or null
+     * @param name the tab's name
+     * @param identity race, specialization and class in one line
+     * @param xp the XP toward the next level, for a player with a character
+     * @param primaryTitle the primary stats' heading
+     * @param unspent "Unspent: 3" at the end of the heading, for a player with a character, else null
+     * @param primary the primary stats, STR, DEX, VIT, INT
+     * @param other the other stats, set apart without a heading
      */
-    public record Section(Component title, List<Row> rows, @Nullable Component note) {
-        /** A section without a note. */
-        public Section(Component title, List<Row> rows) {
-            this(title, rows, null);
+    public record CharacterTab(Component name, Identity identity, Optional<XpBarView> xp, Component primaryTitle,
+            @Nullable Component unspent, List<PrimaryStat> primary, List<Row> other) {
+        public CharacterTab {
+            primary = List.copyOf(primary);
+            other = List.copyOf(other);
+        }
+    }
+
+    /** Race, specialization and class, "Human Frost Mage": its parts in order. Empty without a character. */
+    public record Identity(List<Part> parts) {
+        public Identity {
+            parts = List.copyOf(parts);
+        }
+
+        /** The parts joined by spaces. */
+        public Component line() {
+            MutableComponent line = Component.empty();
+            for (int i = 0; i < parts.size(); i++) {
+                if (i > 0) {
+                    line.append(" ");
+                }
+                line.append(parts.get(i).name());
+            }
+            return line;
+        }
+    }
+
+    /** A part of the identity line and its tooltip, each line in its colour; a specialization's has none yet. */
+    public record Part(Component name, List<Component> tooltip) {
+        public Part {
+            tooltip = List.copyOf(tooltip);
         }
     }
 
     /**
-     * One line of the sheet.
+     * A specialization of the player's class and the points the player has in it. The specialization trees come with C5;
+     * until then no player has points in any, and the line names race and class only.
      *
-     * @param id what the row shows, for tests: an attribute's description id, or {@code <stat description id>/<n>}
-     *     for the n-th line under a primary stat
-     * @param label the text on the left
-     * @param value the formatted value on the right; empty for a line under a primary stat
-     * @param indented whether the row is a line under a primary stat (what it gives)
-     * @param color the text colour, opaque ARGB
-     * @param spend what the {@code +} beside the row spends a stat point on, or null when it offers none
+     * @param id its id, which names it in English, so the alphabetical order of a tie is the names' order
+     * @param name its name
+     * @param points the points the player has in it
      */
-    public record Row(String id, Component label, String value, boolean indented, int color, @Nullable Spend spend) {
-        /** A row that offers no {@code +}. */
-        public Row(String id, Component label, String value, boolean indented, int color) {
-            this(id, label, value, indented, color, null);
+    public record Specialization(String id, Component name, int points) {
+    }
+
+    /**
+     * A primary stat's compact row.
+     *
+     * @param row the stat: its name, value and tooltip, which lists what its points give
+     * @param marks its milestones in order
+     * @param spend the {@code +} that spends a stat point on it, or null when it offers none
+     */
+    public record PrimaryStat(Row row, List<Mark> marks, @Nullable Spend spend) {
+        public PrimaryStat {
+            marks = List.copyOf(marks);
+        }
+    }
+
+    /** A milestone of a primary stat: its points and whether the player has reached them. */
+    public record Mark(int points, boolean reached) {
+    }
+
+    /** A tab of stat columns, each a {@link Section} with its heading. */
+    public record StatTab(Component name, List<Section> columns) {
+        public StatTab {
+            columns = List.copyOf(columns);
+        }
+    }
+
+    /** A column's heading and its rows. */
+    public record Section(Component title, List<Row> rows) {
+        public Section {
+            rows = List.copyOf(rows);
+        }
+    }
+
+    /**
+     * One stat.
+     *
+     * @param id the attribute's description id, for tests
+     * @param label its name on the sheet
+     * @param value the formatted value
+     * @param color the text colour, opaque ARGB
+     * @param tooltip the lines under its name when hovered, each in its colour
+     */
+    public record Row(String id, Component label, String value, int color, List<Component> tooltip) {
+        public Row {
+            tooltip = List.copyOf(tooltip);
         }
     }
 
@@ -138,17 +216,33 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
             entry(Attributes.MOVEMENT_SPEED, GeneratedTexts.GUI_MOVEMENT_SPEED),
             entry(NeoForgeMod.SWIM_SPEED, GeneratedTexts.GUI_SWIMMING_SPEED),
             entry(GeneratedStats.XP_MULTIPLIER));
-    private static final List<Entry> OFFENSE = List.of(entry(Attributes.ATTACK_DAMAGE), entry(Attributes.ATTACK_SPEED),
+    private static final List<Entry> MELEE = List.of(entry(Attributes.ATTACK_DAMAGE), entry(Attributes.ATTACK_SPEED),
             entry(GeneratedStats.CRIT_CHANCE), entry(GeneratedStats.CRIT_DAMAGE), entry(GeneratedStats.ARMOR_PIERCE),
             entry(GeneratedStats.ARMOR_SHRED), entry(GeneratedStats.LIFESTEAL), entry(GeneratedStats.OVERHEAL));
-    private static final List<Entry> DEFENSE = List.of(entry(Attributes.MAX_HEALTH),
-            entry(GeneratedStats.HEALTH_REGENERATION), entry(Attributes.ARMOR), entry(Attributes.ARMOR_TOUGHNESS),
-            entry(GeneratedStats.MAGIC_SHIELD), entry(GeneratedStats.DODGE_CHANCE),
-            entry(GeneratedStats.SPELL_RESISTANCE));
-    /** Mana first, then what shapes a spell (Matěj, 2026-10-14). */
+    /**
+     * After Apothic Attributes' Arrow Damage, Draw Speed and Arrow Velocity ({@link #APOTHIC_RANGED}): our crit counts
+     * for a fully drawn shot too (architecture 9.1), and so do armor pierce, armor shred and lifesteal.
+     */
+    private static final List<Entry> RANGED = List.of(entry(GeneratedStats.CRIT_CHANCE),
+            entry(GeneratedStats.CRIT_DAMAGE), entry(GeneratedStats.ARMOR_PIERCE), entry(GeneratedStats.ARMOR_SHRED),
+            entry(GeneratedStats.LIFESTEAL));
+    /** Mana first, then what shapes a spell (Matěj, 2026-10-14); the schools' powers follow from data. */
     private static final List<Entry> SPELLS = List.of(entry(GeneratedStats.MAX_MANA),
             entry(GeneratedStats.MANA_REGENERATION), entry(GeneratedStats.SPELL_POWER),
-            entry(GeneratedStats.COOLDOWN_REDUCTION), entry(GeneratedStats.CAST_TIME_REDUCTION));
+            entry(GeneratedStats.CAST_TIME_REDUCTION), entry(GeneratedStats.COOLDOWN_REDUCTION),
+            entry(GeneratedStats.CRIT_CHANCE), entry(GeneratedStats.CRIT_DAMAGE));
+    /** Healing Received, Apothic Attributes', goes between them ({@link #APOTHIC_HEALING}). */
+    private static final List<Entry> HEALTH_BEFORE = List.of(entry(Attributes.MAX_HEALTH),
+            entry(GeneratedStats.HEALTH_REGENERATION));
+    private static final List<Entry> HEALTH_AFTER = List.of(entry(GeneratedStats.MAGIC_SHIELD),
+            entry(GeneratedStats.DODGE_CHANCE));
+    /** RLM-233's Physical, Projectile, Explosion and Fall Resistance join here. */
+    private static final List<Entry> MITIGATION = List.of(entry(Attributes.ARMOR), entry(Attributes.ARMOR_TOUGHNESS));
+
+    /** Apothic Attributes' stats on the sheet (RLM-235), there when it is loaded. */
+    private static final String APOTHIC = "apothic_attributes";
+    private static final List<String> APOTHIC_RANGED = List.of("arrow_damage", "draw_speed", "arrow_velocity");
+    private static final String APOTHIC_HEALING = "healing_received";
 
     /** Attributes that read as a percentage of the player's base: players walk at 0.1, the default is 0.7. */
     private static final List<Holder<Attribute>> PERCENT_OF_BASE = List.of(Attributes.MOVEMENT_SPEED,
@@ -158,7 +252,8 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
      * Makes every attribute the sheet lists sync to the client, which draws the sheet from the player's own attributes.
      * Vanilla syncs most of them but not attack damage, which only the server computes; our stats are syncable from
      * their registration (architecture 8.1). Called once from {@link CharacterFeature} at common setup, when every
-     * attribute the sheet lists is registered (NeoForge's swim speed and ours are not at mod construction).
+     * attribute the sheet lists is registered (NeoForge's swim speed, Apothic Attributes' and ours are not at mod
+     * construction).
      */
     static void syncShownAttributes() {
         listed().forEach(entry -> entry.attribute().value().setSyncable(true));
@@ -168,17 +263,21 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
     public static CharacterSheetView of(Player player) {
         int level = player.getExistingData(StatsAttachments.LEVEL).map(EntityLevel::value).orElse(EntityLevel.MIN);
         Component title = Component.translatable(GeneratedTexts.GUI_CHARACTER_TITLE, player.getName(), level);
+        CharacterData character = Characters.data(player);
+        Optional<XpBarView> xp = character.exists() ? xp(player.registryAccess(), character, Characters.level(player))
+                : Optional.empty();
+        // C5 brings the specialization trees and the player's points in them.
         return build(title, player::getAttributeValue, player::getAttributeBaseValue, player.registryAccess(),
-                Characters.data(player), StatPoints.unspent(player));
+                character, StatPoints.unspent(player), xp, List.of());
     }
 
     /**
      * The sheet for any source of attribute values and base values (both must answer for every stat and every
-     * attribute the sheet lists), a character and its unspent stat points.
+     * attribute the sheet lists), a character, its unspent stat points, its XP and its specialization points.
      */
     static CharacterSheetView build(Component title, ToDoubleFunction<Holder<Attribute>> value,
             ToDoubleFunction<Holder<Attribute>> base, HolderLookup.Provider registries, CharacterData character,
-            int unspentPoints) {
+            int unspentPoints, Optional<XpBarView> xp, List<Specialization> specializations) {
         List<StatRule> rules = new ArrayList<>();
         registries.lookupOrThrow(StatsRegistries.STAT_RULE).listElements().forEach(rule -> rules.add(rule.value()));
         List<SpellSchool> schools = new ArrayList<>();
@@ -187,8 +286,10 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
                         .thenComparing(school -> school.key().identifier().toString()))
                 .forEach(school -> schools.add(school.value()));
 
-        // By key: the schools' holders come from the attribute registry, ours from GeneratedStats.
+        // By key: the schools' holders come from the attribute registry, ours from GeneratedStats. The resistances
+        // are mob-only, so they count as placed and never show.
         Set<ResourceKey<Attribute>> placed = new HashSet<>();
+        placed.add(key(GeneratedStats.SPELL_RESISTANCE));
         schools.forEach(school -> {
             school.power().flatMap(Holder::unwrapKey).ifPresent(placed::add);
             school.resistance().flatMap(Holder::unwrapKey).ifPresent(placed::add);
@@ -199,152 +300,164 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
                 .flatMap(key -> registries.lookupOrThrow(CharacterRegistries.CLASS).get(key))
                 .map(entry -> entry.value().role());
 
-        List<Row> primary = new ArrayList<>();
+        List<PrimaryStat> primary = new ArrayList<>();
         for (Holder<Attribute> stat : primaryStats()) {
             placed.add(key(stat));
             double points = value.applyAsDouble(stat);
             List<StatRule> statRules = rules.stream().filter(rule -> rule.stat().is(key(stat))).toList();
             boolean spendable = character.exists() && unspentPoints > 0 && StatPoints.isPrimaryStat(key(stat));
-            primary.add(new Row(stat.value().getDescriptionId(), name(stat), formatted(stat, points), false, STAT,
-                    spendable ? new Spend(key(stat), gains(statRules, points, role)) : null));
+            List<Component> tooltip = new ArrayList<>(List.of(description(stat)));
+            List<Mark> marks = new ArrayList<>();
             for (StatRule rule : statRules) {
-                primary.addAll(ruleRows(stat, rule, points, role));
+                tooltip.addAll(ruleLines(rule, points, role));
+                rule.milestones().stream().sorted(Comparator.comparingInt(StatRule.Milestone::points))
+                        .forEach(milestone -> marks.add(new Mark(milestone.points(), points >= milestone.points())));
             }
+            primary.add(new PrimaryStat(new Row(stat.value().getDescriptionId(), name(stat),
+                    StatNumbers.points(points), STAT, tooltip), marks,
+                    spendable ? new Spend(key(stat), gains(statRules, points, role)) : null));
         }
-        // The unspent points at the end of the title (Matěj, 2026-10-16): "Unspent:" white, the number yellow while
+        // The unspent points at the end of the heading (Matěj, 2026-10-16): "Unspent:" white, the number yellow while
         // any are left.
         Component unspent = character.exists() ? Component.translatable(GeneratedTexts.GUI_UNSPENT_STAT_POINTS,
                 Component.literal(String.valueOf(unspentPoints)).withColor((unspentPoints > 0 ? TITLE : STAT)
                         & 0xFFFFFF)) : null;
         List<Row> other = rows(OTHER, value, base);
-        // A stat of ours that no section names still shows, under Other, so new content is never missing.
+        // A stat of ours that no column names still shows among the other stats, so new content is never missing.
         for (Holder<Attribute> stat : GeneratedStats.ALL) {
             if (!placed.contains(key(stat))) {
                 other.add(statRow(stat, value.applyAsDouble(stat), STAT));
             }
         }
-        List<Row> schoolRows = new ArrayList<>();
+        CharacterTab characterTab = new CharacterTab(Component.translatable(GeneratedTexts.GUI_TAB_CHARACTER),
+                identity(race(character, registries), specializations, playerClass(character, registries)), xp,
+                Component.translatable(GeneratedTexts.GUI_PRIMARY_STATS), unspent, primary, other);
+
+        List<Row> spells = rows(SPELLS, value, base);
         for (SpellSchool school : schools) {
-            school.power().ifPresent(stat -> schoolRows.add(statRow(stat, value.applyAsDouble(stat), school.color())));
-            school.resistance().ifPresent(stat -> schoolRows.add(statRow(stat, value.applyAsDouble(stat),
-                    school.color())));
+            school.power().ifPresent(stat -> spells.add(statRow(stat, value.applyAsDouble(stat), school.color())));
         }
-        return new CharacterSheetView(title, List.of(
-                tab(GeneratedTexts.GUI_TAB_STATS, List.of(new Section(Component.translatable(
-                                GeneratedTexts.GUI_PRIMARY_STATS), List.copyOf(primary), unspent)),
-                        List.of(section(GeneratedTexts.GUI_OTHER_STATS, other))),
-                tab(GeneratedTexts.GUI_TAB_COMBAT,
-                        List.of(section(GeneratedTexts.GUI_OFFENSE, rows(OFFENSE, value, base))),
-                        List.of(section(GeneratedTexts.GUI_DEFENSE, rows(DEFENSE, value, base)))),
-                tab(GeneratedTexts.GUI_TAB_MAGIC,
-                        List.of(section(GeneratedTexts.GUI_SPELLS, rows(SPELLS, value, base))),
-                        List.of(section(GeneratedTexts.GUI_SPELL_SCHOOLS, schoolRows))),
-                origin(character, registries)));
+        StatTab offense = new StatTab(Component.translatable(GeneratedTexts.GUI_TAB_OFFENSE), List.of(
+                section(GeneratedTexts.GUI_MELEE, rows(MELEE, value, base)),
+                section(GeneratedTexts.GUI_RANGED, rows(ranged(), value, base)),
+                section(GeneratedTexts.GUI_SPELLS, spells)));
+        StatTab defense = new StatTab(Component.translatable(GeneratedTexts.GUI_TAB_DEFENSE), List.of(
+                section(GeneratedTexts.GUI_HEALTH, rows(health(), value, base)),
+                section(GeneratedTexts.GUI_MITIGATION, rows(MITIGATION, value, base))));
+        return new CharacterSheetView(title, characterTab, List.of(offense, defense));
+    }
+
+    /** The XP bar's view of a player with a character, while the XP curve exists. */
+    private static Optional<XpBarView> xp(HolderLookup.Provider registries, CharacterData character, int level) {
+        Optional<Curve> curve = registries.lookupOrThrow(CoreRegistries.CURVE).get(GeneratedCurves.XP_TO_NEXT_LEVEL)
+                .map(Holder::value);
+        return curve.map(xpCurve -> XpBarView.of(xpCurve, character.totalXp(), level,
+                character.levelCap().orElse(Integer.MAX_VALUE)));
+    }
+
+    /** What the XP bar reads: "350 / 1200 XP", or that the level cap holds the player. */
+    public static Component xpText(XpBarView xp) {
+        return xp.capped() ? Component.translatable(GeneratedTexts.GUI_XP_CAPPED)
+                : Component.translatable(GeneratedTexts.GUI_XP_PROGRESS, xp.xpInLevel(), xp.xpToNext());
     }
 
     /**
-     * The Origin tab (Matěj, 2026-10-14): the race on the left (its description, what it gives, its racial ability and
-     * its racial passive, C4, each a gold heading over a yellow line), the class on the right (its description, then the specialization, a placeholder until
-     * the specialization spell trees exist, C5). A race or class the player lacks, or whose entry is gone, reads as
-     * "None".
+     * The identity line (RLM-509): the race, the specialization the player has the most points in, and the class,
+     * "Human Frost Mage". A tie goes alphabetically ("Human Fire Mage" with 10 Fire and 10 Frost points); with no
+     * points in any, "Human Mage". A player without a race or class leaves that part out.
      */
-    private static Tab origin(CharacterData character, HolderLookup.Provider registries) {
-        Optional<Race> race = character.race()
-                .flatMap(key -> registries.lookupOrThrow(CharacterRegistries.RACE).get(key)).map(Holder::value);
-        Optional<PlayerClass> playerClass = character.classes().stream().findFirst()
-                .flatMap(key -> registries.lookupOrThrow(CharacterRegistries.CLASS).get(key)).map(Holder::value);
-
-        List<Row> raceRows = new ArrayList<>();
-        race.ifPresent(entry -> {
-            raceRows.add(new Row(ORIGIN + "race/description", Component.translatable(entry.description()), "", false,
-                    TEXT));
-            List<Component> bonuses = CharacterCreationView.bonuses(entry.modifiers());
-            for (int n = 0; n < bonuses.size(); n++) {
-                raceRows.add(new Row(ORIGIN + "race/bonus/" + n, bonuses.get(n), "", false, BONUS));
-            }
-            entry.racialSpell().ifPresent(spell -> {
-                raceRows.add(new Row(ORIGIN + "race/racial_ability",
-                        Component.translatable(GeneratedTexts.GUI_ORIGIN_RACIAL_ABILITY), "", false, RACIAL_NAME));
-                raceRows.add(new Row(ORIGIN + "race/racial_ability/spell", Component.translatable(spell.value().name()),
-                        "", false, RACIAL_DETAIL));
-            });
-            entry.racialPassive().ifPresent(passive -> {
-                raceRows.add(new Row(ORIGIN + "race/racial_passive", Component.translatable(passive.name()), "", false,
-                        RACIAL_NAME));
-                raceRows.add(new Row(ORIGIN + "race/racial_passive/description",
-                        Component.literal(RacialPassives.description(passive)), "", false, RACIAL_DETAIL));
-            });
+    static Identity identity(Optional<Part> race, List<Specialization> specializations, Optional<Part> playerClass) {
+        List<Part> parts = new ArrayList<>();
+        race.ifPresent(parts::add);
+        playerClass.ifPresent(classPart -> {
+            shownSpecialization(specializations).ifPresent(spec -> parts.add(new Part(spec.name(), List.of())));
+            parts.add(classPart);
         });
-        List<Row> classRows = new ArrayList<>();
-        playerClass.ifPresent(entry -> classRows.add(new Row(ORIGIN + "class/description",
-                Component.translatable(entry.description()), "", false, TEXT)));
-        Section specialization = new Section(Component.translatable(GeneratedTexts.GUI_SPECIALIZATION_WIP),
-                List.of(new Row(ORIGIN + "specialization/description",
-                        Component.translatable(GeneratedTexts.GUI_SPECIALIZATION_WIP_DESCRIPTION), "", false, TEXT)));
-
-        Component none = Component.translatable(GeneratedTexts.GUI_NONE);
-        Section raceSection = new Section(Component.translatable(GeneratedTexts.GUI_ORIGIN_RACE,
-                race.<Component>map(entry -> Component.translatable(entry.name())).orElse(none)), List.copyOf(raceRows));
-        Section classSection = new Section(Component.translatable(GeneratedTexts.GUI_ORIGIN_CLASS,
-                playerClass.<Component>map(entry -> Component.translatable(entry.name())).orElse(none)),
-                List.copyOf(classRows));
-        return new Tab(Component.translatable(GeneratedTexts.GUI_TAB_ORIGIN), List.of(raceSection),
-                List.of(classSection, specialization));
+        return new Identity(parts);
     }
 
-    /** Every row of the sheet: tab by tab, left column first. */
+    /** The specialization the line names: the one with the most points, a tie alphabetically; none without points. */
+    static Optional<Specialization> shownSpecialization(List<Specialization> specializations) {
+        return specializations.stream().filter(spec -> spec.points() > 0)
+                .min(Comparator.<Specialization>comparingInt(spec -> -spec.points())
+                        .thenComparing(Specialization::id));
+    }
+
+    /**
+     * The race's part: its name, then in its tooltip its description, what it gives, and its racial ability and
+     * passive (C4), each a gold heading over a yellow line (Matěj, 2026-10-30): what the Origin tab showed.
+     */
+    private static Optional<Part> race(CharacterData character, HolderLookup.Provider registries) {
+        return character.race().flatMap(key -> registries.lookupOrThrow(CharacterRegistries.RACE).get(key))
+                .map(Holder::value).map(race -> {
+                    List<Component> tooltip = new ArrayList<>();
+                    tooltip.add(colored(Component.translatable(race.description()), TEXT));
+                    CharacterCreationView.bonuses(race.modifiers()).forEach(line -> tooltip.add(colored(line, BONUS)));
+                    race.racialSpell().ifPresent(spell -> {
+                        tooltip.add(colored(Component.translatable(GeneratedTexts.GUI_RACIAL_ABILITY), RACIAL_NAME));
+                        tooltip.add(colored(Component.translatable(spell.value().name()), RACIAL_DETAIL));
+                    });
+                    race.racialPassive().ifPresent(passive -> {
+                        tooltip.add(colored(Component.translatable(passive.name()), RACIAL_NAME));
+                        tooltip.add(colored(Component.literal(RacialPassives.description(passive)), RACIAL_DETAIL));
+                    });
+                    return new Part(Component.translatable(race.name()), tooltip);
+                });
+    }
+
+    /** The class's part: its name, and its description in its tooltip. */
+    private static Optional<Part> playerClass(CharacterData character, HolderLookup.Provider registries) {
+        return character.classes().stream().findFirst()
+                .flatMap(key -> registries.lookupOrThrow(CharacterRegistries.CLASS).get(key)).map(Holder::value)
+                .map(entry -> new Part(Component.translatable(entry.name()),
+                        List.of(colored(Component.translatable(entry.description()), TEXT))));
+    }
+
+    /** The tab names in order: Character, then the stat tabs. */
+    public List<Component> tabNames() {
+        List<Component> names = new ArrayList<>();
+        names.add(character.name());
+        statTabs.forEach(tab -> names.add(tab.name()));
+        return names;
+    }
+
+    /** Every stat row of the sheet: the primary stats, the other stats, then the stat tabs column by column. */
     public List<Row> rows() {
         List<Row> rows = new ArrayList<>();
-        for (Tab tab : tabs) {
-            for (List<Section> column : List.of(tab.left(), tab.right())) {
-                column.forEach(section -> rows.addAll(section.rows()));
-            }
-        }
+        character.primary().forEach(stat -> rows.add(stat.row()));
+        rows.addAll(character.other());
+        statTabs.forEach(tab -> tab.columns().forEach(column -> rows.addAll(column.rows())));
         return rows;
     }
 
-    /**
-     * Points, rounded half up to one decimal and shown without a trailing {@code .0}: {@code 25}, {@code 12.5},
-     * {@code 6.44} reads {@code 6.4} and {@code 6.45} {@code 6.5} (Matěj, 2026-10-14). The decimal the value prints as
-     * is what rounds, so a double just below {@code 6.45} still reads {@code 6.5}.
-     */
-    public static String points(double value) {
-        if (!Double.isFinite(value)) {
-            return String.valueOf(value);
-        }
-        return plain(BigDecimal.valueOf(value).setScale(1, RoundingMode.HALF_UP));
+    /** What a stat does: its tooltip text ({@code content/texts/stat_tooltip.yaml}), in the descriptions' gray. */
+    public static Component description(Holder<Attribute> attribute) {
+        return colored(Component.translatable(TOOLTIP_PREFIX + key(attribute).identifier().getPath()), TEXT);
     }
 
-    /**
-     * A share in percent, rounded half up to a whole number (Matěj, 2026-10-14): {@code 0.05} reads {@code 5%},
-     * {@code 1.005} {@code 101%} and {@code 1.004} {@code 100%}. Only the display rounds; the game keeps the value.
-     */
-    public static String share(double value) {
-        if (!Double.isFinite(value)) {
-            return value * 100 + "%";
-        }
-        return plain(BigDecimal.valueOf(value).movePointRight(2).setScale(0, RoundingMode.HALF_UP)) + "%";
-    }
-
-    /** A value as a percentage of a base: movement speed 0.105 of the base 0.1 reads {@code 105%}. */
-    public static String percentOf(double value, double base) {
-        return base == 0 ? points(value) : share(value / base);
-    }
-
-    /**
-     * The amount a stat rule's modifier gives, signed: a share for multiplied operations and for adding to a share
-     * ({@code +25%}), points otherwise ({@code +10}).
-     */
-    public static String signed(Holder<Attribute> attribute, AttributeModifier.Operation operation, double amount) {
-        boolean percent = operation != AttributeModifier.Operation.ADD_VALUE
-                || attribute.value() instanceof PercentageAttribute;
-        String number = percent ? share(Math.abs(amount)) : points(Math.abs(amount));
-        return (amount < 0 ? "-" : "+") + number;
-    }
-
-    /** Every attribute the sections list by name (the primary stats and the schools' stats come from data). */
+    /** Every attribute the columns list by name (the primary stats and the schools' powers come from data). */
     private static Stream<Entry> listed() {
-        return Stream.of(OTHER, OFFENSE, DEFENSE, SPELLS).flatMap(List::stream);
+        return Stream.of(OTHER, MELEE, ranged(), SPELLS, health(), MITIGATION).flatMap(List::stream);
+    }
+
+    private static List<Entry> ranged() {
+        List<Entry> entries = new ArrayList<>();
+        APOTHIC_RANGED.forEach(path -> apothic(path).ifPresent(attribute -> entries.add(entry(attribute))));
+        entries.addAll(RANGED);
+        return entries;
+    }
+
+    private static List<Entry> health() {
+        List<Entry> entries = new ArrayList<>(HEALTH_BEFORE);
+        apothic(APOTHIC_HEALING).ifPresent(attribute -> entries.add(entry(attribute)));
+        entries.addAll(HEALTH_AFTER);
+        return entries;
+    }
+
+    /** An attribute of Apothic Attributes, while it is loaded. */
+    private static Optional<Holder<Attribute>> apothic(String path) {
+        return BuiltInRegistries.ATTRIBUTE.get(Identifier.fromNamespaceAndPath(APOTHIC, path))
+                .map(attribute -> attribute);
     }
 
     private static List<Holder<Attribute>> primaryStats() {
@@ -360,9 +473,10 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
             Holder<Attribute> attribute = entry.attribute();
             double current = value.applyAsDouble(attribute);
             String shown = PERCENT_OF_BASE.stream().anyMatch(percent -> attribute.is(percent))
-                    ? percentOf(current, base.applyAsDouble(attribute))
-                    : formatted(attribute, current);
-            rows.add(new Row(attribute.value().getDescriptionId(), name(attribute), shown, false, STAT));
+                    ? StatNumbers.percentOf(current, base.applyAsDouble(attribute))
+                    : StatNumbers.value(attribute, current);
+            rows.add(new Row(attribute.value().getDescriptionId(), name(attribute), shown, STAT,
+                    List.of(description(attribute))));
         }
         return rows;
     }
@@ -370,8 +484,7 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
     /**
      * What one more point gives a player of {@code role} under the stat's rules: each per-point bonus for that role
      * that grows (one that reached its cap does not), then the bonuses for that role of each milestone the point
-     * reaches. Amounts read with one decimal, a share as a percentage too ({@link #gain}): a point gives little, and
-     * whole percents would read 0% (Dexterity's 0.5% crit).
+     * reaches.
      */
     static List<Component> gains(List<StatRule> rules, double points, Optional<ClassRole> role) {
         List<Component> gains = new ArrayList<>();
@@ -379,16 +492,13 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
             for (StatRule.PerPoint entry : rule.perPoint()) {
                 double more = entry.totalAt(points + 1) - entry.totalAt(points);
                 if (Math.abs(more) > 1e-9 && entry.modifier().appliesTo(role)) {
-                    gains.add(Component.translatable(GeneratedTexts.GUI_STAT_BONUS, gain(entry.modifier().attribute(),
-                            entry.modifier().operation(), more), name(entry.modifier().attribute())));
+                    gains.add(bonus(entry.modifier(), more));
                 }
             }
             for (StatRule.Milestone milestone : rule.milestones()) {
                 if (points < milestone.points() && points + 1 >= milestone.points()) {
                     milestone.modifiers().stream().filter(modifier -> modifier.appliesTo(role))
-                            .forEach(modifier -> gains.add(Component.translatable(GeneratedTexts.GUI_STAT_BONUS,
-                                    gain(modifier.attribute(), modifier.operation(), modifier.amount()),
-                                    name(modifier.attribute()))));
+                            .forEach(modifier -> gains.add(bonus(modifier, modifier.amount())));
                 }
             }
         }
@@ -396,29 +506,16 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
     }
 
     /**
-     * A small amount, signed, with one decimal: a share for multiplied operations and for adding to a share
-     * ({@code +0.1%}), points otherwise ({@code +1}).
+     * What the rule gives a player of {@code role} at {@code points}, for a primary stat's tooltip: each per-point
+     * total for that role that is not 0, in yellow, then every milestone with a bonus for that role, listing those
+     * bonuses only, in gold once reached and gray while ahead.
      */
-    public static String gain(Holder<Attribute> attribute, AttributeModifier.Operation operation, double amount) {
-        boolean percent = operation != AttributeModifier.Operation.ADD_VALUE
-                || attribute.value() instanceof PercentageAttribute;
-        String number = percent
-                ? plain(BigDecimal.valueOf(Math.abs(amount)).movePointRight(2).setScale(1, RoundingMode.HALF_UP)) + "%"
-                : points(Math.abs(amount));
-        return (amount < 0 ? "-" : "+") + number;
-    }
-
-    /**
-     * What the rule gives a player of {@code role} at {@code points}: each per-point total for that role that is not
-     * 0, then every milestone with a bonus for that role, listing those bonuses only.
-     */
-    private static List<Row> ruleRows(Holder<Attribute> stat, StatRule rule, double points, Optional<ClassRole> role) {
-        String id = stat.value().getDescriptionId();
-        List<Row> rows = new ArrayList<>();
+    static List<Component> ruleLines(StatRule rule, double points, Optional<ClassRole> role) {
+        List<Component> lines = new ArrayList<>();
         for (StatRule.PerPoint entry : rule.perPoint()) {
             double total = entry.totalAt(points);
             if (total != 0 && entry.modifier().appliesTo(role)) {
-                rows.add(new Row(id + "/" + rows.size(), bonus(entry.modifier(), total), "", true, BONUS));
+                lines.add(colored(bonus(entry.modifier(), total), BONUS));
             }
         }
         for (StatRule.Milestone milestone : rule.milestones()) {
@@ -432,27 +529,26 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
                 }
                 bonuses.append(bonus(modifier, modifier.amount()));
             }
-            if (bonuses.getSiblings().isEmpty()) {
-                continue;
+            if (!bonuses.getSiblings().isEmpty()) {
+                lines.add(colored(Component.translatable(GeneratedTexts.GUI_STAT_MILESTONE, milestone.points(),
+                        bonuses), points >= milestone.points() ? MILESTONE : AHEAD));
             }
-            Component label = Component.translatable(GeneratedTexts.GUI_STAT_MILESTONE, milestone.points(), bonuses);
-            rows.add(new Row(id + "/" + rows.size(), label, "", true, points >= milestone.points() ? MILESTONE
-                    : AHEAD));
         }
-        return rows;
+        return lines;
     }
 
-    private static Component bonus(StatRule.Modifier modifier, double amount) {
+    private static MutableComponent bonus(StatRule.Modifier modifier, double amount) {
         return Component.translatable(GeneratedTexts.GUI_STAT_BONUS,
-                signed(modifier.attribute(), modifier.operation(), amount), name(modifier.attribute()));
+                StatNumbers.signed(modifier.attribute(), modifier.operation(), amount), name(modifier.attribute()));
     }
 
     private static Row statRow(Holder<Attribute> stat, double value, int color) {
-        return new Row(stat.value().getDescriptionId(), name(stat), formatted(stat, value), false, color);
+        return new Row(stat.value().getDescriptionId(), name(stat), StatNumbers.value(stat, value), color,
+                List.of(description(stat)));
     }
 
-    private static String formatted(Holder<Attribute> attribute, double value) {
-        return attribute.value() instanceof PercentageAttribute ? share(value) : points(value);
+    private static Component colored(Component text, int color) {
+        return text.copy().withColor(color & 0xFFFFFF);
     }
 
     private static ResourceKey<Attribute> key(Holder<Attribute> attribute) {
@@ -460,8 +556,8 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
     }
 
     /**
-     * An attribute's name on the sheet, on its row and in the bonuses of the primary stats: the name a section gives
-     * it (Movement Speed for vanilla's Speed), or its own.
+     * An attribute's name on the sheet, on its row and in what a primary stat or a race gives: the name the sheet
+     * gives it (Movement Speed for vanilla's Speed), or its own.
      */
     static Component name(Holder<Attribute> attribute) {
         ResourceKey<Attribute> key = key(attribute);
@@ -479,16 +575,6 @@ public record CharacterSheetView(Component title, List<Tab> tabs) {
     }
 
     private static Section section(String titleKey, List<Row> rows) {
-        return new Section(Component.translatable(titleKey), List.copyOf(rows));
-    }
-
-    /** A rounded number without trailing zeros or an exponent: {@code 20}, {@code 6.5}, {@code -2}. */
-    private static String plain(BigDecimal rounded) {
-        BigDecimal stripped = rounded.stripTrailingZeros();
-        return (stripped.signum() == 0 ? BigDecimal.ZERO : stripped).toPlainString();
-    }
-
-    private static Tab tab(String nameKey, List<Section> left, List<Section> right) {
-        return new Tab(Component.translatable(nameKey), left, right);
+        return new Section(Component.translatable(titleKey), rows);
     }
 }
