@@ -8,6 +8,7 @@ import io.github.matejkadlec.realmforge.client.spell.ClientCasts;
 import io.github.matejkadlec.realmforge.client.spell.TargetCircle;
 import io.github.matejkadlec.realmforge.combat.net.CombatTextPayload;
 import io.github.matejkadlec.realmforge.combat.net.HitDirectionPayload;
+import io.github.matejkadlec.realmforge.spell.CastEnd;
 import io.github.matejkadlec.realmforge.spell.net.CastEndedPayload;
 import io.github.matejkadlec.realmforge.spell.net.CastRefusedPayload;
 import io.github.matejkadlec.realmforge.spell.net.CastStartedPayload;
@@ -38,10 +39,10 @@ public final class ClientPayloadHandlers {
         event.register(HitDirectionPayload.TYPE, (payload, context) -> HitDirectionHud.add(payload));
         event.register(CastStartedPayload.TYPE, (payload, context) -> ClientCasts.start(payload));
         event.register(CastEndedPayload.TYPE, (payload, context) -> {
-            // A swing (RLM-399) has no cast bar, so its end shows nothing there either.
+            // A swing's bar (RLM-399) runs down to 0 and goes: only a swing cut short shows how it ended.
             boolean swing = ClientCasts.isSwing(payload.casterId());
             ClientCasts.end(payload);
-            if (!swing) {
+            if (!swing || payload.end() != CastEnd.COMPLETED) {
                 CastBarHud.ended(payload);
             }
             TargetCircle.ended(payload);

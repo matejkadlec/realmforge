@@ -357,7 +357,7 @@ public final class SpellCaster {
     static OptionalDouble stickyRange(LivingEntity caster, Spell spell) {
         return caster instanceof Player && !spell.cast().lockOn()
                 && (spell.targeting() instanceof EnemyTargeting || spell.targeting() instanceof AllyTargeting)
-                ? OptionalDouble.of(STICKY_RANGE_FACTOR * spell.targeting().reach()) : OptionalDouble.empty();
+                ? OptionalDouble.of(STICKY_RANGE_FACTOR * spell.targeting().reach(caster)) : OptionalDouble.empty();
     }
 
     /**

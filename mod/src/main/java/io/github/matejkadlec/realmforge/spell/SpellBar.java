@@ -47,9 +47,9 @@ public final class SpellBar {
     private static LivingEntity assisted(ServerPlayer player, ResourceKey<Spell> key) {
         return Spells.get(player.registryAccess(), key).map(spell -> spell.value().targeting())
                 .flatMap(targeting -> targeting instanceof EnemyTargeting
-                        ? AimAssist.enemy(player, Math.min(targeting.reach(), AimAssist.REACH))
+                        ? AimAssist.enemy(player, Math.min(targeting.reach(player), AimAssist.REACH))
                         : targeting instanceof AllyTargeting
-                        ? AimAssist.ally(player, Math.min(targeting.reach(), AimAssist.REACH))
+                        ? AimAssist.ally(player, Math.min(targeting.reach(player), AimAssist.REACH))
                         : Optional.empty())
                 .orElse(null);
     }

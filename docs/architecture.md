@@ -1391,13 +1391,14 @@ whose window is closed (`CastFailure.NO_WINDOW`) and a cast closes it. The spell
 and draws an open one with a glow and its seconds left (`SpellBarView.Slot#windowTicks`, `client/hud/SpellSlots`).
 `WindowsAndProcsGameTests` covers both openers, a gray kill, and Execute's condition and extra rage.
 
-**In code (RLM-399): swings.** An instant spell may play out over an animation (`SpellCast#animationTicks`, Slam's 1 s
-swing): it starts at once, paying its cost and starting the global and its own cooldown, but `Casting` keeps it as a
-cast of its own (`CombatState.Cast#swing`), without a cast bar, a cast animation, the slow or the sprint stop: its
-caster moves freely and cannot swing a weapon meanwhile (the cast's Better Combat tag and the cancelled
-`AttackEntityEvent`, as for any cast). Its effects run once, at its hit moment (`SpellCast#hitAt`, a share of the
-animation: Slam's middle, Reckless Strike's and Shield Bash's first contact after 0.25 s), with the caster's look as it is
-then. A new spell from the bar cuts it (Matěj, 2026-10-29), so its damage lands only if its hit moment had passed; a stun
+**In code (RLM-399): swings.** An instant spell may play out over an animation (`SpellCast#animationTicks`, Slam's
+0.5 s swing): it starts at once, paying its cost and starting the global and its own cooldown, but `Casting` keeps it as
+a cast of its own (`CombatState.Cast#swing`), without a cast animation, the slow or the sprint stop: its caster moves
+freely and cannot swing a weapon meanwhile (the cast's Better Combat tag and the cancelled `AttackEntityEvent`, as for
+any cast). The cast bar shows it as a channel, emptying while its seconds count down (Matěj's playtest of 2026-10-31:
+"instant" begins at once, it does not end at once). Its effects run once, at its hit moment (`SpellCast#hitAt`, a share
+of the animation: Slam's middle, Reckless Strike's first contact a quarter of the way in, Shield Bash's after
+0.25 s), with the caster's look as it is then. A new spell from the bar cuts it (Matěj, 2026-10-29), so its damage lands only if its hit moment had passed; a stun
 or death before the hit moment gives half its cost and half its cooldown back. Attack Speed shortens neither the
 animation nor the hit moment. `Spells#landSwing` brings a swing to its end at once, for QA and GameTests.
 
@@ -1493,7 +1494,8 @@ with the cursor", as Iron's Spells does).
   down from above (its visuals are C6's). It is placed when the cast begins and stays, as in WoW and League of
   Legends, so a cast-time area is a telegraph players can read.
 - **Targeted spells** (`enemy`, `ally`) take the entity the client finds under the crosshair (an ally spell without
-  one takes the caster), or the one aim assistance picks (below).
+  one takes the caster), or the one aim assistance picks (below), within the spell's range, or for a melee spell's
+  enemy (`melee: true`) within the caster's melee reach (`SpellTargeting#reach(caster)`).
 - `SpellAimingGameTests` casts bolts and ground spells at the sky, a wall, a ceiling, a point beyond range, a mob behind
   a low wall, passive and hostile mobs, an invulnerable mob and an ally, and turns a caster during a cast time;
   `GroundPointsTest` covers the clamp.
@@ -1601,18 +1603,28 @@ type only for genuinely new behaviour.
   its damage at the splash's share (the Mage's bolts: 1 block, 50 %) and every other effect at full strength (Burning,
   Slowness, spell penetration), and its impact's particles burst over the whole of it. Each of Arcane Missiles' missiles
   explodes on its own.
-- **`realmforge:melee`** (RLM-399, `MeleeEffect`, `MeleeShape`): a melee spell's hit shape in front of the caster, in
-  the frame of its look so it tilts with the pitch: a `sector` (Slam's 120°, Better Combat's sword swing, and 1.5 blocks
-  round the eyes) or a `box` (Reckless Strike's and Shield Bash's, 2 blocks wide and 1 deep from the front of the body),
-  each `height` tall round the crosshair (2 blocks: twice Better Combat's sword swing, which is its 3-block reach / 3
-  tall). Every enemy whose hitbox reaches into it (a grid of points at most a quarter of a block apart) takes its
-  effects, the same for each, so most melee spells hit an area and need no target (Matěj, 2026-10-24 and 2026-10-30);
-  single target stays for spells like Execute. **Cover:** never through a wall, and an enemy more than half behind
+- **`realmforge:melee`** (RLM-399, `MeleeEffect`, `MeleeShape`): a melee spell's hit shape in front of the caster:
+  one of Better Combat's sword hitboxes at the caster's **melee reach**, its entity interaction range (3, 5 in creative
+  mode; vanilla's 3 for a mob without the attribute), so a melee spell hits where a melee attack does and **every melee
+  spell grows with the reach** (Matěj's playtest of 2026-10-31). **The default melee hit shape is the `swing`**, Better
+  Combat's sword slash: 2 × reach wide, reach / 3 tall, reach deep and 120° (Slam, Reckless Strike); the `stab`, its
+  sword stab, is reach / 2 wide and tall and as deep (Shield Bash). Better Combat 3.2.2's rules, read from its jar
+  (`WeaponHitBoxes`, `TargetFinder`): the box lies in the frame of the look, so it tilts with the pitch, from the eyes
+  lowered by 15 % of the caster's height to the reach ahead; an enemy is struck when its hitbox touches the box (a
+  separating axis test) or the box holds its middle, its nearest point is within the reach of that origin, and for a
+  swing its middle or nearest point is within 60° of the look. A weapon's own Better Combat range bonus is not added
+  (a sword's is 0). Every enemy struck takes its effects, the same for each, so most melee spells hit an area and need
+  no target (Matěj, 2026-10-24 and 2026-10-30); single target stays for spells like Execute, whose `enemy` targeting
+  says `melee: true`: the target must be in the caster's swing instead of within a range (`EnemyTargeting`), and the
+  spellbook reads "Melee range" for both. **Cover:** never through a wall, and an enemy more than half behind
   blocks is spared: of 27 points spread through its hitbox, at least half must have no block between them and the
   caster's eyes (Matěj's rule; Better Combat hits a mob whose middle or nearest point a ray reaches). With vanilla's
-  hitbox display on (F3 + B), clients draw the shape of every swing in progress as outlines
-  (`client/render/SwingShapes`, a debug renderer of NeoForge's `RegisterDebugRenderersEvent`). `SwingAndSplashGameTests`
-  covers the shapes, the hit moment, a stun's refund, the splash, a wall and a corner; `MeleeShapeTest` the geometry.
+  hitbox display on (F3 + B), clients draw the shape of every swing in progress as outlines, the box and a swing's 120°
+  arc (`client/render/SwingShapes`, a debug renderer of NeoForge's `RegisterDebugRenderersEvent`). Better Combat's own
+  F3 + B box shows the hitbox of the player's *next* attack (it reads the combo count after the swing raised it), so
+  after the first slash it draws the second's, and after the second slash the stab's. `SwingAndSplashGameTests` covers
+  the shapes, the reach, the hit moment, a stun's refund, the splash, a wall and a corner; `MeleeShapeTest` the
+  geometry.
 - Both deliver their effects themselves: the hit's direct entity is the projectile or the area, its causing entity
   the caster, so kill credit and the hit direction work as for an arrow. Their effects read the caster's stats when
   they land; no snapshot is taken at the cast, as nothing (talents, procs) needs one yet. A spell entity ends when its
@@ -1845,9 +1857,11 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
   border, holding the spell's icon (its initials on the school's colour until icons exist) and then the bar. The bar
   fills in the spell school's colour, shaded in steps from light at the top to dark at the bottom with an almost white
   leading edge (`CastBarStyle`); a cast time fills from the left, a channel starts full and empties toward the left. The
-  spell's name is on the left and the seconds "elapsed / total" on the right, smaller. After a cast the bar stays a
-  moment: full and flashing toward white as it fades, or red with how it ended in place of the name ("Interrupted", "Out
-  of range"), and a refused cast's reason shows there in red (`spell/CastTexts`, research SP-3).
+  spell's name is on the left and the seconds "elapsed / total" on the right, smaller. A melee spell's swing (RLM-399)
+  empties like a channel while its seconds count down, "0.5 / 0.5" to "0.0 / 0.5", and goes at 0 (Matěj's playtest of
+  2026-10-31). After a cast the bar stays a moment: full and flashing toward white as it fades, or red with how it
+  ended in place of the name ("Interrupted", "Out of range"), a swing only in red; and a refused cast's reason shows
+  there in red (`spell/CastTexts`, research SP-3).
 - **The spell bar's place and size** (RLM-404; Matěj, 2026-10-24 and 2026-10-29): three rows of the Realmforge config
   screen (`client/screen/RealmforgeConfigScreen`), after the casting ones and with no section heading, saved in the
   client config (`client/ClientConfig`). Spellbar Position's button opens the drag mode
@@ -1974,13 +1988,14 @@ to a single target. Damage labels (Low, Medium, High) compare a spell with the o
 | Fury | Reckless Strike | Medium | instant, about 4 s | about 20 | that hit has an extra 10 / 15 / 20 / 25 / 30 % Crit Chance |
 | Protection | Shield Bash | Medium | instant, about 6 s | about 15 | stuns its targets for 0.5 / 0.75 / 1 / 1.25 / 1.5 s |
 
-- **Instant** means the spell starts at once, without a cast bar (Matěj, 2026-10-24). It still plays out over its
-  animation (about 0.5 to 1.5 s) and deals its damage at the hit moment during it: Slam at the middle of its swing
-  of about 1 s, Reckless Strike and Shield Bash at first contact after about 0.25 s (their animations last about 1 s
-  and 0.5 s).
+- **Instant** means the spell starts at once (Matěj, 2026-10-24). It still plays out over its animation (about 0.5 to
+  1.5 s), with a cast bar that counts it down (Matěj's playtest of 2026-10-31), and deals its damage at the hit moment
+  during it: Slam at the middle of its 0.5 s swing, Reckless Strike at first contact a quarter of the way into its
+  0.5 s, Shield Bash at first contact after 0.25 s of its 0.5 s.
 - **Areas:** most melee spells hit an area, and single target stays for spells like Execute (Matěj, 2026-10-24).
-  Slam is D4's Warrior starting spell, "a Slam but AoE", and Shield Bash's stun hits an area too. Their hit shapes,
-  and a splash explosion for the Mage's bolts, come in RLM-399 with the animations (C6, RLM-29).
+  Slam is D4's Warrior starting spell, "a Slam but AoE", and Shield Bash's stun hits an area too. Their hit shapes
+  (RLM-399) are Better Combat's sword hitboxes at the player's melee reach: Slam and Reckless Strike the swing, Shield
+  Bash the narrower stab ([11.3](#113-spell-entities)); the Mage's bolts splash.
 - **Shield Bash** hits with the shield, not the weapon: it needs a shield in either hand and needs no weapon. The
   other hand may hold a one-handed weapon or nothing, so it works in the Defensive stance (Matěj, 2026-10-27,
   RLM-418).

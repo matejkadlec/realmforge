@@ -48,4 +48,14 @@ class CastBarStyleTest {
         assertEquals("2.0 / 2.0", CastBarStyle.time(45, 40), "never past the total");
         assertEquals("0.0 / 1.3", CastBarStyle.time(-3, 25), "a total rounds half up");
     }
+
+    /** RLM-399: a swing's bar counts its seconds down to 0.0 (Matěj's playtest of 2026-10-31). */
+    @Test
+    void aSwingCountsDownToZero() {
+        assertEquals("0.5 / 0.5", CastBarStyle.countdown(0, 10), "the whole swing as it begins");
+        assertEquals("0.4 / 0.5", CastBarStyle.countdown(1, 10), "the seconds left round down");
+        assertEquals("0.0 / 0.5", CastBarStyle.countdown(9, 10), "0.0 in its last tick");
+        assertEquals("0.0 / 0.5", CastBarStyle.countdown(14, 10), "never below 0");
+        assertEquals("1.0 / 1.0", CastBarStyle.countdown(-2, 20), "never above the whole swing");
+    }
 }

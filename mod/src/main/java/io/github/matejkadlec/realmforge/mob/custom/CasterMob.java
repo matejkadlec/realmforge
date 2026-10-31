@@ -38,7 +38,7 @@ public class CasterMob extends CustomMob {
         if (reach < 0) {
             reach = spec().spells().stream()
                     .flatMap(spell -> Spells.get(registryAccess(), spell).stream())
-                    .mapToDouble(spell -> spell.value().targeting().reach())
+                    .mapToDouble(spell -> spell.value().targeting().reach(this))
                     .min().orElse(0);
         }
         return reach;

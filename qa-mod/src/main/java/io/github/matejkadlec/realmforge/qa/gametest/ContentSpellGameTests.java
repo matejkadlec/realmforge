@@ -147,7 +147,7 @@ public final class ContentSpellGameTests {
 
     private static double range(SpellTargeting targeting) {
         return switch (targeting) {
-            case EnemyTargeting enemy -> enemy.range();
+            case EnemyTargeting enemy -> enemy.range().orElse(0.0);
             case AllyTargeting ally -> ally.range();
             case GroundPointTargeting point -> point.range();
             case DirectionTargeting direction -> direction.range();
@@ -176,7 +176,7 @@ public final class ContentSpellGameTests {
                     projectile.effects().stream().map(ContentSpellGameTests::effect).toList());
             case DamageOverTimeEffect dot -> new EffectExpectation(type, damageOverTimeNumbers(dot),
                     Map.of("effect", dot.effect().getRegisteredName()), List.of());
-            case MeleeEffect melee -> new EffectExpectation(type, meleeNumbers(melee),
+            case MeleeEffect melee -> new EffectExpectation(type, Map.of(),
                     Map.of("shape", melee.shape().getSerializedName()),
                     melee.effects().stream().map(ContentSpellGameTests::effect).toList());
             case AreaEffect area -> new EffectExpectation(type, Map.of("radius", area.radius(), "duration_ticks",
@@ -215,14 +215,6 @@ public final class ContentSpellGameTests {
         Map<String, Double> numbers = new HashMap<>(withCoefficient(Map.of("amount", dot.amount(), "per_level",
                 dot.perLevel(), "duration_ticks", (double) dot.durationTicks()), dot.coefficient()));
         putIfSet(numbers, "duration_per_level_ticks", dot.durationPerLevelTicks());
-        return Map.copyOf(numbers);
-    }
-
-    /** A melee shape's numbers (RLM-399): a sector's angle or a box's width, as its data names one of them. */
-    private static Map<String, Double> meleeNumbers(MeleeEffect melee) {
-        Map<String, Double> numbers = new HashMap<>(Map.of("reach", melee.reach(), "height", melee.height()));
-        melee.angleDegrees().ifPresent(angle -> numbers.put("angle_degrees", angle));
-        melee.width().ifPresent(width -> numbers.put("width", width));
         return Map.copyOf(numbers);
     }
 

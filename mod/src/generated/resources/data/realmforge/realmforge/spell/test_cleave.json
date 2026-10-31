@@ -24,10 +24,7 @@
   "effects": [
     {
       "type": "realmforge:melee",
-      "shape": "sector",
-      "reach": 4.0,
-      "angle_degrees": 120.0,
-      "height": 2.0,
+      "shape": "swing",
       "effects": [
         {
           "amount": 5.0,

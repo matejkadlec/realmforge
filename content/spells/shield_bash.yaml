@@ -1,9 +1,9 @@
 # yaml-language-server: $schema=../../tools/schemas/spells.schema.json
 # Protection's first spell (C4, RLM-392): a blow with the shield, so it needs a shield in either hand and no weapon
 # (the other hand may hold a one-handed weapon or nothing, Matěj, 2026-10-27, RLM-418). It stuns its targets for 0.5 s,
-# 0.25 s longer per rank (1.5 s at rank 5). An area bash (RLM-399): the same box as Reckless Strike's in front of the
-# player, every enemy in it taking the damage and the stun, with no target needed; a faster 0.5 s bash that deals all of
-# it at first contact, after 0.25 s. Rage per second of cooldown: 15 / 6 s = 2.5. Scaling system C (RLM-534,
+# 0.25 s longer per rank (1.5 s at rank 5). An area bash (RLM-399): Better Combat's sword stab at the player's melee
+# reach, as far ahead as Slam's swing but narrower (Matěj's playtest of 2026-10-31), every enemy in it taking the damage
+# and the stun, with no target needed; a 0.5 s bash that deals all of it at first contact, after 0.25 s. Rage per second of cooldown: 15 / 6 s = 2.5. Scaling system C (RLM-534,
 # Claude's proposal for Matěj's playtest): a utility blow with a cooldown, so the least per cast of the Warrior's hits,
 # 1/1.5/2/2.5/3 + 60/70/80/90/100 % of Attack Damage.
 id: shield_bash
@@ -19,10 +19,7 @@ max_level: 5
 requires: [shield]
 effects:
   - type: realmforge:melee
-    shape: box
-    reach: 1
-    width: 2
-    height: 2
+    shape: stab
     effects:
       - type: realmforge:damage
         amount: 1

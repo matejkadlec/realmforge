@@ -1352,10 +1352,7 @@ CLEAVE = (
     "requires: [melee_weapon]\n"
     "effects:\n"
     "  - type: realmforge:melee\n"
-    "    shape: box\n"
-    "    reach: 1\n"
-    "    width: 2\n"
-    "    height: 2\n"
+    "    shape: swing\n"
     "    effects:\n"
     "      - {type: realmforge:damage, amount: 3, attack_damage_percent: 80}\n"
 )
@@ -1401,16 +1398,17 @@ def test_a_swing_and_its_melee_shape_are_in_game_units(repo: RepoPaths) -> None:
     data = json.loads(generate(repo)[f"{SPELL_DATA}/test_swing.json"])
     assert data["cast"] == {"type": "instant", "animation_ticks": 20, "hit_at": 0.25}
     assert data["effects"][0]["type"] == "realmforge:melee"
-    assert data["effects"][0]["shape"] == "box"
-    assert data["effects"][0]["width"] == 2
+    assert data["effects"][0]["shape"] == "swing"
+    assert set(data["effects"][0]) == {"type", "shape", "effects"}, (
+        "its size comes from the caster's melee reach"
+    )
 
 
 @pytest.mark.parametrize(
     ("change", "expected"),
     [
-        (("width: 2", "angle_degrees: 120"), "a box names width and no angle_degrees"),
-        (("shape: box", "shape: sector"), "a sector names angle_degrees and no width"),
-        (("reach: 1", "reach: 7"), "less than or equal to 6"),
+        (("shape: swing", "shape: sector"), "Input should be 'swing' or 'stab'"),
+        (("shape: swing\n", "shape: swing\n    reach: 3\n"), "Extra inputs are not permitted"),
         (
             ("animation_seconds: 1, ", ""),
             "hit_at_percent is a moment of the animation: name animation_seconds too",
@@ -1425,6 +1423,28 @@ def test_invalid_swings_are_rejected(repo: RepoPaths, change: tuple[str, str], e
 def test_a_melee_shape_lies_in_front_of_the_caster_itself(repo: RepoPaths) -> None:
     spell(repo, "test_swing", CLEAVE.replace("{type: realmforge:self}", "{type: realmforge:enemy, range: 4}"))
     assert_problem(repo, "realmforge:melee acts on the spell's targets, so the targeting is realmforge:self")
+
+
+def test_a_melee_spells_enemy_is_in_its_melee_swing(repo: RepoPaths) -> None:
+    spell(repo, "test_bleed", BLEED.replace("range: 5}", "melee: true}"))
+    data = json.loads(generate(repo)[f"{SPELL_DATA}/test_bleed.json"])
+    assert data["targeting"] == {"type": "realmforge:enemy", "melee": True}
+
+
+@pytest.mark.parametrize(
+    ("targeting", "expected"),
+    [
+        (
+            "{type: realmforge:enemy, range: 5, melee: true}",
+            "an enemy targeting has either a range or melee: true",
+        ),
+        ("{type: realmforge:enemy}", "an enemy targeting has either a range or melee: true"),
+        ("{type: realmforge:enemy, melee: false}", "Input should be True"),
+    ],
+)
+def test_an_enemy_has_a_range_or_melee(repo: RepoPaths, targeting: str, expected: str) -> None:
+    spell(repo, "test_bleed", BLEED.replace("{type: realmforge:enemy, range: 5}", targeting))
+    assert_problem(repo, expected)
 
 
 def test_a_melee_shapes_damage_needs_a_melee_weapon(repo: RepoPaths) -> None:

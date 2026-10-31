@@ -56,8 +56,6 @@ MAX_STRENGTH = 5.0
 PLAYER_CHANNEL_INTERVAL = 0.5
 # A bolt's splash (RLM-399): within about a block of its target, at most 4.
 MAX_SPLASH_RADIUS = 4.0
-# A melee shape (RLM-399) reaches a few blocks at most: it is a weapon's swing, not an area.
-MAX_MELEE_REACH = 6.0
 # What a window or an internal cooldown lasts at most: a minute.
 MAX_WINDOW_SECONDS = 60.0
 
@@ -503,42 +501,21 @@ class AreaEffectDef(StrictModel):
 
 
 class MeleeEffectDef(StrictModel):
-    """A melee spell's hit shape in front of the caster (RLM-399): every enemy whose hitbox reaches into it takes
+    """A melee spell's hit shape in front of the caster (RLM-399): every enemy whose hitbox it strikes takes
     ``effects``, the same for each, and none behind a wall: an enemy more than half hidden behind blocks from the
-    caster's eyes is spared. The shape follows the caster's look (the crosshair), so it tilts with the pitch, and is
-    ``height`` tall round it. sector: a slice of a circle of ``reach`` round the caster, ``angle_degrees`` wide,
-    halved by the look (Slam's swing); box: ``width`` wide and ``reach`` deep from the front of the caster's body
-    (Reckless Strike's stab, Shield Bash's bash)."""
+    caster's eyes is spared. The shape is one of Better Combat's sword hitboxes at the caster's melee reach (its entity
+    interaction range: 3, 5 in creative mode), so it grows with the reach (Matěj's playtest of 2026-10-31), and it
+    follows the caster's look (the crosshair), so it tilts with the pitch. swing: Better Combat's sword swing, twice
+    the reach wide, reach / 3 tall, reach deep and 120° wide, the default melee hit shape (Slam, Reckless Strike);
+    stab: its sword stab, reach / 2 wide and tall and as deep (Shield Bash)."""
 
     type: Literal["realmforge:melee"]
-    shape: Literal["sector", "box"] = Field(description="sector: a slice of a circle; box: a box in front.")
-    reach: float = Field(
-        gt=0,
-        le=MAX_MELEE_REACH,
-        allow_inf_nan=False,
-        description="sector: its radius from the caster's eyes; box: its depth from the front of the caster's body. "
-        "In blocks, at most 6.",
-    )
-    angle_degrees: float | None = Field(
-        default=None, gt=0, le=360, allow_inf_nan=False, description="sector: how wide, in degrees."
-    )
-    width: float | None = Field(
-        default=None, gt=0, le=MAX_MELEE_REACH, allow_inf_nan=False, description="box: how wide, in blocks."
-    )
-    height: float = Field(
-        gt=0, le=MAX_MELEE_REACH, allow_inf_nan=False, description="How tall round the crosshair, in blocks."
+    shape: Literal["swing", "stab"] = Field(
+        description="swing: Better Combat's sword swing, the default; stab: its narrower sword stab."
     )
     effects: list[EntityEffectDef] = Field(
         min_length=1, description="What it does to each enemy inside, in order."
     )
-
-    @model_validator(mode="after")
-    def _dimensions(self) -> MeleeEffectDef:
-        if self.shape == "sector" and (self.angle_degrees is None or self.width is not None):
-            raise ValueError("a sector names angle_degrees and no width")
-        if self.shape == "box" and (self.width is None or self.angle_degrees is not None):
-            raise ValueError("a box names width and no angle_degrees")
-        return self
 
 
 class TeleportEffectDef(StrictModel):
@@ -585,10 +562,24 @@ class SelfTargetingDef(StrictModel):
 
 
 class EnemyTargetingDef(StrictModel):
-    """A living entity that is not the caster's ally, in range and in line of sight."""
+    """A living entity that is not the caster's ally, in range and in line of sight. A melee spell's (``melee:
+    true``) is instead in the caster's melee swing, Better Combat's sword swing at its melee reach (the default melee
+    hit shape, Matěj's playtest of 2026-10-31), so it reaches as far as a melee attack."""
 
     type: Literal["realmforge:enemy"]
-    range: float = Field(gt=0, le=MAX_RANGE, allow_inf_nan=False, description="Range in blocks, at most 128.")
+    range: float | None = Field(
+        default=None, gt=0, le=MAX_RANGE, allow_inf_nan=False, description="Range in blocks, at most 128."
+    )
+    melee: Literal[True] | None = Field(
+        default=None,
+        description="true: the target must be in the caster's melee swing instead; then no range.",
+    )
+
+    @model_validator(mode="after")
+    def _range_or_melee(self) -> EnemyTargetingDef:
+        if (self.range is None) == (not self.melee):
+            raise ValueError("an enemy targeting has either a range or melee: true")
+        return self
 
 
 class AllyTargetingDef(StrictModel):

@@ -5,7 +5,7 @@
   "scales_with": "attack_damage",
   "targeting": {
     "type": "realmforge:enemy",
-    "range": 5.0
+    "melee": true
   },
   "cast": {
     "type": "instant"

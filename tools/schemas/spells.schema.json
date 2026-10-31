@@ -929,14 +929,36 @@
     },
     "EnemyTargetingDef": {
       "additionalProperties": false,
-      "description": "A living entity that is not the caster's ally, in range and in line of sight.",
+      "description": "A living entity that is not the caster's ally, in range and in line of sight. A melee spell's (``melee:\ntrue``) is instead in the caster's melee swing, Better Combat's sword swing at its melee reach (the default melee\nhit shape, Matěj's playtest of 2026-10-31), so it reaches as far as a melee attack.",
       "properties": {
+        "melee": {
+          "anyOf": [
+            {
+              "const": true,
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "true: the target must be in the caster's melee swing instead; then no range.",
+          "title": "Melee"
+        },
         "range": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 128.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
           "description": "Range in blocks, at most 128.",
-          "exclusiveMinimum": 0,
-          "maximum": 128.0,
-          "title": "Range",
-          "type": "number"
+          "title": "Range"
         },
         "type": {
           "const": "realmforge:enemy",
@@ -945,8 +967,7 @@
         }
       },
       "required": [
-        "type",
-        "range"
+        "type"
       ],
       "title": "EnemyTargetingDef",
       "type": "object"
@@ -1198,23 +1219,8 @@
     },
     "MeleeEffectDef": {
       "additionalProperties": false,
-      "description": "A melee spell's hit shape in front of the caster (RLM-399): every enemy whose hitbox reaches into it takes\n``effects``, the same for each, and none behind a wall: an enemy more than half hidden behind blocks from the\ncaster's eyes is spared. The shape follows the caster's look (the crosshair), so it tilts with the pitch, and is\n``height`` tall round it. sector: a slice of a circle of ``reach`` round the caster, ``angle_degrees`` wide,\nhalved by the look (Slam's swing); box: ``width`` wide and ``reach`` deep from the front of the caster's body\n(Reckless Strike's stab, Shield Bash's bash).",
+      "description": "A melee spell's hit shape in front of the caster (RLM-399): every enemy whose hitbox it strikes takes\n``effects``, the same for each, and none behind a wall: an enemy more than half hidden behind blocks from the\ncaster's eyes is spared. The shape is one of Better Combat's sword hitboxes at the caster's melee reach (its entity\ninteraction range: 3, 5 in creative mode), so it grows with the reach (Matěj's playtest of 2026-10-31), and it\nfollows the caster's look (the crosshair), so it tilts with the pitch. swing: Better Combat's sword swing, twice\nthe reach wide, reach / 3 tall, reach deep and 120° wide, the default melee hit shape (Slam, Reckless Strike);\nstab: its sword stab, reach / 2 wide and tall and as deep (Shield Bash).",
       "properties": {
-        "angle_degrees": {
-          "anyOf": [
-            {
-              "exclusiveMinimum": 0,
-              "maximum": 360,
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "sector: how wide, in degrees.",
-          "title": "Angle Degrees"
-        },
         "effects": {
           "description": "What it does to each enemy inside, in order.",
           "items": {
@@ -1258,25 +1264,11 @@
           "title": "Effects",
           "type": "array"
         },
-        "height": {
-          "description": "How tall round the crosshair, in blocks.",
-          "exclusiveMinimum": 0,
-          "maximum": 6.0,
-          "title": "Height",
-          "type": "number"
-        },
-        "reach": {
-          "description": "sector: its radius from the caster's eyes; box: its depth from the front of the caster's body. In blocks, at most 6.",
-          "exclusiveMinimum": 0,
-          "maximum": 6.0,
-          "title": "Reach",
-          "type": "number"
-        },
         "shape": {
-          "description": "sector: a slice of a circle; box: a box in front.",
+          "description": "swing: Better Combat's sword swing, the default; stab: its narrower sword stab.",
           "enum": [
-            "sector",
-            "box"
+            "swing",
+            "stab"
           ],
           "title": "Shape",
           "type": "string"
@@ -1285,28 +1277,11 @@
           "const": "realmforge:melee",
           "title": "Type",
           "type": "string"
-        },
-        "width": {
-          "anyOf": [
-            {
-              "exclusiveMinimum": 0,
-              "maximum": 6.0,
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "box: how wide, in blocks.",
-          "title": "Width"
         }
       },
       "required": [
         "type",
         "shape",
-        "reach",
-        "height",
         "effects"
       ],
       "title": "MeleeEffectDef",

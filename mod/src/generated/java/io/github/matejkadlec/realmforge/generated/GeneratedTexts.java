@@ -536,6 +536,9 @@ public final class GeneratedTexts {
     /** {@code spell.tooltip.realmforge.instant} from {@code content/texts/spell.tooltip.yaml}: "Instant" */
     public static final String SPELL_TOOLTIP_INSTANT = "spell.tooltip.realmforge.instant";
 
+    /** {@code spell.tooltip.realmforge.melee_range} from {@code content/texts/spell.tooltip.yaml}: "Melee range" */
+    public static final String SPELL_TOOLTIP_MELEE_RANGE = "spell.tooltip.realmforge.melee_range";
+
     /** {@code spell.tooltip.realmforge.next_rank} from {@code content/texts/spell.tooltip.yaml}: "Next rank:" */
     public static final String SPELL_TOOLTIP_NEXT_RANK = "spell.tooltip.realmforge.next_rank";
 

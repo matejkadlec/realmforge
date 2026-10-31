@@ -71,6 +71,13 @@ public final class SpellTextGameTests {
                         + "(RLM-403)");
         helper.assertValueEqual(tooltip(helper, player, GeneratedSpells.TEST_MENDING_RING, 1).subList(1, 3),
                 List.of("On yourself", "Instant"), "a spell on the caster has no range");
+        // RLM-399, Matěj's playtest of 2026-10-31: a melee spell reads "Melee range", never "On yourself".
+        helper.assertValueEqual(tooltip(helper, player, GeneratedSpells.SLAM, 1).subList(2, 5),
+                List.of("30 Rage", "Melee range", "Instant"), "a swing in front of the caster");
+        helper.assertValueEqual(tooltip(helper, player, GeneratedSpells.TEST_REND, 1).subList(2, 4),
+                List.of("Melee range", "Instant"), "an enemy in the caster's melee swing");
+        helper.assertFalse(tooltip(helper, player, GeneratedSpells.ASTONE_QUAKE, 1).contains("On yourself"),
+                "an area round the caster that deals damage has no range line");
         logout(player);
         helper.succeed();
     }

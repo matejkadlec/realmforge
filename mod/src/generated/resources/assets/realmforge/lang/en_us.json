@@ -427,6 +427,7 @@
   "spell.tooltip.realmforge.cost_per_second": "%1$s %2$s per sec",
   "spell.tooltip.realmforge.empty_slot": "Empty slot",
   "spell.tooltip.realmforge.instant": "Instant",
+  "spell.tooltip.realmforge.melee_range": "Melee range",
   "spell.tooltip.realmforge.next_rank": "Next rank:",
   "spell.tooltip.realmforge.passive": "Passive",
   "spell.tooltip.realmforge.racial_empty": "Your racial ability goes here",

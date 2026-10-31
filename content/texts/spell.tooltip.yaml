@@ -15,6 +15,12 @@ texts:
   # %1$s in blocks.
   range:
     en_us: "%1$s block range"
+  # A melee spell's (RLM-399): an enemy in the caster's melee swing, or a hit shape in front of it, which grow with
+  # the caster's melee reach.
+  melee_range:
+    en_us: Melee range
+  # A spell on the caster that deals no damage (a buff, a shield); one that does, an area round the caster, has no
+  # range line.
   self:
     en_us: On yourself
   instant:

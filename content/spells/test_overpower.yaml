@@ -2,12 +2,14 @@
 # Engine test (RLM-540): usable only for 5 s after the player blocks a hit with a shield or a raised two-handed weapon,
 # as the Arms Warrior's Overpower will be (RLM-543), and Test Taste for Blood's proc opens the same window. Not gameplay
 # content: the GameTests and Matěj's playtest cast it.
+# Its target must be in the player's melee swing, the default melee hit shape (melee: true; Matěj's playtest of
+# 2026-10-31).
 id: test_overpower
 name: {en_us: Test Overpower}
 description: {en_us: "Usable for 5 sec after you block. Overpowers an enemy for {damage} damage."}
 school: realmforge:physical
 scales_with: attack_damage
-targeting: {type: realmforge:enemy, range: 5}
+targeting: {type: realmforge:enemy, melee: true}
 cast: {type: instant}
 requires: [melee_weapon]
 window: {duration_seconds: 5, opened_by: [block]}

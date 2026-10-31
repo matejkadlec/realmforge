@@ -6,7 +6,7 @@ import java.math.RoundingMode;
 /**
  * How the cast bar looks (C3b, RLM-25; Matěj's playtest of 2026-10-21, after WoW's casting bar), as plain arithmetic
  * for JUnit: the fill is the school's colour, lighter toward the top and darker toward the bottom like a lit tube, its
- * leading edge almost white, and the time reads "elapsed / total" in seconds.
+ * leading edge almost white, and the time reads "elapsed / total" in seconds, a swing's "left / total".
  */
 final class CastBarStyle {
     /** How much lighter the top row is: a share of the way to white. */
@@ -60,6 +60,16 @@ final class CastBarStyle {
     static String time(int elapsedTicks, int totalTicks) {
         int elapsed = Math.clamp(elapsedTicks, 0, totalTicks);
         return tenths(BigDecimal.valueOf(elapsed).divide(BigDecimal.valueOf(20), 1, RoundingMode.DOWN)) + " / "
+                + tenths(BigDecimal.valueOf(totalTicks).divide(BigDecimal.valueOf(20), 1, RoundingMode.HALF_UP));
+    }
+
+    /**
+     * "0.4 / 0.5": a swing's seconds left (RLM-399), rounded down, so it reads the whole length as it begins and 0.0 in
+     * its last tick, and its whole length, both with one decimal.
+     */
+    static String countdown(int elapsedTicks, int totalTicks) {
+        int left = totalTicks - Math.clamp(elapsedTicks, 0, totalTicks);
+        return tenths(BigDecimal.valueOf(left).divide(BigDecimal.valueOf(20), 1, RoundingMode.DOWN)) + " / "
                 + tenths(BigDecimal.valueOf(totalTicks).divide(BigDecimal.valueOf(20), 1, RoundingMode.HALF_UP));
     }
 

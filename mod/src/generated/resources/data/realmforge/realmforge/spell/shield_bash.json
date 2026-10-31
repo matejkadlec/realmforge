@@ -31,10 +31,7 @@
   "effects": [
     {
       "type": "realmforge:melee",
-      "shape": "box",
-      "reach": 1.0,
-      "width": 2.0,
-      "height": 2.0,
+      "shape": "stab",
       "effects": [
         {
           "amount": 1.0,

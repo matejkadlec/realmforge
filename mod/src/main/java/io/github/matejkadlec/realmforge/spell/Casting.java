@@ -371,7 +371,7 @@ public final class Casting {
         Cast cast = running.cast();
         double share = cast.durationTicks() > 0 ? (double) (now - cast.startGameTime()) / cast.durationTicks() : 1;
         if (spellCast.keepRange().filter(kept -> share < kept).isPresent()
-                && Targets.distance(caster, target) > running.spell().value().targeting().reach()) {
+                && Targets.distance(caster, target) > running.spell().value().targeting().reach(caster)) {
             return Optional.of(CastEnd.OUT_OF_RANGE);
         }
         return Optional.empty();

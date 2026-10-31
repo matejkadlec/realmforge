@@ -80,7 +80,8 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   Will To Survive in the racial slot and Sword Specialization; melee spells need a melee weapon in the main hand and
   Shield Bash a shield (RLM-499), stuns stop mobs and casts, crit chance above 100 % turns into crit damage, and a
   player's channel ticks every 0.5 s (RLM-518). Slam, Reckless Strike and Shield Bash are swings with hit shapes in
-  front of the player (a sector, a box) that hit every enemy in them at their hit moment, never through walls, and the
+  front of the player (Better Combat's sword swing, the default, and its stab, at the player's melee reach, so they grow
+  with it), counted down on the cast bar, that hit every enemy in them at their hit moment, never through walls, and the
   Mage's bolts splash half their damage within a block (RLM-399); Frozen roots and shows ice, Bleeding keeps a stack per
   caster's spell, bosses have per-boss immunities (RLM-539); spells may have windows (after a block, after a kill),
   target health conditions and extra rage, and passive spells' procs have internal cooldowns per target (RLM-540).

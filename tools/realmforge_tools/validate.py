@@ -1348,6 +1348,15 @@ ENTITY_TEXT_GROUP = "entity"
 # The targeting types a mob's AI casts with: at its target, or at a player it picks itself (architecture 11.2).
 MOB_SPELL_TARGETING = (ENEMY, CURRENT_TARGET, RANDOM_PLAYER, FARTHEST_PLAYER)
 
+# A melee spell's reach (``melee: true``, RLM-399) when no caster is at hand: vanilla's default melee reach, a mob's.
+DEFAULT_MELEE_REACH = 3.0
+
+
+def _reach(targeting: object) -> float:
+    """How far a mob's spell of ``targeting`` reaches: its range, or a melee spell's default melee reach."""
+    reach = getattr(targeting, "range", None)
+    return DEFAULT_MELEE_REACH if reach is None else reach
+
 
 def _check_mobs(content: Content, universe: IdUniverse) -> list[Problem]:
     """A mob's loot (its own and its variants') names items that exist and are worth having (no trash loot, principle
@@ -1423,12 +1432,12 @@ def _check_mobs(content: Content, universe: IdUniverse) -> list[Problem]:
                         f"{', '.join(MOB_SPELL_TARGETING)}",
                     )
                 )
-            elif mob.caster.kiting is not None and spell.targeting.range <= mob.caster.kiting.step_blocks:
+            elif mob.caster.kiting is not None and _reach(spell.targeting) <= mob.caster.kiting.step_blocks:
                 problems.append(
                     Problem(
                         entry.source,
                         path,
-                        f"{spell_id} reaches {spell.targeting.range:g} blocks, no farther than one "
+                        f"{spell_id} reaches {_reach(spell.targeting):g} blocks, no farther than one "
                         f"{mob.caster.kiting.step_blocks:g}-block step of its kiting, so a step could never keep its "
                         "target in range",
                     )

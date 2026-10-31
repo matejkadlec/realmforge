@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../../tools/schemas/spells.schema.json
-# Engine test (RLM-399): a long melee sector, 4 blocks round the player, 120° wide and 2 blocks tall, that lands at once,
-# so the GameTests can put walls and corners between the player and its enemies. Not gameplay content.
+# Engine test (RLM-399): the default melee swing (Better Combat's sword swing at the player's melee reach) that lands
+# at once, so the GameTests can put walls and corners between the player and its enemies. Not gameplay content.
 id: test_cleave
 name: {en_us: Test Cleave}
 description: {en_us: "Cleaves every enemy in front of you for {damage} damage."}
@@ -11,9 +11,6 @@ cast: {type: instant}
 requires: [melee_weapon]
 effects:
   - type: realmforge:melee
-    shape: sector
-    reach: 4
-    angle_degrees: 120
-    height: 2
+    shape: swing
     effects:
       - {type: realmforge:damage, amount: 5, attack_damage_percent: 0}

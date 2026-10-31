@@ -384,7 +384,9 @@ Rules:
   school, framed in black on the spell bar: Will To Survive, Matěj, 2026-10-30); what they `scales_with`, `spell_power` for a magic school and `attack_damage`
   for a physical one (off-class stats do nothing for a class's abilities, Matěj, 2026-10-15); their `targeting`
   (`{type: realmforge:self}`, or `realmforge:enemy`, `realmforge:ally`, `realmforge:ground_point` or
-  `realmforge:direction` with a `range` of at most 128 blocks; from a player's spell bar, an `enemy` or `ally` spell
+  `realmforge:direction` with a `range` of at most 128 blocks; a melee spell's `realmforge:enemy` says `melee: true`
+  instead of a range: its target must be in the caster's melee swing, the default melee hit shape below, RLM-399;
+  from a player's spell bar, an `enemy` or `ally` spell
   takes the entity under the crosshair, else the one aim assistance picks in a narrow cone around it, within its range
   and 32 blocks (ADR 0055); an enemy spell without one is refused, and an ally spell without one takes the caster; a
   ground point lands on the block the crosshair hits within range, or beyond it, or at the sky, at the farthest point
@@ -457,9 +459,10 @@ Rules:
   `splash`, `{radius, damage_percent}`: a small explosion where it hits an enemy, every other enemy within the radius of
   the target taking its effects too, the damage at the share and the rest at full strength, RLM-399) at
   an enemy, a ground point or along a direction; `realmforge:melee` (RLM-399, on a `realmforge:self` spell: a hit shape in
-  front of the player, `shape: sector` with `reach` round the eyes and `angle_degrees`, or `shape: box` with `width`
-  and `reach` from the front of the body, each `height` tall round the crosshair; its own `effects` on every enemy whose
-  hitbox reaches into it, none behind a wall or more than half hidden by a corner); `realmforge:area` (`radius`, `duration_seconds`, `interval_seconds`, `affects: enemies` or
+  front of the player, one of Better Combat's sword hitboxes at the caster's melee reach, its entity interaction range,
+  so it grows with the reach: `shape: swing`, the default melee hit shape, 2 × reach wide, reach / 3 tall, reach deep
+  and 120°, or `shape: stab`, reach / 2 wide and tall and as deep; its own `effects` on every enemy whose hitbox it
+  strikes, none behind a wall or more than half hidden by a corner); `realmforge:area` (`radius`, `duration_seconds`, `interval_seconds`, `affects: enemies` or
   `allies`, its own `effects` on each of them inside as it appears and then at every interval, once per interval
   of its duration, and an optional `ring_color`, the dust ring that shows its edge instead of purple sparks) at the
   caster's feet, an enemy's or a ground point; `realmforge:teleport` (the caster to a ground

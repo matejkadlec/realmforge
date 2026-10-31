@@ -21,6 +21,11 @@ public interface SpellTargeting {
         return 0;
     }
 
+    /** How far {@code caster} reaches with the spell, in blocks: {@link #reach()}, unless its own reach decides. */
+    default double reach(LivingEntity caster) {
+        return reach();
+    }
+
     /** What the cast acts on, given the caster and what the cast aimed at, or why the cast cannot go ahead. */
     Either<SpellTarget, CastFailure> resolve(LivingEntity caster, SpellAim aim);
 }

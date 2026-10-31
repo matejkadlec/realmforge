@@ -8,7 +8,7 @@
   },
   "cast": {
     "type": "instant",
-    "animation_ticks": 20,
+    "animation_ticks": 10,
     "hit_at": 0.25
   },
   "cost": {
@@ -32,10 +32,7 @@
   "effects": [
     {
       "type": "realmforge:melee",
-      "shape": "box",
-      "reach": 1.0,
-      "width": 2.0,
-      "height": 2.0,
+      "shape": "swing",
       "effects": [
         {
           "amount": 3.0,

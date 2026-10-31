@@ -36,9 +36,12 @@ import net.neoforged.neoforge.common.NeoForge;
  * black frame with rounded corners that holds the spell's icon on the left and the bar on the right. The bar fills in
  * the spell school's colour, shaded like a lit tube ({@link CastBarStyle}) with an almost white leading edge; a cast
  * time fills from the left, a channel starts full and empties toward the left. The spell's name is on the left, the
- * seconds "elapsed / total" on the right. When a cast ends, the bar stays for a moment: full and fading when it
+ * seconds "elapsed / total" on the right. A melee spell's swing (RLM-399; Matěj's playtest of 2026-10-31: an instant
+ * melee spell begins at once but plays out over its swing) empties like a channel while its seconds count down,
+ * "0.5 / 0.5" to "0.0 / 0.5", and goes at 0. When a cast ends, the bar stays for a moment: full and fading when it
  * completed, red with the reason in place of the name when it did not ("Interrupted", "Out of range";
- * {@link CastTexts}). With no cast to show, a refused cast's reason shows there in red (research SP-3).
+ * {@link CastTexts}), a swing only then. With no cast to show, a refused cast's reason shows there in red (research
+ * SP-3).
  */
 public final class CastBarHud {
     static final Identifier LAYER = Realmforge.id("cast_bar");
@@ -116,14 +119,17 @@ public final class CastBarHud {
                 ClientConfig.spellBarGroup(graphics.guiWidth(), graphics.guiHeight()));
         int x = (graphics.guiWidth() - SpellBarLayout.CAST_BAR_WIDTH) / 2;
         Font font = minecraft.font;
-        Optional<Cast> cast = ClientCasts.current(player).filter(current -> !current.swing());
+        Optional<Cast> cast = ClientCasts.current(player);
         if (cast.isPresent()) {
             Optional<Spell> spell = spell(player, cast.get().spell());
             float progress = CurrentCasts.progress(cast.get(), time);
-            float filled = cast.get().channel() ? 1 - progress : progress;
+            boolean drains = cast.get().channel() || cast.get().swing();
+            float filled = drains ? 1 - progress : progress;
             int elapsed = (int) Math.floor(time - cast.get().startGameTime());
-            drawBar(graphics, font, x, top, spell, filled, schoolColor(spell), name(spell, cast.get().spell()),
-                    CastBarStyle.time(elapsed, cast.get().durationTicks()), 0, 255);
+            String clock = cast.get().swing() ? CastBarStyle.countdown(elapsed, cast.get().durationTicks())
+                    : CastBarStyle.time(elapsed, cast.get().durationTicks());
+            drawBar(graphics, font, x, top, spell, filled, schoolColor(spell), name(spell, cast.get().spell()), clock,
+                    0, 255);
             return;
         }
         if (ended != null && CastBarStyle.showing(now - ended.gameTime(), ENDED_TICKS)) {

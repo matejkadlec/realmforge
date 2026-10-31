@@ -24,10 +24,11 @@ import net.neoforged.neoforge.client.event.RegisterDebugRenderersEvent;
  * A melee spell's hit shape drawn while it swings (RLM-399; architecture 18): with vanilla's hitbox display on (F3 + B,
  * the debug screen's Entity Hitboxes entry), the shape of every swing this client knows of, the local player's and
  * every tracked caster's, is drawn as outline lines only, round the caster's look as the server takes it at the hit
- * moment ({@code spell/MeleeShape}), so the shapes can be checked and tuned in a playtest.
+ * moment and at its melee reach (entity interaction range, a synced attribute; {@code spell/MeleeShape}): the box,
+ * and a swing's 120° arc in its middle, so the shapes can be checked against Better Combat's in a playtest.
  */
 public final class SwingShapes implements DebugRenderer.SimpleDebugRenderer {
-    /** The outline's colour: Better Combat's hitboxes are white, ours a clear orange. */
+    /** The outline's colour: Better Combat's hitboxes are green (red with a target in them), ours a clear orange. */
     private static final int COLOR = 0xFFFF9020;
     private static final int ARC_SEGMENTS = 12;
 
@@ -57,10 +58,9 @@ public final class SwingShapes implements DebugRenderer.SimpleDebugRenderer {
             if (melee.isEmpty()) {
                 continue;
             }
-            Vec3 eyes = caster.getEyePosition(partialTicks);
-            MeleeShape.Frame frame = MeleeShape.Frame.of(eyes, caster.getViewXRot(partialTicks),
-                    caster.getViewYRot(partialTicks));
-            for (Vec3[] line : melee.get().geometry().outline(frame, caster.getBbWidth() / 2, ARC_SEGMENTS)) {
+            MeleeShape.Frame frame = MeleeEffect.frame(caster, caster.getEyePosition(partialTicks),
+                    caster.getViewXRot(partialTicks), caster.getViewYRot(partialTicks));
+            for (Vec3[] line : melee.get().geometry(caster).outline(frame, ARC_SEGMENTS)) {
                 Gizmos.line(line[0], line[1], COLOR);
             }
         }

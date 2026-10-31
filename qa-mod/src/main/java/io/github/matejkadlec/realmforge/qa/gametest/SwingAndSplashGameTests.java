@@ -39,9 +39,9 @@ import net.minecraft.world.phys.Vec3;
 /**
  * RLM-399: the Warrior's melee spells hit every enemy in a shape in front of the player at their hit moment, and the
  * Mage's bolts explode on the enemy they hit. The player stands at (4.5, 1, 0.5) or (4.5, 1, 2.5) of a 9 x 9 platform,
- * facing south (+z), its eyes 1.62 above its feet; the shapes are 2 blocks tall round the crosshair. Slam: a 120° sector
- * of 1.5 blocks; Reckless Strike and Shield Bash: a box 2 wide and 1 deep in front of the body; test_cleave: a sector of
- * 4 blocks that lands at once, for the walls.
+ * facing south (+z), in survival mode: a melee reach of 3. The shapes are Better Combat's sword hitboxes at that reach
+ * (Matěj's playtest of 2026-10-31), from 1.35 above the feet: Slam's, Reckless Strike's and test_cleave's (which lands
+ * at once, for the walls) the swing, 6 wide, 1 tall, 3 deep and 120°; Shield Bash's the stab, 1.5 wide and tall.
  */
 public final class SwingAndSplashGameTests {
     private static final double HEALTH = SpellGameTests.HEALTH;
@@ -52,8 +52,9 @@ public final class SwingAndSplashGameTests {
     }
 
     /**
-     * Slam hits every husk in its sector, the one ahead and the one ahead to the right alike, and none behind the
-     * player, beside it or beyond 1.5 blocks; its damage lands at its hit moment, half a second in, not at once.
+     * Slam hits every husk in its swing, the one ahead and the one ahead to the right alike, and none behind the
+     * player, beside it (outside the 120°) or beyond the reach of 3; its damage lands at its hit moment, a quarter of a
+     * second into its 0.5 s swing, not at once.
      */
     @QaGameTest(template = QaGameTests.PLATFORM_9X9)
     public static void slamHitsItsSectorAtItsHitMoment(GameTestHelper helper) {
@@ -62,17 +63,17 @@ public final class SwingAndSplashGameTests {
         Husk aheadRight = husk(helper, new Vec3(5.5, 1, 3.5));
         Husk behind = husk(helper, new Vec3(4.5, 1, 1.2));
         Husk beside = husk(helper, new Vec3(6.6, 1, 2.5));
-        Husk beyond = husk(helper, new Vec3(4.5, 1, 5.5));
+        Husk beyond = husk(helper, new Vec3(4.5, 1, 6.2));
         learn(helper, player, GeneratedSpells.SLAM);
         assertCast(helper, player, GeneratedSpells.SLAM, null);
-        helper.runAfterDelay(5, () -> helper.assertTrue(close(ahead.getHealth(), HEALTH),
+        helper.runAfterDelay(2, () -> helper.assertTrue(close(ahead.getHealth(), HEALTH),
                 "Slam landed before its hit moment"));
-        helper.runAfterDelay(14, () -> {
+        helper.runAfterDelay(9, () -> {
             helper.assertTrue(ahead.getHealth() < HEALTH, "Slam missed the husk ahead");
             helper.assertTrue(close(aheadRight.getHealth(), ahead.getHealth()),
-                    "every husk in the sector takes the same damage");
+                    "every husk in the swing takes the same damage");
             for (Husk spared : List.of(behind, beside, beyond)) {
-                helper.assertTrue(close(spared.getHealth(), HEALTH), "Slam hit a husk outside its sector at "
+                helper.assertTrue(close(spared.getHealth(), HEALTH), "Slam hit a husk outside its swing at "
                         + spared.position());
             }
             logout(player);
@@ -81,32 +82,61 @@ public final class SwingAndSplashGameTests {
     }
 
     /**
-     * Reckless Strike and Shield Bash hit every husk in their 2 × 1 box in front of the player, the one ahead and the one
-     * ahead to the left, and none beside or behind it; Shield Bash stuns all it hits.
+     * Reckless Strike swings: it hits the husk ahead and the one 45° ahead to the left alike, and none beside, behind or
+     * beyond the reach. Shield Bash stabs, as far ahead but narrower: it stuns the husk ahead and one just off its middle,
+     * not the one 45° to the left.
      */
     @QaGameTest(template = QaGameTests.PLATFORM_9X9)
-    public static void recklessStrikeAndShieldBashHitTheirFrontBox(GameTestHelper helper) {
-        ServerPlayer player = warrior(helper, "qa-swing-box", CENTRE);
+    public static void recklessStrikeSwingsAndShieldBashStabs(GameTestHelper helper) {
+        ServerPlayer player = warrior(helper, "qa-swing-stab", CENTRE);
         player.setItemSlot(EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
-        Husk ahead = husk(helper, new Vec3(4.5, 1, 3.6));
-        Husk aheadLeft = husk(helper, new Vec3(3.6, 1, 3.6));
+        Husk ahead = husk(helper, new Vec3(4.5, 1, 4.9));
+        Husk offMiddle = husk(helper, new Vec3(5.1, 1, 3.6));
+        Husk wide = husk(helper, new Vec3(3.0, 1, 4.0));
         Husk beside = husk(helper, new Vec3(5.6, 1, 2.3));
         Husk behind = husk(helper, new Vec3(4.5, 1, 1.4));
+        Husk beyond = husk(helper, new Vec3(4.5, 1, 5.9));
         learn(helper, player, GeneratedSpells.RECKLESS_STRIKE);
         learn(helper, player, GeneratedSpells.SHIELD_BASH);
         assertCast(helper, player, GeneratedSpells.RECKLESS_STRIKE, null);
         helper.assertTrue(Spells.landSwing(player), "Reckless Strike swung");
-        helper.assertTrue(ahead.getHealth() < HEALTH && aheadLeft.getHealth() < HEALTH,
-                "Reckless Strike hit both husks in its box");
-        helper.assertTrue(close(beside.getHealth(), HEALTH) && close(behind.getHealth(), HEALTH),
-                "Reckless Strike hit a husk beside or behind the player");
+        for (Husk hit : List.of(ahead, offMiddle, wide)) {
+            helper.assertTrue(hit.getHealth() < HEALTH, "Reckless Strike missed the husk at " + hit.position());
+        }
+        for (Husk spared : List.of(beside, behind, beyond)) {
+            helper.assertTrue(close(spared.getHealth(), HEALTH), "Reckless Strike hit the husk at "
+                    + spared.position());
+        }
         Spells.resetCooldowns(player);
         assertCast(helper, player, GeneratedSpells.SHIELD_BASH, null);
         helper.assertTrue(Spells.landSwing(player), "Shield Bash swung");
-        helper.assertTrue(ahead.hasEffect(GeneratedEffects.STUNNED) && aheadLeft.hasEffect(GeneratedEffects.STUNNED),
-                "Shield Bash stuns every husk in its box");
-        helper.assertFalse(beside.hasEffect(GeneratedEffects.STUNNED) || behind.hasEffect(GeneratedEffects.STUNNED),
-                "Shield Bash stunned a husk outside its box");
+        for (Husk stunned : List.of(ahead, offMiddle)) {
+            helper.assertTrue(stunned.hasEffect(GeneratedEffects.STUNNED), "Shield Bash missed the husk at "
+                    + stunned.position());
+        }
+        for (Husk spared : List.of(wide, beside, behind, beyond)) {
+            helper.assertFalse(spared.hasEffect(GeneratedEffects.STUNNED), "Shield Bash stunned the husk at "
+                    + spared.position());
+        }
+        logout(player);
+        helper.succeed();
+    }
+
+    /**
+     * The shapes grow with the melee reach: a husk 3.4 blocks ahead is out of the swing's reach of 3 (survival mode)
+     * and within a reach of 5 (creative mode's, which vanilla adds on the player's tick), as Better Combat's swing is.
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_9X9)
+    public static void theSwingGrowsWithTheReach(GameTestHelper helper) {
+        ServerPlayer player = warrior(helper, "qa-swing-reach", EDGE);
+        Husk far = husk(helper, new Vec3(4.5, 1, 4.2));
+        learn(helper, player, GeneratedSpells.TEST_CLEAVE);
+        assertCast(helper, player, GeneratedSpells.TEST_CLEAVE, null);
+        helper.assertTrue(close(far.getHealth(), HEALTH), "a reach of 3 hit the husk 3.4 ahead");
+        CombatGameTests.setBase(player, Attributes.ENTITY_INTERACTION_RANGE, 5);
+        Spells.resetCooldowns(player);
+        assertCast(helper, player, GeneratedSpells.TEST_CLEAVE, null);
+        helper.assertTrue(close(far.getHealth(), HEALTH - 5), "a reach of 5 missed it: " + (HEALTH - far.getHealth()));
         logout(player);
         helper.succeed();
     }
@@ -125,7 +155,7 @@ public final class SwingAndSplashGameTests {
         helper.assertTrue(player.entityTags().contains(CombatState.BETTER_COMBAT_DISABLED_TAG),
                 "no Better Combat swing while Slam plays out");
         helper.assertTrue(close(Resources.amount(player, ResourceTypes.RAGE), 70), "Slam costs 30 rage");
-        helper.runAfterDelay(3, () -> player.addEffect(new MobEffectInstance(GeneratedEffects.STUNNED, 40)));
+        helper.runAfterDelay(2, () -> player.addEffect(new MobEffectInstance(GeneratedEffects.STUNNED, 40)));
         helper.runAfterDelay(14, () -> {
             helper.assertTrue(close(ahead.getHealth(), HEALTH), "a stunned Slam landed");
             helper.assertTrue(close(Resources.amount(player, ResourceTypes.RAGE), 85), "half the rage came back: "
@@ -188,7 +218,7 @@ public final class SwingAndSplashGameTests {
         ServerPlayer player = warrior(helper, "qa-swing-wall", EDGE);
         wall(helper, 4, 4);
         Husk hidden = husk(helper, new Vec3(4.5, 1, 3.5));
-        Husk open = husk(helper, new Vec3(6.5, 1, 3.5));
+        Husk open = husk(helper, new Vec3(6.0, 1, 2.8));
         learn(helper, player, GeneratedSpells.TEST_CLEAVE);
         assertCast(helper, player, GeneratedSpells.TEST_CLEAVE, null);
         helper.assertTrue(close(hidden.getHealth(), HEALTH), "the swing hit through the wall");
