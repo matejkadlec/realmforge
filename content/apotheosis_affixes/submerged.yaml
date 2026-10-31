@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Submerged (mining speed under water): Matěj turned it off in his affix review (RLM-232, 2026-10-16).
+id: submerged
+affix: apotheosis:breaker/attribute/submerged
+disabled: true

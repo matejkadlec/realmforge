@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Blighted (Wither on the arrow's target): Matěj's affix review (RLM-232) adds Rare (Wither I-II for 8-10 s, every 15
+# s) and makes Epic Wither I-III; Legendary keeps I-IV.
+id: blighted
+affix: apotheosis:ranged/mob_effect/blighted
+replace:
+  values:
+    apotheosis:rare:
+      duration:
+        min: 160.0
+        max: 200.0
+        step: 20.0
+      amplifier:
+        min: 0.0
+        max: 1.0
+        step: 0.25
+      cooldown: 300
+    apotheosis:epic:
+      duration:
+        min: 160.0
+        max: 200.0
+        step: 20.0
+      amplifier:
+        min: 0.0
+        max: 2.0
+        step: 0.25
+      cooldown: 300
+    apotheosis:mythic:
+      duration:
+        min: 160.0
+        max: 200.0
+        step: 20.0
+      amplifier:
+        min: 0.0
+        max: 3.0
+        step: 0.25
+      cooldown: 300

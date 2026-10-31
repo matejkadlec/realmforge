@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Omnetic (mines as every tool): Matěj turned it off in his affix review (RLM-232, 2026-10-16); it bypasses the realm tool tiers.
+id: omnetic
+affix: apotheosis:breaker/effect/omnetic
+disabled: true

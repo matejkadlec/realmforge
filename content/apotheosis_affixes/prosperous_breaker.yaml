@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Prosperous on tools (+Fortune): Matěj turned it off in his affix review (RLM-232, 2026-10-16); too strong on top of Fortune, which Apothic
+# Enchanting raises above III.
+id: prosperous_breaker
+affix: apotheosis:breaker/enchantment/prosperous
+disabled: true

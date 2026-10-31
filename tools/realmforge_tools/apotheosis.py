@@ -1,15 +1,19 @@
 """Apotheosis's data, fitted to Realmforge (ADR 0063, architecture 19.4, ``schema/apotheosis.py``).
 
 1. ``rf ids apotheosis`` downloads the jar ``pack/mods/apotheosis.pw.toml`` names (sha512-verified, cached in
-   ``.cache/``) and writes ``tools/id_universe/apotheosis-<version>.json``: its affixes, gems, tier augments and
-   rarities as Apotheosis ships them, and the ids of its recipes (committed; validation and ``rf gen`` read only this
-   file).
+   ``.cache/``) and writes ``tools/id_universe/apotheosis-<version>.json``: its affixes, gems, tier augments, rarities
+   and rarity overrides as Apotheosis ships them, the ids of its recipes, and its license's text (committed;
+   validation and ``rf gen`` read only this file). The jar carries no license file, so the text comes from
+   Apotheosis's repository at the commit the release was built from (``SOURCE_COMMIT``).
 2. ``fit`` applies ``content/``'s changes to that snapshot: first an entry's own change (switched off, or fields
-   replaced), then the stat remaps. Every entry that changed becomes a file at Apotheosis's own path; a switched-off
-   one becomes a file NeoForge skips (``neoforge:never``), which Placebo, Apotheosis's data loader, logs at trace
-   level only. ``validate.py`` reports ``fit``'s problems, ``generate/apotheosis.py`` writes its files.
+   replaced), then the stat remaps, then the rarity overrides, which read the fitted rarities. Every entry that
+   changed becomes a file at Apotheosis's own path; a switched-off one becomes a file NeoForge skips
+   (``neoforge:never``), which Placebo, Apotheosis's data loader, logs at trace level only. ``validate.py`` reports
+   ``fit``'s problems, ``generate/apotheosis.py`` writes its files.
 
-Apotheosis's data is MIT-licensed (Shadows_of_Fire); the snapshot names its source and license.
+Apotheosis is MIT-licensed (its code and the data its generators write; the jar's metadata keeps its assets, none of
+which we copy, All Rights Reserved). MIT's one condition is that its notice goes with every copy, so ``rf gen`` writes
+the snapshot's license text next to the copied data in the jar, ``META-INF/third_party/apotheosis/`` (RLM-524).
 """
 
 from __future__ import annotations
@@ -31,20 +35,28 @@ from realmforge_tools.formats.jsonfmt import dump_json
 from realmforge_tools.problems import Problem
 from realmforge_tools.project import RepoPaths
 from realmforge_tools.schema.apotheosis import (
+    CURIOS_LOOT_CATEGORIES,
+    LOOT_CATEGORIES,
+    RARITIES,
     ApotheosisAffixDef,
     ApotheosisEntryDef,
+    ApotheosisRarityOverrideDef,
     ApotheosisStatRemapDef,
 )
 
 # The snapshot's kinds: Apotheosis's folders below data/<namespace>/apotheosis/.
-KINDS = ("affixes", "gems", "tier_augments", "rarities")
+RARITY_OVERRIDE = "rarity_override"
+KINDS = ("affixes", "gems", "tier_augments", "rarities", RARITY_OVERRIDE)
 # The kinds whose entries grant attributes, and so meet the stat remaps.
 REMAPPED_KINDS = ("affixes", "gems", "tier_augments")
 
 PACK_METAFILE = "pack/mods/apotheosis.pw.toml"
 SNAPSHOT_GLOB = "apotheosis-*.json"
 SOURCE = "https://github.com/Shadows-of-Fire/Apotheosis"
-LICENSE = "MIT, Copyright (c) Shadows_of_Fire: Apotheosis's own data, unchanged"
+# The commit Apotheosis 9.1.0 for Minecraft 26.1.2 was built from: update it with an Apotheosis update in the pack.
+SOURCE_COMMIT = "f2e7686"
+LICENSE_URL = f"https://raw.githubusercontent.com/Shadows-of-Fire/Apotheosis/{SOURCE_COMMIT}/LICENSE"
+LICENSE_SPDX = "MIT"
 
 # What a switched-off entry or a removed recipe becomes: NeoForge skips a file whose conditions fail.
 DISABLED: dict[str, Any] = {"neoforge:conditions": [{"type": "neoforge:never"}]}
@@ -55,6 +67,8 @@ MULTI_ATTRIBUTE = "apotheosis:multi_attribute"
 ALL_STATS = "apotheosis:all_stats"
 ADD_MULTIPLIED_BASE = "add_multiplied_base"
 ADD_VALUE = "add_value"
+AFFIX_RULE = "apotheosis:affix"
+CHANCED_RULE = "apotheosis:chanced"
 
 _DATA_FILE = re.compile(
     r"^data/(?P<ns>[a-z0-9_.-]+)/apotheosis/(?P<kind>[a-z_]+)/(?P<path>[a-z0-9_/]+)\.json$"
@@ -70,6 +84,7 @@ class Snapshot:
     sha512: str
     entries: dict[str, dict[str, dict[str, Any]]]
     recipes: frozenset[str]
+    license_text: str
 
     def entry(self, kind: str, id_: str) -> dict[str, Any] | None:
         return self.entries.get(kind, {}).get(id_)
@@ -92,6 +107,7 @@ def load_snapshot(paths: RepoPaths) -> Snapshot:
         sha512=data["jar"]["sha512"],
         entries={kind: data[kind] for kind in KINDS},
         recipes=frozenset(data["recipes"]),
+        license_text=data["license"]["text"],
     )
 
 
@@ -115,7 +131,9 @@ def extract(paths: RepoPaths) -> Path:
             raise RuntimeError(f"{jar['file']}: sha512 mismatch against {PACK_METAFILE}")
         cached.parent.mkdir(parents=True, exist_ok=True)
         cached.write_bytes(data)
-    snapshot = build_snapshot(cached, jar)
+    with urllib.request.urlopen(LICENSE_URL) as response:
+        license_text = response.read().decode("utf-8")
+    snapshot = build_snapshot(cached, jar, license_text)
     for old in snapshot_files(paths):
         old.unlink()
     target = paths.id_universe / f"apotheosis-{snapshot['version']}.json"
@@ -124,7 +142,7 @@ def extract(paths: RepoPaths) -> Path:
     return target
 
 
-def build_snapshot(jar_path: Path, jar: dict[str, str]) -> dict[str, Any]:
+def build_snapshot(jar_path: Path, jar: dict[str, str], license_text: str) -> dict[str, Any]:
     entries: dict[str, dict[str, Any]] = {kind: {} for kind in KINDS}
     recipes: set[str] = set()
     with zipfile.ZipFile(jar_path) as archive:
@@ -140,7 +158,7 @@ def build_snapshot(jar_path: Path, jar: dict[str, str]) -> dict[str, Any]:
         "version": version,
         "jar": {"file": jar["file"], "sha512": jar["sha512"]},
         "source": SOURCE,
-        "license": LICENSE,
+        "license": {"spdx": LICENSE_SPDX, "source": LICENSE_URL, "text": license_text},
         "generated_by": "uv run rf ids apotheosis",
         **{kind: dict(sorted(entries[kind].items())) for kind in KINDS},
         "recipes": sorted(recipes),
@@ -238,9 +256,143 @@ def fit(content: Content, snapshot: Snapshot) -> Fitted:
                 Problem(entry.source, "source", f"no Apotheosis affix, gem or tier augment grants {source}")
             )
 
+    fitted.problems += _switched_off_exclusions(snapshot, changed, sources)
     for (kind, id_), data in sorted(changed.items()):
         fitted.files[data_path(kind, id_)] = data
+    for entry in content.apotheosis_rarity_overrides:
+        override = _rarity_override(entry, snapshot, changed, fitted)
+        if override is not None:
+            fitted.files[override_path(override["category"])] = override
     return fitted
+
+
+def _switched_off_exclusions(
+    snapshot: Snapshot, changed: dict[tuple[str, str], dict[str, Any]], sources: dict[tuple[str, str], str]
+) -> list[Problem]:
+    """An affix that stays on and names a switched-off one in its exclusive set: Apotheosis then logs "contains the
+    unknown affix ... in its exclusive set" at ERROR on every load."""
+    problems: list[Problem] = []
+    for id_, original in snapshot.entries["affixes"].items():
+        data = changed.get(("affixes", id_), original)
+        if data is DISABLED:
+            continue
+        for named in data.get("definition", {}).get("exclusive_set", []):
+            if changed.get(("affixes", named)) is DISABLED:
+                problems.append(
+                    Problem(
+                        sources.get(("affixes", id_))
+                        or sources.get(("affixes", named), "content/apotheosis_affixes/"),
+                        "replace.definition.exclusive_set",
+                        f"{id_} names {named}, which is switched off, in its exclusive set: replace its definition "
+                        "without it",
+                    )
+                )
+    return problems
+
+
+def override_path(category: str) -> str:
+    """A loot category's rarity override below ``data/``. Apotheosis reads the category from the file's path, so
+    ``apotheosis:helmet``'s is ``apotheosis/apotheosis/rarity_override/apotheosis/helmet.json``, where Apotheosis's own
+    override for it would be (``RarityOverrideRegistry#validateItem``)."""
+    namespace, path = category.split(":", 1)
+    return f"apotheosis/apotheosis/{RARITY_OVERRIDE}/{namespace}/{path}.json"
+
+
+def _rarity_override(
+    entry: Entry[ApotheosisRarityOverrideDef],
+    snapshot: Snapshot,
+    changed: dict[tuple[str, str], dict[str, Any]],
+    fitted: Fitted,
+) -> dict[str, Any] | None:
+    """The category's rarity override: Apotheosis's own, or none, with the rules of every rarity listed taken from it
+    or from the fitted rarity, capped to the slots the entry allows. None when the entry cannot be fitted."""
+    model = entry.model
+    category = model.category
+    if category in CURIOS_LOOT_CATEGORIES:
+        fitted.problems.append(
+            Problem(entry.source, "category", f"{category} exists only with Curios, which the pack lacks")
+        )
+        return None
+    if category not in LOOT_CATEGORIES:
+        fitted.problems.append(
+            Problem(
+                entry.source,
+                "category",
+                f"unknown loot category {category!r}; Apotheosis has {', '.join(LOOT_CATEGORIES)}",
+            )
+        )
+        return None
+    path = override_path(category)
+    if path in fitted.files:
+        fitted.problems.append(Problem(entry.source, "category", f"{category} already has a rarity override"))
+        return None
+    own = next(
+        (data for data in snapshot.entries[RARITY_OVERRIDE].values() if data.get("category") == category),
+        None,
+    )
+    overrides: dict[str, Any] = copy.deepcopy(own["overrides"]) if own else {}
+    for rarity, limits in model.max_slots.items():
+        if rarity not in RARITIES:
+            fitted.problems.append(
+                Problem(
+                    entry.source,
+                    f"max_slots.{rarity}",
+                    f"unknown rarity {rarity!r}; Apotheosis has {', '.join(RARITIES)}",
+                )
+            )
+            continue
+        rules = overrides.get(rarity)
+        if rules is None:
+            rules = changed.get(("rarities", rarity), snapshot.entry("rarities", rarity) or {}).get(
+                "rules", []
+            )
+        capped = copy.deepcopy(rules)
+        for kind, limit in limits.items():
+            location = f"max_slots.{rarity}.{kind}"
+            slots = [n for n, rule in enumerate(capped) if _slot_kind(rule) == kind]
+            if any(_names_kind(rule, kind) for rule in capped if _slot_kind(rule) is None):
+                fitted.problems.append(
+                    Problem(
+                        entry.source,
+                        location,
+                        f"{category}'s rules at {rarity} name {kind} inside another rule",
+                    )
+                )
+            elif len(slots) <= limit:
+                fitted.problems.append(
+                    Problem(
+                        entry.source,
+                        location,
+                        f"{category} has {len(slots)} {kind} slot(s) at {rarity}: nothing to drop for at most {limit}",
+                    )
+                )
+            else:
+                chanced = [n for n in slots if capped[n]["type"] == CHANCED_RULE]
+                plain = [n for n in slots if capped[n]["type"] != CHANCED_RULE]
+                dropped = set((chanced[::-1] + plain[::-1])[: len(slots) - limit])
+                capped = [rule for n, rule in enumerate(capped) if n not in dropped]
+        overrides[rarity] = capped
+    ordered = {rarity: overrides[rarity] for rarity in RARITIES if rarity in overrides}
+    return {**(own or {}), "category": category, "overrides": ordered}
+
+
+def _slot_kind(rule: Any) -> str | None:
+    """The affix kind of a slot, an affix rule or a chanced one, or None for any other rule."""
+    if not isinstance(rule, dict):
+        return None
+    if rule.get("type") == CHANCED_RULE:
+        return _slot_kind(rule.get("rule"))
+    if rule.get("type") == AFFIX_RULE:
+        return rule.get("affix_type")
+    return None
+
+
+def _names_kind(value: Any, kind: str) -> bool:
+    if isinstance(value, dict):
+        return value.get("affix_type") == kind or any(_names_kind(item, kind) for item in value.values())
+    if isinstance(value, list):
+        return any(_names_kind(item, kind) for item in value)
+    return False
 
 
 def _unknown_entry(kind: str, id_: str, snapshot: Snapshot) -> str:
@@ -460,3 +612,14 @@ def generated_files(content: Content, snapshot: Snapshot) -> dict[str, bytes]:
     files = {path: dump_json(data) for path, data in fit(content, snapshot).files.items()}
     files.update({path: dump_json(data) for path, data in recipe_removals(content).items()})
     return files
+
+
+def notices(snapshot: Snapshot) -> dict[str, bytes]:
+    """Apotheosis's ``LICENSE`` and our ``NOTICE``, below ``META-INF/third_party/apotheosis/``, for a jar that carries
+    its data."""
+    notice = (
+        f"The files below data/apotheosis/ in this jar are Apotheosis's own data, version {snapshot.version}\n"
+        f"({SOURCE}), each with Realmforge's changes to it. A switched-off entry or recipe is\n"
+        "a file whose neoforge:never condition makes the game skip it. Apotheosis is MIT-licensed: see LICENSE.\n"
+    )
+    return {"LICENSE": snapshot.license_text.encode("utf-8"), "NOTICE": notice.encode("utf-8")}

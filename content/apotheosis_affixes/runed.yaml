@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Runed (magic damage reduction): Matěj turned it off (RLM-232, 2026-10-30). Spell Resistance and the school
+# resistances are mob-only stats (RLM-233); a player's magic defense is Magic Protection, Magic Shield, Dodge and
+# health.
+id: runed
+affix: apotheosis:armor/dmg_reduction/runed
+disabled: true

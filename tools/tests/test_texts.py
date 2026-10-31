@@ -73,6 +73,23 @@ def test_dotted_group_prefixes_its_keys_and_joins_its_constants(repo: RepoPaths)
     assert 'public static final String HINT_EXTRA_TIP = "hint.extra.realmforge.tip";' in java
 
 
+def test_dotted_name_suffixes_its_key_and_joins_its_constant(repo: RepoPaths) -> None:
+    # Apotheosis reads a loot category's plural from loot_category.<namespace>.<path>.plural (RLM-273).
+    write(repo.content / "texts" / "hint.yaml", "id: hint\ntexts:\n  tip.plural:\n    en_us: Tips\n")
+    files = generate(repo)
+    assert json.loads(files[f"{LANG}/en_us.json"])["hint.realmforge.tip.plural"] == "Tips"
+    java = files[GENERATED_TEXTS].decode()
+    assert 'public static final String HINT_TIP_PLURAL = "hint.realmforge.tip.plural";' in java
+
+
+def test_a_dotted_name_and_an_underscored_one_cannot_share_a_constant(repo: RepoPaths) -> None:
+    write(
+        repo.content / "texts" / "hint.yaml",
+        "id: hint\ntexts:\n  tip.plural:\n    en_us: A\n  tip_plural:\n    en_us: B\n",
+    )
+    assert any("Java constant HINT_TIP_PLURAL is also generated for" in p for p in problems_for(repo))
+
+
 def test_text_comment_cannot_close_the_javadoc(repo: RepoPaths) -> None:
     write(repo.content / "texts" / "hint.yaml", "id: hint\ntexts:\n  odd:\n    en_us: 'a */ b @c'\n")
     java = generate(repo)[GENERATED_TEXTS].decode()
@@ -120,6 +137,8 @@ def test_java_constants_must_be_unique(repo: RepoPaths) -> None:
         ("id: hint\n", "texts: Field required"),
         ("id: hint.\ntexts:\n  a:\n    en_us: X\n", "id: String should match pattern"),
         ("id: hint..x\ntexts:\n  a:\n    en_us: X\n", "id: String should match pattern"),
+        ("id: hint\ntexts:\n  a.:\n    en_us: X\n", "texts.a..[key]: String should match pattern"),
+        ("id: hint\ntexts:\n  .a:\n    en_us: X\n", "texts..a.[key]: String should match pattern"),
     ],
 )
 def test_invalid_text_groups_are_rejected(repo: RepoPaths, yaml: str, expected: str) -> None:

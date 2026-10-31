@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Giant Slaying (bonus damage of the target's current health): Matěj's affix review (RLM-232) drops its Pinnacle-only
+# weight, so it rolls at every world tier with the weight of most affixes, from Rare up. Values per rarity: Rare 5-10
+# %, Epic 10-15 %, Legendary 15-20 %.
+id: giant_slaying
+affix: apotheosis:melee/attribute/giant_slaying
+replace:
+  definition:
+    affix_type: stat
+    exclusive_set: []
+    weights:
+      quality: 0.1
+      weight: 25
+  values:
+    apotheosis:rare:
+      min: 0.05
+      max: 0.1
+    apotheosis:epic:
+      min: 0.1
+      max: 0.15
+    apotheosis:mythic:
+      min: 0.15
+      max: 0.2

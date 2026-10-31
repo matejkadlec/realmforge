@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Surefooted: Matěj turned it off in his affix review (RLM-232, 2026-10-16); no step height source is planned.
+id: surefooted
+affix: apotheosis:boots/ability/surefooted
+disabled: true

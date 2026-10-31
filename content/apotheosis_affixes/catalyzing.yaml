@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Catalyzing (Strength for a while after blocking an explosion): Matěj's affix review (RLM-232) adds Rare, 5-15 s. An
+# ability, so a Rare shield rolls it only through Rare's chanced ability slot.
+id: catalyzing
+affix: apotheosis:shield/catalyzing
+replace:
+  values:
+    apotheosis:rare:
+      min: 100.0
+      max: 300.0
+      step: 20.0
+    apotheosis:epic:
+      min: 200.0
+      max: 400.0
+      step: 20.0
+    apotheosis:mythic:
+      min: 300.0
+      max: 600.0
+      step: 20.0

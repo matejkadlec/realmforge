@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One of Apotheosis's loot categories with fewer affix slots at some rarities (RLM-232): Apotheosis rolls a\nrarity's rules for every category unless a rarity override names other rules for it, and a slot that finds no\naffix of its kind left for the item logs \"no affixes available\" and rolls nothing.\n\nThe category's rules at each rarity listed are the rarity's own (as ``content/apotheosis_rarities/`` fits them),\nor those of Apotheosis's override for the category where it has one, keeping at most the number of slots given\nfor each kind: chanced slots go first, the last first, then plain ones from the end. The other rarities keep what\nthey had.",
+  "properties": {
+    "category": {
+      "description": "The loot category, e.g. apotheosis:helmet.",
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+      "title": "Category",
+      "type": "string"
+    },
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "max_slots": {
+      "description": "Rarity -> affix kind -> the most slots of that kind the category keeps there, e.g. apotheosis:rare: {ability: 0, basic_effect: 1}.",
+      "minProperties": 1,
+      "patternProperties": {
+        "^[a-z0-9_.-]+:[a-z0-9_./-]+$": {
+          "additionalProperties": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "minProperties": 1,
+          "propertyNames": {
+            "enum": [
+              "stat",
+              "basic_effect",
+              "ability"
+            ]
+          },
+          "type": "object"
+        }
+      },
+      "propertyNames": {
+        "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe."
+      },
+      "title": "Max Slots",
+      "type": "object"
+    }
+  },
+  "required": [
+    "id",
+    "category",
+    "max_slots"
+  ],
+  "title": "ApotheosisRarityOverrideDef",
+  "type": "object"
+}

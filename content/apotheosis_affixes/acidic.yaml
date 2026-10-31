@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Acidic (Sundering on the arrow's target): Matěj's affix review (RLM-232) drops its Pinnacle-only weight and adds
+# Rare (2-4 s) and Epic (3-6 s), every 2 s like Legendary's 4-8 s.
+id: acidic
+affix: apotheosis:ranged/mob_effect/acidic
+replace:
+  definition:
+    affix_type: basic_effect
+    exclusive_set: []
+    weights:
+      quality: 0.1
+      weight: 25
+  values:
+    apotheosis:rare:
+      duration:
+        min: 40.0
+        max: 80.0
+        step: 20.0
+      amplifier: 0.0
+      cooldown: 40
+    apotheosis:epic:
+      duration:
+        min: 60.0
+        max: 120.0
+        step: 20.0
+      amplifier: 0.0
+      cooldown: 40
+    apotheosis:mythic:
+      duration:
+        min: 80.0
+        max: 160.0
+        step: 20.0
+      amplifier: 0.0
+      cooldown: 40

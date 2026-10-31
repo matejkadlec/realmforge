@@ -778,6 +778,9 @@ def test_the_resistance_stats_name_the_damage_types_they_lower(repo: RepoPaths) 
 def test_without_resistance_stats_nothing_resists(repo: RepoPaths) -> None:
     for name in ("explosion", "fall", "physical", "projectile"):
         (repo.content / "stats" / f"{name}_resistance.yaml").unlink()
+    # Apotheosis's reduction affixes turn into these stats.
+    for affix in ("blast_forged", "blockading", "deflective", "feathery"):
+        (repo.content / "apotheosis_affixes" / f"{affix}.yaml").unlink()
     assert "DAMAGE_RESISTANCES = List.of();" in generate(repo)[STATS_JAVA].decode()
 
 
@@ -811,6 +814,10 @@ def test_no_stats_or_rules_still_compile(repo: RepoPaths) -> None:
             file.unlink()
     for file in (repo.content / "items").glob("*.yaml"):
         if "\ngear:" in file.read_text(encoding="utf-8"):
+            file.unlink()
+    # Apotheosis's reduction affixes that turn into our resistances (RLM-233).
+    for file in (repo.content / "apotheosis_affixes").glob("*.yaml"):
+        if "\nto_attribute:" in file.read_text(encoding="utf-8"):
             file.unlink()
     # Astone's kill XP rank names her body.
     (repo.content / "kill_xp_multipliers" / "astone.yaml").unlink()

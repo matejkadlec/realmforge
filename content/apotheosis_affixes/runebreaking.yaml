@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Runebreaking (protection pierce): Matěj turned it off in his affix review (RLM-232, 2026-10-16). The protection_pierce remap switches it
+# off too (RLM-272); this file keeps it off whatever that remap becomes.
+id: runebreaking
+affix: apotheosis:weapon/attribute/runebreaking
+disabled: true

@@ -1,0 +1,3 @@
+The files below data/apotheosis/ in this jar are Apotheosis's own data, version 9.1.0
+(https://github.com/Shadows-of-Fire/Apotheosis), each with Realmforge's changes to it. A switched-off entry or recipe is
+a file whose neoforge:never condition makes the game skip it. Apotheosis is MIT-licensed: see LICENSE.

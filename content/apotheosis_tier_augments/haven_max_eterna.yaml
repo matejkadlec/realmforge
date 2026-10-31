@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_tier_augments.schema.json
+# Haven's cap on Apothic Enchanting's max Eterna is off (RLM-232): the world tier is the player's highest one, and the
+# shelves gate enchanting power instead. The other player augments (luck, experience) stay Apotheosis's.
+id: haven_max_eterna
+augment: apotheosis:haven/max_eterna
+disabled: true

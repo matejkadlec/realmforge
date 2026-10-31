@@ -128,6 +128,12 @@ dependencies {
     // Inventory Sorting leaves backpacks in their slots, so an open backpack stays open (client/compat/inventorysorter,
     // RLM-519).
     compileOnly packModrinthMod('inventory-sorting')
+    // Our wands get an Apotheosis loot category of their own (compat/apotheosis, RLM-273): the category is
+    // Apotheosis's, its slot group Apothic Attributes', and Apotheosis's types name Placebo's. `compileOnlyApi` hands
+    // them to the QA mod, whose GameTests read Apotheosis's registries.
+    compileOnlyApi packModrinthMod('apotheosis')
+    compileOnlyApi packModrinthMod('apothic-attributes')
+    compileOnlyApi packModrinthMod('placebo')
 
     testImplementation platform("org.junit:junit-bom:${junit_version}")
     testImplementation 'org.junit.jupiter:junit-jupiter'

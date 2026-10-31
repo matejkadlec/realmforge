@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_rarities.schema.json
+# Rare gets a chanced ability slot, 25 % (Matěj, 2026-10-29, RLM-232), so Rare items, 4 % of drops in Haven and 10 % in
+# Frontier, can carry an ability in the early realms. Apotheosis rolls abilities only on Epic and Legendary; the other
+# rules are its own.
+id: rare
+rarity: apotheosis:rare
+replace:
+  rules:
+    - type: apotheosis:affix
+      affix_type: stat
+    - type: apotheosis:affix
+      affix_type: stat
+    - type: apotheosis:affix
+      affix_type: basic_effect
+    - type: apotheosis:chanced
+      chance: 0.35
+      rule:
+        type: apotheosis:affix
+        affix_type: basic_effect
+    - type: apotheosis:chanced
+      chance: 0.25
+      rule:
+        type: apotheosis:affix
+        affix_type: ability
+    - type: apotheosis:socket
+      min: 0
+      max: 2
+    - type: apotheosis:durability
+      min: 0.1
+      max: 0.25
