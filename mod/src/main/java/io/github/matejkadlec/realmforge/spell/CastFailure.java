@@ -38,7 +38,11 @@ public enum CastFailure implements StringRepresentable {
     /** A player's spell needs a shield in either hand, and neither holds one (Shield Bash, C4). */
     NO_SHIELD("no_shield"),
     /** A passive spell (RLM-541), which works while it is known and is never cast. */
-    PASSIVE("passive");
+    PASSIVE("passive"),
+    /** A spell usable only in its window (RLM-540: after a block, a kill), and the window is closed. */
+    NO_WINDOW("no_window"),
+    /** A spell castable only on a target below a share of its health (RLM-540: Execute), and the target is above it. */
+    TARGET_HEALTH_TOO_HIGH("target_health_too_high");
 
     private final String serializedName;
 

@@ -238,7 +238,10 @@ public final class SpellText {
         return BigDecimal.valueOf(value).setScale(2, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString();
     }
 
-    /** Every effect in order, each projectile's and area's own right after it, as the pipeline counts them. */
+    /**
+     * Every effect in order, each projectile's, area's and melee shape's own right after it, as the pipeline counts
+     * them.
+     */
     static List<SpellEffect> allEffects(List<SpellEffect> effects) {
         List<SpellEffect> all = new ArrayList<>();
         for (SpellEffect effect : effects) {
@@ -247,6 +250,8 @@ public final class SpellText {
                 all.addAll(projectile.effects());
             } else if (effect instanceof AreaEffect area) {
                 all.addAll(area.effects());
+            } else if (effect instanceof MeleeEffect melee) {
+                all.addAll(melee.effects());
             }
         }
         return all;

@@ -36,7 +36,9 @@ import net.minecraft.world.item.ItemStack;
  *   <li>the spell's own cooldown runs, or the global cooldown runs and the spell is on it;</li>
  *   <li>a player lacks what the spell needs in hand: a melee weapon in the main hand, a shield in either hand
  *   ({@link SpellRequirement}, RLM-499);</li>
+ *   <li>a player's spell usable only in its window has its window closed ({@link Windows}, RLM-540);</li>
  *   <li>its targeting finds no valid target (an entity or a point) in range and in line of sight;</li>
+ *   <li>a spell castable only on a target below a share of its health has a target above it (RLM-540: Execute);</li>
  *   <li>a player has less of the spell's resource than it costs.</li>
  * </ol>
  * Otherwise the spell starts the global cooldown, which every spell is on (Matěj, 2026-10-24), and pays its cost at
@@ -45,7 +47,10 @@ import net.minecraft.world.item.ItemStack;
  * SpellTarget}). A cast-time or channelled spell begins its cast ({@link Casting}): a cast time starts its own cooldown
  * when it completes, a channel when it begins, and a channel pays its cost again every second it lasts. Mobs and bosses
  * pay no cost: their cooldowns pace their spells (architecture 11.2 step 6). A player's wand in the main hand loses a
- * point of durability with the cost, once per cast, as a sword does per hit (RLM-172).
+ * point of durability with the cost, once per cast, as a sword does per hit (RLM-172). A player's cast that may spend
+ * extra resource does so after the cost, up to its maximum, and its damage grows with it (RLM-540: Execute); a cast
+ * closes its spell's window. An instant spell with an animation (RLM-399, a Warrior's swing) starts its cooldown at once
+ * but plays out over its animation ({@link Casting}), its effects at its hit moment.
  *
  * <p>The spell bar may replace the cast in progress (C3b, RLM-25; Matěj, 2026-10-19: with spell queueing off, a new
  * spell cancels the cast and casts at once): with {@code replaceCast}, a cast of another spell skips the
@@ -151,12 +156,20 @@ public final class SpellCaster {
         if (unmet.isPresent()) {
             return CastResult.refused(unmet.get());
         }
+        if (caster instanceof Player && value.conditions().window().isPresent()
+                && !state.isWindowOpen(spell.key(), now)) {
+            return CastResult.refused(CastFailure.NO_WINDOW);
+        }
         Either<SpellTarget, CastFailure> resolved = value.targeting().resolve(caster, aim);
         Optional<CastFailure> missed = resolved.right();
         if (missed.isPresent()) {
             return CastResult.refused(missed.get());
         }
         SpellTarget hit = resolved.left().orElseThrow();
+        Optional<CastFailure> health = value.conditions().targetFailure(hit.entityOrNull());
+        if (health.isPresent()) {
+            return CastResult.refused(health.get());
+        }
         if (!canPay(caster, value, level, state)) {
             return CastResult.refused(CastFailure.NOT_ENOUGH_RESOURCE);
         }
@@ -170,18 +183,27 @@ public final class SpellCaster {
         }
         state.setGlobalCooldownEnd(now + value.globalCooldownTicks());
         payCost(caster, value, level, state);
+        double extra = payExtra(caster, value, state);
+        double damageScale = value.cost().flatMap(SpellCost::extra).map(more -> more.damageFactor(extra)).orElse(1.0);
         wearWand(caster);
+        if (caster instanceof Player) {
+            state.closeWindow(spell.key());
+        }
         if (value.cast().type() == SpellCast.Type.CAST_TIME) {
-            Casting.begin(caster, spell, level, hit, now);
+            Casting.begin(caster, spell, level, hit, now, damageScale);
             return CastResult.begun(hit);
         }
         startCooldown(caster, value, spell.key(), state, now);
         if (value.cast().type() == SpellCast.Type.CHANNEL) {
-            Casting.begin(caster, spell, level, hit, now);
+            Casting.begin(caster, spell, level, hit, now, damageScale);
+            return CastResult.begun(hit);
+        }
+        if (value.cast().swing()) {
+            Casting.beginSwing(caster, spell, level, hit, now, damageScale, cost(caster, value, level) + extra);
             return CastResult.begun(hit);
         }
         caster.syncData(SpellAttachments.COMBAT);
-        runEffects(serverLevel, caster, spell, level, hit);
+        runEffects(serverLevel, caster, spell, level, hit, Optional.empty(), damageScale);
         wentOff(caster, spell);
         return CastResult.cast(hit);
     }
@@ -206,7 +228,7 @@ public final class SpellCaster {
             return CastResult.refused(missed.get());
         }
         SpellTarget hit = resolved.left().orElseThrow();
-        runEffects(serverLevel, caster, spell, level, hit, Optional.of(origin));
+        runEffects(serverLevel, caster, spell, level, hit, Optional.of(origin), 1);
         return CastResult.cast(hit);
     }
 
@@ -245,6 +267,29 @@ public final class SpellCaster {
         if (cost > 0) {
             ResourceKey<ResourceType> type = resource(spell);
             state.setResource(type, (float) Math.max(0, state.resource(type) - cost));
+        }
+    }
+
+    /**
+     * Spends what a player's cast may take beyond its cost (RLM-540: Execute's up to 30 more rage), as much as they have
+     * up to its maximum; returns how much it spent. Mobs and spells without extra spend nothing.
+     */
+    static double payExtra(LivingEntity caster, Spell spell, CombatState state) {
+        Optional<SpellCost.Extra> extra = spell.cost().flatMap(SpellCost::extra);
+        if (!(caster instanceof Player) || extra.isEmpty()) {
+            return 0;
+        }
+        ResourceKey<ResourceType> type = resource(spell);
+        double spent = extra.get().spentFrom(state.resource(type));
+        state.setResource(type, (float) Math.max(0, state.resource(type) - spent));
+        return spent;
+    }
+
+    /** Gives back {@code amount} of the spell's resource: half of an interrupted swing's (RLM-399). Players only. */
+    static void refund(LivingEntity caster, Spell spell, double amount, CombatState state) {
+        if (caster instanceof Player && amount > 0 && spell.cost().isPresent()) {
+            ResourceKey<ResourceType> type = resource(spell);
+            state.setResource(type, (float) (state.resource(type) + amount));
         }
     }
 
@@ -312,25 +357,22 @@ public final class SpellCaster {
     static OptionalDouble stickyRange(LivingEntity caster, Spell spell) {
         return caster instanceof Player && !spell.cast().lockOn()
                 && (spell.targeting() instanceof EnemyTargeting || spell.targeting() instanceof AllyTargeting)
-                ? OptionalDouble.of(STICKY_RANGE_FACTOR * spell.targeting().reach()) : OptionalDouble.empty();
+                ? OptionalDouble.of(STICKY_RANGE_FACTOR * spell.targeting().reach(caster)) : OptionalDouble.empty();
     }
 
-    /** Runs every effect of the spell on {@code target}, with the caster's stats as they are now. */
+    /**
+     * Runs every effect of the spell on {@code target}, with the caster's stats as they are now: for a proc's spell
+     * with its origin, if it has one, and its damage multiplied by {@code damageScale} (extra rage spent, RLM-540).
+     */
     static void runEffects(ServerLevel level, LivingEntity caster, Holder<Spell> spell, int spellLevel,
-            SpellTarget target) {
-        runEffects(level, caster, spell, spellLevel, target, Optional.empty());
-    }
-
-    /** {@link #runEffects(ServerLevel, LivingEntity, Holder, int, SpellTarget)} for a proc's spell, if it has one. */
-    private static void runEffects(ServerLevel level, LivingEntity caster, Holder<Spell> spell, int spellLevel,
-            SpellTarget target, Optional<Identifier> procOrigin) {
-        EffectContext context = EffectContext.of(level, caster, spell, spellLevel, procOrigin);
+            SpellTarget target, Optional<Identifier> procOrigin, double damageScale) {
+        EffectContext context = EffectContext.of(level, caster, spell, spellLevel, procOrigin).scaled(damageScale);
         for (SpellEffect effect : spell.value().effects()) {
             effect.apply(context, target);
         }
     }
 
-    private static double cost(LivingEntity caster, Spell spell, int level) {
+    static double cost(LivingEntity caster, Spell spell, int level) {
         return caster instanceof Player ? spell.costAt(level) : 0;
     }
 

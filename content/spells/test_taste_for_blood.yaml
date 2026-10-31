@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Engine test (RLM-540): a passive whose proc opens Test Overpower's window on a tick of the player's Test Rend, at most
+# once every 6 s on each enemy, as the Arms Warrior's Taste for Blood will with Rend (RLM-543). A sure chance. Not
+# gameplay content.
+id: test_taste_for_blood
+name: {en_us: Test Taste for Blood}
+description: {en_us: "Your Test Rend's ticks open Test Overpower's window, at most once every 6 sec on each target."}
+school: realmforge:physical
+passive:
+  procs:
+    - trigger: tick
+      effect: realmforge:bleeding
+      spell: realmforge:test_rend
+      chance_percent: 100
+      cooldown_seconds: 6
+      open_window: realmforge:test_overpower

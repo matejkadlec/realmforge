@@ -20,11 +20,11 @@ class SpellCastTest {
     /** The Hewn Chanter's Stoneform as {@code rf gen} writes it: every field W3 added, set. */
     private static final SpellCast STONEFORM = new SpellCast(SpellCast.Type.CAST_TIME, 30, 0, false, false, true,
             Optional.of(0.5), Optional.of(Identifier.parse("realmforge:spell.stoneform.form")), true,
-            SpellCast.Animation.RAISE);
+            SpellCast.Animation.RAISE, 0, SpellCast.DEFAULT_HIT_AT);
     /** Astone's Quake as {@code rf gen} writes it: a channel that slams. */
     private static final SpellCast QUAKE = new SpellCast(SpellCast.Type.CHANNEL, 60, 15, false, false, false,
             Optional.empty(), Optional.of(Identifier.parse("realmforge:spell.astone_quake.rumble")), false,
-            SpellCast.Animation.SLAM);
+            SpellCast.Animation.SLAM, 0, SpellCast.DEFAULT_HIT_AT);
 
     private static DataResult<SpellCast> parse(String json) {
         return SpellCast.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(json));

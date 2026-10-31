@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Engine test (RLM-540): a passive whose proc Freezes an enemy for 2 s whenever the player slows it, at most once every
+# 3 s on each enemy, as the Frost Mage's Frostbite will (RLM-542, at its own chance). A sure chance, so the GameTests and
+# Matěj's playtest see every proc. Not gameplay content.
+id: test_frostbite
+name: {en_us: Test Frostbite}
+description: {en_us: "Your Slowness Freezes its target for 2 sec, at most once every 3 sec on each target."}
+school: realmforge:frost
+passive:
+  procs:
+    - trigger: applies_effect
+      effect: minecraft:slowness
+      chance_percent: 100
+      cooldown_seconds: 3
+      apply_effect: {effect: realmforge:frozen, duration_seconds: 2}

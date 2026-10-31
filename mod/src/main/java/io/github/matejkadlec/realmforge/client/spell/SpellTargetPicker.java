@@ -30,7 +30,7 @@ public final class SpellTargetPicker {
     }
 
     public static Optional<LivingEntity> pick(LocalPlayer player, Spell spell) {
-        double range = spell.targeting().reach();
+        double range = spell.targeting().reach(player);
         if (range <= 0 || spell.targeting() instanceof DirectionTargeting) {
             return Optional.empty();
         }

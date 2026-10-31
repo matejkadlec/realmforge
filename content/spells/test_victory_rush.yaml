@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Engine test (RLM-540): usable only for 20 s after the player kills an enemy that is not gray (its level at least the
+# player's - 3), as the Arms Warrior's Victory Rush will be (RLM-543). Not gameplay content.
+# Its target must be in the player's melee swing, the default melee hit shape (melee: true; Matěj's playtest of
+# 2026-10-31).
+id: test_victory_rush
+name: {en_us: Test Victory Rush}
+description: {en_us: "Usable for 20 sec after a kill. Strikes an enemy for {damage} damage."}
+school: realmforge:physical
+scales_with: attack_damage
+targeting: {type: realmforge:enemy, melee: true}
+cast: {type: instant}
+requires: [melee_weapon]
+window: {duration_seconds: 20, opened_by: [kill]}
+effects:
+  - {type: realmforge:damage, amount: 5, attack_damage_percent: 0}

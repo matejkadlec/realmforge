@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Engine test (RLM-540): 4 frost damage, tripled against a Frozen target, as the Frost Mage's Ice Lance will be
+# (RLM-542). Not gameplay content.
+id: test_ice_lance
+name: {en_us: Test Ice Lance}
+description: {en_us: "Strikes an enemy for {damage} frost damage, three times as much if it is Frozen."}
+school: realmforge:frost
+scales_with: spell_power
+targeting: {type: realmforge:enemy, range: 16}
+cast: {type: instant}
+effects:
+  - type: realmforge:damage
+    amount: 4
+    against_effect: {effect: realmforge:frozen, damage_percent: 200}

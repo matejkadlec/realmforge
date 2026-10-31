@@ -6,6 +6,8 @@
 # Scaling system C (RLM-534, Claude's proposal for Matěj's playtest): a channel splits its coefficient over its ticks,
 # so each missile deals 3/3.5/4/4.5/5 + 35/42.5/50/57.5/65 % of Spell Power, about Frostbolt's coefficient in all
 # (105 % to 195 %) on a slightly higher base, paid for in mana. At 7 Spell Power (a level 1 Mage) about 16.4 a cast.
+# Each missile explodes in arcane where it hits (RLM-399): every other enemy within a block of the target takes half its
+# damage, with the full spell penetration.
 id: arcane_missiles
 name: {en_us: Arcane Missiles}
 description: {en_us: "Fires 3 arcane missiles, each for {damage} damage, ignoring {penetration}% of the target's resistance to arcane."}
@@ -21,6 +23,7 @@ effects:
     size: 0.4
     impact: {sound: minecraft:block.amethyst_cluster.break, particles: minecraft:amethyst_block}
     appearance: {model: orb, color: "#C77DFF"}
+    splash: {radius: 1, damage_percent: 50}
     effects:
       - type: realmforge:damage
         amount: 3

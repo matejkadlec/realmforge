@@ -1,12 +1,13 @@
 # yaml-language-server: $schema=../../tools/schemas/bosses.schema.json
 # Boss framework test (W5a, RLM-490): three phases, one per trigger type and an on_enter buff, a short phase change so
-# the GameTests stay short. Not gameplay content; the GameTests in the QA mod fight it.
+# the GameTests stay short, and immune to Frozen (RLM-539). Not gameplay content; the GameTests in the QA mod fight it.
 id: test_titan
 entity: realmforge:test_titan
 level: 5
 arena: {radius: 12}
 bar_color: purple
 phase_change_seconds: 1
+immune_to: [realmforge:frozen]
 phases:
   - id: awakening
     name: {en_us: Awakening}

@@ -90,6 +90,12 @@ public final class ClassKitGameTests {
     /** Multiplies a character's crit chance by 0 ({@link #character}); the stat recompute leaves it alone. */
     private static final Identifier NO_CRITS = RealmforgeQa.id("gametest/no_crits");
 
+    /**
+     * Where a husk stands in front of a player on the platform's (2.5, 1, 0.5), facing south: within Slam's 1.5-block
+     * sector and the 1-block box of Reckless Strike and Shield Bash (RLM-399).
+     */
+    private static final BlockPos IN_FRONT = new BlockPos(2, 1, 1);
+
     private ClassKitGameTests() {
     }
 
@@ -152,7 +158,7 @@ public final class ClassKitGameTests {
     public static void aMeleeSpellNeedsAMeleeWeaponInTheMainHand(GameTestHelper helper) {
         ServerPlayer player = character(helper, "qa-kit-melee", "warrior");
         Resources.set(player, ResourceTypes.RAGE, 100);
-        Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 2));
+        Husk husk = SpellGameTests.husk(helper, IN_FRONT);
         for (ItemStack none : List.of(ItemStack.EMPTY, new ItemStack(Items.BOW),
                 new ItemStack(GeneratedItems.STONE_WAND.get()), new ItemStack(Items.IRON_PICKAXE))) {
             player.setItemSlot(EquipmentSlot.MAINHAND, none);
@@ -166,17 +172,17 @@ public final class ClassKitGameTests {
         helper.assertTrue(close(husk.getHealth(), HEALTH), "and dealt nothing");
 
         player.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.STONE_SWORD));
-        assertCast(helper, player, GeneratedSpells.SLAM, husk);
+        swing(helper, player, GeneratedSpells.SLAM);
         helper.assertTrue(close(Resources.amount(player, ResourceTypes.RAGE), 70), "Slam costs 30 rage");
         helper.assertTrue(husk.getHealth() < HEALTH, "Slam hit the husk");
         Spells.resetCooldowns(player);
         player.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_AXE));
-        assertCast(helper, player, GeneratedSpells.SLAM, husk);
+        swing(helper, player, GeneratedSpells.SLAM);
 
         Pig pig = helper.spawnWithNoFreeWill(EntityType.PIG, new BlockPos(3, 1, 2));
         Husk caster = SpellGameTests.husk(helper, new BlockPos(1, 1, 2));
         helper.assertTrue(caster.getMainHandItem().isEmpty(), "the mob holds nothing");
-        assertCast(helper, caster, GeneratedSpells.SLAM, pig);
+        swing(helper, caster, GeneratedSpells.SLAM);
         logout(player);
         helper.succeed();
     }
@@ -190,12 +196,12 @@ public final class ClassKitGameTests {
         ServerPlayer player = character(helper, "qa-kit-bash", "warrior");
         Resources.set(player, ResourceTypes.RAGE, 100);
         learn(helper, player, GeneratedSpells.SHIELD_BASH, 1);
-        Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 2));
+        Husk husk = SpellGameTests.husk(helper, IN_FRONT);
         player.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.STONE_SWORD));
         assertRefused(helper, player, GeneratedSpells.SHIELD_BASH, husk, CastFailure.NO_SHIELD);
 
         player.setItemSlot(EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
-        assertCast(helper, player, GeneratedSpells.SHIELD_BASH, husk);
+        swing(helper, player, GeneratedSpells.SHIELD_BASH);
         assertStunnedFor(helper, husk, 10, "rank 1 stuns for 0.5 s");
 
         husk.removeAllEffects();
@@ -203,7 +209,7 @@ public final class ClassKitGameTests {
         learn(helper, player, GeneratedSpells.SHIELD_BASH, 5);
         player.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.SHIELD));
         player.setItemSlot(EquipmentSlot.OFFHAND, ItemStack.EMPTY);
-        assertCast(helper, player, GeneratedSpells.SHIELD_BASH, husk);
+        swing(helper, player, GeneratedSpells.SHIELD_BASH);
         assertStunnedFor(helper, husk, 30, "rank 5 stuns for 1.5 s, the shield in the main hand");
         logout(player);
         helper.succeed();
@@ -286,9 +292,9 @@ public final class ClassKitGameTests {
         allowCrits(player);
         StatsCommands.setBase(player, GeneratedStats.CRIT_CHANCE, 1);
         StatsCommands.setBase(player, GeneratedStats.CRIT_DAMAGE, 0.5);
-        Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 2));
+        Husk husk = SpellGameTests.husk(helper, IN_FRONT);
         double attackDamage = player.getAttributeValue(Attributes.ATTACK_DAMAGE);
-        assertCast(helper, player, GeneratedSpells.RECKLESS_STRIKE, husk);
+        swing(helper, player, GeneratedSpells.RECKLESS_STRIKE);
         double expected = (3 + 0.5 * 4 + (0.8 + 0.1 * 4) * attackDamage) * (1 + 0.5 + 0.3);
         helper.assertTrue(close(HEALTH - husk.getHealth(), expected), "a crit for 180 %: " + expected
                 + " expected, dealt " + (HEALTH - husk.getHealth()));
@@ -302,7 +308,7 @@ public final class ClassKitGameTests {
         ServerPlayer player = character(helper, "qa-kit-shred", "warrior");
         Resources.set(player, ResourceTypes.RAGE, 100);
         player.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.STONE_SWORD));
-        Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 2));
+        Husk husk = SpellGameTests.husk(helper, IN_FRONT);
         CombatGameTests.setBase(husk, Attributes.ARMOR, 15);
         double attackDamage = player.getAttributeValue(Attributes.ATTACK_DAMAGE);
         for (int rank : new int[] {1, 5}) {
@@ -310,7 +316,7 @@ public final class ClassKitGameTests {
             Spells.resetCooldowns(player);
             Resources.set(player, ResourceTypes.RAGE, 100);
             float before = husk.getHealth();
-            assertCast(helper, player, GeneratedSpells.SLAM, husk);
+            swing(helper, player, GeneratedSpells.SLAM);
             double raw = 4 + 1.5 * (rank - 1) + (1.2 + 0.2 * (rank - 1)) * attackDamage;
             double shred = 0.05 * rank;
             double expected = raw * (1 - DamageCalculator.armorReduction(raw, 15, 0, 0, shred));
@@ -331,7 +337,7 @@ public final class ClassKitGameTests {
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-kit-scaling", new Vec3(2.5, 1, 0.5));
         player.setGameMode(GameType.SURVIVAL);
         StatsCommands.setBase(player, GeneratedStats.CRIT_CHANCE, 0);
-        Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 2));
+        Husk husk = SpellGameTests.husk(helper, IN_FRONT);
         Holder.Reference<Spell> frostbolt = Spells.get(helper.getLevel().registryAccess(), GeneratedSpells.FROSTBOLT)
                 .orElseThrow();
         DamageEffect bolt = (DamageEffect) ((ProjectileEffect) frostbolt.value().effects().getFirst()).effects()
@@ -354,7 +360,7 @@ public final class ClassKitGameTests {
         Resources.set(player, ResourceTypes.RAGE, 100);
         learn(helper, player, GeneratedSpells.SLAM, 5);
         float before = husk.getHealth();
-        assertCast(helper, player, GeneratedSpells.SLAM, husk);
+        swing(helper, player, GeneratedSpells.SLAM);
         helper.assertTrue(close(before - husk.getHealth(), 40), "Slam rank 5 with 15 Attack Damage: 40 expected, "
                 + "dealt " + (before - husk.getHealth()));
         logout(player);
@@ -637,6 +643,15 @@ public final class ClassKitGameTests {
             @Nullable LivingEntity target) {
         CastResult result = SpellCaster.cast(caster, spell, target);
         helper.assertTrue(result.success(), spell.identifier() + " was refused: " + result.failure());
+    }
+
+    /**
+     * {@code caster} swings {@code spell} (RLM-399: Slam, Reckless Strike, Shield Bash need no target, their shape in
+     * front of the caster decides whom they hit) and the swing lands at once, rather than at its hit moment.
+     */
+    private static void swing(GameTestHelper helper, LivingEntity caster, ResourceKey<Spell> spell) {
+        assertCast(helper, caster, spell, null);
+        helper.assertTrue(Spells.landSwing(caster), spell.identifier() + " did not swing");
     }
 
     private static void assertRefused(GameTestHelper helper, LivingEntity caster, ResourceKey<Spell> spell,

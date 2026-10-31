@@ -34,6 +34,8 @@ public final class CastTexts {
             case NO_MELEE_WEAPON -> GeneratedTexts.CAST_NO_MELEE_WEAPON;
             case NO_SHIELD -> GeneratedTexts.CAST_NO_SHIELD;
             case PASSIVE -> GeneratedTexts.CAST_PASSIVE;
+            case NO_WINDOW -> GeneratedTexts.CAST_NO_WINDOW;
+            case TARGET_HEALTH_TOO_HIGH -> GeneratedTexts.CAST_TARGET_HEALTH_TOO_HIGH;
         };
         if (failure == CastFailure.NOT_ENOUGH_RESOURCE) {
             Component resource = spell.flatMap(Spell::cost).flatMap(cost -> cost.resource().unwrapKey())

@@ -1,0 +1,37 @@
+{
+  "name": "spell.realmforge.test_taste_for_blood.name",
+  "description": "spell.realmforge.test_taste_for_blood.description",
+  "school": "realmforge:physical",
+  "scales_with": "spell_power",
+  "targeting": {
+    "type": "realmforge:self"
+  },
+  "cast": {
+    "type": "instant"
+  },
+  "cooldown_ticks": 0,
+  "global_cooldown_ticks": 10,
+  "max_level": 1,
+  "crit": {
+    "can_crit": true,
+    "bonus_chance": 0.0
+  },
+  "npc_only": false,
+  "requires": [],
+  "castable_while_stunned": false,
+  "effects": [],
+  "passive": {
+    "modifiers": [],
+    "spell_damage": [],
+    "procs": [
+      {
+        "trigger": "tick",
+        "effect": "realmforge:bleeding",
+        "spell": "realmforge:test_rend",
+        "chance": 1.0,
+        "cooldown_ticks": 120,
+        "open_window": "realmforge:test_overpower"
+      }
+    ]
+  }
+}

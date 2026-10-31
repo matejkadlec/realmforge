@@ -44,16 +44,16 @@ public final class GeneratedSpells {
     /** {@code realmforge:improved_frostbolt} from {@code content/spells/improved_frostbolt.yaml}: frost, passive. */
     public static final ResourceKey<Spell> IMPROVED_FROSTBOLT = key("improved_frostbolt");
 
-    /** {@code realmforge:reckless_strike} from {@code content/spells/reckless_strike.yaml}: physical, enemy, damage. */
+    /** {@code realmforge:reckless_strike} from {@code content/spells/reckless_strike.yaml}: physical, self, melee. */
     public static final ResourceKey<Spell> RECKLESS_STRIKE = key("reckless_strike");
 
     /** {@code realmforge:shatter} from {@code content/spells/shatter.yaml}: frost, passive. */
     public static final ResourceKey<Spell> SHATTER = key("shatter");
 
-    /** {@code realmforge:shield_bash} from {@code content/spells/shield_bash.yaml}: physical, enemy, damage, apply_effect. */
+    /** {@code realmforge:shield_bash} from {@code content/spells/shield_bash.yaml}: physical, self, melee. */
     public static final ResourceKey<Spell> SHIELD_BASH = key("shield_bash");
 
-    /** {@code realmforge:slam} from {@code content/spells/slam.yaml}: physical, enemy, damage. */
+    /** {@code realmforge:slam} from {@code content/spells/slam.yaml}: physical, self, melee. */
     public static final ResourceKey<Spell> SLAM = key("slam");
 
     /** {@code realmforge:stoneform} from {@code content/spells/stoneform.yaml}: arcane, current_target, projectile. */
@@ -74,17 +74,38 @@ public final class GeneratedSpells {
     /** {@code realmforge:test_cleanse} from {@code content/spells/test_cleanse.yaml}: arcane, ally, remove_effect. */
     public static final ResourceKey<Spell> TEST_CLEANSE = key("test_cleanse");
 
+    /** {@code realmforge:test_cleave} from {@code content/spells/test_cleave.yaml}: physical, self, melee. */
+    public static final ResourceKey<Spell> TEST_CLEAVE = key("test_cleave");
+
+    /** {@code realmforge:test_deep_wound} from {@code content/spells/test_deep_wound.yaml}: physical, enemy, damage_over_time. */
+    public static final ResourceKey<Spell> TEST_DEEP_WOUND = key("test_deep_wound");
+
+    /** {@code realmforge:test_deep_wounds} from {@code content/spells/test_deep_wounds.yaml}: physical, passive. */
+    public static final ResourceKey<Spell> TEST_DEEP_WOUNDS = key("test_deep_wounds");
+
     /** {@code realmforge:test_drain} from {@code content/spells/test_drain.yaml}: arcane, enemy, damage. */
     public static final ResourceKey<Spell> TEST_DRAIN = key("test_drain");
+
+    /** {@code realmforge:test_execute} from {@code content/spells/test_execute.yaml}: physical, enemy, damage. */
+    public static final ResourceKey<Spell> TEST_EXECUTE = key("test_execute");
 
     /** {@code realmforge:test_forward_missile} from {@code content/spells/test_forward_missile.yaml}: frost, direction, projectile. */
     public static final ResourceKey<Spell> TEST_FORWARD_MISSILE = key("test_forward_missile");
 
+    /** {@code realmforge:test_frostbite} from {@code content/spells/test_frostbite.yaml}: frost, passive. */
+    public static final ResourceKey<Spell> TEST_FROSTBITE = key("test_frostbite");
+
     /** {@code realmforge:test_homing_bolt} from {@code content/spells/test_homing_bolt.yaml}: frost, enemy, damage. */
     public static final ResourceKey<Spell> TEST_HOMING_BOLT = key("test_homing_bolt");
 
+    /** {@code realmforge:test_ice_lance} from {@code content/spells/test_ice_lance.yaml}: frost, enemy, damage. */
+    public static final ResourceKey<Spell> TEST_ICE_LANCE = key("test_ice_lance");
+
     /** {@code realmforge:test_ignite} from {@code content/spells/test_ignite.yaml}: fire, enemy, apply_effect. */
     public static final ResourceKey<Spell> TEST_IGNITE = key("test_ignite");
+
+    /** {@code realmforge:test_lacerate} from {@code content/spells/test_lacerate.yaml}: physical, enemy, damage_over_time. */
+    public static final ResourceKey<Spell> TEST_LACERATE = key("test_lacerate");
 
     /** {@code realmforge:test_mend} from {@code content/spells/test_mend.yaml}: arcane, ally, heal. */
     public static final ResourceKey<Spell> TEST_MEND = key("test_mend");
@@ -107,11 +128,17 @@ public final class GeneratedSpells {
     /** {@code realmforge:test_npc_target_bolt} from {@code content/spells/test_npc_target_bolt.yaml}: arcane, current_target, damage. */
     public static final ResourceKey<Spell> TEST_NPC_TARGET_BOLT = key("test_npc_target_bolt");
 
+    /** {@code realmforge:test_overpower} from {@code content/spells/test_overpower.yaml}: physical, enemy, damage. */
+    public static final ResourceKey<Spell> TEST_OVERPOWER = key("test_overpower");
+
     /** {@code realmforge:test_proc_spark} from {@code content/spells/test_proc_spark.yaml}: arcane, enemy, damage. */
     public static final ResourceKey<Spell> TEST_PROC_SPARK = key("test_proc_spark");
 
     /** {@code realmforge:test_regrow} from {@code content/spells/test_regrow.yaml}: arcane, ally, apply_effect. */
     public static final ResourceKey<Spell> TEST_REGROW = key("test_regrow");
+
+    /** {@code realmforge:test_rend} from {@code content/spells/test_rend.yaml}: physical, enemy, damage_over_time. */
+    public static final ResourceKey<Spell> TEST_REND = key("test_rend");
 
     /** {@code realmforge:test_sap} from {@code content/spells/test_sap.yaml}: arcane, enemy, apply_effect. */
     public static final ResourceKey<Spell> TEST_SAP = key("test_sap");
@@ -134,8 +161,14 @@ public final class GeneratedSpells {
     /** {@code realmforge:test_sure_crit} from {@code content/spells/test_sure_crit.yaml}: frost, enemy, damage. */
     public static final ResourceKey<Spell> TEST_SURE_CRIT = key("test_sure_crit");
 
+    /** {@code realmforge:test_taste_for_blood} from {@code content/spells/test_taste_for_blood.yaml}: physical, passive. */
+    public static final ResourceKey<Spell> TEST_TASTE_FOR_BLOOD = key("test_taste_for_blood");
+
     /** {@code realmforge:test_titan_harden} from {@code content/spells/test_titan_harden.yaml}: physical, self, apply_effect. */
     public static final ResourceKey<Spell> TEST_TITAN_HARDEN = key("test_titan_harden");
+
+    /** {@code realmforge:test_victory_rush} from {@code content/spells/test_victory_rush.yaml}: physical, enemy, damage. */
+    public static final ResourceKey<Spell> TEST_VICTORY_RUSH = key("test_victory_rush");
 
     /** {@code realmforge:two_handed_weapon_specialization} from {@code content/spells/two_handed_weapon_specialization.yaml}: no school, passive. */
     public static final ResourceKey<Spell> TWO_HANDED_WEAPON_SPECIALIZATION = key("two_handed_weapon_specialization");
@@ -144,7 +177,7 @@ public final class GeneratedSpells {
     public static final ResourceKey<Spell> WILL_TO_SURVIVE = key("will_to_survive");
 
     /** Every key above, in id order. */
-    public static final List<ResourceKey<Spell>> ALL = List.of(ARCANE_MISSILES, ASTONE_BOULDER, ASTONE_CRACKED_STONE, ASTONE_QUAKE, ASTONE_ROCKFALL, ASTONE_SHOCKWAVE, BATTLE_SHOUT, FIREBALL, FROSTBOLT, ICE_BARRIER, IMPROVED_FROSTBOLT, RECKLESS_STRIKE, SHATTER, SHIELD_BASH, SLAM, STONEFORM, TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_DRAIN, TEST_FORWARD_MISSILE, TEST_HOMING_BOLT, TEST_IGNITE, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_PROC_SPARK, TEST_REGROW, TEST_SAP, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT, TEST_TITAN_HARDEN, TWO_HANDED_WEAPON_SPECIALIZATION, WILL_TO_SURVIVE);
+    public static final List<ResourceKey<Spell>> ALL = List.of(ARCANE_MISSILES, ASTONE_BOULDER, ASTONE_CRACKED_STONE, ASTONE_QUAKE, ASTONE_ROCKFALL, ASTONE_SHOCKWAVE, BATTLE_SHOUT, FIREBALL, FROSTBOLT, ICE_BARRIER, IMPROVED_FROSTBOLT, RECKLESS_STRIKE, SHATTER, SHIELD_BASH, SLAM, STONEFORM, TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_CLEAVE, TEST_DEEP_WOUND, TEST_DEEP_WOUNDS, TEST_DRAIN, TEST_EXECUTE, TEST_FORWARD_MISSILE, TEST_FROSTBITE, TEST_HOMING_BOLT, TEST_ICE_LANCE, TEST_IGNITE, TEST_LACERATE, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_OVERPOWER, TEST_PROC_SPARK, TEST_REGROW, TEST_REND, TEST_SAP, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT, TEST_TASTE_FOR_BLOOD, TEST_TITAN_HARDEN, TEST_VICTORY_RUSH, TWO_HANDED_WEAPON_SPECIALIZATION, WILL_TO_SURVIVE);
 
     private GeneratedSpells() {
     }

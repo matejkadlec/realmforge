@@ -32,6 +32,9 @@ public final class GeneratedTexts {
     /** {@code cast.realmforge.no_target} from {@code content/texts/cast.yaml}: "You have no target" */
     public static final String CAST_NO_TARGET = "cast.realmforge.no_target";
 
+    /** {@code cast.realmforge.no_window} from {@code content/texts/cast.yaml}: "You can't do that yet" */
+    public static final String CAST_NO_WINDOW = "cast.realmforge.no_window";
+
     /** {@code cast.realmforge.not_enough_resource} from {@code content/texts/cast.yaml}: "Not enough %1$s" */
     public static final String CAST_NOT_ENOUGH_RESOURCE = "cast.realmforge.not_enough_resource";
 
@@ -55,6 +58,9 @@ public final class GeneratedTexts {
 
     /** {@code cast.realmforge.stunned} from {@code content/texts/cast.yaml}: "You are stunned" */
     public static final String CAST_STUNNED = "cast.realmforge.stunned";
+
+    /** {@code cast.realmforge.target_health_too_high} from {@code content/texts/cast.yaml}: "Your target's health is too high" */
+    public static final String CAST_TARGET_HEALTH_TOO_HIGH = "cast.realmforge.target_health_too_high";
 
     /** {@code cast.realmforge.target_lost} from {@code content/texts/cast.yaml}: "Target lost" */
     public static final String CAST_TARGET_LOST = "cast.realmforge.target_lost";
@@ -529,6 +535,9 @@ public final class GeneratedTexts {
 
     /** {@code spell.tooltip.realmforge.instant} from {@code content/texts/spell.tooltip.yaml}: "Instant" */
     public static final String SPELL_TOOLTIP_INSTANT = "spell.tooltip.realmforge.instant";
+
+    /** {@code spell.tooltip.realmforge.melee_range} from {@code content/texts/spell.tooltip.yaml}: "Melee range" */
+    public static final String SPELL_TOOLTIP_MELEE_RANGE = "spell.tooltip.realmforge.melee_range";
 
     /** {@code spell.tooltip.realmforge.next_rank} from {@code content/texts/spell.tooltip.yaml}: "Next rank:" */
     public static final String SPELL_TOOLTIP_NEXT_RANK = "spell.tooltip.realmforge.next_rank";

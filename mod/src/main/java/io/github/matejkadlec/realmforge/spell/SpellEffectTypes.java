@@ -23,6 +23,10 @@ public final class SpellEffectTypes {
     public static final DeferredHolder<MapCodec<? extends SpellEffect>, MapCodec<HealEffect>> HEAL =
             TYPES.register("heal", () -> HealEffect.MAP_CODEC);
 
+    /** {@code realmforge:damage_over_time}: the caster's stack of a damage over time ({@link DamageOverTimeEffect}). */
+    public static final DeferredHolder<MapCodec<? extends SpellEffect>, MapCodec<DamageOverTimeEffect>>
+            DAMAGE_OVER_TIME = TYPES.register("damage_over_time", () -> DamageOverTimeEffect.MAP_CODEC);
+
     /** {@code realmforge:apply_effect}: a status effect on the target ({@link ApplyEffectEffect}). */
     public static final DeferredHolder<MapCodec<? extends SpellEffect>, MapCodec<ApplyEffectEffect>> APPLY_EFFECT =
             TYPES.register("apply_effect", () -> ApplyEffectEffect.MAP_CODEC);
@@ -42,6 +46,10 @@ public final class SpellEffectTypes {
     /** {@code realmforge:area}: a spell area ({@link AreaEffect}). */
     public static final DeferredHolder<MapCodec<? extends SpellEffect>, MapCodec<AreaEffect>> AREA =
             TYPES.register("area", () -> AreaEffect.MAP_CODEC);
+
+    /** {@code realmforge:melee}: a melee spell's hit shape in front of the caster ({@link MeleeEffect}, RLM-399). */
+    public static final DeferredHolder<MapCodec<? extends SpellEffect>, MapCodec<MeleeEffect>> MELEE =
+            TYPES.register("melee", () -> MeleeEffect.MAP_CODEC);
 
     /** {@code realmforge:teleport}: moves the caster to the target at once ({@link TeleportEffect}). */
     public static final DeferredHolder<MapCodec<? extends SpellEffect>, MapCodec<TeleportEffect>> TELEPORT =

@@ -19,9 +19,9 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 
 /**
  * A spell's tooltip in the spellbook (architecture 11.6, 18; C3b, RLM-25), built from data with live numbers: its name,
- * its rank, its cost at that rank (a channel's per second), its range, its cast after Cast Time Reduction, its cooldown
- * after Cooldown Reduction, and its description with the placeholders filled ({@link SpellText}): its damage numbers
- * with their school's icon and colour. A passive spell (RLM-541) shows its rank's description and the next rank's
+ * its rank, its cost at that rank (a channel's per second), its range ({@link #range}), its cast after Cast Time
+ * Reduction, its cooldown after Cooldown Reduction, and its description with the placeholders filled
+ * ({@link SpellText}): its damage numbers with their school's icon and colour. A passive spell (RLM-541) shows its rank's description and the next rank's
  * instead of cost, range and cast. A view model in common code, so the screen only draws it.
  */
 public final class SpellTooltip {
@@ -61,10 +61,7 @@ public final class SpellTooltip {
                 : GeneratedTexts.SPELL_TOOLTIP_COST;
         spell.cost().ifPresent(cost -> cost.resource().unwrapKey().ifPresent(type -> lines.add(Component.translatable(
                 costKey, DamageNumbers.format(spell.costAt(level)), CastTexts.resourceName(type)))));
-        double reach = spell.targeting().reach();
-        lines.add(reach > 0
-                ? Component.translatable(GeneratedTexts.SPELL_TOOLTIP_RANGE, SpellText.decimal(reach))
-                : Component.translatable(GeneratedTexts.SPELL_TOOLTIP_SELF));
+        range(spell).ifPresent(lines::add);
         lines.add(cast(spell.cast(), stats.applyAsDouble(GeneratedStats.CAST_TIME_REDUCTION)));
         int cooldown = SpellScaling.cooldownTicks(spell.cooldownTicks(),
                 stats.applyAsDouble(GeneratedStats.COOLDOWN_REDUCTION));
@@ -93,6 +90,26 @@ public final class SpellTooltip {
                     school -> Optional.empty()).withStyle(ChatFormatting.YELLOW));
         }
         return lines;
+    }
+
+    /**
+     * The range line: "Melee range" for a melee spell (an enemy in the caster's melee swing, or a hit shape in front of
+     * it, RLM-399), "16 block range" for a targeted one, "On yourself" for one on the caster that deals no damage, and
+     * none for an area round the caster that does (Matěj's playtest of 2026-10-31: "On yourself" reads as a buff).
+     */
+    static Optional<Component> range(Spell spell) {
+        List<SpellEffect> effects = SpellText.allEffects(spell.effects());
+        if (spell.targeting() instanceof EnemyTargeting enemy && enemy.melee()
+                || effects.stream().anyMatch(MeleeEffect.class::isInstance)) {
+            return Optional.of(Component.translatable(GeneratedTexts.SPELL_TOOLTIP_MELEE_RANGE));
+        }
+        double reach = spell.targeting().reach();
+        if (reach > 0) {
+            return Optional.of(Component.translatable(GeneratedTexts.SPELL_TOOLTIP_RANGE, SpellText.decimal(reach)));
+        }
+        return effects.stream().anyMatch(effect -> effect instanceof DamageEffect
+                        || effect instanceof DamageOverTimeEffect) ? Optional.empty()
+                : Optional.of(Component.translatable(GeneratedTexts.SPELL_TOOLTIP_SELF));
     }
 
     /** The cast line: instant, a cast time or a channel, its time after Cast Time Reduction. */

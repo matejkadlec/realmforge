@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Engine test (RLM-539): a bleed of 12 physical damage over 6 s, 1 every half second, plus 50 % of the caster's Attack
+# Damage over the whole bleed at rank 2 and above, so the GameTests and Matěj's playtest see a stack of Bleeding. Not
+# gameplay content: the Arms Warrior's Rend comes with RLM-543.
+# Its target must be in the player's melee swing, the default melee hit shape (melee: true; Matěj's playtest of
+# 2026-10-31).
+id: test_rend
+name: {en_us: Test Rend}
+description: {en_us: "Wounds an enemy, making it bleed for 6 sec."}
+school: realmforge:physical
+scales_with: attack_damage
+targeting: {type: realmforge:enemy, melee: true}
+cast: {type: instant}
+max_level: 2
+effects:
+  - type: realmforge:damage_over_time
+    effect: realmforge:bleeding
+    amount: 12
+    attack_damage_per_level_percent: 50
+    attack_damage_percent: 0
+    duration_seconds: 6

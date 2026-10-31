@@ -1,24 +1,29 @@
 # yaml-language-server: $schema=../../tools/schemas/spells.schema.json
 # Fury's first spell (C4, RLM-392): a reckless thrust, Medium damage, with 10 % more chance to crit at rank 1 and 5 %
 # more per rank (30 % at rank 5). Crit chance above 100 % turns into crit damage 1:1 (combat/DamageCalculator). It needs
-# a melee weapon (RLM-499). Rage per second of cooldown: 20 / 4 s = 5. Scaling system C (RLM-534, Claude's proposal
+# a melee weapon (RLM-499). An area strike (RLM-399): Better Combat's sword swing at the player's melee reach, as
+# Slam's (Matěj's playtest of 2026-10-31), every enemy in it taking the same damage, with no target needed; it plays
+# out over 0.5 s and hits at first contact, a quarter of the way in. Rage per second of cooldown: 20 / 4 s = 5. Scaling system C (RLM-534, Claude's proposal
 # for Matěj's playtest): an instant spell with a shorter cooldown than Slam's, so less per cast, 3/3.5/4/4.5/5 +
 # 80/90/100/110/120 % of Attack Damage, about Slam's damage a second before its crit bonus.
 id: reckless_strike
 name: {en_us: Reckless Strike}
-description: {en_us: "Strikes an enemy recklessly for {damage} damage, with {crit_chance}% more chance to crit."}
+description: {en_us: "Strikes recklessly at every enemy just in front of you for {damage} damage, with {crit_chance}% more chance to crit."}
 school: realmforge:physical
 scales_with: attack_damage
-targeting: {type: realmforge:enemy, range: 4}
-cast: {type: instant}
+targeting: {type: realmforge:self}
+cast: {type: instant, animation_seconds: 0.5, hit_at_percent: 25}
 cost: {resource: realmforge:rage, amount: 20}
 cooldown_seconds: 4
 max_level: 5
 requires: [melee_weapon]
 crit: {bonus_chance_percent: 10, bonus_chance_per_level_percent: 5}
 effects:
-  - type: realmforge:damage
-    amount: 3
-    per_level: 0.5
-    attack_damage_percent: 80
-    attack_damage_per_level_percent: 10
+  - type: realmforge:melee
+    shape: swing
+    effects:
+      - type: realmforge:damage
+        amount: 3
+        per_level: 0.5
+        attack_damage_percent: 80
+        attack_damage_per_level_percent: 10

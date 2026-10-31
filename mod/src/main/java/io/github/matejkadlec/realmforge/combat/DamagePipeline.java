@@ -26,6 +26,7 @@ import net.neoforged.neoforge.event.entity.ProjectileImpactEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingHealEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingShieldBlockEvent;
 import net.neoforged.neoforge.event.entity.player.CriticalHitEvent;
 
 /**
@@ -48,8 +49,9 @@ import net.neoforged.neoforge.event.entity.player.CriticalHitEvent;
  *   {@link SchoolDamageSource} brings one) and the defender's resistance (spell resistance added for magic), less the
  *   hit's spell penetration. The armor reduction becomes
  *   vanilla's formula on the armor the attacker's armor pierce and shred leave (a spell's hit adding its own shred),
- *   except for damage in {@code #minecraft:bypasses_armor}. The defender's magic shield joins the absorption
- *   reduction ({@link MagicShields}).</li>
+ *   except for damage in {@code #minecraft:bypasses_armor} and the ticks of a damage over time that ignores armor
+ *   (Bleeding, RLM-539). A damage over time's tick is never dodged, nor blocked by a raised weapon or a shield. The
+ *   defender's magic shield joins the absorption reduction ({@link MagicShields}).</li>
  *   <li>Hurt cooldown: a school hit lands through it ({@code #minecraft:bypasses_cooldown}) and leaves the defender's
  *   window as it was: it grants no invulnerability of its own, and {@code lastHurt}, which vanilla overwrites, is
  *   restored afterwards, so melee hits in an open window are still compared with the previous melee hit, not with a
@@ -79,6 +81,7 @@ public final class DamagePipeline {
         NeoForge.EVENT_BUS.addListener(LivingIncomingDamageEvent.class, DamagePipeline::onIncomingDamage);
         NeoForge.EVENT_BUS.addListener(LivingDamageEvent.Post.class, DamagePipeline::onDamagePost);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, LivingHealEvent.class, DamagePipeline::onHeal);
+        NeoForge.EVENT_BUS.addListener(LivingShieldBlockEvent.class, DamagePipeline::onShieldBlock);
     }
 
     /** A stat's value on the entity, or 0 when the entity lacks the attribute (mobs lack most of ours). */
@@ -96,6 +99,10 @@ public final class DamagePipeline {
      * explosions and damage from the world cannot (architecture 9.1).
      */
     public static boolean dodgeable(DamageSource source, Optional<? extends Holder<SpellSchool>> school) {
+        if (SchoolDamageSource.tickOf(source).isPresent()) {
+            // A tick of a damage over time: the hit that applied it was the one to dodge (RLM-539).
+            return false;
+        }
         if (school.isPresent()) {
             return source.getEntity() != null && !source.is(DamageTypeTags.IS_EXPLOSION)
                     && !school.get().value().magic();
@@ -147,6 +154,21 @@ public final class DamagePipeline {
         if (arrow.isCritArrow() || arrow instanceof ThrownTrident) {
             HitTracker.markFullDraw(arrow);
             arrow.setCritArrow(false);
+        }
+    }
+
+    /**
+     * A shield never blocks a damage over time's tick (RLM-539), wherever its caster stands; a hit it does block is
+     * reported ({@link CombatEvent.Block}, RLM-540). NeoForge fires the event for every hit on a raised shield that its
+     * damage type does not bypass, still marked blocked, so a hit outside the shield's arc (from behind) arrives with
+     * no blocked damage: it blocked nothing and is not reported.
+     */
+    static void onShieldBlock(LivingShieldBlockEvent event) {
+        if (event.getBlocked() && SchoolDamageSource.tickOf(event.getDamageSource()).isPresent()) {
+            event.setBlocked(false);
+        }
+        if (event.getBlocked() && event.getBlockedDamage() > 0 && !event.getEntity().level().isClientSide()) {
+            NeoForge.EVENT_BUS.post(new CombatEvent.Block(event.getEntity(), event.getDamageSource()));
         }
     }
 
@@ -349,6 +371,10 @@ public final class DamagePipeline {
         DamageSource source = container.getSource();
         if (source.is(DamageTypeTags.BYPASSES_ARMOR)) {
             return vanilla;
+        }
+        if (SchoolDamageSource.tickOf(source).filter(SchoolDamageSource.Tick::ignoresArmor).isPresent()) {
+            // Bleeding's ticks (RLM-539): armor stops none of them.
+            return 0;
         }
         float damage = container.getNewDamage();
         LivingEntity attacker = source.getEntity() instanceof LivingEntity living ? living : null;

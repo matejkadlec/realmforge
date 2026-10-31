@@ -101,6 +101,22 @@ public final class Effects {
         }
     }
 
+    /** A removed stacked effect (milk, a cleanse) takes every stack with it (RLM-539). */
+    static void onStacksRemoved(MobEffectEvent.Remove event) {
+        forgetStacks(event.getEntity(), event.getEffect());
+    }
+
+    static void onStacksExpired(MobEffectEvent.Expired event) {
+        if (event.getEffectInstance() != null) {
+            forgetStacks(event.getEntity(), event.getEffectInstance().getEffect());
+        }
+    }
+
+    private static void forgetStacks(LivingEntity entity, Holder<MobEffect> effect) {
+        key(effect).ifPresent(key -> entity.getExistingData(EffectAttachments.STACKS)
+                .ifPresent(stacks -> stacks.clear(key)));
+    }
+
     private static void forget(LivingEntity entity, Holder<MobEffect> effect) {
         Optional<ResourceKey<MobEffect>> key = key(effect);
         Optional<EffectSources> sources = entity.getExistingData(EffectAttachments.SOURCES);

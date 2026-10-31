@@ -8,6 +8,8 @@ import com.geckolib.animation.RawAnimation;
 import com.geckolib.animation.object.PlayState;
 import com.geckolib.constant.DefaultAnimations;
 import com.geckolib.util.GeckoLibUtil;
+import io.github.matejkadlec.realmforge.effect.EffectLooks;
+import io.github.matejkadlec.realmforge.effect.StatusEffect;
 import io.github.matejkadlec.realmforge.mob.ai.Wandering;
 import io.github.matejkadlec.realmforge.spell.SpellCast;
 import io.github.matejkadlec.realmforge.spell.SpellVisuals;
@@ -173,6 +175,15 @@ public abstract class CustomMob extends Monster implements GeoEntity, SpellVisua
     public Optional<SpellCast.Animation> castAnimation() {
         int value = entityData.get(CAST_ANIMATION);
         return value > 0 && value <= ANIMATIONS.length ? Optional.of(ANIMATIONS[value - 1]) : Optional.empty();
+    }
+
+    /**
+     * On a client, a mob drawn in ice (Frozen, RLM-539) is fully frozen, so GeckoLib's renderer shakes it as vanilla
+     * shakes a mob in powder snow; the server keeps vanilla's answer, so the ice never hurts it as freezing does.
+     */
+    @Override
+    public boolean isFullyFrozen() {
+        return super.isFullyFrozen() || level().isClientSide() && EffectLooks.has(this, StatusEffect.Look.ICE);
     }
 
     @Override
