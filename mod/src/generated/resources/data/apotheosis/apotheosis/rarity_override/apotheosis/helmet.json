@@ -15,14 +15,6 @@
         "affix_type": "basic_effect"
       },
       {
-        "type": "apotheosis:chanced",
-        "chance": 0.35,
-        "rule": {
-          "type": "apotheosis:affix",
-          "affix_type": "basic_effect"
-        }
-      },
-      {
         "type": "apotheosis:socket",
         "min": 0,
         "max": 2
@@ -51,14 +43,6 @@
         "affix_type": "basic_effect"
       },
       {
-        "type": "apotheosis:chanced",
-        "chance": 0.25,
-        "rule": {
-          "type": "apotheosis:affix",
-          "affix_type": "basic_effect"
-        }
-      },
-      {
         "type": "apotheosis:socket",
         "min": 1,
         "max": 3
@@ -85,10 +69,6 @@
       {
         "type": "apotheosis:affix",
         "affix_type": "stat"
-      },
-      {
-        "type": "apotheosis:affix",
-        "affix_type": "basic_effect"
       },
       {
         "type": "apotheosis:affix",

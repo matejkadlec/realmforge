@@ -3,5 +3,5 @@
 # Unhurried is the boots' one ability, and it rolls from Epic. Epic and Legendary boots keep their ability slot.
 id: boots
 category: apotheosis:boots
-without_ability:
-  - apotheosis:rare
+max_slots:
+  apotheosis:rare: {ability: 0}

@@ -602,62 +602,85 @@ def test_the_world_tiers_cap_no_eterna(files: dict[str, bytes], tier: str) -> No
 # Rarity overrides
 
 
-def test_helmets_skip_every_ability_slot_and_boots_rare_s(files: dict[str, bytes]) -> None:
-    """Matěj, 2026-10-31 (RLM-232): with Runed off, helmets have no ability, and boots none below Epic. Their rules
-    are the fitted rarity's without the ability slot."""
-    rare = generated_json(files, DATA + "apotheosis/apotheosis/rarities/rare.json")
-    snapshot = load_snapshot(RepoPaths())
-    rules = {
-        "apotheosis:rare": rare["rules"],
-        "apotheosis:epic": snapshot.entry("rarities", "apotheosis:epic")["rules"],
-        "apotheosis:mythic": snapshot.entry("rarities", "apotheosis:mythic")["rules"],
-    }
+def labels(rules: list[dict]) -> list[str]:
+    """A rarity's rules as their kinds: ``stat``, ``basic_effect?`` for a chanced slot, ``socket`` and so on."""
+    return [
+        rule["rule"]["affix_type"] + "?"
+        if rule["type"] == "apotheosis:chanced"
+        else rule.get("affix_type", rule["type"].removeprefix("apotheosis:"))
+        for rule in rules
+    ]
 
-    def ability(rule: dict) -> bool:
-        return rule.get("affix_type") == "ability" or rule.get("rule", {}).get("affix_type") == "ability"
 
-    def without_ability(rarity: str) -> list[dict]:
-        kept = [rule for rule in rules[rarity] if not ability(rule)]
-        assert len(kept) == len(rules[rarity]) - 1, f"{rarity} has one ability slot"
-        return kept
+def test_helmets_boots_and_shears_skip_the_slots_they_have_nothing_for(files: dict[str, bytes]) -> None:
+    """Matěj, 2026-10-31 (RLM-232): with Runed and Blinding off, helmets have no ability and one basic effect; with
+    Runed, Steadfast and Surefooted off, boots have no ability below Epic; with Gardening and Leaf-Forming off, shears
+    have one basic effect."""
+    helmet = generated_json(files, RARITY_OVERRIDES + "apotheosis/helmet.json")["overrides"]
+    assert {rarity: labels(rules) for rarity, rules in helmet.items()} == {
+        "apotheosis:rare": ["stat", "stat", "basic_effect", "socket", "durability"],
+        "apotheosis:epic": ["stat", "stat", "stat", "basic_effect", "socket", "durability"],
+        "apotheosis:mythic": ["stat", "stat", "stat", "stat", "basic_effect", "select", "select"],
+    }
+    boots = generated_json(files, RARITY_OVERRIDES + "apotheosis/boots.json")["overrides"]
+    assert {rarity: labels(rules) for rarity, rules in boots.items()} == {
+        "apotheosis:rare": ["stat", "stat", "basic_effect", "basic_effect?", "socket", "durability"],
+    }
+    # Shears start from Apotheosis's own override: its other rarities stay as it ships them.
+    shears = generated_json(files, RARITY_OVERRIDES + "apotheosis/shears.json")
+    own = load_snapshot(RepoPaths()).entry("rarity_override", "apotheosis:apotheosis/shears")
+    assert shears["category"] == "apotheosis:shears"
+    for rarity in ("apotheosis:common", "apotheosis:uncommon", "apotheosis:rare"):
+        assert shears["overrides"][rarity] == own["overrides"][rarity]
+    assert labels(shears["overrides"]["apotheosis:epic"]) == ["socket", "stat", "basic_effect", "durability"]
+    assert labels(shears["overrides"]["apotheosis:mythic"]) == ["socket", "stat", "basic_effect", "select"]
 
-    assert generated_json(files, RARITY_OVERRIDES + "apotheosis/helmet.json") == {
-        "category": "apotheosis:helmet",
-        "overrides": {rarity: without_ability(rarity) for rarity in rules},
-    }
-    assert generated_json(files, RARITY_OVERRIDES + "apotheosis/boots.json") == {
-        "category": "apotheosis:boots",
-        "overrides": {"apotheosis:rare": without_ability("apotheosis:rare")},
-    }
+
+def test_the_rest_of_a_capped_rarity_is_the_fitted_rarity_s(files: dict[str, bytes]) -> None:
+    rare = generated_json(files, DATA + "apotheosis/apotheosis/rarities/rare.json")["rules"]
+    helmet = generated_json(files, RARITY_OVERRIDES + "apotheosis/helmet.json")["overrides"][
+        "apotheosis:rare"
+    ]
+    # Rare's chanced basic effect and chanced ability go; everything else is Rare's own, in its order.
+    assert helmet == [rule for rule in rare if rule["type"] != "apotheosis:chanced"]
 
 
 def overriding(repo: RepoPaths, body: str) -> None:
     write(repo.content / "apotheosis_rarity_overrides" / "test.yaml", "id: test\n" + body)
 
 
+def test_chanced_slots_go_first(repo: RepoPaths) -> None:
+    overriding(repo, "category: apotheosis:bow\nmax_slots:\n  apotheosis:rare: {basic_effect: 1, stat: 1}\n")
+    files = generated(repo)
+    bow = generated_json(files, RARITY_OVERRIDES + "apotheosis/bow.json")["overrides"]["apotheosis:rare"]
+    assert labels(bow) == ["stat", "basic_effect", "ability?", "socket", "durability"]
+
+
 @pytest.mark.parametrize(
     ("body", "message"),
     [
         (
-            "category: apotheosis:wand\nwithout_ability: [apotheosis:rare]\n",
+            "category: apotheosis:wand\nmax_slots: {apotheosis:rare: {ability: 0}}\n",
             "unknown loot category 'apotheosis:wand'",
         ),
-        ("category: apotheosis:charm\nwithout_ability: [apotheosis:rare]\n", "exists only with Curios"),
         (
-            "category: apotheosis:bow\nwithout_ability: [apotheosis:legendary]\n",
+            "category: apotheosis:charm\nmax_slots: {apotheosis:rare: {ability: 0}}\n",
+            "exists only with Curios",
+        ),
+        (
+            "category: apotheosis:bow\nmax_slots: {apotheosis:legendary: {ability: 0}}\n",
             "unknown rarity 'apotheosis:legendary'",
         ),
         (
-            "category: apotheosis:bow\nwithout_ability: [apotheosis:common]\n",
-            "apotheosis:bow has no ability slot at apotheosis:common",
-        ),
-        # Apotheosis's own override for shears has no ability slot: the override starts from it, not from Rare's rules.
-        (
-            "category: apotheosis:shears\nwithout_ability: [apotheosis:rare]\n",
-            "apotheosis:shears has no ability slot at apotheosis:rare",
+            "category: apotheosis:bow\nmax_slots: {apotheosis:common: {ability: 0}}\n",
+            "apotheosis:bow has 0 ability slot(s) at apotheosis:common: nothing to drop for at most 0",
         ),
         (
-            "category: apotheosis:helmet\nwithout_ability: [apotheosis:rare]\n",
+            "category: apotheosis:bow\nmax_slots: {apotheosis:rare: {stat: 2}}\n",
+            "apotheosis:bow has 2 stat slot(s) at apotheosis:rare: nothing to drop for at most 2",
+        ),
+        (
+            "category: apotheosis:helmet\nmax_slots: {apotheosis:rare: {stat: 1}}\n",
             "apotheosis:helmet already has a rarity override",
         ),
     ],
@@ -667,11 +690,39 @@ def test_a_rarity_override_is_checked(repo: RepoPaths, body: str, message: str) 
     assert_problem(repo, message)
 
 
-def test_a_rarity_override_names_rarities() -> None:
-    with pytest.raises(ValidationError, match="at least 1 item"):
+def test_a_rarity_override_starts_from_apotheosis_s_own(repo: RepoPaths) -> None:
+    """Apotheosis's override for shears has no ability slot: the override reads it, not Rare's rules."""
+    write(
+        repo.content / "apotheosis_rarity_overrides" / "shears.yaml",
+        "id: shears\ncategory: apotheosis:shears\nmax_slots: {apotheosis:rare: {ability: 0}}\n",
+    )
+    assert_problem(repo, "apotheosis:shears has 0 ability slot(s) at apotheosis:rare")
+
+
+@pytest.mark.parametrize(
+    "max_slots",
+    [{}, {"apotheosis:rare": {}}, {"apotheosis:rare": {"ability": -1}}, {"apotheosis:rare": {"socket": 0}}],
+)
+def test_a_rarity_override_names_rarities_kinds_and_counts(max_slots: dict) -> None:
+    with pytest.raises(ValidationError):
         ApotheosisRarityOverrideDef.model_validate(
-            {"id": "test", "category": "apotheosis:bow", "without_ability": []}
+            {"id": "test", "category": "apotheosis:bow", "max_slots": max_slots}
         )
+
+
+def test_unbound_no_longer_names_winged(files: dict[str, bytes]) -> None:
+    unbound = generated_json(files, AFFIXES + "armor/attribute/unbound.json")
+    assert unbound["definition"]["exclusive_set"] == []
+    assert unbound["definition"]["weights"] == {"pinnacle": {"quality": 0.2, "weight": 1}}
+
+
+def test_a_switched_off_affix_left_in_an_exclusive_set_is_reported(repo: RepoPaths) -> None:
+    (repo.content / "apotheosis_affixes" / "unbound.yaml").unlink()
+    assert_problem(
+        repo,
+        "apotheosis:armor/attribute/unbound names apotheosis:armor/attribute/winged, which is switched off, in its "
+        "exclusive set",
+    )
 
 
 # Apotheosis's license (RLM-524)

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "One of Apotheosis's loot categories without the ability slot at some rarities (RLM-232): Apotheosis rolls a\nrarity's rules for every category unless a rarity override names other rules for it, and an ability slot that\nfinds no ability for the category logs \"no affixes available\" and rolls nothing.\n\nThe category's rules at each rarity listed are the rarity's own (as ``content/apotheosis_rarities/`` fits them), or\nthose of Apotheosis's override for the category where it has one, without their ability rules, a chanced one\nincluded. The other rarities keep what they had.",
+  "description": "One of Apotheosis's loot categories with fewer affix slots at some rarities (RLM-232): Apotheosis rolls a\nrarity's rules for every category unless a rarity override names other rules for it, and a slot that finds no\naffix of its kind left for the item logs \"no affixes available\" and rolls nothing.\n\nThe category's rules at each rarity listed are the rarity's own (as ``content/apotheosis_rarities/`` fits them),\nor those of Apotheosis's override for the category where it has one, keeping at most the number of slots given\nfor each kind: chanced slots go first, the last first, then plain ones from the end. The other rarities keep what\nthey had.",
   "properties": {
     "category": {
       "description": "The loot category, e.g. apotheosis:helmet.",
@@ -16,23 +16,37 @@
       "title": "Id",
       "type": "string"
     },
-    "without_ability": {
-      "description": "The rarities whose ability slot the category skips, e.g. apotheosis:rare.",
-      "items": {
-        "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
-        "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
-        "type": "string"
+    "max_slots": {
+      "description": "Rarity -> affix kind -> the most slots of that kind the category keeps there, e.g. apotheosis:rare: {ability: 0, basic_effect: 1}.",
+      "minProperties": 1,
+      "patternProperties": {
+        "^[a-z0-9_.-]+:[a-z0-9_./-]+$": {
+          "additionalProperties": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "minProperties": 1,
+          "propertyNames": {
+            "enum": [
+              "stat",
+              "basic_effect",
+              "ability"
+            ]
+          },
+          "type": "object"
+        }
       },
-      "minItems": 1,
-      "title": "Without Ability",
-      "type": "array",
-      "uniqueItems": true
+      "propertyNames": {
+        "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe."
+      },
+      "title": "Max Slots",
+      "type": "object"
     }
   },
   "required": [
     "id",
     "category",
-    "without_ability"
+    "max_slots"
   ],
   "title": "ApotheosisRarityOverrideDef",
   "type": "object"

@@ -3771,14 +3771,17 @@ NeoForge stacks the mods' data packs in that order, so a file of ours replaces t
   from Rare; Rare gets a chanced ability slot, 25 %, next to its rules; every world tier's cap on Apothic
   Enchanting's max Eterna is off.
 - **Rarity overrides** (RLM-232): Apotheosis rolls a rarity's rules for every loot category unless a rarity override
-  names other rules for one, and an ability slot that finds no ability for the item's category logs `Failed to
+  names other rules for one, and a slot that finds no affix of its kind left for the item's category logs `Failed to
   execute AffixLootRule (no affixes available)` at ERROR and rolls nothing (`LootRule$AffixLootRule#execute`). An
-  entry of `apotheosis_rarity_overrides/` makes a category skip the ability slot at the rarities it lists: their
-  rules are the fitted rarity's (or those of Apotheosis's own override for the category, shears' the only one) without
-  the ability rules, a chanced one included, at `data/apotheosis/apotheosis/rarity_override/<namespace>/<path>.json`,
-  the path Apotheosis reads the category from (`RarityOverrideRegistry#validateItem`). With Runed off, helmets have no
-  ability left and boots none below Epic (Unhurried), so helmets skip the slot at Rare, Epic and Legendary and boots at
-  Rare (Matěj, 2026-10-31).
+  entry of `apotheosis_rarity_overrides/` caps a category's slots of each kind at the rarities it lists: their rules
+  are the fitted rarity's (or those of Apotheosis's own override for the category, shears' the only one) with the
+  surplus slots dropped, chanced ones first, at `data/apotheosis/apotheosis/rarity_override/<namespace>/<path>.json`,
+  the path Apotheosis reads the category from (`RarityOverrideRegistry#validateItem`). The review left three
+  categories short (Matěj, 2026-10-31: skip the slots they have nothing for): helmets keep no ability and one basic
+  effect at Rare, Epic and Legendary (Runed and Blinding are off, Deflective is left), boots no ability at Rare
+  (Unhurried rolls from Epic), shears one basic effect at Epic and Legendary (Gardening and Leaf-Forming are off,
+  Radial is left). Validation also refuses an affix that stays on and names a switched-off one in its exclusive set,
+  which Apotheosis logs at ERROR on every load: Unbound's no longer names Winged.
 - **Apotheosis's license** (RLM-524): Apotheosis is MIT, its code and the data its generators write; the jar's
   metadata keeps its assets All Rights Reserved, and we copy none of them. MIT asks that its notice goes with every
   copy, so `rf ids apotheosis` records the license's text in the snapshot (the jar carries no license file: it comes
@@ -3806,7 +3809,8 @@ combat stats, a mob's lifesteal heals it, and no potion charm recipe loads. `Apo
 Apotheosis's registries and loot code: the review's affixes are off, its Rare rolls apply (Giant Slaying adds its Rare
 value) and Magical stays Epic, about a quarter of Rare swords carry one ability, every loot category of Apotheosis's
 rolls at every rarity at Haven and Pinnacle (the GameTest log then holds no `AffixLootRule` error) with no ability on a
-helmet or a Rare boot, no tier caps max Eterna, and every wand is `realmforge:wand` with no affix to roll.
+helmet or a Rare boot and at most one basic effect on a helmet or shears, no tier caps max Eterna, and every wand is
+`realmforge:wand` with no affix to roll.
 - **Apothic Enchanting's stale list of loot modifiers** (`data/neoforge/loot_modifiers/global_loot_modifiers.json`,
   the NeoForge 21.1 format) is replaced by a file in the core mod's resources whose `neoforge:never` condition makes
   NeoForge skip it quietly. NeoForge 26.1 reads every file in `loot_modifiers/` as a modifier and logged an error for

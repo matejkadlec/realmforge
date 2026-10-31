@@ -67,7 +67,6 @@ ADD_MULTIPLIED_BASE = "add_multiplied_base"
 ADD_VALUE = "add_value"
 AFFIX_RULE = "apotheosis:affix"
 CHANCED_RULE = "apotheosis:chanced"
-ABILITY = "ability"
 
 _DATA_FILE = re.compile(
     r"^data/(?P<ns>[a-z0-9_.-]+)/apotheosis/(?P<kind>[a-z_]+)/(?P<path>[a-z0-9_/]+)\.json$"
@@ -253,6 +252,7 @@ def fit(content: Content, snapshot: Snapshot) -> Fitted:
                 Problem(entry.source, "source", f"no Apotheosis affix, gem or tier augment grants {source}")
             )
 
+    fitted.problems += _switched_off_exclusions(snapshot, changed, sources)
     for (kind, id_), data in sorted(changed.items()):
         fitted.files[data_path(kind, id_)] = data
     for entry in content.apotheosis_rarity_overrides:
@@ -260,6 +260,30 @@ def fit(content: Content, snapshot: Snapshot) -> Fitted:
         if override is not None:
             fitted.files[override_path(override["category"])] = override
     return fitted
+
+
+def _switched_off_exclusions(
+    snapshot: Snapshot, changed: dict[tuple[str, str], dict[str, Any]], sources: dict[tuple[str, str], str]
+) -> list[Problem]:
+    """An affix that stays on and names a switched-off one in its exclusive set: Apotheosis then logs "contains the
+    unknown affix ... in its exclusive set" at ERROR on every load."""
+    problems: list[Problem] = []
+    for id_, original in snapshot.entries["affixes"].items():
+        data = changed.get(("affixes", id_), original)
+        if data is DISABLED:
+            continue
+        for named in data.get("definition", {}).get("exclusive_set", []):
+            if changed.get(("affixes", named)) is DISABLED:
+                problems.append(
+                    Problem(
+                        sources.get(("affixes", id_))
+                        or sources.get(("affixes", named), "content/apotheosis_affixes/"),
+                        "replace.definition.exclusive_set",
+                        f"{id_} names {named}, which is switched off, in its exclusive set: replace its definition "
+                        "without it",
+                    )
+                )
+    return problems
 
 
 def override_path(category: str) -> str:
@@ -277,7 +301,7 @@ def _rarity_override(
     fitted: Fitted,
 ) -> dict[str, Any] | None:
     """The category's rarity override: Apotheosis's own, or none, with the rules of every rarity listed taken from it
-    or from the fitted rarity, without their ability rules. None when the entry cannot be fitted."""
+    or from the fitted rarity, capped to the slots the entry allows. None when the entry cannot be fitted."""
     model = entry.model
     category = model.category
     if category in CURIOS_LOOT_CATEGORIES:
@@ -303,12 +327,13 @@ def _rarity_override(
         None,
     )
     overrides: dict[str, Any] = copy.deepcopy(own["overrides"]) if own else {}
-    for n, rarity in enumerate(model.without_ability):
-        location = f"without_ability.{n}"
+    for rarity, limits in model.max_slots.items():
         if rarity not in RARITIES:
             fitted.problems.append(
                 Problem(
-                    entry.source, location, f"unknown rarity {rarity!r}; Apotheosis has {', '.join(RARITIES)}"
+                    entry.source,
+                    f"max_slots.{rarity}",
+                    f"unknown rarity {rarity!r}; Apotheosis has {', '.join(RARITIES)}",
                 )
             )
             continue
@@ -317,39 +342,52 @@ def _rarity_override(
             rules = changed.get(("rarities", rarity), snapshot.entry("rarities", rarity) or {}).get(
                 "rules", []
             )
-        kept = [rule for rule in rules if not _ability_rule(rule)]
-        if len(kept) == len(rules):
-            fitted.problems.append(
-                Problem(entry.source, location, f"{category} has no ability slot at {rarity} to skip")
-            )
-        elif _names_ability(kept):
-            fitted.problems.append(
-                Problem(
-                    entry.source,
-                    location,
-                    f"{category}'s rules at {rarity} name an ability inside another rule",
+        capped = copy.deepcopy(rules)
+        for kind, limit in limits.items():
+            location = f"max_slots.{rarity}.{kind}"
+            slots = [n for n, rule in enumerate(capped) if _slot_kind(rule) == kind]
+            if any(_names_kind(rule, kind) for rule in capped if _slot_kind(rule) is None):
+                fitted.problems.append(
+                    Problem(
+                        entry.source,
+                        location,
+                        f"{category}'s rules at {rarity} name {kind} inside another rule",
+                    )
                 )
-            )
-        else:
-            overrides[rarity] = copy.deepcopy(kept)
+            elif len(slots) <= limit:
+                fitted.problems.append(
+                    Problem(
+                        entry.source,
+                        location,
+                        f"{category} has {len(slots)} {kind} slot(s) at {rarity}: nothing to drop for at most {limit}",
+                    )
+                )
+            else:
+                chanced = [n for n in slots if capped[n]["type"] == CHANCED_RULE]
+                plain = [n for n in slots if capped[n]["type"] != CHANCED_RULE]
+                dropped = set((chanced[::-1] + plain[::-1])[: len(slots) - limit])
+                capped = [rule for n, rule in enumerate(capped) if n not in dropped]
+        overrides[rarity] = capped
     ordered = {rarity: overrides[rarity] for rarity in RARITIES if rarity in overrides}
     return {**(own or {}), "category": category, "overrides": ordered}
 
 
-def _ability_rule(rule: Any) -> bool:
-    """An ability slot: an affix rule of the ability kind, or a chanced one."""
+def _slot_kind(rule: Any) -> str | None:
+    """The affix kind of a slot, an affix rule or a chanced one, or None for any other rule."""
     if not isinstance(rule, dict):
-        return False
+        return None
     if rule.get("type") == CHANCED_RULE:
-        return _ability_rule(rule.get("rule"))
-    return rule.get("type") == AFFIX_RULE and rule.get("affix_type") == ABILITY
+        return _slot_kind(rule.get("rule"))
+    if rule.get("type") == AFFIX_RULE:
+        return rule.get("affix_type")
+    return None
 
 
-def _names_ability(value: Any) -> bool:
+def _names_kind(value: Any, kind: str) -> bool:
     if isinstance(value, dict):
-        return value.get("affix_type") == ABILITY or any(_names_ability(item) for item in value.values())
+        return value.get("affix_type") == kind or any(_names_kind(item, kind) for item in value.values())
     if isinstance(value, list):
-        return any(_names_ability(item) for item in value)
+        return any(_names_kind(item, kind) for item in value)
     return False
 
 

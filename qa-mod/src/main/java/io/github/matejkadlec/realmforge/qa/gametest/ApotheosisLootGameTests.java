@@ -133,7 +133,8 @@ public final class ApotheosisLootGameTests {
         GenContext context = context(helper, WorldTier.HAVEN, 232);
         int withAbility = 0;
         for (int i = 0; i < RARE_SWORD_ROLLS; i++) {
-            int abilities = abilities(LootController.createLootItem(new ItemStack(Items.DIAMOND_SWORD), rare, context));
+            ItemStack sword = LootController.createLootItem(new ItemStack(Items.DIAMOND_SWORD), rare, context);
+            int abilities = count(sword, AffixType.ABILITY);
             helper.assertTrue(abilities <= 1, "a Rare sword has at most one ability, rolled " + abilities);
             withAbility += abilities;
         }
@@ -144,8 +145,9 @@ public final class ApotheosisLootGameTests {
     }
 
     /**
-     * Matěj, 2026-10-31 (RLM-232): helmets have no ability left once Runed is off, and boots none below Epic, so they
-     * skip that slot. Every other category rolls at every rarity and tier without an empty slot (the log check).
+     * Matěj, 2026-10-31 (RLM-232): a category skips the slots it has nothing left for. Helmets have no ability and one
+     * basic effect (Runed and Blinding are off), boots no ability below Epic, shears one basic effect (Gardening and
+     * Leaf-Forming are off). Every category rolls at every rarity and tier without an empty slot (the log check).
      */
     @QaGameTest(timeoutTicks = 200)
     public static void everyCategoryRollsWithoutAnEmptySlot(GameTestHelper helper) {
@@ -156,11 +158,13 @@ public final class ApotheosisLootGameTests {
                 for (Item item : CATEGORY_ITEMS) {
                     for (int i = 0; i < ROLLS; i++) {
                         ItemStack rolled = LootController.createLootItem(new ItemStack(item), rarity, context);
-                        boolean noAbility = item == Items.DIAMOND_HELMET
-                                || (item == Items.DIAMOND_BOOTS && id.equals("rare"));
-                        if (noAbility) {
-                            helper.assertTrue(abilities(rolled) == 0,
-                                    BuiltInRegistries.ITEM.getKey(item) + " at " + id + " rolls no ability");
+                        String what = BuiltInRegistries.ITEM.getKey(item) + " at " + id;
+                        if (item == Items.DIAMOND_HELMET || (item == Items.DIAMOND_BOOTS && id.equals("rare"))) {
+                            helper.assertTrue(count(rolled, AffixType.ABILITY) == 0, what + " rolls no ability");
+                        }
+                        if (item == Items.DIAMOND_HELMET || item == Items.SHEARS) {
+                            helper.assertTrue(count(rolled, AffixType.BASIC_EFFECT) <= 1,
+                                    what + " rolls at most one basic effect");
                         }
                     }
                 }
@@ -224,9 +228,9 @@ public final class ApotheosisLootGameTests {
         helper.succeed();
     }
 
-    private static int abilities(ItemStack stack) {
+    private static int count(ItemStack stack, AffixType type) {
         return (int) AffixHelper.getAffixes(stack).keySet().stream()
-                .filter(holder -> holder.get().definition().type() == AffixType.ABILITY)
+                .filter(holder -> holder.get().definition().type() == type)
                 .count();
     }
 

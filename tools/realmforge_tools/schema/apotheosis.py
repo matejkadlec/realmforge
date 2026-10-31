@@ -19,7 +19,7 @@ Apotheosis 9.1.0 registers in Java; update them with an Apotheosis update.
 
 from __future__ import annotations
 
-from typing import Annotated, ClassVar
+from typing import Annotated, ClassVar, Literal
 
 from pydantic import Field, JsonValue, StringConstraints, model_validator
 
@@ -156,19 +156,30 @@ ENTRY_MODELS: tuple[type[ApotheosisEntryDef], ...] = (
 )
 
 
-class ApotheosisRarityOverrideDef(StrictModel):
-    """One of Apotheosis's loot categories without the ability slot at some rarities (RLM-232): Apotheosis rolls a
-    rarity's rules for every category unless a rarity override names other rules for it, and an ability slot that
-    finds no ability for the category logs "no affixes available" and rolls nothing.
+# The kinds of affix slot a rarity's rules hold (Apotheosis's AffixType).
+AffixKind = Literal["stat", "basic_effect", "ability"]
 
-    The category's rules at each rarity listed are the rarity's own (as ``content/apotheosis_rarities/`` fits them), or
-    those of Apotheosis's override for the category where it has one, without their ability rules, a chanced one
-    included. The other rarities keep what they had."""
+
+class ApotheosisRarityOverrideDef(StrictModel):
+    """One of Apotheosis's loot categories with fewer affix slots at some rarities (RLM-232): Apotheosis rolls a
+    rarity's rules for every category unless a rarity override names other rules for it, and a slot that finds no
+    affix of its kind left for the item logs "no affixes available" and rolls nothing.
+
+    The category's rules at each rarity listed are the rarity's own (as ``content/apotheosis_rarities/`` fits them),
+    or those of Apotheosis's override for the category where it has one, keeping at most the number of slots given
+    for each kind: chanced slots go first, the last first, then plain ones from the end. The other rarities keep what
+    they had."""
 
     id: ContentId
     category: ResourceId = Field(description="The loot category, e.g. apotheosis:helmet.")
-    without_ability: Annotated[UniqueResourceIds, Field(min_length=1)] = Field(
-        description="The rarities whose ability slot the category skips, e.g. apotheosis:rare."
+    max_slots: Annotated[
+        dict[ResourceId, Annotated[dict[AffixKind, Annotated[int, Field(ge=0)]], Field(min_length=1)]],
+        Field(min_length=1),
+    ] = Field(
+        description=(
+            "Rarity -> affix kind -> the most slots of that kind the category keeps there, e.g. "
+            "apotheosis:rare: {ability: 0, basic_effect: 1}."
+        )
     )
 
 

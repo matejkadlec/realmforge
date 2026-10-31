@@ -1,10 +1,11 @@
 # yaml-language-server: $schema=../../tools/schemas/apotheosis_rarity_overrides.schema.json
-# Helmets skip the ability slot (Matěj, 2026-10-31, RLM-232): Runed, their only ability, is off, so Apotheosis would
-# find none for Rare's chanced slot, Epic or Legendary, log an error and roll one affix fewer. Their other rules stay
-# the rarities' own.
+# Helmets skip the slots they have nothing left for (Matěj, 2026-10-31, RLM-232): Runed, their only ability, and
+# Blinding, one of their two basic effects, are off, so Apotheosis would find no ability for Rare's chanced slot, Epic
+# or Legendary, and no second basic effect (only Deflective is left), log an error and roll one affix fewer. Their
+# other rules stay the rarities' own.
 id: helmet
 category: apotheosis:helmet
-without_ability:
-  - apotheosis:rare
-  - apotheosis:epic
-  - apotheosis:mythic
+max_slots:
+  apotheosis:rare: {ability: 0, basic_effect: 1}
+  apotheosis:epic: {ability: 0, basic_effect: 1}
+  apotheosis:mythic: {ability: 0, basic_effect: 1}
