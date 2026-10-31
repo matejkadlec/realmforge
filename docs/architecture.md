@@ -3753,10 +3753,13 @@ a slot when that slot's stack is no longer the one it opened (`BackpackContainer
 it open:
 
 - `client/compat/inventorysorter/BackpacksStayInPlace` adds a sort priority rule, every backpack tier with the
-  position `ignore` (`compat/inventorysorter/BackpackSortRule`), to Inventory Sorting's loaded client config, in memory,
-  on `ClientPlayerNetworkEvent.LoggingIn` at the highest priority, before Inventory Sorting's own listener sends the
-  rules to the server, which sorts by them. The player's `config/inventorysorter.json` and their own rules stay as they
-  are; the pack ships no copy of that file, which would overwrite them. Like Pick Up Notifier's, it changes the mod's
+  position `ignore` (`compat/inventorysorter/BackpackSortRule`), to Inventory Sorting's loaded client config on every
+  join, on `ClientPlayerNetworkEvent.LoggingIn` at the highest priority, before Inventory Sorting's own listener sends
+  the rules to the server, which sorts by them. Inventory Sorting writes its whole loaded config, our rule included,
+  into the player's `config/inventorysorter.json` the next time it saves it (its config screen, the sort button's
+  toggle, settings synced back from `/invsort`, the missing-server warning); the player's own rules stay, and
+  `BackpackSortRule.isMissing` never adds ours twice (RLM-558). The pack ships no copy of that file, which would
+  overwrite them. Like Pick Up Notifier's, it changes the mod's
   loaded config, compiled against the pack's build (`compileOnly`, read from `pack/mods/inventory-sorting.pw.toml`),
   and runs only while both mods are loaded; `neoforge.mods.toml` names Inventory Sorting as an optional client
   dependency.
