@@ -559,7 +559,8 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
   the attributes marked syncable (`Attribute#isClientSyncable`). Vanilla marks max health, armor, toughness, attack
   speed and movement speed, but not attack damage, so the client sees only its base value. The character sheet draws
   from the player's own attributes, so `CharacterSheetView#syncShownAttributes` marks every vanilla attribute it
-  shows as syncable, attack damage included; a GameTest fails if an attribute on the sheet does not sync. It runs at
+  shows as syncable, attack damage included, and Apothic Attributes' Arrow Damage, Draw Speed, Arrow Velocity and
+  Healing Received while it is loaded (RLM-235); a GameTest fails if an attribute on the sheet does not sync. It runs at
   common setup (`FMLCommonSetupEvent#enqueueWork`), once every attribute is registered: at mod construction a
   `DeferredHolder` is still unbound.
 - **Primary stats (ours, decision D5):** strength (STR), dexterity (DEX), vitality (VIT: health; Stamina is a
@@ -1102,9 +1103,9 @@ the playtest covers it.
     weapons: the item tag `#realmforge:sword_like`, swords and katanas today, and longswords and maybe rapiers once
     the pack has them. For a Human, the tooltip of every such weapon (hover, JEI) shows two lines below the weapon's
     stats and above the Apotheosis affixes, where Apotheosis puts "Heavenly Implements": "Sword Specialization" in
-    gold and "+10% damage with swords" in yellow (Matěj, 2026-10-30). The character sheet's Origin tab shows the
-    racial ability and passive the same way, each on two rows: "Racial Ability" in gold over "Will To Survive" in
-    yellow, and "Sword Specialization" in gold over its line in yellow.
+    gold and "+10% damage with swords" in yellow (Matěj, 2026-10-30). The race's tooltip on the character sheet's
+    Character tab shows the racial ability and passive the same way, each on two lines: "Racial Ability" in gold over
+    "Will To Survive" in yellow, and "Sword Specialization" in gold over its line in yellow.
 - **A class** gives its role, resource type, starting stats, spells by level, its specializations' spell trees and
   starting kit. Its role (melee, caster or ranged) decides which role-bound bonuses of the stat rules its players get
   ([8.3](#83-derived-stats-and-milestones), RLM-170). Race and
@@ -1155,8 +1156,8 @@ the playtest covers it.
   slot (X, `Spells#learnRacial`), and its racial passive (`racial_passive`, `character/RacialPassive`): a name, a
   description, an item tag the main hand's item must be in, and modifiers that `CharacterBonuses` adds while it is
   (`CharacterBonuses#passiveModifierId`); `character/RacialPassives` writes its tooltip lines, which
-  `client/tooltip/RacialPassiveTooltip` adds to the weapon's (`AddAttributeTooltipsEvent`). The Origin tab lists both
-  under the race. The Human's Will To Survive is free, as a race spans classes of different resources, and casts
+  `client/tooltip/RacialPassiveTooltip` adds to the weapon's (`AddAttributeTooltipsEvent`). The race's tooltip on the
+  character sheet lists both. The Human's Will To Survive is free, as a race spans classes of different resources, and casts
   while stunned (`castable_while_stunned`). `ClassKitGameTests` covers the kits.
 
 ### 10.2 Leveling
@@ -3403,6 +3404,16 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   NeoForge's own client classes are mostly not marked client-only, so only the import check catches those.
 - **Thin screens:** screens and HUD layers draw from view models computed in common code (`CharacterSheetView`,
   `TalentTreeView`), so their logic is testable without rendering.
+- **Layout helper** (`client/screen/layout/Flex`, RLM-560): a small flexbox-style layout, so a screen says what goes
+  next to what instead of placing coordinates by hand. A node is a row or a column of children (a gap between them,
+  padding inside, children aligned across the axis: start, centre, end or stretched) or a leaf with a size of its own
+  (a line of text measured with the font); free space along the axis goes to the children that grow, by weight, from
+  their basis (`basis(0)` and the same weight make equal columns), and otherwise sits where `Justify` puts it.
+  Nothing shrinks: a screen sizes its panel from the root's preferred size and scales the panel down when the screen is
+  smaller. Any node carries a payload, which the screen draws in the node's rectangle, a parent before its children
+  (`forEach`), and finds under the mouse (`payloadAt`, filtered to what reacts: a button, a hover area). It is pure
+  arithmetic without Minecraft classes, so JUnit covers it (`FlexTest`). The character sheet is its first user;
+  RLM-225's frame and font and the guide (M4, RLM-116) build on it.
 - **What exists (F5, F4b, revised after Matěj's playtest of 2026-10-13):**
   - The combat text layer (`client/hud/CombatTextHud`) draws each `CombatTextPayload` over the entity it is about,
     popping in, rising and fading. A text keeps its entity's id and follows the entity every frame (its interpolated
@@ -3428,27 +3439,43 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
     below vanilla's health layer, notes where that row goes (`Gui#leftHeight`), so the bar follows layers that raise
     the left column.
   - The character sheet (`client/screen/CharacterSheetScreen`, opened and closed by `client/input/CharacterSheetKey`,
-    K by default) draws `character/CharacterSheetView`: the player's name and level in bold ("Steve · Lv. 12"),
-    then four tabs of two columns (a click, the number keys, Tab or the arrow keys switch them). The heading and the
-    selected tab are white, and gold marks the section titles. Stats: the primary stats with what they give the
-    player's class role (a player without a character sees the role-free bonuses,
-    [8.3](#83-derived-stats-and-milestones)) in vanilla's yellow, and their milestones in vanilla's gold once reached
-    and gray while ahead (Matěj, 2026-10-30: the green they had read badly; a race's bonuses on Origin are yellow
-    too, while the `+` and character creation's bonus lines stay green), and the other attributes (luck, Stamina right below it, mining speed,
-    reach, movement speed, swimming speed, the XP multiplier); Combat: offense, and defense with spell resistance last; Magic: spells (max mana, mana regeneration,
-    spell power, cooldown and cast time reduction) and the spell schools' power and resistance; Origin (C1): the race
-    with its description and what it gives (its racial passive and active once spells exist), and the class with its
-    description, then "Specialization: WIP", a placeholder until the specialization spell trees exist (C5). The names the sheet gives vanilla attributes (Mining Speed, Movement Speed, ...)
-    apply on their rows and in the primary stats' bonuses. A stat of ours that no section
-    names shows under Other. Values round for display only (Matěj, 2026-10-14): a percentage half up to a whole
-    number (100.6% reads 101%), any other number half up to one decimal (6.45 reads 6.5). For a player with a
-    character the Primary Stats title ends with "Unspent: 3", "Unspent:" white and the number yellow while any are
-    left (Matěj, 2026-10-16), and while any are unspent a small green `+` beside each primary stat spends one on it
-    (`SpendStatPointPayload`, RLM-196). Hovered, it says "Spend a point on Strength" and beneath it, in the section
-    titles' yellow and aligned right under the stat's name (`client/tooltip/RightAlignedLines`, a tooltip component),
-    what the point gives: each per-point bonus that still grows and the bonuses of a milestone it reaches, with one
-    decimal (whole percents would read Dexterity's 0.1% crit chance as 0%). All of it comes from the player's synced
-    attributes, level and character and the synced registries; a pet tab waits for the pet system (RLM-161).
+    K by default) draws `character/CharacterSheetView`, laid out with `Flex`: the player's name and level in bold
+    ("Steve · Lv. 12"), then three tabs (Matěj, 2026-10-30; a click, the number keys, Tab or the arrow keys switch
+    them, and a Pet tab joins later, RLM-161). The heading and the selected tab are white, and gold marks the column
+    headings. The panel is opaque, so the HUD never shows through it (RLM-560), and keeps the size of its largest tab.
+    - **Character** (RLM-509): on the left the player's model, turning toward the mouse as in the inventory
+      (`InventoryScreen#extractEntityInInventoryFollowsMouse`, drawn in screen pixels, as the entity's picture ignores
+      the pose). On the right the identity line, race, specialization and class ("Human Frost Mage": the
+      specialization with the most points, a tie alphabetically, none without points, which come with C5), whose race
+      and class show when hovered what the Origin tab showed (the race's description, what it gives and its racials,
+      gold over yellow; the class's description); the XP bar (`XpBarHud#drawBar` at the sheet's size) with "350 / 1200
+      XP", or "Level cap reached"; and the primary stats, one compact row each: name, value, a mark for each milestone
+      (10 and 25), gold once reached. For a player with a character the Primary Stats heading ends with "Unspent: 3",
+      "Unspent:" white and the number yellow while any are left (Matěj, 2026-10-16), and while any are unspent a small
+      green `+` ends each primary stat's row and spends one on it (`SpendStatPointPayload`, RLM-196). Hovered, it says
+      "Spend a point on Strength" and beneath it, in the headings' yellow and aligned right under the stat's name
+      (`client/tooltip/RightAlignedLines`, a tooltip component), what the point gives: each per-point bonus that still
+      grows and the bonuses of a milestone it reaches. Below, an inner panel sets the other stats apart in two columns
+      without a heading (luck, Stamina right below it, mining speed, reach, movement speed, swimming speed, the XP
+      multiplier, and any stat of ours no column names).
+    - **Offense** (RLM-235): Melee (attack damage and speed, crit chance and damage, armor pierce and shred,
+      lifesteal, overheal), Ranged (Apothic Attributes' Arrow Damage, Draw Speed and Arrow Velocity while it is
+      loaded, then crit, which counts for a fully drawn shot too, armor pierce and shred, lifesteal) and Spells (max
+      mana, mana regeneration, spell power, cast time and cooldown reduction, crit, then each school's power in the
+      school's colour). A stat that counts for several shows in each.
+    - **Defense**: Health (max health, health regeneration, Apothic Attributes' Healing Received, magic shield,
+      dodge) and Mitigation (armor, armor toughness; RLM-233's resistances join it). Spell Resistance and the schools'
+      resistances are mob-only stats (RLM-233), so the sheet never shows them.
+
+    Every stat has a tooltip: its name, then what it does from `content/texts/stat_tooltip.yaml`
+    (`stat_tooltip.realmforge.<path of the attribute's id>`, one text per stat, which the guide can reuse); a primary
+    stat's adds what its points give the player's class role (a player without a character sees the role-free
+    bonuses, [8.3](#83-derived-stats-and-milestones)): the per-point totals in vanilla's yellow, then its milestones in
+    vanilla's gold once reached and gray while ahead (Matěj, 2026-10-30: the green they had read badly). The names
+    the sheet gives vanilla attributes (Mining Speed, Movement Speed, ...) apply on their rows and in the primary
+    stats' bonuses. Values round for display only (RLM-530; Matěj, 2026-10-30): every value, percentages included,
+    half up to one decimal without a trailing `.0` (`character/StatNumbers`: 0.5%, 13.5%, 120%, 52.8; 100.6% stays
+    100.6%). All of it comes from the player's synced attributes, level and character and the synced registries.
   - The XP bar (`client/hud/XpBarHud`, C2) draws `character/XpBarView`: as wide as the hotbar, above the health and
     food rows and every other status row. NeoForge stacks those rows through `Gui#leftHeight` and `Gui#rightHeight`;
     the layer, registered above `VanillaGuiLayers.AIR_LEVEL`, reads them, so the bar rises with more heart rows, and

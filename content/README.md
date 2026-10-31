@@ -61,7 +61,9 @@ Rules:
   contain dots where the game prescribes a key format: `key.category.yaml` names key categories, which Options >
   Controls reads from `key.category.<namespace>.<path>` (constant `KEY_CATEGORY_MAIN`). `item_use.yaml` holds the
   green "Use:" tooltip line of each item use, named after the use; validation requires one for every use an item
-  names.
+  names. `stat_tooltip.yaml` says what each stat on the character sheet does (RLM-235, RLM-509), one text named after
+  the path of the attribute's id (`crit_chance`, `max_health`, `draw_speed`): the sheet builds the key from the
+  attribute, so a new stat on it needs its text, which `CharacterSheetGameTests` checks for every row.
 - `items/` may give an item a `use`, what right-clicking it does, one item used up each time
   ([architecture 13](../docs/architecture.md#13-items-gear-and-loot)): `unlearn_stat_points` returns every spent
   stat point (the Scroll of Oblivion, RLM-196). The pipeline puts the item into the tag `realmforge:use/<use>`,

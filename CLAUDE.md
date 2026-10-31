@@ -58,8 +58,9 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   change (Undervault, the realm portal, custom mobs, dungeons, the boss framework and Astone, the quest pipeline) is
   M2's and waits for M1. CI boots the whole pack on a server and a client (spike 6). Before any gameplay code the
   project moved from Minecraft 1.21.1 to 26.1.2 (RLM-65, RLM-123, RLM-124). The core mod has its feature skeleton
-  (F1), datapack registries (F2), player state (F3), stats (F4) with their names, a character sheet (F4b) and
-  raised attribute caps (F4c), Matěj's second stat numbers with bonuses by class role (melee, caster, ranged) and
+  (F1), datapack registries (F2), player state (F3), stats (F4) with their names, a character sheet (F4b; its tabs
+  Character, Offense and Defense, a tooltip on every stat and values with one decimal since RLM-509, RLM-235 and
+  RLM-530, laid out with our flexbox-style helper, RLM-560) and raised attribute caps (F4c), Matěj's second stat numbers with bonuses by class role (melee, caster, ranged) and
   Stamina, which slows the hunger drain (RLM-170, RLM-171), and the combat
   core (F5: spell schools, crit, dodge, resistances, our armor formula, combat text, the QA training dummy), and
   hostile mobs get levels near the nearest player's, floored per realm (W1, RLM-303), scaled by curves. The first
