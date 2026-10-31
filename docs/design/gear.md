@@ -7,8 +7,9 @@
 > (`Apotheosis-26.1.2-9.1.0.jar`, the pack's build: its data files and its `LootCategory` and loot function classes
 > with `javap`). Rarity, affixes, gems and reforging come from Apotheosis
 > ([ADR 0038](../decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md)); its world tiers,
-> loot and reforging loop are in [apotheosis.md](apotheosis.md). Every number here is a proposal for the data
-> tickets until Matěj approves it ([Open questions](#open-questions)), and a playtest tunes it after that.
+> loot and reforging loop are in [apotheosis.md](apotheosis.md). Matěj approved the design on 2026-10-30 and
+> 2026-10-31 (RLM-511, [Decisions](#decisions)) with the changes written in below; a playtest tunes its numbers, and
+> one point is still open ([Open questions](#open-questions)).
 
 ## At a glance
 
@@ -86,8 +87,8 @@ by the realm the source stands in:
   mobs roll the whole band.
 - **Deepholm** (formerly Prestoria, then Atlantis) keeps the chapter 4 band; Skyhearth has no loot of its own.
 - **Repeat runs** roll the same band: no diminishing loot from one spot (Matěj, 2026-10-15), and no item drops
-  only by luck without another way to it (LE-15, LE-17): every unique has a second source, a quest-shop item or a
-  repeatable quest ([Loot-only gear](#loot-only-gear)).
+  only by luck without another way to it (LE-15, LE-17): a boss's unique drops at 100 %, and one that ever drops below
+  that also goes into its dungeon's quest shop ([Second sources](#second-sources)).
 
 ## Affixes by archetype
 
@@ -109,8 +110,8 @@ So the proposal, for RLM-273's Java (a category is a registry entry) and RLM-272
 
 | Category | Items | Slot | How |
 | --- | --- | --- | --- |
-| `realmforge:wand` | `#realmforge:wands` | main hand | RLM-273 (its affixes: RLM-557) |
-| `realmforge:robe_head`, `robe_chest`, `robe_legs`, `robe_feet` | the caster sets (piece names by archetype: Cap, Robes, Pants, Sandals) | the armor slot | new: four categories, each robe mapped in `apotheosis:loot_category_overrides` (generated from the item's `gear`), so the order of the predicates never matters |
+| `realmforge:wand` | `#realmforge:wands` | main hand | RLM-273 (its affixes: RLM-562) |
+| `realmforge:robe_head`, `robe_chest`, `robe_legs`, `robe_feet` | the caster sets (piece names by archetype: Cap, Robes, Pants, Sandals) | the armor slot | RLM-546 (accepted on RLM-536, 2026-10-30): four categories, each robe mapped in `apotheosis:loot_category_overrides` (generated from the item's `gear`), so the order of the predicates never matters |
 | `realmforge:ring`, `necklace`, `bracelet` | `#curios:ring` and so on | the curio slot | RLM-556, once Curios and our curio items are in the pack |
 | ranged and rogue armor | the first ranged set (Hood, Tunic, Greaves, Tabi) | the armor slot | when that set exists (M3), the same way as robes |
 
@@ -123,40 +124,45 @@ crit chance (Intricate), crit damage (Lacerating), armor pierce (Piercing), life
 (Berserking), cooldown reduction (Timekeeping), and vanilla's attack damage, attack speed, armor and toughness as
 they are. Warrior spells scale with attack damage, so Violent and Murderous are the Warrior's spell power too.
 
-**One clash to fix in RLM-272: max health on gear.** Architecture 8.2 forbids gear that adds `minecraft:max_health`
-directly, because equipment modifiers apply one tick after a login and the saved health is cut to the lower maximum
-first (the item schema refuses it for our gear). Apotheosis's **Blessed** affix (armor, 2–8 health) and the
-**Brawler's** and **Warlord's** gems add exactly that. Proposal: remap them to Vitality at 1 point per health point
-(VIT gives 1 health per point through the saved derived modifiers, `content/stat_rules/vitality.yaml`), so a
-Legendary Blessed gives 5–8 VIT and the health survives a login.
+**Max health on gear: kept as is** (Matěj, 2026-10-30). Apotheosis's **Blessed** affix (armor, 2–8 health) and the
+**Brawler's** and **Warlord's** gems keep their `minecraft:max_health`; no remap to Vitality. Architecture 8.2 forbade
+gear that adds max health directly, because equipment modifiers apply one tick after a login and the saved health is
+cut to the lower maximum first (the item schema refuses it for our gear). That rule predates Apotheosis and changes
+instead: RLM-565 keeps the health across the login, so the clamp no longer cuts it.
 
 ### Caster: robes and wands
 
 New affixes of our own, through the `apotheosis_affixes` content type (`type: apotheosis:attribute`, like
-`lucky.yaml`), all `stat` kind so they roll from Common. Values per piece, Common / Uncommon / Rare / Epic /
-Legendary, anchored on our robes (a Netherite robe piece gives 10 % spell power and 40 mana, an Arcane Silk one 7 %
-and 25) and on the Mage's 100 mana and 5 mana per second:
+`lucky.yaml`), all `stat` kind so they roll from Common. Matěj approved the robe affixes on 2026-10-30 (RLM-511,
+question 4; RLM-557 builds them). Values per piece, Common / Uncommon / Rare / Epic / Legendary, anchored on our robes
+and on the Mage's 100 mana and 5 mana per second. Spell Power is flat points since RLM-534 (scaling system C): a
+Netherite robe piece gives 0.9–2.4 Spell Power and 40 mana (6 Spell Power for the set), an Arcane Silk one 0.7–1.8 and
+25 (4.5 for the set), and a wand 1–5.
 
-| Affix (working name) | Stat | Robes | Wand |
-| --- | --- | --- | --- |
-| Sorcerous | spell power | 2–3 / 2–4 / 3–5 / 4–7 / 6–9 % | 4–6 / 5–8 / 7–11 / 10–15 / 14–20 % |
-| Deep | max mana | 5–10 / 8–12 / 10–18 / 15–25 / 20–35 | |
-| Flowing | mana regeneration | 0.2–0.4 / 0.3–0.5 / 0.4–0.8 / 0.6–1.0 / 0.8–1.5 per s | 0.5–1 / 0.6–1.2 / 1–2 / 1.5–2.5 / 2–3 per s |
-| Warded | magic shield | 1 / 1–2 / 1–3 / 2–4 / 3–5 | |
-| Swift-Casting | cast time reduction | | from Rare: 2–4 / 3–6 / 5–8 % |
-| Timekeeping (Apotheosis's, remapped by RLM-272) | cooldown reduction | from Rare: 1–5 / 5–7.5 / 5–10 %, on the robe head and chest categories too | |
-| Timeless | cooldown reduction | | from Rare: 2–4 / 3–6 / 5–8 % |
-| Fiery, Frozen, Arcane-Touched | fire, frost or arcane power | from Uncommon: 3–5 / 4–7 / 6–10 / 8–14 % | from Uncommon: 5–8 / 6–10 / 9–15 / 12–20 % |
-| Spellwarded | spell resistance | from Rare: 2–4 / 3–5 / 4–7 % (robes only) | |
-| Insightful | crit chance | | 2–4 / 2–4 / 3–5 / 4–7 / 5–9 % |
-| Apotheosis's kept armor affixes that give no armor (Fortunate, Lucky, Stalwart, Windswept, Aquatic, Feathery, Bolstering and the like) | as Apotheosis's | on robes too: the robe categories join their lists | |
+| Affix (working name) | Stat | Robes, per piece |
+| --- | --- | --- |
+| Sorcerous | Spell Power, flat (`add_value`): half a wand's (Matěj, 2026-10-31) | 1–1.5 / 1–1.5 / 1.5–2.5 / 2–3 / 2.5–4 |
+| Deep | max mana | 5–10 / 8–12 / 10–18 / 15–25 / 20–35 |
+| Flowing | mana regeneration | 0.2–0.4 / 0.3–0.5 / 0.4–0.8 / 0.6–1.0 / 0.8–1.5 per s |
+| Warded | magic shield | 1 / 1–2 / 1–3 / 2–4 / 3–5 |
+| Timekeeping (Apotheosis's, remapped by RLM-272) | cooldown reduction | from Rare: 1–5 / 5–7.5 / 5–10 %, on the robe head and chest categories |
+| Fiery, Frozen, Arcane-Touched | fire, frost or arcane power | from Uncommon: 3–5 / 4–7 / 6–10 / 8–14 % |
+| Apotheosis's kept armor affixes that give no armor (Fortunate, Lucky, Stalwart, Windswept, Aquatic, Feathery, Bolstering and the like) | as Apotheosis's | the robe categories join their lists |
 
+- **No Spellwarded.** Spell Resistance and the school resistances are mob-only stats (Matěj, 2026-10-30, RLM-233): a
+  player's magic defense is Magic Protection (RLM-537), Magic Shield, Dodge and health. So the caster affixes are ten,
+  and Spell Penetration (RLM-535) takes Spellwarded's place on wands.
 - **No armor or toughness on robes,** so Ironforged, Adamantine and Steel Touched leave them out, and the robe
   categories never take the melee armor affixes.
-- **Stats only on wands, at first.** Apotheosis's effect and ability affixes fire on melee hits, arrows and being
-  hurt, never on a spell, so a wand's "On hit" would fire only when it is swung. Spell-hit effects (a Frostbolt that
-  slows more) need a hook in our spell engine, for a later ticket (open question 3). Effects on robes work as on any
-  armor (Bolstering, Revitalizing: on being hurt).
+- **Wands roll affixes like melee weapons, converted to spells** (Matěj, 2026-10-31, RLM-562, which replaces this
+  table's former wand column). Stat affixes: Sorcerous (flat Spell Power 2–3 / 2–3 / 3–5 / 4–6 / 5–8, as Violent),
+  Hastened (cast time reduction), Timeless (cooldown reduction), Spellbreaking (Spell Penetration), Insightful (crit
+  chance), Devastating (crit damage), Flowing (mana regeneration) and Fiery, Frozen and Arcane-Touched; then effects on
+  spell hit (Enfeebling, Chilling, Illuminating, Blighting, Uplifting, Hexing, Far-Reaching) and abilities (Explosive,
+  Echoing, Siphoning, Warding, Staggering) through a spell-hit hook in our spell engine, since Apotheosis's own effect
+  and ability affixes fire on melee hits, arrows and being hurt, never on a spell. RLM-562 holds the values. This
+  supersedes the first answer to question 3 (2026-10-30: stats only on wands now, spell-hit effects later). Effects on
+  robes work as on any armor (Bolstering, Revitalizing: on being hurt).
 - **Sockets:** robes and wands take sockets as Apotheosis's armor and weapons do; the gems' bonuses for them are in
   [Gems](#gems).
 
@@ -180,13 +186,16 @@ four slots add up to a fifth and sixth armor piece:
 
 | Slot | Affixes | Examples, Common → Legendary |
 | --- | --- | --- |
-| Ring | offense or defense: attack damage, spell power, crit chance, armor, health regeneration | crit chance 1–2 → 3–5 %; spell power 1–2 → 4–6 %; armor 0.5–1 → 2–4 |
+| Ring | offense or defense: attack damage, spell power, crit chance, armor, health regeneration | crit chance 1–2 → 3–5 %; spell power: to size in flat points ([open](#open-questions)); armor 0.5–1 → 2–4 |
 | Necklace | the school of a build: fire, frost or arcane power, crit damage, lifesteal, max mana | fire power 2–4 → 6–10 %; crit damage 5–8 → 12–20 % |
 | Bracelet | utility: movement speed, cooldown reduction, cast time reduction, mana regeneration, knockback resistance | cooldown reduction 1 → 3–4 %; movement speed 2–4 → 6–10 % |
 
 - **No toughness affix on curios.** Toughness stays scarce (Matěj, 2026-10-16): the crafted Diamond Band's fixed
   +1 toughness is the only toughness from curios, two rings give +2 at most.
 - **Sockets:** one socket from Rare, as `rarity_override` files per curio category (RLM-273).
+- **Artifacts' slots** (Matěj, 2026-10-30, RLM-512): the curio rule ended, and Artifacts' head, belt, two hands and feet
+  slots join ours for its items, which roll no affixes; the necklace is one slot that its necklaces share with ours
+  ([artifacts.md](../research/artifacts.md#matějs-decision-and-where-each-item-goes)).
 
 ## Loot-only gear
 
@@ -237,14 +246,18 @@ set's numbers, above anything a level 18 player can craft, and equal to what cha
 
 Curios have no crafted set to compare with, except the jeweler's few (Diamond Band, RLM-248). Their reference is a
 **piece budget**: a Haven curio's fixed stats equal one reference piece's non-armor stats, an Arcane Silk piece's
-7 % spell power or 25 mana, or 1–2 attack damage for melee. The table above raises it by source as for armor. A
+0.7–1.8 Spell Power or 25 mana, or 1–2 attack damage for melee. The table above raises it by source as for armor. A
 unique curio's effect is the point of it: the Snow Queen's Frozen Necklace (RLM-246) is the first.
 
 ### Second sources
 
-Every loot-only item has a second, deterministic way to it (LE-17, against luck as the only way, LE-15): the
-dungeon type's quest shop sells the boss's unique for that dungeon's tokens or coins after a first kill, or a
-repeatable quest gives it, priced at about 5–10 runs. A boss's unique is never a 1 % drop with nothing else behind it.
+Matěj, 2026-10-31 (RLM-511, question 8): yes, in principle, against luck as the only way (LE-15, LE-17).
+
+- **Every boss drop designed so far drops at 100 %,** so no item needs the shop now, and low drop chances such as
+  10 % are not wanted.
+- **If a boss's unique ever drops below 100 %,** it also goes into its dungeon type's quest shop after the first kill,
+  as bad-luck protection, for that dungeon's tokens or coins at about 5–10 runs' worth (or a repeatable quest gives
+  it). A boss's unique is never a rare drop with nothing else behind it.
 
 ### In data
 
@@ -259,32 +272,39 @@ repeatable quest gives it, priced at about 5–10 runs. A boss's unique is never
 ## Netherite upgrades
 
 Decided (Matěj, 2026-10-15): eight gems around one base item craft an upgrade for one netherite piece, at most one per
-piece and no set bonuses: **Ruby** offense, **Sapphire** defense, **Topaz** utility (Topaz is also the curio
-material). It is our own bonus tied to the piece, not an affix, and it follows the piece's archetype. Proposed values
-per piece:
+piece and no set bonuses: **Ruby** offense, **Sapphire** defense, **Topaz** utility. It is our own bonus tied to the
+piece, not an affix, and it follows the piece's archetype. Values per piece (Matěj, 2026-10-30, RLM-511; RLM-566
+builds them):
 
-| Upgrade | Melee piece | Caster piece |
-| --- | --- | --- |
-| Ruby (offense) | +3 % attack damage | +3 % spell power |
-| Sapphire (defense) | +1 armor, +5 % knockback resistance | +2 magic shield |
-| Topaz (utility) | +3 % movement speed | +2 % cooldown reduction |
+| Upgrade | Melee piece | Caster piece | Later, ranged piece (M3) |
+| --- | --- | --- | --- |
+| Ruby (offense) | +5 % Attack Damage | +5 % Spell Power | +5 % Arrow Damage |
+| Sapphire (defense) | +2 armor, +1 armor toughness | +3 Magic Shield | +1 armor, +2 % Dodge Chance |
+| Topaz (utility) | +5 % movement speed | +5 % Cooldown Reduction | +5 % Draw Speed |
 
-Four Rubies give +12 % attack damage, about one Legendary Murderous on a sword. The upgrade is a smithing recipe
-(template, piece, upgrade) that sets a data component of ours, shown as a tooltip line; the gems go into Undervault's
-stones with RLM-433.
+- Four Rubies give +20 % Attack Damage, or +20 % Spell Power on the caster's flat points (system C: a percent
+  modifier multiplies the flat total).
+- The ranged Sapphire's Dodge Chance is Claude's suggestion (Matěj was unsure of it): 2 % a piece, 8 % for a full set.
+- **Every gem has other uses too:** Topaz is also the curio material, and Ruby and Sapphire go into curios or other
+  recipes, never only into the upgrade.
+- The upgrade is a smithing recipe (template, piece, upgrade) that sets a data component of ours, shown as a tooltip
+  line. The gems drop from the Hewn Sentinel today and go into Undervault's stones with RLM-433.
 
 ## Gems
 
 - **Apotheosis's gems are the socket gems,** and Ruby, Sapphire and Topaz are not sockets (task 4).
 - **Our categories get gem bonuses:** each gem that fits a caster or a curio gets a bonus for `realmforge:wand`,
-  the robe categories and the curio categories (`extra_gem_bonuses` in RLM-273's data), with our stats: Solar fire
-  power, Lunar frost power, Splendor luck, Samurai crit chance on wands. Curios take attribute bonuses only.
+  the robe categories and the curio categories (Apotheosis's `extra_gem_bonuses`), with our stats: the wand bonuses in
+  RLM-547 (Matěj's picks on RLM-536, 2026-10-30), the robes' in RLM-548 (the armor gems' bonuses with swaps: Armor and
+  Toughness to Magic Shield, Attack Damage % to Spell Power %), the curios' with RLM-556. Curios take attribute bonuses
+  only.
 - **The Nether's and the End's gems never drop:** Blood Lord, Inferno and Molten Breach name
   `minecraft:the_nether` in their `constraints.dimensions`, Endersurge and Mageslayer `minecraft:the_end`, and the
-  pack has neither ([ADR 0025](../decisions/0025-remove-the-nether-and-end.md)). Proposal: our data moves their
-  constraints to realms of their theme: the Nether's three to Ashfire, the End's two to Unmade Isles. The three
-  Overworld gems (Earth, Royalty, Verdant Ruin) stay Overworld's.
-- Max health on gems: the Brawler's and the Warlord's, as above.
+  pack has neither ([ADR 0025](../decisions/0025-remove-the-nether-and-end.md)). Accepted (Matěj, 2026-10-30, on
+  RLM-536): our data moves their constraints to realms of their theme once those realms exist, the Nether's three to
+  Ashfire, the End's two to Unmade Isles (RLM-550). The three Overworld gems (Earth, Royalty, Verdant Ruin) stay
+  Overworld's.
+- Max health on gems: the Brawler's and the Warlord's keep theirs, as above (RLM-565).
 
 ## Expected gear for balance tests
 
@@ -298,37 +318,46 @@ stand in, and the handoff says so. Later handoffs add rows; Matěj's corrections
 
 | Content | Level | Melee (Warrior) | Caster (Mage) | Enchantments | Rarity and sockets | Source |
 | --- | --- | --- | --- | --- | --- | --- |
-| Astone, Undervault's final boss | 18 | full netherite armor and a netherite sword | the Netherite set (cap, robes, pants, sandals) and the Netherite Wand | about level V (each at its maximum where that is lower: Protection IV, Unbreaking III) | Rare, every socket filled with a Flawed gem | Matěj, 2026-10-30: "full netherite, enchantments at about level V, rare gems"; gems have purities, not rarities, so "rare gems" reads as Rare pieces with Flawed gems until a playtest says otherwise. RLM-534's target: such a player deals about 50 per spell to her |
+| Astone, Undervault's final boss | 18 | full netherite armor and a netherite sword | the Netherite set (cap, robes, pants, sandals) and the Netherite Wand | level V for every enchantment, Protection and Unbreaking included: Apothic Enchanting raises vanilla's maximum levels (RLM-552) | Rare, every socket filled with a Flawed gem | Matěj, 2026-10-30: "full netherite, enchantments at about level V, rare gems"; gems have purities, not rarities, so "rare gems" reads as Rare pieces with Flawed gems until a playtest says otherwise. RLM-534's target: such a player deals about 50 per spell to her |
 
 ## What follows from it
 
-Once Matěj approves, these tickets carry it (names for the follow-ups, not tickets yet):
+These tickets carry the approved design:
 
-- **RLM-272** (data from our YAML): Blessed, Brawler's and Warlord's max health remapped to Vitality; the robes'
-  `loot_category_overrides`; `reforge_item` support in our loot tables.
-- **RLM-273** (loot categories): the four robe categories next to the wand and curio ones; the curio affixes, sockets
-  and gem bonuses.
-- **New: caster affixes** (the table above) through the `apotheosis_affixes` content type, after RLM-272.
-- **New: Nether and End gems re-homed** to Ashfire and Unmade Isles, after RLM-272.
-- **New: netherite upgrades** (Ruby, Sapphire, Topaz), after RLM-433's gems.
-- **New: loot-only rule in validation**: a unique's base stats within its source's band, from the reference sets,
-  once the first uniques exist (Astone's, RLM-503).
+- **RLM-272** (Done): Apotheosis's data from our YAML. RLM-273 (Done): the wand loot category.
+- **RLM-546:** the four robe loot categories and their `loot_category_overrides`.
+- **RLM-557:** the pipeline for affixes of our own and the robe affixes (the table above).
+- **RLM-562:** the wand affixes (stats, effects on spell hit, abilities), a stun ability for every weapon, and Hexed.
+- **RLM-547** and **RLM-548:** the gem bonuses for wands and robes; **RLM-556:** the curio categories, their affixes,
+  sockets and gem bonuses.
+- **RLM-550:** the Nether's and the End's gems drop in Ashfire and Unmade Isles, once those realms exist.
+- **RLM-565:** max health from gear survives a login (Blessed and the two gems keep theirs).
+- **RLM-566:** the netherite upgrades (Ruby, Sapphire, Topaz).
+- **RLM-567** (M2): our own loot names its band through `apotheosis:reforge_item`, and validation keeps loot-only
+  uniques within their source's step, once the first uniques exist.
+
+## Decisions
+
+Matěj's answers to the design's questions (RLM-511, 2026-10-30 and 2026-10-31), written into the sections above:
+
+1. **Bands for our loot:** yes, his band per realm of 2026-10-15, bosses at its top and a realm's final boss one
+   above it for its unique; Apotheosis's random drops by world tier.
+2. **Loot-only power:** yes, +0 / +15 / +30 % by source and the next tier's set for a final boss, armor and toughness
+   climbing slowest.
+3. **Effects on wands:** first stats only, spell-hit effects later through our spell engine (2026-10-30); on
+   2026-10-31 RLM-562 brought the spell-hit effects and abilities in now.
+4. **Caster affixes:** yes, ten, without Spell Resistance (a mob-only stat); Spell Penetration (RLM-535) takes its
+   place on wands. Sorcerous is flat Spell Power under system C (2026-10-31): robes 1–1.5 / 1–1.5 / 1.5–2.5 / 2–3 /
+   2.5–4 a piece, wands 2–3 / 2–3 / 3–5 / 4–6 / 5–8.
+5. **Max health on gear:** kept as is; architecture 8.2's rule changes instead, and the login clamp is solved
+   (RLM-565).
+6. **Nether and End gems:** re-homed to Ashfire and Unmade Isles once those realms exist (on RLM-536).
+7. **Netherite upgrades:** new values, the table above, and every gem has other uses too.
+8. **Second sources:** yes, in principle: boss drops at 100 %, no low drop chances, and a unique below 100 % goes into
+   its dungeon's quest shop after the first kill.
 
 ## Open questions
 
-For Matěj; each has a proposal so the data tickets can go on.
-
-1. **Bands for our loot.** Your table of 2026-10-15 as the band our own loot names per realm, bosses at the band's
-   top and a realm's final boss one above it for its unique (proposed); or the world tier alone everywhere?
-2. **Loot-only power.** The reference set +0 / +15 / +30 % by source and the next tier's set for a final boss, with
-   armor and toughness climbing at most to the next tier's (proposed); or other shares?
-3. **Effects on wands.** Stats only on wands now, spell-hit effects later through our spell engine (proposed); or
-   no effects on wands at all?
-4. **Caster affixes.** The table above (eleven affixes, values per rarity) as the first set (proposed)? Its names are
-   working names for the style guide.
-5. **Max health on gear.** Blessed and the two gems remapped to Vitality (proposed), or turned off?
-6. **Nether and End gems.** Re-homed to Ashfire and Unmade Isles (proposed), or left out?
-7. **Netherite upgrades.** The values above (proposed)? Topaz as the utility upgrade and the curio material at once
-   (your two notes of 2026-10-15)?
-8. **Second sources.** Every boss unique in its dungeon's quest shop after a first kill, at about 5–10 runs' worth
-   (proposed)?
+1. **Spell Power on curios under system C.** Spell Power is flat points since RLM-534, and the ring's spell power
+   affix (Curios, above) was sized as a percent, 1–2 → 4–6 %, against the old stat. Its size in flat points waits for
+   Matěj (RLM-511 comment 23232: no agent picks new numbers); RLM-556 needs it for the ring.

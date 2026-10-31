@@ -4,7 +4,9 @@ Date: 2026-10-29
 
 Status: Accepted (amends [0044](0044-third-party-mods-by-milestone.md),
 [0038](0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md) and
-[0041](0041-dungeon-containers-hold-loot-through-lootr.md) in their milestones, and the roadmap's decision D7)
+[0041](0041-dungeon-containers-hold-loot-through-lootr.md) in their milestones, and the roadmap's decision D7);
+amended by [0066](0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md) (Artifacts placed item by item,
+Immersive Armors rejected), 2026-10-31
 
 ## Context
 

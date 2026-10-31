@@ -656,7 +656,10 @@ transient because of how vanilla handles health:
   tick (`LivingEntity#detectEquipmentUpdates`), and lowering max health clamps health at once
   (`LivingEntity#onAttributeUpdated`). Hence two rules: gear never adds `generic.max_health` directly (a validation
   rule; max health comes from primary stats through the saved derived modifiers), and the recompute after login
-  waits for that first tick, so it sees the same gear the saved values were computed with.
+  waits for that first tick, so it sees the same gear the saved values were computed with. Third-party gear breaks
+  the first rule: Apotheosis's Blessed affix and its Brawler's and Warlord's gems add max health, and Matěj kept them
+  (2026-10-30, RLM-511), so RLM-565 is to keep the health across the login instead of forbidding them; until then such
+  a player logs in with health cut to the maximum without them.
 - **Respawning:** after a death, vanilla copies only base values and sets health before our modifiers exist
   (`ServerPlayer#restoreFrom`), so refill health to the new maximum after the first-tick recompute. Leaving the End
   (`PlayerEvent.Clone#isWasDeath` is false) is not a death: vanilla copies the permanent modifiers (ours, and
@@ -3753,10 +3756,13 @@ a slot when that slot's stack is no longer the one it opened (`BackpackContainer
 it open:
 
 - `client/compat/inventorysorter/BackpacksStayInPlace` adds a sort priority rule, every backpack tier with the
-  position `ignore` (`compat/inventorysorter/BackpackSortRule`), to Inventory Sorting's loaded client config, in memory,
-  on `ClientPlayerNetworkEvent.LoggingIn` at the highest priority, before Inventory Sorting's own listener sends the
-  rules to the server, which sorts by them. The player's `config/inventorysorter.json` and their own rules stay as they
-  are; the pack ships no copy of that file, which would overwrite them. Like Pick Up Notifier's, it changes the mod's
+  position `ignore` (`compat/inventorysorter/BackpackSortRule`), to Inventory Sorting's loaded client config on every
+  join, on `ClientPlayerNetworkEvent.LoggingIn` at the highest priority, before Inventory Sorting's own listener sends
+  the rules to the server, which sorts by them. Inventory Sorting writes its whole loaded config, our rule included,
+  into the player's `config/inventorysorter.json` the next time it saves it (its config screen, the sort button's
+  toggle, settings synced back from `/invsort`, the missing-server warning); the player's own rules stay, and
+  `BackpackSortRule.isMissing` never adds ours twice (RLM-558). The pack ships no copy of that file, which would
+  overwrite them. Like Pick Up Notifier's, it changes the mod's
   loaded config, compiled against the pack's build (`compileOnly`, read from `pack/mods/inventory-sorting.pw.toml`),
   and runs only while both mods are loaded; `neoforge.mods.toml` names Inventory Sorting as an optional client
   dependency.

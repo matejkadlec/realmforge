@@ -93,7 +93,7 @@ gear of the old M2 moved here.
 | Spell trees | one specialization spell tree per class, full to level 18 (C5, RLM-218); talents are postponed indefinitely (Matěj, 2026-10-16, RLM-28, [ADR 0044](decisions/0044-third-party-mods-by-milestone.md)) |
 | Spell visuals | icons, and every spell's model, trajectory, particles, animation and sounds |
 | Leveling | levels 1-18 with the level cap of D2 (C2); the chapter advancements that raise the cap are granted by command until M2's quests grant them |
-| Gear | Apotheosis's rarities, affixes, gems and reforging fitted to our stats ([ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md)); weapons, wands and caster robes up to netherite with textures; our own shield tiers; curios with textures, with Artifacts and Immersive Armors as Matěj picks them |
+| Gear | Apotheosis's rarities, affixes, gems and reforging fitted to our stats ([ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md)); weapons, wands and caster robes up to netherite with textures; our own shield tiers; curios with textures, with Artifacts placed item by item ([ADR 0066](decisions/0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md)) |
 | Items | the Scrolls of Respec and Rebirth |
 | World | Overworld as the test world: vanilla hostile mobs with levels (W1), vanilla strongholds off |
 | Pack | the M1 mods of [ADR 0044](decisions/0044-third-party-mods-by-milestone.md) ([Pack](#pack-parallel)) and the gear mods, which were M2's until 2026-10-29 |
@@ -276,10 +276,11 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
   and caster robes (RLM-197) up to netherite, all with textures, and more weapon and armor sets.
 - **Shields** (RLM-378). Our own shield tiers with a block cooldown per tier, from wood to netherite, then our realm
   materials.
-- **Curios:** Curios with the first curios of our own, with textures; Artifacts and Immersive Armors after their
-  catalogues, from which Matěj picks what stays (RLM-312, RLM-313; Artifacts' curio items wait for his word on
-  [ADR 0025](decisions/0025-remove-the-nether-and-end.md)'s curio rule), and the gear and tooltip mods (RLM-314:
-  Legendary Tooltips, Item Borders, YDM's Weapon Master).
+- **Curios:** Curios with the first curios of our own, with textures; Artifacts with a place for each of its items
+  ([research](research/artifacts.md#matějs-decision-and-where-each-item-goes): the curio rule ended and Immersive Armors
+  stays out, Matěj 2026-10-30, RLM-512, RLM-513,
+  [ADR 0066](decisions/0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md)), and the gear and
+  tooltip mods (RLM-314: Artifacts, Legendary Tooltips, Item Borders, YDM's Weapon Master).
 - **Scrolls** of Respec (RLM-226), a full spell point reset, and of Rebirth (RLM-228), a full character reset.
 
 ### Pack (parallel)

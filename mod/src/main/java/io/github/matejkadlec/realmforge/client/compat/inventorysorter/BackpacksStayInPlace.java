@@ -16,9 +16,12 @@ import net.neoforged.neoforge.common.NeoForge;
  * Keeps every Sophisticated Backpacks backpack in its slot when Inventory Sorting sorts ({@link BackpackSortRule},
  * RLM-519), so sorting the inventory with a backpack open leaves the backpack open and unchanged. Inventory Sorting
  * sorts on the server, by the sort priority rules each client sends it from its config ({@code config/
- * inventorysorter.json}) when it joins a world. This adds our rule to the loaded config, in memory, just before that:
- * the player's file and their own rules stay as they are, and the rule comes back on the next join if they remove it.
- * The pack cannot ship the file, which packwiz-installer would copy over every player's own settings. Runs only while
+ * inventorysorter.json}) when it joins a world. This adds our rule to the loaded config on every join, just before
+ * that, and the rule comes back on the next join if the player removes it. Inventory Sorting writes its whole loaded
+ * config, our rule included, into the player's file the next time it saves it (its config screen, the sort button's
+ * toggle, settings synced back from {@code /invsort}, the missing-server warning); their own rules stay, and
+ * {@link BackpackSortRule#isMissing} never adds ours twice (RLM-558). The pack cannot ship the file, which
+ * packwiz-installer would copy over every player's own settings. Runs only while
  * both mods are loaded (architecture 19.4); the core mod compiles against the pack's Inventory Sorting, so an update
  * that changes its config fails the build, not the game.
  */
