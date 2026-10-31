@@ -91,6 +91,38 @@ public final class WindowsAndProcsGameTests {
     }
 
     /**
+     * A raised shield opens Test Overpower's window only for a hit it blocks: a zombie's hit from behind, outside the
+     * shield's 90°, goes through and opens nothing; the same hit from in front is blocked and opens it.
+     */
+    @QaGameTest
+    public static void aShieldOpensOverpowersWindowOnlyForAHitItBlocks(GameTestHelper helper) {
+        ServerPlayer player = player(helper, "qa-window-shield", new Vec3(2.5, 1, 2.5));
+        learn(helper, player, GeneratedSpells.TEST_OVERPOWER);
+        player.setItemSlot(EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
+        Zombie behind = zombie(helper, new Vec3(2.5, 1, 1));
+        Zombie ahead = zombie(helper, new Vec3(2.5, 1, 4));
+        player.startUsingItem(InteractionHand.OFF_HAND);
+        // The shield blocks after its 0.25 s delay.
+        for (int tick = 0; tick < 6; tick++) {
+            player.doTick();
+        }
+        helper.assertTrue(player.isBlocking(), "the shield is raised");
+
+        player.hurtServer(helper.getLevel(), helper.getLevel().damageSources().mobAttack(behind), 4);
+        long now = helper.getLevel().getGameTime();
+        helper.assertFalse(player.getData(SpellAttachments.COMBAT).isWindowOpen(GeneratedSpells.TEST_OVERPOWER, now),
+                "a hit from behind, which the shield did not block, opened Test Overpower's window");
+
+        player.invulnerableTime = 0;
+        player.hurtServer(helper.getLevel(), helper.getLevel().damageSources().mobAttack(ahead), 4);
+        helper.assertTrue(player.getData(SpellAttachments.COMBAT).isWindowOpen(GeneratedSpells.TEST_OVERPOWER, now),
+                "the blocked hit from in front opened Test Overpower's window");
+        player.stopUsingItem();
+        logout(player);
+        helper.succeed();
+    }
+
+    /**
      * A kill of an enemy at most 3 levels below the player opens Test Victory Rush's window for 20 s; a gray kill, 4
      * levels below, does not.
      */
@@ -237,13 +269,26 @@ public final class WindowsAndProcsGameTests {
     }
 
     private static ServerPlayer player(GameTestHelper helper, String name) {
-        ServerPlayer player = QaPlayers.loginOnPlatform(helper, name, new Vec3(2.5, 1, 0.5));
+        return player(helper, name, new Vec3(2.5, 1, 0.5));
+    }
+
+    /** A player facing south from {@code where}, who never crits or dodges and has no Spell Power. */
+    private static ServerPlayer player(GameTestHelper helper, String name, Vec3 where) {
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, name, where);
         player.setGameMode(GameType.SURVIVAL);
         player.connection.markClientLoaded();
         StatsCommands.setBase(player, GeneratedStats.CRIT_CHANCE, 0);
         StatsCommands.setBase(player, GeneratedStats.DODGE_CHANCE, 0);
         StatsCommands.setBase(player, GeneratedStats.SPELL_POWER, 0);
         return player;
+    }
+
+    /** A zombie that stands still at {@code where}, at level 1. */
+    private static Zombie zombie(GameTestHelper helper, Vec3 where) {
+        Zombie zombie = helper.spawn(EntityType.ZOMBIE, where);
+        zombie.setNoAi(true);
+        MobLevels.setLevel(zombie, EntityLevel.MIN);
+        return zombie;
     }
 
     private static void learn(GameTestHelper helper, ServerPlayer player, ResourceKey<Spell> spell) {

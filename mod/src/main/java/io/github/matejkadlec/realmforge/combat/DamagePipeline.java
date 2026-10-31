@@ -159,13 +159,15 @@ public final class DamagePipeline {
 
     /**
      * A shield never blocks a damage over time's tick (RLM-539), wherever its caster stands; a hit it does block is
-     * reported ({@link CombatEvent.Block}, RLM-540).
+     * reported ({@link CombatEvent.Block}, RLM-540). NeoForge fires the event for every hit on a raised shield that its
+     * damage type does not bypass, still marked blocked, so a hit outside the shield's arc (from behind) arrives with
+     * no blocked damage: it blocked nothing and is not reported.
      */
     static void onShieldBlock(LivingShieldBlockEvent event) {
         if (event.getBlocked() && SchoolDamageSource.tickOf(event.getDamageSource()).isPresent()) {
             event.setBlocked(false);
         }
-        if (event.getBlocked() && !event.getEntity().level().isClientSide()) {
+        if (event.getBlocked() && event.getBlockedDamage() > 0 && !event.getEntity().level().isClientSide()) {
             NeoForge.EVENT_BUS.post(new CombatEvent.Block(event.getEntity(), event.getDamageSource()));
         }
     }
