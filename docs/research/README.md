@@ -79,12 +79,16 @@ consumable decisions of 11–12 October 2026.
   where it places items (chests, brushing, mob equipment, campsites and the Mimic) and the config and data that switch
   each source off; its five Curios slot types against our four slots and Matěj's curio rule. Proposed: six utility
   items as unique quest rewards in our slots, everything else and every world source off, with an ADR amending the
-  curio rule; or Artifacts left out. Waiting for Matěj's pick.
+  curio rule; or Artifacts left out. **Decided (Matěj, 2026-10-30, RLM-512): neither; the curio rule ends, Artifacts
+  is in, and each item gets its own place** (its decision section,
+  [ADR 0066](../decisions/0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md)).
 - **[immersive-armors.md](immersive-armors.md)**: Immersive Armors 1.8.2's ten sets and 40 pieces (NeoForge 26.1.2
   jar) with armor, toughness, knockback resistance, speed, durability, enchantability, their hard-coded effects and
   where they act in our damage pipeline, recipes (two with Nether materials), chest loot and mob armor, and the levers
   (config, recipe conditions, `ModifyDefaultComponentsEvent`). Proposed: nine sets, Robe off, Heavy's toughness cut,
-  Warrior and Divine as unique quest rewards, its chest loot and mob armor off. Waiting for Matěj's pick.
+  Warrior and Divine as unique quest rewards, its chest loot and mob armor off. **Decided (Matěj, 2026-10-30,
+  RLM-513): not taken**
+  ([ADR 0066](../decisions/0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md)).
 
 ## Coins, merchant trades and trade display (2026-10-19, RLM-222)
 

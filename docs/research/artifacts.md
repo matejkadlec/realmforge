@@ -9,8 +9,11 @@
 > `GeneralConfig`, `ConfigManager`, `ModItems`, `ArtifactProperties`, `MimicEntity`, the Curios integration and the
 > mixins named below). Apotheosis's `charm` category was checked in the pack's Apotheosis 9.1.0 jar. The jar is not
 > in the repository, and nothing of Artifacts' code or assets goes into Realmforge: mechanics only.
-> **Waiting for Matěj** ([Questions](#questions-for-matěj)).
-> [ADR 0044](../decisions/0044-third-party-mods-by-milestone.md) holds Artifacts until he decides.
+> **Decided by Matěj on 2026-10-30 (RLM-512): option C,** neither of the catalogue's options: the curio rule ends,
+> Artifacts joins the pack, and each item gets its own place
+> ([ADR 0066](../decisions/0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md),
+> [Matěj's decision and where each item goes](#matějs-decision-and-where-each-item-goes)). The catalogue below is the
+> research the placement reads.
 
 **In short.** Artifacts adds 49 items: 45 worn accessories, one held item (the Umbrella), two foods that are never
 used up, and the Mimic's spawn egg. The accessories have no slots of their own: they need Curios (or Accessories or
@@ -26,6 +29,118 @@ fire and lava safety, mount speed). The proposal: take Artifacts in narrowly, as
 items given as unique quest rewards, worn in our own slots, with every world source and every Artifacts slot off. An
 ADR then amends the curio rule for those items alone. The alternative is to leave Artifacts out and build those six
 effects as our own curios later ([Proposal](#proposal-for-matěj)).
+
+## Matěj's decision and where each item goes
+
+**Matěj, 2026-10-30 (RLM-512): option C.** The curio rule (RLM-7, 2026-10-12) is cancelled: Artifacts was picked
+precisely because it is a curios mod. Artifacts is in. Instead of a keep-list, every item gets a place: which realm,
+dungeon or boss gives it, at what level, as loot, a quest reward or a boss drop. The more items find a place, the
+better; an item that clashes with our systems (stats, the damage pipeline, a later realm's progression) gets a place
+late enough, a tweak, or is off, each with its reason. His notes: the Night Vision Goggles are useless here (every
+player has Night Vision by default), and the Onion Ring, as far as he knows, does nothing. The catalogue's questions
+2–9 fall away; this section answers them item by item, and the pack task RLM-314 builds it
+([ADR 0066](../decisions/0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md)).
+
+### The rules this placement follows
+
+- **Slots:** Artifacts' Curios compatibility is on, so its slot types join ours: head, belt, two hands and feet next to
+  our two rings and our bracelet. The necklace is one slot (Curios' `necklace`, which both use): an Artifacts necklace
+  and one of our stat necklaces compete for it, as WoW's trinket slots make a player choose. A hand item is worn in
+  Artifacts' hands slots, never in our ring or bracelet.
+- **Sources are ours:** a quest reward (**quest**), a boss's drop at 100 % (**boss**, as every boss drop designed so
+  far, [gear design](../design/gear.md#second-sources)), or one item per player from a dungeon's treasure through Lootr
+  (**treasure**). Artifacts' own sources are off (`artifactRarity` 10000, `archaeologyChance` 0,
+  `entityEquipmentChance` 0, `campsiteCount` 0, `generateAsLoot` false for every item, the beef's `dropRate` 0), so no
+  item is only a chance roll, and an item's realm decides who meets it.
+- **One of each:** a reward gives an item once per player; a player who loses one gets it again from the quest giver
+  or the boss's dungeon (the second-source rule).
+- **No affixes:** each item's effect is the point of it, so `apotheosis:loot_category_overrides` maps every Artifacts
+  item to `none` and our curio categories never take one.
+- **Tweaks are config numbers** (`items.toml` has every item's numbers, [Facts](#facts)); an item switched off stays
+  registered, hidden from JEI and the creative tab.
+- **Names:** Artifacts' names stay unless they clash with the [style guide](../lore/style.md)'s tone; the joke items
+  are the ones off or renamed below. A rename is a lang entry of ours with the same key, if our resources load after
+  Artifacts' (to verify with RLM-314).
+- **Levels** are the realm bands of [realms.md](../design/realms.md#at-a-glance): Overworld 1–10, Undervault 6–18,
+  Sunwastes 16–24, Everwinter 20–30, Skyhearth from about 15, Deepholm 26–40, Quagmire 36–44, Ashfire 40–52, Unmade
+  Isles 48–60. A later realm's dungeon or quest that is not designed yet is named by its realm alone.
+
+### The placement
+
+| Item | Slot | Where | Level | Source | Tweak or reason |
+| --- | --- | --- | --- | --- | --- |
+| Novelty Drinking Hat | head | Overworld, a tavern quest (Village Taverns) | 5 | quest | renamed "Brewer's Hat" in our style; potions drink faster, which helps in a fight |
+| Plastic Drinking Hat | | | | off | the Novelty Drinking Hat's numbers twice, and "plastic" against the lore's tone |
+| Villager Hat | head | Skyhearth, its traders' questline | 20 | quest | cheaper villager trades: late, once coins and merchants ([ADR 0040](../decisions/0040-coins-and-data-driven-merchant-trades.md)) are an economy the discount does not break; reputation +75 lowered to +30 |
+| Superstitious Hat | head | Sunwastes, the pyramid dungeon's boss | 20 | boss | +1 Looting on Apothic Enchanting's levels: a treasure-hunter's reward in the treasure realm |
+| Cowboy Hat | head | the mounts' questline, with the mount tiers (M4) | 22 | quest | mount speed +40 % lowered to +15 %, so the mount tiers stay the main step ([Chococraft decision](chococraft.md#decision-rlm-115)) |
+| Angler's Hat | head | the fishing profession (Aquaculture 2, M5) | its band | quest | as the catalogue: with the profession |
+| Snorkel | head | Overworld, a coastal quest | 9 | quest | 30 s of breath per dive helps Overworld's shipwrecks and ruins; Deepholm's own Breath of Deepholm (infinite) supersedes it there |
+| Night Vision Goggles | | | | off | useless here: every player has Night Vision by default (Matěj) |
+| Lucky Scarf | necklace | Undervault, a Cairnfolk ore or gem quest | 12 | quest | +1 Fortune for the mine of the whole game |
+| Panic Necklace | necklace | Overworld, a quest after the first dungeon | 6 | quest | Speed I when hurt: a mild escape for new players |
+| Thorn Pendant | necklace | Overworld, the first dungeon's treasure | 4 | treasure | flat 2–6 damage is strong at level 4 and fades by Undervault: an early item that ages out, as WoW's early trinkets do |
+| Shock Pendant | necklace | Everwinter, the ice castle's boss | 28 | boss | lightning on an attacker is vanilla damage outside our schools and lights fires, so it comes where frost covers the ground; chance 25 % lowered to 15 %, and a GameTest checks that it never hits a party member |
+| Flame Pendant | necklace | Ashfire, a volcano dungeon's boss | 44 | boss | sets attackers on fire and then gives Fire Resistance: Ashfire is where fire safety belongs |
+| Charm of Sinking | necklace | Deepholm, its seabed quests | 28 | quest | walking on the seabed is Deepholm's movement; given with or after the Breath of Deepholm, never before |
+| Scarf of Invisibility | | | | off | permanent Invisibility breaks mob targeting, boss fights and multiplayer at any level |
+| Cross Necklace | | | | off | adds to `invulnerableTime`, the field our damage pipeline keeps for its hurt-cooldown rules ([ADR 0049](../decisions/0049-player-hits-bypass-the-hurt-cooldown-in-our-pipeline.md), [0051](../decisions/0051-player-melee-passes-the-hurt-cooldown-only-at-full-strength.md)) |
+| Charm of Shrinking | | | | off | half size through any one-block gap breaks dungeon layouts, hitboxes and boss areas |
+| Universal Attractor | belt | Overworld, an early side quest | 4 | quest | pure convenience |
+| Antidote Vessel | belt | Quagmire, the slime dungeon's boss | 42 | boss | caps vanilla's debuffs (Poison, Slowness, Weakness) at 5 s in the poison realm; our own effects are not in its tag, so our bosses' debuffs keep their length |
+| Obsidian Skull | belt | Ashfire, an entry quest | 41 | quest | Fire Resistance after fire damage: Ashfire's hazard, at Ashfire |
+| Crystal Heart | belt | Deepholm, the underwater city's boss | 36 | boss | +10 max health: after RLM-565 keeps gear's max health through a login, and late, where +10 is a few VIT points instead of a doubled pool |
+| Cloud in a Bottle | belt | Skyhearth, the heavens' questline | 30 | quest | the double jump comes after Undervault's and the twins' jumping puzzles; later realms' puzzles and arenas are built knowing it |
+| Helium Flamingo | belt | Deepholm, after elytra | 32 | quest | swimming in the air for 8 s comes after elytra (the twins' final boss, [ADR 0037](../decisions/0037-elytra-from-chapter-3s-final-boss-amends-the-nether-and-end-removal.md)), when flight is no longer new |
+| Warp Drive | belt | Unmade Isles, the void's questline | 52 | quest | free ender pearls skip rooms: late, with ender pearls refused in instances (a rule RLM-314 checks for, or a follow-up) |
+| Chorus Totem | | | | off | a random teleport on a fatal hit leaves a boss arena (which resets the boss) or an instance, beside vanilla's totem |
+| Onion Ring | hands | Undervault, a Cairnfolk mining quest | 8 | quest | it does work, against Matěj's note: Haste II for 6 s per food point eaten (a steak gives 48 s); faster mining in the mining realm |
+| Digging Claws | hands | Overworld, a miner's quest | 3 | quest | +30 % mining speed and hands-free mining: small since the tool speed rule is gone (RLM-450) |
+| Pickaxe Heater | hands | Undervault, a smelting quest | 10 | quest | ores drop smelted: skips a furnace step, nothing else |
+| Golden Hook | hands | Overworld, an enchanter's quest | 6 | quest | +50 % vanilla XP from kills feeds enchanting only, never our character XP |
+| Pocket Piston | hands | Overworld, the illager questline | 8 | quest | +0.75 knockback: fun early; bosses' knockback resistance keeps them in place |
+| Withered Bracelet | hands | Undervault, the catacombs' treasure | 14 | treasure | Wither II on a melee hit is about 8 damage over 8 s: modest beside our damage over time at that level |
+| Fire Gauntlet | hands | Everwinter, the nordic fortress's boss | 24 | boss | melee hits set the target on fire: a frost realm's answer, outside our fire school, so its burn stays vanilla's |
+| Feral Claws | hands | Everwinter, a dungeon's treasure | 26 | treasure | attack speed +30 % lowered to +10 %, next to DEX's attack speed and Better Combat's timing |
+| Power Glove | hands | Ashfire, the fire realm's final boss | 50 | boss | +4 attack damage is half an iron sword at level 10 and little at 50, where it no longer bends the Warrior's spell scaling |
+| Vampiric Glove | | | | off | 20 % melee lifesteal on every hit beside our lifesteal stat (Apotheosis's Vampiric, remapped), outside its rules |
+| Kitty Slippers | feet | Overworld, a village cat quest | 6 | quest | creepers keep away: kind to new players; no dungeon depends on creepers |
+| Rooted Boots | feet | Overworld, a farmer's quest | 7 | quest | a little hunger on grass; the vision keeps hunger, and this barely dents it |
+| Running Shoes | feet | Sunwastes, a desert travel quest | 17 | quest | sprint speed +40 % lowered to +15 %, close to DEX's 20 % movement cap, before mounts |
+| Snowshoes | feet | Everwinter, its entry quest | 20 | quest | as the catalogue: Everwinter's snow |
+| Bunny Hoppers | feet | Everwinter, a frozen lake quest | 25 | quest | +40 % jump strength after the twins' first puzzles; the hurt sounds stay, a joke kept |
+| Flippers | feet | Deepholm, its first quest | 26 | quest | +70 % swim speed joins Deepholm's swim plan (Depth Strider above III); they stack, so the plan is tuned with them |
+| Strider Shoes | feet | Ashfire, a lava lake quest | 43 | quest | standing on lava is Ashfire's, at Ashfire |
+| Aqua-Dashers | feet | Unmade Isles, an entry quest | 50 | quest | sprinting on fluids, lava included, comes after Ashfire's lava lakes and Deepholm's water |
+| Steadfast Spikes | feet | Unmade Isles, the Void Cathedral's treasure | 56 | treasure | full knockback immunity lowered to +0.5 knockback resistance, so our knockback spells and bosses' pushes still move a player |
+| Umbrella | off hand | Overworld, a rainy-day quest | 5 | quest | added to `#c:tools/shield` by our data, so the two-handed wands' shield lock (RLM-461) covers it; its slow fall is a small glider long before elytra; Better Combat has no preset, so it stays vanilla in the hand |
+| Eternal Steak | any | Unmade Isles, the finale's last quest | 58 | quest | food that is never used up, at the end of the game, when every food buff (M2) and cooking (M5) has had its time |
+| Everlasting Beef | | | | off | the raw form of the Eternal Steak, and its source (cows) is off; the steak is the reward |
+| Whoopee Cushion | | | | off | a fart joke against the lore's tone, and it sits in the spawn bonus chest |
+| Mimic Spawn Egg | | | | off | creative only; the Mimic is off with the campsites (below) |
+
+**Count:** 49 items: 39 placed (6 of them with a lowered number) and 10 off, the Mimic's spawn egg among them. Placed
+by realm: Overworld 11, Undervault 4, Sunwastes 2, Everwinter 5, Skyhearth 2, Deepholm 4, Quagmire 1, Ashfire 4,
+Unmade Isles 4, and 2 with the mounts' and the fishing questlines (the Cowboy Hat and the Angler's Hat).
+
+### Campsites and the Mimic
+
+Off with every other Artifacts source (`campsiteCount` 0). The Mimic is a fair idea for a dungeon's treasure room (a
+chest that bites), but it drops Artifacts' own table; a later dungeon ticket can bring it back with a loot table of
+ours (an override of `artifacts:artifact`) and its spawns in our rooms.
+
+### For RLM-314
+
+- `general.toml`: Curios compatibility on (Accessories' and Trinkets' off); every world source off as above.
+- `items.toml`: `generateAsLoot` false everywhere; the tweaks of the table (Villager Hat, Cowboy Hat, Shock Pendant,
+  Feral Claws, Running Shoes, Steadfast Spikes); `enabled` false for the off items where they have the switch,
+  their bonuses at 0 otherwise.
+- Data: the Umbrella in `#c:tools/shield`; every item to `none` in `apotheosis:loot_category_overrides`; the off items
+  hidden from JEI and the creative tab; the rename of the Novelty Drinking Hat.
+- Sources: each item's quest, boss drop or treasure as its content lands (most are M2 and later); the ids need the
+  full-pack registry dump.
+- Checks: a pack boot; the damage pipeline's GameTests with Artifacts loaded (the Cross Necklace's mixin runs worn or
+  not); ender pearls in instances for the Warp Drive; a playtest that the slots and a few items work.
 
 ## Facts
 
@@ -350,7 +465,10 @@ and the Strider Shoes (Ashfire). Each would need a slot of ours or a reason to t
 - **Checks:** a pack boot; the damage pipeline's GameTests with Artifacts loaded (the Cross Necklace's mixin); a
   playtest that each kept item works and renders in our slot.
 
-### What the ADR would say (for B)
+### What the ADR would say (for B, not taken)
+
+Matěj chose option C instead; [ADR 0066](../decisions/0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md)
+records it. The draft for B stays as written:
 
 "Amends [0025](../decisions/0025-remove-the-nether-and-end.md)'s curio rule (RLM-7) and lifts
 [0044](../decisions/0044-third-party-mods-by-milestone.md)'s hold on Artifacts. Artifacts joins the pack. The items on
@@ -360,11 +478,15 @@ Trinkets compatibility off); our data tags each kept item into one of our slots.
 off (chests, brushing, mob equipment, campsites and mimics, the beef); a kept item comes only from our own sources,
 first as a unique quest reward. The items not kept stay registered but have no source and are hidden. A new kept item
 is a decision of Matěj's, recorded in this ADR's list." Under A, the curio rule stands, and a short new ADR amends
-0044 to move its Artifacts entry from held to Rejected: CLAUDE.md rule 10 never rewrites an accepted ADR in place
-(the precedent: [ADR 0049](../decisions/0049-player-hits-bypass-the-hurt-cooldown-in-our-pipeline.md) amended 0044
-for Iron's RPG Tweaks).
+0044 and [0058](../decisions/0058-player-systems-before-world-content.md) to move Artifacts from held to Rejected:
+CLAUDE.md rule 10 never rewrites an accepted ADR in place (the precedent:
+[ADR 0049](../decisions/0049-player-hits-bypass-the-hurt-cooldown-in-our-pipeline.md) amended 0044 for Iron's RPG
+Tweaks). Its milestone needs no ADR in either case: ADR 0058 already moved Artifacts into M1 with the gear (RLM-552).
 
 ## Questions for Matěj
+
+Answered on 2026-10-30 (RLM-512): option C, [above](#matějs-decision-and-where-each-item-goes); questions 2–9 fall away
+with it. The questions as they were asked:
 
 1. **Artifacts in or out?** Proposed: in, narrowly (option B), with an ADR that amends the curio rule for the kept
    items alone. Otherwise out (option A), and the six effects become our own curios later.

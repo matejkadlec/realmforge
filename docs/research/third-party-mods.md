@@ -33,7 +33,7 @@ the [ADR 0013](../decisions/0013-modpack-composition.md) list.
 | M1 | Iron's RPG Tweaks, combat module only | marked No on 2026-10-18, then taken on 2026-10-19 (below) | PK4, RLM-311 |
 | M1 | Controlling + Searchables | in the pack since RLM-279 ([ADR 0043](../decisions/0043-default-keys-and-key-search-in-the-pack.md)) | done |
 | M1 | MmmMmmMmmMmm (target dummies) + Moonlight Lib | added on 2026-10-23, after this review: target dummies for everyone, and Maren's Trial (RLM-397) dresses one. Moonlight Lib is a pinned beta, a release-channel exception: every 26.1.2 build of it is a beta ([ADR 0053](../decisions/0053-target-dummies-in-the-pack-worldedit-for-building-and-no-ftb-teams-parties.md)) | RLM-393 |
-| M1 | Artifacts, Immersive Armors | **Artifacts is held:** its items are curios, which ADR 0025 keeps out of the pack unless they are ours (RLM-7), so Matěj decides with its catalogue. A catalogue each first (every item with its effect, a proposed minimum realm or level, early unique reward candidates); Matěj decides what stays | RLM-312, RLM-313, RLM-314 |
+| M1 | Artifacts | **The curio rule ends and Artifacts is in** (Matěj, 2026-10-30, RLM-512, [ADR 0066](../decisions/0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md)): every item gets a place of its own (a realm, a level and a source of ours, a tweak, or off with its reason), in [artifacts.md](artifacts.md#matějs-decision-and-where-each-item-goes); its world sources off. **Immersive Armors is rejected** (Matěj, 2026-10-30, RLM-513): its effects act outside our damage pipeline and can only be switched off together, and its fire and magic resistance would be a second magic defense on players ([immersive-armors.md](immersive-armors.md)) | RLM-312, RLM-313, RLM-314 |
 | M1 | Legendary Tooltips, Item Borders, YDM's Weapon Master | M2's until 2026-10-29 (RLM-504) | RLM-314 |
 | M2 | Lootr | moved from M2 to M1 on 2026-10-19 ([ADR 0041](../decisions/0041-dungeon-containers-hold-loot-through-lootr.md)), back to M2 with the dungeons on 2026-10-29 ([ADR 0058](../decisions/0058-player-systems-before-world-content.md)) | RLM-288 |
 | M2 | YUNG's suite: Better Mineshafts, Desert Temples, Jungle Temples, Witch Huts, Ocean Monuments, Bridges, Extras, Better Caves, Better Dungeons | not Better Strongholds. Better Dungeons is in (open question 1, below) | RLM-315 |
@@ -53,7 +53,8 @@ Supplementaries with Amendments, Polymorph, Relics (SSKirillSS's, Modrinth `reli
 join when they reach 26.1.2; for Enhanced Boss Bars, Simply Swords and Mowzie's Mobs we build our own until they arrive.
 Undecided on the watchlist: Every Compat, and Handcrafted, Another Furniture or Chipped.
 
-**Rejected (No):** Epic Knights, Basic Weapons, the RPG Series gear (Arsenal, Armory, ZsoltMolnarrr's Relics
+**Rejected (No):** Immersive Armors (Matěj, 2026-10-30, RLM-513, after its catalogue), Epic Knights, Basic Weapons,
+the RPG Series gear (Arsenal, Armory, ZsoltMolnarrr's Relics
 `relics-rpg`, Jewelry: too much overlap, against "not overmodded"), TslatEntityStatus (we have damage numbers and Neat),
 Combat Roll (classes get their own teleport, dash or roll), DeCubed Dungeons, Explorify and Formations Overworld (they
 overlap MVS), Medieval Buildings, ATi Structures, Variants&Ventures, Friends&Foes, Mutant Monsters, The Conjurer,
