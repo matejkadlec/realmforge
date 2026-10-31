@@ -30,6 +30,7 @@ from realmforge_tools.schema import (
     ApotheosisAffixDef,
     ApotheosisGemDef,
     ApotheosisRarityDef,
+    ApotheosisRarityOverrideDef,
     ApotheosisStatRemapDef,
     ApotheosisTierAugmentDef,
     BlockDef,
@@ -211,6 +212,7 @@ class Content:
     apotheosis_gems: tuple[Entry[ApotheosisGemDef], ...]
     apotheosis_tier_augments: tuple[Entry[ApotheosisTierAugmentDef], ...]
     apotheosis_rarities: tuple[Entry[ApotheosisRarityDef], ...]
+    apotheosis_rarity_overrides: tuple[Entry[ApotheosisRarityOverrideDef], ...]
     apotheosis_stat_remaps: tuple[Entry[ApotheosisStatRemapDef], ...]
     recipes: tuple[Entry[RecipeOverrideDef], ...]
     recipe_removals: tuple[Entry[RecipeRemovalDef], ...]
@@ -312,6 +314,7 @@ def load_content(
         apotheosis_gems=by_id(loaded["apotheosis_gems"]),
         apotheosis_tier_augments=by_id(loaded["apotheosis_tier_augments"]),
         apotheosis_rarities=by_id(loaded["apotheosis_rarities"]),
+        apotheosis_rarity_overrides=by_id(loaded["apotheosis_rarity_overrides"]),
         apotheosis_stat_remaps=by_id(loaded["apotheosis_stat_remaps"]),
         recipes=by_id(loaded["recipes"]),
         recipe_removals=by_id(loaded["recipe_removals"]),

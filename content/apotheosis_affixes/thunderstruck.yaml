@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Thunderstruck (an area hit around the target): Matěj's affix review (RLM-232) adds Rare, 2-4 damage. An ability, so
+# a Rare item rolls it only through Rare's chanced ability slot (apotheosis_rarities/rare.yaml).
+id: thunderstruck
+affix: apotheosis:melee/thunderstruck
+replace:
+  values:
+    apotheosis:rare:
+      min: 2.0
+      max: 4.0
+      step: 1.0
+    apotheosis:epic:
+      min: 3.0
+      max: 6.0
+      step: 1.0
+    apotheosis:mythic:
+      min: 4.0
+      max: 8.0
+      step: 1.0

@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Retreating (the player leaps back on blocking a melee hit): Matěj's affix review (RLM-232) adds Rare. An ability, so
+# a Rare shield rolls it only through Rare's chanced ability slot.
+id: retreating
+affix: apotheosis:shield/retreating
+replace:
+  rarities:
+    - apotheosis:rare
+    - apotheosis:epic
+    - apotheosis:mythic

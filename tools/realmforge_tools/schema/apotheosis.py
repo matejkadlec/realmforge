@@ -156,6 +156,22 @@ ENTRY_MODELS: tuple[type[ApotheosisEntryDef], ...] = (
 )
 
 
+class ApotheosisRarityOverrideDef(StrictModel):
+    """One of Apotheosis's loot categories without the ability slot at some rarities (RLM-232): Apotheosis rolls a
+    rarity's rules for every category unless a rarity override names other rules for it, and an ability slot that
+    finds no ability for the category logs "no affixes available" and rolls nothing.
+
+    The category's rules at each rarity listed are the rarity's own (as ``content/apotheosis_rarities/`` fits them), or
+    those of Apotheosis's override for the category where it has one, without their ability rules, a chanced one
+    included. The other rarities keep what they had."""
+
+    id: ContentId
+    category: ResourceId = Field(description="The loot category, e.g. apotheosis:helmet.")
+    without_ability: Annotated[UniqueResourceIds, Field(min_length=1)] = Field(
+        description="The rarities whose ability slot the category skips, e.g. apotheosis:rare."
+    )
+
+
 class ApotheosisStatRemapDef(StrictModel):
     """An Apothic Attributes stat that ours replaces, or that is switched off, wherever an Apotheosis affix, gem bonus
     or tier augment grants it (RLM-272).

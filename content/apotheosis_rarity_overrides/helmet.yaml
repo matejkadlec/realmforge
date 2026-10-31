@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_rarity_overrides.schema.json
+# Helmets skip the ability slot (Matěj, 2026-10-31, RLM-232): Runed, their only ability, is off, so Apotheosis would
+# find none for Rare's chanced slot, Epic or Legendary, log an error and roll one affix fewer. Their other rules stay
+# the rarities' own.
+id: helmet
+category: apotheosis:helmet
+without_ability:
+  - apotheosis:rare
+  - apotheosis:epic
+  - apotheosis:mythic

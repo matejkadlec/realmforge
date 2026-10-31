@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_rarity_overrides.schema.json
+# Rare boots skip Rare's chanced ability slot (Matěj, 2026-10-31, RLM-232): with Runed, Steadfast and Surefooted off,
+# Unhurried is the boots' one ability, and it rolls from Epic. Epic and Legendary boots keep their ability slot.
+id: boots
+category: apotheosis:boots
+without_ability:
+  - apotheosis:rare

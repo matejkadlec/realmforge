@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Galvanizing (Pinnacle only): Matěj turned it off in his affix review (RLM-232, 2026-10-16).
+id: galvanizing
+affix: apotheosis:shield/mob_effect/galvanizing
+disabled: true

@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Deathbound (Pinnacle only): Matěj turned it off in his affix review (RLM-232, 2026-10-16); too close to Blighted.
+id: deathbound
+affix: apotheosis:ranged/mob_effect/deathbound
+disabled: true

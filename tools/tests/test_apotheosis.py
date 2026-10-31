@@ -18,6 +18,7 @@ from realmforge_tools.project import REPO_ROOT, RepoPaths
 from realmforge_tools.schema.apotheosis import (
     ApotheosisAffixDef,
     ApotheosisRarityDef,
+    ApotheosisRarityOverrideDef,
     ApotheosisStatRemapDef,
     RecipeRemovalDef,
 )
@@ -71,6 +72,9 @@ def test_the_snapshot_is_of_the_jar_the_pack_installs() -> None:
     assert jar["file"].endswith(f"-{snapshot.version}.jar")
     assert len(snapshot.entries["affixes"]) == 99
     assert "apotheosis:potion_charm" in snapshot.recipes
+    # The jar carries no license file: its text comes from the release's commit (RLM-524).
+    assert snapshot.license_text.startswith("MIT License\n")
+    assert "Copyright (c) 2018-2025 Stormraven Studios, LLC" in snapshot.license_text
 
 
 def test_a_snapshot_holds_the_jar_s_entries_by_kind_and_its_recipe_ids(tmp_path: Path) -> None:
@@ -80,15 +84,24 @@ def test_a_snapshot_holds_the_jar_s_entries_by_kind_and_its_recipe_ids(tmp_path:
         archive.writestr("data/apotheosis/apotheosis/affixes/melee/attribute/test.json", '{"type": "a"}')
         archive.writestr("data/apotheosis/apotheosis/gems/core/test.json", '{"bonuses": []}')
         archive.writestr("data/apotheosis/apotheosis/apothic_elites/test.json", "{}")
+        archive.writestr(
+            "data/apotheosis/apotheosis/rarity_override/apotheosis/shears.json", '{"category": "s"}'
+        )
         archive.writestr("data/apotheosis/recipe/infusion/test.json", "{}")
         archive.writestr("assets/apotheosis/lang/en_us.json", "{}")
-    snapshot = build_snapshot(jar, {"file": "apotheosis.jar", "url": "", "sha512": "abc"})
+    snapshot = build_snapshot(jar, {"file": "apotheosis.jar", "url": "", "sha512": "abc"}, "MIT License\n")
     assert snapshot["version"] == "9.9.9"
     assert snapshot["jar"] == {"file": "apotheosis.jar", "sha512": "abc"}
     assert snapshot["affixes"] == {"apotheosis:melee/attribute/test": {"type": "a"}}
     assert snapshot["gems"] == {"apotheosis:core/test": {"bonuses": []}}
     assert snapshot["tier_augments"] == {} and snapshot["rarities"] == {}
+    assert snapshot["rarity_override"] == {"apotheosis:apotheosis/shears": {"category": "s"}}
     assert snapshot["recipes"] == ["apotheosis:infusion/test"]
+    assert snapshot["license"] == {
+        "spdx": "MIT",
+        "source": "https://raw.githubusercontent.com/Shadows-of-Fire/Apotheosis/f2e7686/LICENSE",
+        "text": "MIT License\n",
+    }
 
 
 def test_the_pack_s_metafile_pins_a_sha512() -> None:
@@ -161,9 +174,12 @@ def test_stats_without_an_equivalent_of_ours_stay_apothic_attributes(files: dict
         "ranged/attribute/agile",
         "ranged/attribute/elven",
         "breaker/attribute/experienced",
-        "melee/attribute/giant_slaying",
+        "ranged/attribute/streamlined",
     ):
         assert AFFIXES + f"{affix}.json" not in files
+    # Giant Slaying's values change (RLM-232), its stat does not.
+    giant_slaying = generated_json(files, AFFIXES + "melee/attribute/giant_slaying.json")
+    assert giant_slaying["attribute"] == "apothic_attributes:current_hp_damage"
 
 
 def test_an_add_multiplied_base_crit_damage_bonus_adds_what_it_added_to_apothic_attributes(
@@ -260,12 +276,12 @@ def test_an_entry_can_be_switched_off_or_have_fields_replaced(repo: RepoPaths) -
         + "id: cleaving\naffix: apotheosis:melee/cleaving\ndisabled: true\n",
     )
     write(
-        repo.content / "apotheosis_tier_augments" / "max_eterna.yaml",
-        "id: max_eterna\naugment: apotheosis:haven/max_eterna\ndisabled: true\n",
+        repo.content / "apotheosis_tier_augments" / "luck.yaml",
+        "id: luck\naugment: apotheosis:frontier/luck\ndisabled: true\n",
     )
     write(
-        repo.content / "apotheosis_rarities" / "rare.yaml",
-        "id: rare\nrarity: apotheosis:rare\nreplace:\n  color: '#00ff00'\n",
+        repo.content / "apotheosis_rarities" / "uncommon.yaml",
+        "id: uncommon\nrarity: apotheosis:uncommon\nreplace:\n  color: '#00ff00'\n",
     )
     write(
         repo.content / "apotheosis_gems" / "breach.yaml",
@@ -273,9 +289,9 @@ def test_an_entry_can_be_switched_off_or_have_fields_replaced(repo: RepoPaths) -
     )
     files = generated(repo)
     assert generated_json(files, AFFIXES + "melee/cleaving.json") == DISABLED
-    assert generated_json(files, AUGMENTS + "haven/max_eterna.json") == DISABLED
-    rare = generated_json(files, DATA + "apotheosis/apotheosis/rarities/rare.json")
-    assert rare == {**load_snapshot(repo).entry("rarities", "apotheosis:rare"), "color": "#00ff00"}
+    assert generated_json(files, AUGMENTS + "frontier/luck.json") == DISABLED
+    uncommon = generated_json(files, DATA + "apotheosis/apotheosis/rarities/uncommon.json")
+    assert uncommon == {**load_snapshot(repo).entry("rarities", "apotheosis:uncommon"), "color": "#00ff00"}
     # A replaced gem still meets the stat remaps.
     breach = generated_json(files, GEMS + "core/breach.json")
     assert breach["weights"] == {"quality": 0.5, "weight": 10}
@@ -464,3 +480,216 @@ def test_the_snapshot_is_required(repo: RepoPaths) -> None:
     for snapshot in repo.id_universe.glob("apotheosis-*.json"):
         snapshot.unlink()
     assert_problem(repo, "run `uv run rf ids apotheosis`")
+
+
+# The affix set from Matěj's review (RLM-232)
+
+REVIEW_OFF = (
+    "armor/attribute/elastic",
+    "armor/attribute/fireproof",
+    "armor/attribute/oxygenated",
+    "armor/attribute/winged",
+    "armor/dmg_reduction/grounded",
+    "armor/dmg_reduction/runed",
+    "armor/mob_effect/blinding",
+    "boots/ability/steadfast",
+    "boots/ability/surefooted",
+    "breaker/ability/sandforming",
+    "breaker/ability/stoneforming",
+    "breaker/attribute/submerged",
+    "breaker/effect/omnetic",
+    "breaker/enchantment/prosperous",
+    "breaker/mob_effect/spelunkers",
+    "melee/attribute/glacial",
+    "melee/attribute/infernal",
+    "melee/cleaving",
+    "melee/executing",
+    "melee/festive",
+    "melee/mob_effect/elusive",
+    "melee/mob_effect/omniscient",
+    "ranged/enchantment/prosperous",
+    "ranged/mob_effect/deathbound",
+    "ranged/mob_effect/shulkers",
+    "shears/effect/gardening",
+    "shears/effect/leafforming",
+    "shield/mob_effect/galvanizing",
+    "shield/mob_effect/withering",
+    "weapon/attribute/nullifying",
+    "weapon/attribute/runebreaking",
+)
+RARITY_OVERRIDES = DATA + "apotheosis/apotheosis/rarity_override/"
+NOTICES = "mod/src/generated/resources/META-INF/third_party/apotheosis/"
+
+
+def test_the_review_s_thirty_one_affixes_are_off(files: dict[str, bytes]) -> None:
+    """The 29 of the review, Executing (2026-10-29) and Runed (2026-10-30), and no other affix."""
+    off = {
+        path.removeprefix(AFFIXES).removesuffix(".json")
+        for path in files
+        if path.startswith(AFFIXES) and generated_json(files, path) == DISABLED
+    }
+    assert off == set(REVIEW_OFF)
+
+
+@pytest.mark.parametrize(
+    ("affix", "rare"),
+    [
+        ("melee/attribute/giant_slaying", {"min": 0.05, "max": 0.1}),
+        ("melee/thunderstruck", {"min": 2.0, "max": 4.0, "step": 1.0}),
+        ("ranged/spectral", {"min": 0.1, "max": 0.3}),
+        ("shield/catalyzing", {"min": 100.0, "max": 300.0, "step": 20.0}),
+        ("shield/psychic", {"min": 0.4, "max": 0.6}),
+        (
+            "ranged/mob_effect/acidic",
+            {"duration": {"min": 40.0, "max": 80.0, "step": 20.0}, "amplifier": 0.0, "cooldown": 40},
+        ),
+        (
+            "ranged/mob_effect/blighted",
+            {
+                "duration": {"min": 160.0, "max": 200.0, "step": 20.0},
+                "amplifier": {"min": 0.0, "max": 1.0, "step": 0.25},
+                "cooldown": 300,
+            },
+        ),
+    ],
+)
+def test_the_review_opens_affixes_to_rare(files: dict[str, bytes], affix: str, rare: dict) -> None:
+    assert generated_json(files, AFFIXES + f"{affix}.json")["values"]["apotheosis:rare"] == rare
+
+
+def test_retreating_rolls_from_rare_and_magical_stays_epic(files: dict[str, bytes]) -> None:
+    retreating = generated_json(files, AFFIXES + "shield/retreating.json")
+    assert retreating["rarities"] == ["apotheosis:rare", "apotheosis:epic", "apotheosis:mythic"]
+    # Magical stays an ability of Epic and Legendary (Matěj, 2026-10-29).
+    assert AFFIXES + "ranged/magical.json" not in files
+
+
+@pytest.mark.parametrize("affix", ["melee/attribute/giant_slaying", "ranged/mob_effect/acidic"])
+def test_the_pinnacle_only_weights_the_review_drops_become_everyone_s(
+    files: dict[str, bytes], affix: str
+) -> None:
+    assert generated_json(files, AFFIXES + f"{affix}.json")["definition"]["weights"] == {
+        "quality": 0.1,
+        "weight": 25,
+    }
+
+
+def test_blighted_s_epic_reaches_wither_iii(files: dict[str, bytes]) -> None:
+    blighted = generated_json(files, AFFIXES + "ranged/mob_effect/blighted.json")
+    assert blighted["values"]["apotheosis:epic"]["amplifier"]["max"] == 2.0
+    assert blighted["values"]["apotheosis:mythic"]["amplifier"]["max"] == 3.0
+
+
+def test_rare_gets_a_chanced_ability_slot(files: dict[str, bytes]) -> None:
+    rare = generated_json(files, DATA + "apotheosis/apotheosis/rarities/rare.json")
+    original = load_snapshot(RepoPaths()).entry("rarities", "apotheosis:rare")
+    chanced = {
+        "type": "apotheosis:chanced",
+        "chance": 0.25,
+        "rule": {"type": "apotheosis:affix", "affix_type": "ability"},
+    }
+    assert rare["rules"] == [*original["rules"][:4], chanced, *original["rules"][4:]]
+    assert {key: value for key, value in rare.items() if key != "rules"} == {
+        key: value for key, value in original.items() if key != "rules"
+    }
+
+
+@pytest.mark.parametrize("tier", ["haven", "frontier", "ascent", "summit"])
+def test_the_world_tiers_cap_no_eterna(files: dict[str, bytes], tier: str) -> None:
+    assert generated_json(files, AUGMENTS + f"{tier}/max_eterna.json") == DISABLED
+
+
+# Rarity overrides
+
+
+def test_helmets_skip_every_ability_slot_and_boots_rare_s(files: dict[str, bytes]) -> None:
+    """Matěj, 2026-10-31 (RLM-232): with Runed off, helmets have no ability, and boots none below Epic. Their rules
+    are the fitted rarity's without the ability slot."""
+    rare = generated_json(files, DATA + "apotheosis/apotheosis/rarities/rare.json")
+    snapshot = load_snapshot(RepoPaths())
+    rules = {
+        "apotheosis:rare": rare["rules"],
+        "apotheosis:epic": snapshot.entry("rarities", "apotheosis:epic")["rules"],
+        "apotheosis:mythic": snapshot.entry("rarities", "apotheosis:mythic")["rules"],
+    }
+
+    def ability(rule: dict) -> bool:
+        return rule.get("affix_type") == "ability" or rule.get("rule", {}).get("affix_type") == "ability"
+
+    def without_ability(rarity: str) -> list[dict]:
+        kept = [rule for rule in rules[rarity] if not ability(rule)]
+        assert len(kept) == len(rules[rarity]) - 1, f"{rarity} has one ability slot"
+        return kept
+
+    assert generated_json(files, RARITY_OVERRIDES + "apotheosis/helmet.json") == {
+        "category": "apotheosis:helmet",
+        "overrides": {rarity: without_ability(rarity) for rarity in rules},
+    }
+    assert generated_json(files, RARITY_OVERRIDES + "apotheosis/boots.json") == {
+        "category": "apotheosis:boots",
+        "overrides": {"apotheosis:rare": without_ability("apotheosis:rare")},
+    }
+
+
+def overriding(repo: RepoPaths, body: str) -> None:
+    write(repo.content / "apotheosis_rarity_overrides" / "test.yaml", "id: test\n" + body)
+
+
+@pytest.mark.parametrize(
+    ("body", "message"),
+    [
+        (
+            "category: apotheosis:wand\nwithout_ability: [apotheosis:rare]\n",
+            "unknown loot category 'apotheosis:wand'",
+        ),
+        ("category: apotheosis:charm\nwithout_ability: [apotheosis:rare]\n", "exists only with Curios"),
+        (
+            "category: apotheosis:bow\nwithout_ability: [apotheosis:legendary]\n",
+            "unknown rarity 'apotheosis:legendary'",
+        ),
+        (
+            "category: apotheosis:bow\nwithout_ability: [apotheosis:common]\n",
+            "apotheosis:bow has no ability slot at apotheosis:common",
+        ),
+        # Apotheosis's own override for shears has no ability slot: the override starts from it, not from Rare's rules.
+        (
+            "category: apotheosis:shears\nwithout_ability: [apotheosis:rare]\n",
+            "apotheosis:shears has no ability slot at apotheosis:rare",
+        ),
+        (
+            "category: apotheosis:helmet\nwithout_ability: [apotheosis:rare]\n",
+            "apotheosis:helmet already has a rarity override",
+        ),
+    ],
+)
+def test_a_rarity_override_is_checked(repo: RepoPaths, body: str, message: str) -> None:
+    overriding(repo, body)
+    assert_problem(repo, message)
+
+
+def test_a_rarity_override_names_rarities() -> None:
+    with pytest.raises(ValidationError, match="at least 1 item"):
+        ApotheosisRarityOverrideDef.model_validate(
+            {"id": "test", "category": "apotheosis:bow", "without_ability": []}
+        )
+
+
+# Apotheosis's license (RLM-524)
+
+
+def test_the_jar_carries_apotheosis_s_license_next_to_its_data(files: dict[str, bytes]) -> None:
+    snapshot = load_snapshot(RepoPaths())
+    assert files[NOTICES + "LICENSE"] == snapshot.license_text.encode()
+    notice = files[NOTICES + "NOTICE"].decode()
+    assert f"Apotheosis's own data, version {snapshot.version}" in notice
+    assert "MIT-licensed: see LICENSE" in notice
+
+
+def test_no_apotheosis_data_needs_no_license(repo: RepoPaths) -> None:
+    for folder in repo.content.glob("apotheosis_*"):
+        for path in folder.glob("*.yaml"):
+            path.unlink()
+    for path in (repo.content / "recipe_removals").glob("*.yaml"):
+        path.unlink()
+    files = generated(repo)
+    assert not any(path.startswith(NOTICES) or "/data/apotheosis/" in path for path in files)

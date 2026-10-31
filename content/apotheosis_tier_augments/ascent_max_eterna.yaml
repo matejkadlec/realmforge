@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_tier_augments.schema.json
+# Ascent's cap on Apothic Enchanting's max Eterna is off (RLM-232): the world tier is the player's highest one, and the
+# shelves gate enchanting power instead. The other player augments (luck, experience) stay Apotheosis's.
+id: ascent_max_eterna
+augment: apotheosis:ascent/max_eterna
+disabled: true
