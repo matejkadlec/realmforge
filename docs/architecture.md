@@ -656,7 +656,10 @@ transient because of how vanilla handles health:
   tick (`LivingEntity#detectEquipmentUpdates`), and lowering max health clamps health at once
   (`LivingEntity#onAttributeUpdated`). Hence two rules: gear never adds `generic.max_health` directly (a validation
   rule; max health comes from primary stats through the saved derived modifiers), and the recompute after login
-  waits for that first tick, so it sees the same gear the saved values were computed with.
+  waits for that first tick, so it sees the same gear the saved values were computed with. Third-party gear breaks
+  the first rule: Apotheosis's Blessed affix and its Brawler's and Warlord's gems add max health, and Matěj kept them
+  (2026-10-30, RLM-511), so RLM-565 is to keep the health across the login instead of forbidding them; until then such
+  a player logs in with health cut to the maximum without them.
 - **Respawning:** after a death, vanilla copies only base values and sets health before our modifiers exist
   (`ServerPlayer#restoreFrom`), so refill health to the new maximum after the first-tick recompute. Leaving the End
   (`PlayerEvent.Clone#isWasDeath` is false) is not a death: vanilla copies the permanent modifiers (ours, and
