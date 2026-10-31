@@ -11,6 +11,7 @@ import io.github.matejkadlec.realmforge.spell.AreaEffect;
 import io.github.matejkadlec.realmforge.spell.Coefficient;
 import io.github.matejkadlec.realmforge.spell.CurrentTargetTargeting;
 import io.github.matejkadlec.realmforge.spell.DamageEffect;
+import io.github.matejkadlec.realmforge.spell.DamageOverTimeEffect;
 import io.github.matejkadlec.realmforge.spell.DashEffect;
 import io.github.matejkadlec.realmforge.spell.DirectionTargeting;
 import io.github.matejkadlec.realmforge.spell.EnemyTargeting;
@@ -18,6 +19,7 @@ import io.github.matejkadlec.realmforge.spell.FarthestPlayerTargeting;
 import io.github.matejkadlec.realmforge.spell.GroundPointTargeting;
 import io.github.matejkadlec.realmforge.spell.HealEffect;
 import io.github.matejkadlec.realmforge.spell.KnockbackEffect;
+import io.github.matejkadlec.realmforge.spell.MeleeEffect;
 import io.github.matejkadlec.realmforge.spell.ProjectileEffect;
 import io.github.matejkadlec.realmforge.spell.RandomPlayerTargeting;
 import io.github.matejkadlec.realmforge.spell.RemoveEffectEffect;
@@ -172,6 +174,11 @@ public final class ContentSpellGameTests {
             case ProjectileEffect projectile -> new EffectExpectation(type, projectileNumbers(projectile),
                     projectile.spares().map(tag -> Map.of("spares", tag.location().toString())).orElse(Map.of()),
                     projectile.effects().stream().map(ContentSpellGameTests::effect).toList());
+            case DamageOverTimeEffect dot -> new EffectExpectation(type, damageOverTimeNumbers(dot),
+                    Map.of("effect", dot.effect().getRegisteredName()), List.of());
+            case MeleeEffect melee -> new EffectExpectation(type, meleeNumbers(melee),
+                    Map.of("shape", melee.shape().getSerializedName()),
+                    melee.effects().stream().map(ContentSpellGameTests::effect).toList());
             case AreaEffect area -> new EffectExpectation(type, Map.of("radius", area.radius(), "duration_ticks",
                     (double) area.durationTicks(), "interval_ticks", (double) area.intervalTicks()),
                     areaNames(area), area.effects().stream().map(ContentSpellGameTests::effect).toList());
@@ -201,6 +208,22 @@ public final class ContentSpellGameTests {
         all.put("spell_power", coefficient.spellPower());
         all.put("spell_power_per_level", coefficient.spellPowerPerLevel());
         return Map.copyOf(all);
+    }
+
+    /** A damage over time's numbers (RLM-539): its growth per level only when it grows, as the data names it only then. */
+    private static Map<String, Double> damageOverTimeNumbers(DamageOverTimeEffect dot) {
+        Map<String, Double> numbers = new HashMap<>(withCoefficient(Map.of("amount", dot.amount(), "per_level",
+                dot.perLevel(), "duration_ticks", (double) dot.durationTicks()), dot.coefficient()));
+        putIfSet(numbers, "duration_per_level_ticks", dot.durationPerLevelTicks());
+        return Map.copyOf(numbers);
+    }
+
+    /** A melee shape's numbers (RLM-399): a sector's angle or a box's width, as its data names one of them. */
+    private static Map<String, Double> meleeNumbers(MeleeEffect melee) {
+        Map<String, Double> numbers = new HashMap<>(Map.of("reach", melee.reach(), "height", melee.height()));
+        melee.angleDegrees().ifPresent(angle -> numbers.put("angle_degrees", angle));
+        melee.width().ifPresent(width -> numbers.put("width", width));
+        return Map.copyOf(numbers);
     }
 
     /** A status effect's numbers; its growth per level (C4) only when it grows, as the data names it only then. */

@@ -4,7 +4,8 @@
 # and flies like Frostbolt. Scaling system C (RLM-534, Claude's proposal for Matěj's playtest): the hit 6/7/8/9/10 +
 # 70/80/90/100/110 % of Spell Power, less than Frostbolt's because the Burning carries the rest of the coefficient over
 # its ticks (content/effects/burning.yaml: 3 % a tick, 24 % to 36 % over ranks 1 to 4, 72 % as Burning II). At 7 Spell
-# Power (a level 1 Mage) about 10.9 on the hit and 5.7 more over the Burning.
+# Power (a level 1 Mage) about 10.9 on the hit and 5.7 more over the Burning. Its hit explodes in fire (RLM-399): every
+# other enemy within a block of the target takes half the hit and the full Burning.
 id: fireball
 name: {en_us: Fireball}
 description: {en_us: "Hurls a ball of fire for {damage} damage that burns the target for {periodic_total} more over {duration} sec."}
@@ -20,6 +21,7 @@ effects:
     size: 0.5
     impact: {sound: minecraft:entity.generic.extinguish_fire, particles: minecraft:magma_block}
     appearance: {model: orb, color: "#FF7F1F"}
+    splash: {radius: 1, damage_percent: 50}
     effects:
       - type: realmforge:damage
         amount: 6

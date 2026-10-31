@@ -1,0 +1,41 @@
+{
+  "name": "spell.realmforge.test_cleave.name",
+  "description": "spell.realmforge.test_cleave.description",
+  "school": "realmforge:physical",
+  "scales_with": "attack_damage",
+  "targeting": {
+    "type": "realmforge:self"
+  },
+  "cast": {
+    "type": "instant"
+  },
+  "cooldown_ticks": 0,
+  "global_cooldown_ticks": 10,
+  "max_level": 1,
+  "crit": {
+    "can_crit": true,
+    "bonus_chance": 0.0
+  },
+  "npc_only": false,
+  "requires": [
+    "melee_weapon"
+  ],
+  "castable_while_stunned": false,
+  "effects": [
+    {
+      "type": "realmforge:melee",
+      "shape": "sector",
+      "reach": 4.0,
+      "angle_degrees": 120.0,
+      "height": 2.0,
+      "effects": [
+        {
+          "amount": 5.0,
+          "per_level": 0,
+          "attack_damage": 0.0,
+          "type": "realmforge:damage"
+        }
+      ]
+    }
+  ]
+}

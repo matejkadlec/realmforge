@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Engine test (RLM-539): a second source of Bleeding, 6 physical damage over 6 s, so the GameTests see two spells' bleeds
+# stack on one target. Not gameplay content.
+id: test_lacerate
+name: {en_us: Test Lacerate}
+description: {en_us: "Lacerates an enemy, making it bleed for 6 sec."}
+school: realmforge:physical
+scales_with: attack_damage
+targeting: {type: realmforge:enemy, range: 5}
+cast: {type: instant}
+effects:
+  - type: realmforge:damage_over_time
+    effect: realmforge:bleeding
+    amount: 6
+    duration_seconds: 6

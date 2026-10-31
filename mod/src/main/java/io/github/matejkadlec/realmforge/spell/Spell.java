@@ -39,12 +39,13 @@ import net.minecraft.util.ExtraCodecs;
  * @param effects what it does, in order; none for a passive spell
  * @param passive what it does while its player knows it, for a passive spell (RLM-541): never cast, never on the bar.
  *     A passive spell's data names no targeting, cast or effects, and the pipeline writes their defaults
+ * @param conditions when it may be cast beyond its cooldowns and cost (RLM-540): its window, a target health share
  */
 public record Spell(String name, String description, Optional<Holder<SpellSchool>> school, Scaling scalesWith,
         SpellTargeting targeting, SpellCast cast,
         Optional<SpellCost> cost, int cooldownTicks, int globalCooldownTicks, int maxLevel, CritRule crit,
         boolean npcOnly, List<SpellRequirement> requires, boolean castableWhileStunned, List<SpellEffect> effects,
-        Optional<Passive> passive) {
+        Optional<Passive> passive, SpellConditions conditions) {
     /** The global cooldown of a spell that names none: half a second, as in WoW (Matěj, 2026-10-19, RLM-25). */
     public static final int DEFAULT_GLOBAL_COOLDOWN_TICKS = 10;
 
@@ -79,7 +80,8 @@ public record Spell(String name, String description, Optional<Holder<SpellSchool
                     SpellRequirement.CODEC.listOf().optionalFieldOf("requires", List.of()).forGetter(Spell::requires),
                     Codec.BOOL.optionalFieldOf("castable_while_stunned", false)
                             .forGetter(Spell::castableWhileStunned),
-                    BEHAVIOUR.forGetter(Spell::behaviour))
+                    BEHAVIOUR.forGetter(Spell::behaviour),
+                    SpellConditions.MAP_CODEC.forGetter(Spell::conditions))
             .apply(instance, Spell::decoded))
             .validate(Spell::validate);
 
@@ -99,10 +101,11 @@ public record Spell(String name, String description, Optional<Holder<SpellSchool
     private static Spell decoded(String name, String description, Optional<Holder<SpellSchool>> school,
             Scaling scalesWith, SpellTargeting targeting, SpellCast cast, Optional<SpellCost> cost, int cooldownTicks,
             int globalCooldownTicks, int maxLevel, CritRule crit, boolean npcOnly, List<SpellRequirement> requires,
-            boolean castableWhileStunned, Pair<List<SpellEffect>, Optional<Passive>> behaviour) {
+            boolean castableWhileStunned, Pair<List<SpellEffect>, Optional<Passive>> behaviour,
+            SpellConditions conditions) {
         return new Spell(name, description, school, scalesWith, targeting, cast, cost, cooldownTicks,
                 globalCooldownTicks, maxLevel, crit, npcOnly, requires, castableWhileStunned, behaviour.getFirst(),
-                behaviour.getSecond());
+                behaviour.getSecond(), conditions);
     }
 
     private Pair<List<SpellEffect>, Optional<Passive>> behaviour() {

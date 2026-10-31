@@ -6,6 +6,9 @@
   },
   "bar_color": "purple",
   "phase_change_ticks": 20,
+  "immune_to": [
+    "realmforge:frozen"
+  ],
   "phases": [
     {
       "id": "awakening",

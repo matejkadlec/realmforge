@@ -1,5 +1,30 @@
 {
   "$defs": {
+    "AgainstEffectDef": {
+      "additionalProperties": false,
+      "description": "More damage against a target that has a status effect (RLM-540: Ice Lance against a Frozen target).",
+      "properties": {
+        "damage_percent": {
+          "description": "How much more damage the hit deals then, in percent: 200 triples it.",
+          "exclusiveMinimum": 0,
+          "maximum": 1000,
+          "title": "Damage Percent",
+          "type": "number"
+        },
+        "effect": {
+          "description": "The status effect the target has, e.g. realmforge:frozen.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Effect",
+          "type": "string"
+        }
+      },
+      "required": [
+        "effect",
+        "damage_percent"
+      ],
+      "title": "AgainstEffectDef",
+      "type": "object"
+    },
     "AllyTargetingDef": {
       "additionalProperties": false,
       "description": "The caster or one of its allies (for players: other players), in range and in line of sight. Without a\ntarget the spell takes the caster.",
@@ -112,6 +137,7 @@
                 "realmforge:apply_effect": "#/$defs/ApplyEffectEffectDef",
                 "realmforge:cleanse": "#/$defs/CleanseEffectDef",
                 "realmforge:damage": "#/$defs/DamageEffectDef",
+                "realmforge:damage_over_time": "#/$defs/DamageOverTimeEffectDef",
                 "realmforge:heal": "#/$defs/HealEffectDef",
                 "realmforge:knockback": "#/$defs/KnockbackEffectDef",
                 "realmforge:remove_effect": "#/$defs/RemoveEffectEffectDef"
@@ -124,6 +150,9 @@
               },
               {
                 "$ref": "#/$defs/HealEffectDef"
+              },
+              {
+                "$ref": "#/$defs/DamageOverTimeEffectDef"
               },
               {
                 "$ref": "#/$defs/ApplyEffectEffectDef"
@@ -427,6 +456,18 @@
           "title": "Amount",
           "type": "number"
         },
+        "extra": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtraCostDef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "More of the resource the cast spends when the caster has it, for more damage (RLM-540)."
+        },
         "per_level": {
           "default": 0,
           "description": "Added for every spell level above 1.",
@@ -570,6 +611,18 @@
       "additionalProperties": false,
       "description": "Damage of the spell's school to each target: its amount plus its coefficient of the caster's power (Spell\nPower for magic, Attack Damage for a physical ability), then times (1 + the school's power + passives) in the damage\npipeline (architecture 9.1). The hit can crit as the spell's ``crit`` says.",
       "properties": {
+        "against_effect": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AgainstEffectDef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "More damage against a target with a status effect (RLM-540), e.g. {effect: realmforge:frozen, damage_percent: 200} triples it against a Frozen target."
+        },
         "amount": {
           "description": "The amount at spell level 1.",
           "minimum": 0,
@@ -712,6 +765,120 @@
       "title": "DamageEffectDef",
       "type": "object"
     },
+    "DamageOverTimeEffectDef": {
+      "additionalProperties": false,
+      "description": "Damage over time kept as the caster's own stack of a status effect with ``stacks`` (RLM-539, Bleeding): the\namount (plus its coefficient of the caster's power) is the damage over the whole duration, fixed from the caster's\nstats when it is applied, and its ticks split it evenly. Another spell or caster stacks; the same spell from the\nsame caster refreshes its stack.",
+      "properties": {
+        "amount": {
+          "description": "The amount at spell level 1.",
+          "minimum": 0,
+          "title": "Amount",
+          "type": "number"
+        },
+        "attack_damage_per_level_percent": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Added to attack_damage_percent for every spell level above 1.",
+          "title": "Attack Damage Per Level Percent"
+        },
+        "attack_damage_percent": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Share of the caster's attack damage added to the amount at spell level 1 (100 adds all of it). Required for the damage of spells that scale with attack_damage, refused for spells that scale with spell_power.",
+          "title": "Attack Damage Percent"
+        },
+        "duration_per_level_seconds": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Added to the duration for every spell level above 1.",
+          "title": "Duration Per Level Seconds"
+        },
+        "duration_seconds": {
+          "description": "How long it lasts at spell level 1: a whole number of the effect's intervals, at most 60.",
+          "minimum": 0,
+          "title": "Duration Seconds",
+          "type": "number"
+        },
+        "effect": {
+          "description": "One of our status effects with stacks, e.g. realmforge:bleeding.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Effect",
+          "type": "string"
+        },
+        "per_level": {
+          "default": 0,
+          "description": "Added for every spell level above 1.",
+          "minimum": 0,
+          "title": "Per Level",
+          "type": "number"
+        },
+        "spell_power_per_level_percent": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Added to spell_power_percent for every spell level above 1.",
+          "title": "Spell Power Per Level Percent"
+        },
+        "spell_power_percent": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Share of the caster's Spell Power (points) added to the amount at spell level 1 (100 adds all of it). Only for spells that scale with spell_power; without it, Spell Power adds nothing.",
+          "title": "Spell Power Percent"
+        },
+        "type": {
+          "const": "realmforge:damage_over_time",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "amount",
+        "type",
+        "effect",
+        "duration_seconds"
+      ],
+      "title": "DamageOverTimeEffectDef",
+      "type": "object"
+    },
     "DashEffectDef": {
       "additionalProperties": false,
       "description": "Throws the caster toward the target (an enemy, a ground point or along a direction) with a burst of speed,\nwhich friction then slows as for any push.",
@@ -782,6 +949,31 @@
         "range"
       ],
       "title": "EnemyTargetingDef",
+      "type": "object"
+    },
+    "ExtraCostDef": {
+      "additionalProperties": false,
+      "description": "More of the resource a cast spends when the caster has it (RLM-540: Execute's extra rage), each point raising\nthe spell's damage.",
+      "properties": {
+        "damage_per_point_percent": {
+          "description": "How much more damage the spell deals for each point spent, in percent.",
+          "exclusiveMinimum": 0,
+          "maximum": 100,
+          "title": "Damage Per Point Percent",
+          "type": "number"
+        },
+        "max": {
+          "description": "The most it spends beyond the cost, e.g. 30 rage.",
+          "exclusiveMinimum": 0,
+          "title": "Max",
+          "type": "number"
+        }
+      },
+      "required": [
+        "max",
+        "damage_per_point_percent"
+      ],
+      "title": "ExtraCostDef",
       "type": "object"
     },
     "FarthestPlayerTargetingDef": {
@@ -920,8 +1112,37 @@
     },
     "InstantCastDef": {
       "additionalProperties": false,
-      "description": "The spell's effects run when it is cast.",
+      "description": "The spell's effects run when it is cast; with ``animation_seconds``, it starts at once but plays out over its\nanimation (RLM-399: a Warrior's swing), and its effects run at its hit moment. The caster may move but not swing a\nweapon meanwhile; another spell cuts it, and a stun or death before the hit moment gives half its cost and half its\ncooldown back.",
       "properties": {
+        "animation_seconds": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "How long it plays out (its animation, about 0.5 to 1.5 s); Attack Speed never shortens it.",
+          "title": "Animation Seconds"
+        },
+        "hit_at_percent": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 100,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "When its effects run, in percent of the animation (50 by default: the middle of a swing).",
+          "title": "Hit At Percent"
+        },
         "type": {
           "const": "instant",
           "title": "Type",
@@ -975,9 +1196,125 @@
       "title": "LocalizedText",
       "type": "object"
     },
+    "MeleeEffectDef": {
+      "additionalProperties": false,
+      "description": "A melee spell's hit shape in front of the caster (RLM-399): every enemy whose hitbox reaches into it takes\n``effects``, the same for each, and none behind a wall: an enemy more than half hidden behind blocks from the\ncaster's eyes is spared. The shape follows the caster's look (the crosshair), so it tilts with the pitch, and is\n``height`` tall round it. sector: a slice of a circle of ``reach`` round the caster, ``angle_degrees`` wide,\nhalved by the look (Slam's swing); box: ``width`` wide and ``reach`` deep from the front of the caster's body\n(Reckless Strike's stab, Shield Bash's bash).",
+      "properties": {
+        "angle_degrees": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 360,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "sector: how wide, in degrees.",
+          "title": "Angle Degrees"
+        },
+        "effects": {
+          "description": "What it does to each enemy inside, in order.",
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "realmforge:apply_effect": "#/$defs/ApplyEffectEffectDef",
+                "realmforge:cleanse": "#/$defs/CleanseEffectDef",
+                "realmforge:damage": "#/$defs/DamageEffectDef",
+                "realmforge:damage_over_time": "#/$defs/DamageOverTimeEffectDef",
+                "realmforge:heal": "#/$defs/HealEffectDef",
+                "realmforge:knockback": "#/$defs/KnockbackEffectDef",
+                "realmforge:remove_effect": "#/$defs/RemoveEffectEffectDef"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DamageEffectDef"
+              },
+              {
+                "$ref": "#/$defs/HealEffectDef"
+              },
+              {
+                "$ref": "#/$defs/DamageOverTimeEffectDef"
+              },
+              {
+                "$ref": "#/$defs/ApplyEffectEffectDef"
+              },
+              {
+                "$ref": "#/$defs/RemoveEffectEffectDef"
+              },
+              {
+                "$ref": "#/$defs/CleanseEffectDef"
+              },
+              {
+                "$ref": "#/$defs/KnockbackEffectDef"
+              }
+            ]
+          },
+          "minItems": 1,
+          "title": "Effects",
+          "type": "array"
+        },
+        "height": {
+          "description": "How tall round the crosshair, in blocks.",
+          "exclusiveMinimum": 0,
+          "maximum": 6.0,
+          "title": "Height",
+          "type": "number"
+        },
+        "reach": {
+          "description": "sector: its radius from the caster's eyes; box: its depth from the front of the caster's body. In blocks, at most 6.",
+          "exclusiveMinimum": 0,
+          "maximum": 6.0,
+          "title": "Reach",
+          "type": "number"
+        },
+        "shape": {
+          "description": "sector: a slice of a circle; box: a box in front.",
+          "enum": [
+            "sector",
+            "box"
+          ],
+          "title": "Shape",
+          "type": "string"
+        },
+        "type": {
+          "const": "realmforge:melee",
+          "title": "Type",
+          "type": "string"
+        },
+        "width": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 6.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "box: how wide, in blocks.",
+          "title": "Width"
+        }
+      },
+      "required": [
+        "type",
+        "shape",
+        "reach",
+        "height",
+        "effects"
+      ],
+      "title": "MeleeEffectDef",
+      "type": "object"
+    },
     "PassiveDef": {
       "additionalProperties": false,
-      "description": "What a passive spell does (RLM-541): it is never cast and never on the spell bar; while the player knows it, at\nits rank, it gives modifiers, raises named spells' damage, adds crit chance against a condition or shortens a\ntwo-handed block's cooldown. Procs (Frostbite, Taste for Blood, Deep Wounds) come with the windows-and-procs\nticket and live in a passive spell too.",
+      "description": "What a passive spell does (RLM-541): it is never cast and never on the spell bar; while the player knows it, at\nits rank, it gives modifiers, raises named spells' damage, adds crit chance against a condition or shortens a\ntwo-handed block's cooldown, and its procs fire (RLM-540: Frostbite, Taste for Blood, Deep Wounds).",
       "properties": {
         "block_cooldown": {
           "anyOf": [
@@ -1009,6 +1346,14 @@
             "$ref": "#/$defs/PassiveModifierDef"
           },
           "title": "Modifiers",
+          "type": "array"
+        },
+        "procs": {
+          "description": "What fires on the player's hits, crits, kills, effects and ticks (RLM-540): Frostbite, Taste for Blood, Deep Wounds.",
+          "items": {
+            "$ref": "#/$defs/ProcDef"
+          },
+          "title": "Procs",
           "type": "array"
         },
         "spell_damage": {
@@ -1118,6 +1463,156 @@
       "title": "PassiveModifierDef",
       "type": "object"
     },
+    "ProcApplyEffectDef": {
+      "additionalProperties": false,
+      "description": "A status effect a proc gives the other entity.",
+      "properties": {
+        "duration_seconds": {
+          "description": "How long it lasts; more than 0, at most 60.",
+          "minimum": 0,
+          "title": "Duration Seconds",
+          "type": "number"
+        },
+        "effect": {
+          "description": "The status effect, e.g. realmforge:frozen.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Effect",
+          "type": "string"
+        }
+      },
+      "required": [
+        "effect",
+        "duration_seconds"
+      ],
+      "title": "ProcApplyEffectDef",
+      "type": "object"
+    },
+    "ProcDef": {
+      "additionalProperties": false,
+      "description": "A proc of a passive spell (RLM-540): when its trigger happens, at its chance and outside its internal cooldown\non that target (research SP-15), it does one thing: gives the other entity a status effect, casts a spell at it\nat the passive's rank, or opens a spell's window. Procs never trigger procs.",
+      "properties": {
+        "apply_effect": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ProcApplyEffectDef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Gives the other entity a status effect."
+        },
+        "cast": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Casts this spell at the other entity, at the passive's rank (at most its own).",
+          "title": "Cast"
+        },
+        "chance_per_level_percent": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 100,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Added to chance_percent for every rank above 1.",
+          "title": "Chance Per Level Percent"
+        },
+        "chance_percent": {
+          "description": "The chance it fires at rank 1, in percent.",
+          "exclusiveMinimum": 0,
+          "maximum": 100,
+          "title": "Chance Percent",
+          "type": "number"
+        },
+        "cooldown_seconds": {
+          "default": 0,
+          "description": "Its internal cooldown on each target, after it fired; at most 60 s.",
+          "minimum": 0,
+          "title": "Cooldown Seconds",
+          "type": "number"
+        },
+        "effect": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "applies_effect, tick: the status effect, e.g. minecraft:slowness.",
+          "title": "Effect"
+        },
+        "open_window": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Opens this spell's window for the player, e.g. realmforge:overpower.",
+          "title": "Open Window"
+        },
+        "spell": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "tick: only the ticks of this spell's damage over time, e.g. realmforge:rend.",
+          "title": "Spell"
+        },
+        "trigger": {
+          "description": "hit, crit, kill, hit_taken: the player's hit, crit or kill, or a hit on the player; applies_effect: the player gives an enemy the status effect `effect`; tick: a tick of the player's damage over time of `effect` (and `spell`) on an enemy.",
+          "enum": [
+            "hit",
+            "crit",
+            "kill",
+            "hit_taken",
+            "applies_effect",
+            "tick"
+          ],
+          "title": "Trigger",
+          "type": "string"
+        }
+      },
+      "required": [
+        "trigger",
+        "chance_percent"
+      ],
+      "title": "ProcDef",
+      "type": "object"
+    },
     "ProjectileAppearanceDef": {
       "additionalProperties": false,
       "description": "How a projectile looks; without it, a trail of sparks (until C6, RLM-29). Its placeholder texture is\ngenerated at ``textures/entity/spell/<spell>.png`` until real art exists.",
@@ -1166,6 +1661,7 @@
                 "realmforge:apply_effect": "#/$defs/ApplyEffectEffectDef",
                 "realmforge:cleanse": "#/$defs/CleanseEffectDef",
                 "realmforge:damage": "#/$defs/DamageEffectDef",
+                "realmforge:damage_over_time": "#/$defs/DamageOverTimeEffectDef",
                 "realmforge:heal": "#/$defs/HealEffectDef",
                 "realmforge:knockback": "#/$defs/KnockbackEffectDef",
                 "realmforge:remove_effect": "#/$defs/RemoveEffectEffectDef"
@@ -1178,6 +1674,9 @@
               },
               {
                 "$ref": "#/$defs/HealEffectDef"
+              },
+              {
+                "$ref": "#/$defs/DamageOverTimeEffectDef"
               },
               {
                 "$ref": "#/$defs/ApplyEffectEffectDef"
@@ -1252,6 +1751,18 @@
           "maximum": 100.0,
           "title": "Speed",
           "type": "number"
+        },
+        "splash": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SplashDef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A small explosion where it hits an enemy (RLM-399): the enemies round the target take its effects too, its damage at a share."
         },
         "type": {
           "const": "realmforge:projectile",
@@ -1412,6 +1923,32 @@
       "title": "SpellDamageDef",
       "type": "object"
     },
+    "SplashDef": {
+      "additionalProperties": false,
+      "description": "A bolt's small explosion where it hits an enemy (RLM-399): every other enemy within ``radius`` of the target\ntakes the projectile's effects too, its damage at ``damage_percent`` and every other effect at full strength.",
+      "properties": {
+        "damage_percent": {
+          "description": "The share of the damage the enemies round the target take.",
+          "exclusiveMinimum": 0,
+          "maximum": 100,
+          "title": "Damage Percent",
+          "type": "number"
+        },
+        "radius": {
+          "description": "In blocks from the target's hitbox, at most 4.",
+          "exclusiveMinimum": 0,
+          "maximum": 4.0,
+          "title": "Radius",
+          "type": "number"
+        }
+      },
+      "required": [
+        "radius",
+        "damage_percent"
+      ],
+      "title": "SplashDef",
+      "type": "object"
+    },
     "TeleportEffectDef": {
       "additionalProperties": false,
       "description": "Moves the caster at once to the target: a ground point, or as far along a direction as its range allows. It\nstops short of blocks, and does not move when no free spot is found on the way.",
@@ -1426,6 +1963,35 @@
         "type"
       ],
       "title": "TeleportEffectDef",
+      "type": "object"
+    },
+    "WindowDef": {
+      "additionalProperties": false,
+      "description": "How long a spell stays usable after what opens its window (RLM-540). The spell bar shows the open window with a\nglow and the time left; a cast closes it.",
+      "properties": {
+        "duration_seconds": {
+          "description": "How long the window stays open; more than 0, at most 60.",
+          "minimum": 0,
+          "title": "Duration Seconds",
+          "type": "number"
+        },
+        "opened_by": {
+          "description": "block: the player blocks a hit with a shield or a two-handed weapon; kill: the player kills an enemy that is not gray (its level at least the player's - 3). A passive's proc may open it too.",
+          "items": {
+            "enum": [
+              "block",
+              "kill"
+            ],
+            "type": "string"
+          },
+          "title": "Opened By",
+          "type": "array"
+        }
+      },
+      "required": [
+        "duration_seconds"
+      ],
+      "title": "WindowDef",
       "type": "object"
     }
   },
@@ -1498,9 +2064,11 @@
             "realmforge:area": "#/$defs/AreaEffectDef",
             "realmforge:cleanse": "#/$defs/CleanseEffectDef",
             "realmforge:damage": "#/$defs/DamageEffectDef",
+            "realmforge:damage_over_time": "#/$defs/DamageOverTimeEffectDef",
             "realmforge:dash": "#/$defs/DashEffectDef",
             "realmforge:heal": "#/$defs/HealEffectDef",
             "realmforge:knockback": "#/$defs/KnockbackEffectDef",
+            "realmforge:melee": "#/$defs/MeleeEffectDef",
             "realmforge:projectile": "#/$defs/ProjectileEffectDef",
             "realmforge:remove_effect": "#/$defs/RemoveEffectEffectDef",
             "realmforge:teleport": "#/$defs/TeleportEffectDef"
@@ -1513,6 +2081,9 @@
           },
           {
             "$ref": "#/$defs/HealEffectDef"
+          },
+          {
+            "$ref": "#/$defs/DamageOverTimeEffectDef"
           },
           {
             "$ref": "#/$defs/ApplyEffectEffectDef"
@@ -1531,6 +2102,9 @@
           },
           {
             "$ref": "#/$defs/AreaEffectDef"
+          },
+          {
+            "$ref": "#/$defs/MeleeEffectDef"
           },
           {
             "$ref": "#/$defs/TeleportEffectDef"
@@ -1625,6 +2199,21 @@
       "description": "The spell school whose damage it deals, e.g. realmforge:fire. A spell that neither deals damage nor heals may leave it out: it belongs to no school (Will To Survive, Matěj, 2026-10-30), and the spell bar frames it in black.",
       "title": "School"
     },
+    "target_health_below_percent": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "maximum": 100,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Castable only on a target below this share of its health, in percent (RLM-540: Execute's 20).",
+      "title": "Target Health Below Percent"
+    },
     "targeting": {
       "description": "Who the spell can target. Required for an active spell; a passive one leaves it out.",
       "discriminator": {
@@ -1667,6 +2256,18 @@
         }
       ],
       "title": "Targeting"
+    },
+    "window": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/WindowDef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Makes the spell usable only for a while after something happens (RLM-540): Overpower after a block, Victory Rush after a kill. A cast closes the window."
     }
   },
   "required": [

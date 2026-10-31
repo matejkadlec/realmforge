@@ -136,6 +136,11 @@ class BossDef(StrictModel):
         description="How long it stands, unhurt and casting nothing, when it enters a new phase, in seconds (research "
         "BM-2: 3 s); 0 for no pause. Particles round it show it.",
     )
+    immune_to: list[ResourceId] = Field(
+        default_factory=list,
+        description="Status effects it never takes, e.g. [realmforge:frozen, realmforge:stunned] (RLM-539): per boss, "
+        "as ordinary mobs have no immunity.",
+    )
     phases: list[BossPhaseDef] = Field(
         min_length=1, description="Its phases, in the order the fight goes through."
     )

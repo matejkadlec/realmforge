@@ -1,25 +1,33 @@
 # yaml-language-server: $schema=../../tools/schemas/spells.schema.json
 # The Warrior's first spell (C4; Arms's first spell, RLM-392; decision D4's starting spell "a Slam but AoE"): a heavy
-# weapon blow, High damage, that ignores 5 % of the target's armor per rank. It needs a melee weapon (RLM-499). Single
-# target, its damage at once, until RLM-399 gives it its sector and C6 its swing (architecture 11.7). Rage per second
-# of cooldown: 30 / 6 s = 5. Scaling system C (Matěj, 2026-10-30, RLM-534): 4/5.5/7/8.5/10 + 120/140/160/180/200 % of
-# Attack Damage.
+# weapon blow, High damage, that ignores 5 % of the target's armor per rank. It needs a melee weapon (RLM-499). An area
+# swing (RLM-399, Matěj, 2026-10-24): a sector a third of a circle wide (Better Combat's sword swing's 120°) and 1.5
+# blocks round the player, every enemy in it taking the same damage, with no target needed; it plays out over a 1 s
+# swing and hits at its middle. The shape is twice as tall as Better Combat's sword swing, 1 block (its 3-block reach
+# / 3), so 2 blocks round the crosshair. Rage per second of cooldown: 30 / 6 s = 5. Scaling system C (Matěj,
+# 2026-10-30, RLM-534): 4/5.5/7/8.5/10 + 120/140/160/180/200 % of Attack Damage.
 id: slam
 name: {en_us: Slam}
-description: {en_us: "Slams an enemy for {damage} damage, ignoring {armor_shred}% of its armor."}
+description: {en_us: "Slams every enemy in front of you for {damage} damage, ignoring {armor_shred}% of their armor."}
 school: realmforge:physical
 scales_with: attack_damage
-targeting: {type: realmforge:enemy, range: 4}
-cast: {type: instant}
+targeting: {type: realmforge:self}
+cast: {type: instant, animation_seconds: 1, hit_at_percent: 50}
 cost: {resource: realmforge:rage, amount: 30}
 cooldown_seconds: 6
 max_level: 5
 requires: [melee_weapon]
 effects:
-  - type: realmforge:damage
-    amount: 4
-    per_level: 1.5
-    attack_damage_percent: 120
-    attack_damage_per_level_percent: 20
-    armor_shred_percent: 5
-    armor_shred_per_level_percent: 5
+  - type: realmforge:melee
+    shape: sector
+    reach: 1.5
+    angle_degrees: 120
+    height: 2
+    effects:
+      - type: realmforge:damage
+        amount: 4
+        per_level: 1.5
+        attack_damage_percent: 120
+        attack_damage_per_level_percent: 20
+        armor_shred_percent: 5
+        armor_shred_per_level_percent: 5

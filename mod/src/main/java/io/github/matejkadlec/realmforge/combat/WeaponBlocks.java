@@ -18,6 +18,7 @@ import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
@@ -105,6 +106,7 @@ public final class WeaponBlocks {
         TO_LOWER.add(player);
         level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.SHIELD_BLOCK,
                 player.getSoundSource(), 1.0F, 0.8F + level.getRandom().nextFloat() * 0.4F);
+        NeoForge.EVENT_BUS.post(new CombatEvent.Block(player, event.getSource()));
         if (left <= 0) {
             event.setCanceled(true);
             return true;
@@ -119,9 +121,12 @@ public final class WeaponBlocks {
         return RAISE_DURATION.getOrDefault(player, remaining) - remaining;
     }
 
-    /** Whether a raised weapon can block the hit: one from the covered arc, with a source position, not magic. */
+    /**
+     * Whether a raised weapon can block the hit: one from the covered arc, with a source position, not magic, and not a
+     * damage over time's tick.
+     */
     static boolean blockable(Player player, DamageSource source, double arcDegrees) {
-        if (source.is(DamageTypeTags.BYPASSES_ARMOR)
+        if (source.is(DamageTypeTags.BYPASSES_ARMOR) || SchoolDamageSource.tickOf(source).isPresent()
                 || source.getDirectEntity() instanceof AbstractArrow arrow && arrow.getPierceLevel() > 0) {
             return false;
         }

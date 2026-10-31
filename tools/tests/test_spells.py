@@ -128,6 +128,18 @@ def test_repository_spells_are_the_class_kits_engine_tests_stoneform_and_astones
         "test_sure_crit",
         # The boss framework's test boss hardens in its second phase (W5a, RLM-490).
         "test_titan_harden",
+        # Bleeding's (RLM-539), the windows', procs' and conditions' (RLM-540) and the melee shapes' (RLM-399).
+        "test_cleave",
+        "test_deep_wound",
+        "test_deep_wounds",
+        "test_execute",
+        "test_frostbite",
+        "test_ice_lance",
+        "test_lacerate",
+        "test_overpower",
+        "test_rend",
+        "test_taste_for_blood",
+        "test_victory_rush",
     }
     assert universe.contains("realmforge:spell", "realmforge:test_bolt")
 
@@ -438,10 +450,12 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
         "ALL = List.of(ARCANE_MISSILES, ASTONE_BOULDER, ASTONE_CRACKED_STONE, ASTONE_QUAKE, ASTONE_ROCKFALL, "
         "ASTONE_SHOCKWAVE, BATTLE_SHOUT, FIREBALL, FROSTBOLT, ICE_BARRIER, IMPROVED_FROSTBOLT, RECKLESS_STRIKE, "
         "SHATTER, SHIELD_BASH, SLAM, STONEFORM, TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, "
-        "TEST_DRAIN, TEST_FORWARD_MISSILE, TEST_HOMING_BOLT, TEST_IGNITE, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, "
-        "TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_PROC_SPARK, TEST_REGROW, "
-        "TEST_SAP, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT, "
-        "TEST_TITAN_HARDEN, TWO_HANDED_WEAPON_SPECIALIZATION, WILL_TO_SURVIVE);"
+        "TEST_CLEAVE, TEST_DEEP_WOUND, TEST_DEEP_WOUNDS, TEST_DRAIN, TEST_EXECUTE, TEST_FORWARD_MISSILE, "
+        "TEST_FROSTBITE, TEST_HOMING_BOLT, TEST_ICE_LANCE, TEST_IGNITE, TEST_LACERATE, TEST_MEND, TEST_MENDING_RING, "
+        "TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_OVERPOWER, "
+        "TEST_PROC_SPARK, TEST_REGROW, TEST_REND, TEST_SAP, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, TEST_SLOW_MISSILE, "
+        "TEST_STRIKE, TEST_SURE_CRIT, TEST_TASTE_FOR_BLOOD, TEST_TITAN_HARDEN, TEST_VICTORY_RUSH, "
+        "TWO_HANDED_WEAPON_SPECIALIZATION, WILL_TO_SURVIVE);"
     ) in keys
     expectations = files[EXPECTATIONS].decode()
     assert (
@@ -1317,3 +1331,239 @@ def test_invalid_passive_spells_are_rejected(repo: RepoPaths, body: str, message
 def test_an_active_spell_still_names_its_cast(repo: RepoPaths) -> None:
     spell(repo, "fireball", FIREBALL.replace("cast: {type: instant}\n", ""))
     assert_problem(repo, "an active spell names cast; a passive one names passive instead")
+
+
+# RLM-539, RLM-540, RLM-399: damage over time, windows, procs, conditions, melee shapes, swings and splash
+
+BLEED = (
+    "school: realmforge:physical\n"
+    "scales_with: attack_damage\n"
+    "targeting: {type: realmforge:enemy, range: 5}\n"
+    "cast: {type: instant}\n"
+    "effects:\n"
+    "  - {type: realmforge:damage_over_time, effect: realmforge:bleeding, amount: 12, duration_seconds: 6}\n"
+)
+
+CLEAVE = (
+    "school: realmforge:physical\n"
+    "scales_with: attack_damage\n"
+    "targeting: {type: realmforge:self}\n"
+    "cast: {type: instant, animation_seconds: 1, hit_at_percent: 25}\n"
+    "requires: [melee_weapon]\n"
+    "effects:\n"
+    "  - type: realmforge:melee\n"
+    "    shape: box\n"
+    "    reach: 1\n"
+    "    width: 2\n"
+    "    height: 2\n"
+    "    effects:\n"
+    "      - {type: realmforge:damage, amount: 3, attack_damage_percent: 80}\n"
+)
+
+
+def test_a_damage_over_time_keeps_its_damage_in_stacks(repo: RepoPaths) -> None:
+    spell(repo, "test_bleed", BLEED)
+    data = json.loads(generate(repo)[f"{SPELL_DATA}/test_bleed.json"])
+    assert data["effects"][0] == {
+        "type": "realmforge:damage_over_time",
+        "amount": 12,
+        "per_level": 0,
+        "effect": "realmforge:bleeding",
+        "duration_ticks": 120,
+    }
+
+
+def test_a_damage_over_time_needs_an_effect_with_stacks(repo: RepoPaths) -> None:
+    spell(repo, "test_bleed", BLEED.replace("realmforge:bleeding", "realmforge:burning"))
+    assert_problem(repo, "realmforge:burning is no effect of content/effects/ with stacks")
+
+
+def test_a_damage_over_time_lasts_whole_intervals(repo: RepoPaths) -> None:
+    spell(repo, "test_bleed", BLEED.replace("duration_seconds: 6", "duration_seconds: 6.25"))
+    assert_problem(repo, "realmforge:bleeding ticks every 0.5 s")
+
+
+def test_a_damage_over_time_scales_with_its_ticks_school(repo: RepoPaths) -> None:
+    spell(
+        repo,
+        "test_bleed",
+        BLEED.replace("school: realmforge:physical", "school: realmforge:frost").replace(
+            "scales_with: attack_damage", "scales_with: spell_power"
+        ),
+    )
+    assert_problem(
+        repo, "deals realmforge:physical damage, a physical school, so the spell scales with attack_damage"
+    )
+
+
+def test_a_swing_and_its_melee_shape_are_in_game_units(repo: RepoPaths) -> None:
+    spell(repo, "test_swing", CLEAVE)
+    data = json.loads(generate(repo)[f"{SPELL_DATA}/test_swing.json"])
+    assert data["cast"] == {"type": "instant", "animation_ticks": 20, "hit_at": 0.25}
+    assert data["effects"][0]["type"] == "realmforge:melee"
+    assert data["effects"][0]["shape"] == "box"
+    assert data["effects"][0]["width"] == 2
+
+
+@pytest.mark.parametrize(
+    ("change", "expected"),
+    [
+        (("width: 2", "angle_degrees: 120"), "a box names width and no angle_degrees"),
+        (("shape: box", "shape: sector"), "a sector names angle_degrees and no width"),
+        (("reach: 1", "reach: 7"), "less than or equal to 6"),
+        (
+            ("animation_seconds: 1, ", ""),
+            "hit_at_percent is a moment of the animation: name animation_seconds too",
+        ),
+    ],
+)
+def test_invalid_swings_are_rejected(repo: RepoPaths, change: tuple[str, str], expected: str) -> None:
+    spell(repo, "test_swing", CLEAVE.replace(*change))
+    assert_problem(repo, expected)
+
+
+def test_a_melee_shape_lies_in_front_of_the_caster_itself(repo: RepoPaths) -> None:
+    spell(repo, "test_swing", CLEAVE.replace("{type: realmforge:self}", "{type: realmforge:enemy, range: 4}"))
+    assert_problem(repo, "realmforge:melee acts on the spell's targets, so the targeting is realmforge:self")
+
+
+def test_a_melee_shapes_damage_needs_a_melee_weapon(repo: RepoPaths) -> None:
+    spell(repo, "test_swing", CLEAVE.replace("requires: [melee_weapon]\n", ""))
+    assert_problem(repo, "needs a melee weapon in the main hand")
+
+
+def test_a_splash_is_in_game_units(repo: RepoPaths) -> None:
+    spell(
+        repo,
+        "test_splash",
+        "school: realmforge:frost\nscales_with: spell_power\ntargeting: {type: realmforge:direction, range: 40}\n"
+        "cast: {type: instant}\neffects:\n  - type: realmforge:projectile\n    speed: 30\n"
+        "    splash: {radius: 1, damage_percent: 50}\n    effects:\n      - {type: realmforge:damage, amount: 8}\n",
+    )
+    data = json.loads(generate(repo)[f"{SPELL_DATA}/test_splash.json"])
+    assert data["effects"][0]["splash"] == {"radius": 1, "damage": 0.5}
+
+
+@pytest.mark.parametrize(
+    ("fields", "expected"),
+    [
+        ({"window": {"duration_seconds": 0}}, "duration_seconds is more than 0 and at most 60"),
+        (
+            {"window": {"duration_seconds": 5, "opened_by": ["block", "block"]}},
+            "opened_by names each trigger once",
+        ),
+        ({"target_health_below_percent": 120}, "less than or equal to 100"),
+        (
+            {
+                "cost": {
+                    "resource": "realmforge:mana",
+                    "amount": 5,
+                    "extra": {"max": 0, "damage_per_point_percent": 3},
+                }
+            },
+            "greater than 0",
+        ),
+    ],
+)
+def test_invalid_conditions_are_rejected(fields: dict, expected: str) -> None:
+    with pytest.raises(pydantic.ValidationError) as excinfo:
+        spell_model(**fields)
+    assert expected in str(excinfo.value)
+
+
+def test_windows_and_conditions_are_in_game_units(repo: RepoPaths) -> None:
+    spell(
+        repo,
+        "test_finisher",
+        FIREBALL.replace(
+            "cast: {type: instant}\n",
+            "cast: {type: instant}\n"
+            "window: {duration_seconds: 5, opened_by: [block]}\ntarget_health_below_percent: 20\n"
+            "cost: {resource: realmforge:mana, amount: 5, extra: {max: 30, damage_per_point_percent: 3}}\n",
+        ),
+    )
+    data = json.loads(generate(repo)[f"{SPELL_DATA}/test_finisher.json"])
+    assert data["window"] == {"duration_ticks": 100, "opened_by": ["block"]}
+    assert data["target_health_below"] == 0.2
+    assert data["cost"]["extra"] == {"max": 30, "damage_per_point": 0.03}
+
+
+def test_a_health_condition_needs_an_enemy_target(repo: RepoPaths) -> None:
+    spell(
+        repo,
+        "test_finisher",
+        "school: realmforge:arcane\nscales_with: spell_power\ntargeting: {type: realmforge:self}\n"
+        "cast: {type: instant}\ntarget_health_below_percent: 20\neffects:\n"
+        "  - {type: realmforge:apply_effect, effect: minecraft:speed, duration_seconds: 5}\n",
+    )
+    assert_problem(repo, "a target's health is read from an enemy target")
+
+
+def test_extra_resource_raises_damage_so_the_spell_deals_some(repo: RepoPaths) -> None:
+    spell(
+        repo,
+        "test_finisher",
+        "school: realmforge:arcane\nscales_with: spell_power\ntargeting: {type: realmforge:self}\n"
+        "cast: {type: instant}\ncost: {resource: realmforge:mana, amount: 5, extra: {max: 30, "
+        "damage_per_point_percent: 3}}\neffects:\n"
+        "  - {type: realmforge:apply_effect, effect: minecraft:speed, duration_seconds: 5}\n",
+    )
+    assert_problem(repo, "extra resource spent raises the spell's damage, and it deals none")
+
+
+PASSIVE_PROC = (
+    "school: realmforge:frost\n"
+    "passive:\n"
+    "  procs:\n"
+    "    - trigger: applies_effect\n"
+    "      effect: minecraft:slowness\n"
+    "      chance_percent: 10\n"
+    "      chance_per_level_percent: 5\n"
+    "      cooldown_seconds: 3\n"
+    "      apply_effect: {effect: realmforge:frozen, duration_seconds: 2}\n"
+    "max_level: 3\n"
+)
+
+
+def test_a_passives_proc_is_in_game_units(repo: RepoPaths) -> None:
+    spell(repo, "test_bite", PASSIVE_PROC)
+    data = json.loads(generate(repo)[f"{SPELL_DATA}/test_bite.json"])
+    assert data["passive"]["procs"] == [
+        {
+            "trigger": "applies_effect",
+            "effect": "minecraft:slowness",
+            "chance": 0.1,
+            "chance_per_level": 0.05,
+            "cooldown_ticks": 60,
+            "apply_effect": {"effect": "realmforge:frozen", "duration_ticks": 40},
+        }
+    ]
+
+
+@pytest.mark.parametrize(
+    ("change", "expected"),
+    [
+        (
+            ("      apply_effect: {effect: realmforge:frozen, duration_seconds: 2}\n", ""),
+            "a proc does one thing: apply_effect, cast or open_window",
+        ),
+        (("      effect: minecraft:slowness\n", ""), "a applies_effect proc names the effect it watches"),
+        (("trigger: applies_effect", "trigger: crit"), "only an applies_effect or tick proc names an effect"),
+        (("realmforge:frozen", "realmforge:no_such_effect"), "passive.procs.0.apply_effect.effect"),
+    ],
+)
+def test_invalid_procs_are_rejected(repo: RepoPaths, change: tuple[str, str], expected: str) -> None:
+    spell(repo, "test_bite", PASSIVE_PROC.replace(*change))
+    assert_problem(repo, expected)
+
+
+def test_a_proc_opens_only_a_spells_window(repo: RepoPaths) -> None:
+    spell(
+        repo,
+        "test_bite",
+        PASSIVE_PROC.replace(
+            "      apply_effect: {effect: realmforge:frozen, duration_seconds: 2}\n",
+            "      open_window: realmforge:test_bolt\n",
+        ),
+    )
+    assert_problem(repo, "realmforge:test_bolt has no window to open")

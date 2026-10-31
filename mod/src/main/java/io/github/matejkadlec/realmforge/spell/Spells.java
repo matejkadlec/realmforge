@@ -117,6 +117,15 @@ public final class Spells {
         return Casting.cancel(caster);
     }
 
+    /**
+     * Brings {@code caster}'s swing (RLM-399) to its end at once: its effects run now if its hit moment had not come yet,
+     * and it completes. For QA and GameTests, which check a swing's hit without waiting for it. Returns whether a swing
+     * was running.
+     */
+    public static boolean landSwing(LivingEntity caster) {
+        return Casting.land(caster);
+    }
+
     /** Ends every cooldown of {@code caster}, the global one included, and syncs it. */
     public static void resetCooldowns(LivingEntity caster) {
         caster.getData(SpellAttachments.COMBAT).clearCooldowns();

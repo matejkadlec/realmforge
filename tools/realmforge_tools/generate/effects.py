@@ -92,6 +92,14 @@ def _registration(effect: EffectDef) -> str:
         for modifier in effect.modifiers
     )
     stun = "\n                    .stuns()" if effect.stun else ""
+    if effect.look is not None:
+        stun += f"\n                    .looks(StatusEffect.Look.{effect.look.upper()})"
+    stacks = effect.stacks
+    if stacks is not None:
+        stun += (
+            f"\n                    .stacks({string_literal(stacks.school)}, "
+            f"{seconds_to_ticks(stacks.interval_seconds)}, {'true' if stacks.ignores_armor else 'false'})"
+        )
     return (
         f"() -> new StatusEffect(MobEffectCategory.{_CATEGORIES[effect.category]}, {_hex(effect.color)},\n"
         f"                    {_periodic(effect)}){stun}{modifiers}"
@@ -125,7 +133,7 @@ def _registrations(content: Content) -> bytes:
         "\n"
         "/**\n"
         " * Status effects generated from {@code content/effects/} (architecture 11.4): attribute modifiers, damage or\n"
-        " * healing over time ({@link Periodic}) and stuns. NeoForge registers attributes before status effects, so a\n"
+        " * healing over time ({@link Periodic}), damage over time kept per caster's spell (stacks) and stuns. NeoForge registers attributes before status effects, so a\n"
         " * modifier finds its attribute, ours included, when its effect is built.\n"
         " */\n"
         "public final class GeneratedEffects {\n"
@@ -153,6 +161,13 @@ def _expectation(effect: EffectDef) -> str:
         f"{string_literal(modifier.operation)}, {_double(modifier.game_amount_at(1))})"
         for modifier in effect.modifiers
     )
+    stacks = effect.stacks
+    stacks_expectation = (
+        f"Optional.of(new StacksExpectation({string_literal(stacks.school)}, "
+        f"{seconds_to_ticks(stacks.interval_seconds)}, {'true' if stacks.ignores_armor else 'false'}))"
+        if stacks is not None
+        else "Optional.empty()"
+    )
     periodic = effect.periodic
     periodic_expectation = (
         f"Optional.of(new PeriodicExpectation({string_literal(periodic.type)}, {string_literal(periodic.school)}, "
@@ -169,6 +184,7 @@ def _expectation(effect: EffectDef) -> str:
         f"                    {_hex(effect.color)},\n"
         f"                    List.of({modifiers}),\n"
         f"                    {periodic_expectation},\n"
+        f"                    {stacks_expectation},\n"
         f"                    {'true' if effect.stun else 'false'})"
     )
 
@@ -204,12 +220,17 @@ def _expectations(content: Content) -> bytes:
         "            int intervalTicks) {\n"
         "    }\n"
         "\n"
+        "    /** Damage over time kept per caster's spell (RLM-539): the school of its ticks, their interval, armor. */\n"
+        "    public record StacksExpectation(String school, int intervalTicks, boolean ignoresArmor) {\n"
+        "    }\n"
+        "\n"
         "    /**\n"
-        "     * Expected state of one effect: its category, particle colour (RGB), modifiers, periodic ticks and whether\n"
-        "     * it stuns.\n"
+        "     * Expected state of one effect: its category, particle colour (RGB), modifiers, periodic ticks, stacks and\n"
+        "     * whether it stuns.\n"
         "     */\n"
         "    public record EffectExpectation(String id, String descriptionId, String category, int color,\n"
-        "            List<ModifierExpectation> modifiers, Optional<PeriodicExpectation> periodic, boolean stun) {\n"
+        "            List<ModifierExpectation> modifiers, Optional<PeriodicExpectation> periodic,\n"
+        "            Optional<StacksExpectation> stacks, boolean stun) {\n"
         "    }\n"
         "\n"
         f"    public static final List<EffectExpectation> EFFECTS = {effects};\n"

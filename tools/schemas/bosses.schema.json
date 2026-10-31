@@ -211,6 +211,16 @@
       "title": "Id",
       "type": "string"
     },
+    "immune_to": {
+      "description": "Status effects it never takes, e.g. [realmforge:frozen, realmforge:stunned] (RLM-539): per boss, as ordinary mobs have no immunity.",
+      "items": {
+        "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+        "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+        "type": "string"
+      },
+      "title": "Immune To",
+      "type": "array"
+    },
     "level": {
       "description": "Its fixed level, which scales its attributes like every mob's (architecture 14.1); in a dungeon run it takes the run's level instead.",
       "maximum": 1000,

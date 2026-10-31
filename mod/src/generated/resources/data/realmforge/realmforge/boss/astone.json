@@ -6,6 +6,7 @@
   },
   "bar_color": "white",
   "phase_change_ticks": 60,
+  "immune_to": [],
   "phases": [
     {
       "id": "weighing",

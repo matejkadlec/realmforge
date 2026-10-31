@@ -68,6 +68,16 @@ public final class SpellSchools {
         return new SchoolDamageSource(damageType(registries, school), direct, causing, crit, bonus, procOrigin);
     }
 
+    /**
+     * One tick of a damage over time of the school, {@code tick} (RLM-539), from {@code caster} or from nobody once the
+     * caster is gone: it never crits, is never dodged or blocked, and may ignore armor.
+     */
+    public static SchoolDamageSource tick(RegistryAccess registries, ResourceKey<SpellSchool> school,
+            @Nullable Entity caster, Optional<Identifier> procOrigin, SchoolDamageSource.Tick tick) {
+        return new SchoolDamageSource(damageType(registries, school), caster, caster, CritRule.NONE, HitBonus.NONE,
+                procOrigin, Optional.of(tick));
+    }
+
     private static Holder<DamageType> damageType(RegistryAccess registries, ResourceKey<SpellSchool> school) {
         SpellSchool value = registries.lookupOrThrow(CombatRegistries.SPELL_SCHOOL).getValueOrThrow(school);
         return registries.lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(value.damageType());

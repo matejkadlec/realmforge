@@ -22,17 +22,18 @@ import net.minecraft.world.item.ItemStack;
  * on the spell bar. While its player knows it, at its rank, and while the main hand holds an item of
  * {@code whileWielding} if it names one, it gives attribute modifiers ({@link Passives#SOURCE}), raises named spells'
  * damage ({@code spellDamage}, the hit's passives layer), adds crit chance against a target with a status effect, and
- * shortens a two-handed block's cooldown from a rank on. Every number grows per rank like an active spell's. Procs
- * (Frostbite, Taste for Blood, Deep Wounds) come with the windows-and-procs ticket and live in a passive spell too.
+ * shortens a two-handed block's cooldown from a rank on, and its procs fire ({@link Passives#procs}; RLM-540: Frostbite,
+ * Taste for Blood, Deep Wounds). Every number grows per rank like an active spell's.
  *
  * @param whileWielding the item tag the main hand must hold for any of it to apply, if any
  * @param modifiers attribute modifiers, per rank
  * @param spellDamage more damage for named spells, per rank
  * @param critChance more crit chance against a target with a status effect, per rank
  * @param blockCooldown a shorter two-handed block cooldown from a rank on
+ * @param procs what fires on the player's hits, crits, kills, effects and ticks, per rank
  */
 public record Passive(Optional<TagKey<Item>> whileWielding, List<Modifier> modifiers, List<SpellDamage> spellDamage,
-        Optional<CritChance> critChance, Optional<BlockCooldown> blockCooldown) {
+        Optional<CritChance> critChance, Optional<BlockCooldown> blockCooldown, List<Proc> procs) {
     public static final Codec<Passive> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                     TagKey.codec(Registries.ITEM).optionalFieldOf("while_wielding")
                             .forGetter(Passive::whileWielding),
@@ -40,12 +41,14 @@ public record Passive(Optional<TagKey<Item>> whileWielding, List<Modifier> modif
                     SpellDamage.CODEC.listOf().optionalFieldOf("spell_damage", List.of())
                             .forGetter(Passive::spellDamage),
                     CritChance.CODEC.optionalFieldOf("crit_chance").forGetter(Passive::critChance),
-                    BlockCooldown.CODEC.optionalFieldOf("block_cooldown").forGetter(Passive::blockCooldown))
+                    BlockCooldown.CODEC.optionalFieldOf("block_cooldown").forGetter(Passive::blockCooldown),
+                    Proc.CODEC.listOf().optionalFieldOf("procs", List.of()).forGetter(Passive::procs))
             .apply(instance, Passive::new));
 
     public Passive {
         modifiers = List.copyOf(modifiers);
         spellDamage = List.copyOf(spellDamage);
+        procs = List.copyOf(procs);
     }
 
     /** Whether it applies with {@code mainHand} in the main hand: always, unless it names a weapon tag. */
@@ -126,6 +129,73 @@ public record Passive(Optional<TagKey<Item>> whileWielding, List<Modifier> modif
         public double chanceAt(int level) {
             return SpellScaling.atLevel(chance, chancePerLevel, level);
         }
+    }
+
+    /**
+     * A passive spell's proc (RLM-540): when {@code trigger} happens, at its chance at the rank, outside its internal
+     * cooldown on that target, it gives the other entity a status effect, casts a spell at it at the passive's rank, or
+     * opens a spell's window ({@link io.github.matejkadlec.realmforge.spell.Proc}).
+     *
+     * @param trigger what makes it fire
+     * @param effect for applies_effect and tick: the status effect it watches
+     * @param spell for tick: only the ticks of this spell's damage over time
+     * @param chance the chance at rank 1, a share
+     * @param chancePerLevel added to it for every rank above 1
+     * @param cooldownTicks its internal cooldown on each target
+     * @param applyEffect the status effect it gives, if that is what it does
+     * @param cast the spell it casts, if that is what it does
+     * @param openWindow the spell whose window it opens, if that is what it does
+     */
+    public record Proc(io.github.matejkadlec.realmforge.spell.Proc.Trigger trigger, Optional<Holder<MobEffect>> effect,
+            Optional<ResourceKey<Spell>> spell, double chance, double chancePerLevel, int cooldownTicks,
+            Optional<ProcEffect> applyEffect, Optional<ResourceKey<Spell>> cast,
+            Optional<ResourceKey<Spell>> openWindow) {
+        public static final Codec<Proc> CODEC = RecordCodecBuilder.<Proc>create(instance -> instance.group(
+                        io.github.matejkadlec.realmforge.spell.Proc.Trigger.CODEC.fieldOf("trigger")
+                                .forGetter(Proc::trigger),
+                        MobEffect.CODEC.optionalFieldOf("effect").forGetter(Proc::effect),
+                        ResourceKey.codec(SpellRegistries.SPELL).optionalFieldOf("spell").forGetter(Proc::spell),
+                        Codec.doubleRange(0, 1).fieldOf("chance").forGetter(Proc::chance),
+                        Codec.doubleRange(0, 1).optionalFieldOf("chance_per_level", 0.0)
+                                .forGetter(Proc::chancePerLevel),
+                        ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("cooldown_ticks", 0)
+                                .forGetter(Proc::cooldownTicks),
+                        ProcEffect.CODEC.optionalFieldOf("apply_effect").forGetter(Proc::applyEffect),
+                        ResourceKey.codec(SpellRegistries.SPELL).optionalFieldOf("cast").forGetter(Proc::cast),
+                        ResourceKey.codec(SpellRegistries.SPELL).optionalFieldOf("open_window")
+                                .forGetter(Proc::openWindow))
+                .apply(instance, Proc::new))
+                .validate(proc -> (proc.applyEffect().isPresent() ? 1 : 0) + (proc.cast().isPresent() ? 1 : 0)
+                        + (proc.openWindow().isPresent() ? 1 : 0) == 1
+                        ? DataResult.success(proc)
+                        : DataResult.error(() -> "A proc does one thing: " + proc));
+
+        /** The chance at rank {@code level}, at most 1. */
+        public double chanceAt(int level) {
+            return Math.min(1, SpellScaling.atLevel(chance, chancePerLevel, level));
+        }
+
+        /** What it does at rank {@code level}, as the proc engine runs it. */
+        public io.github.matejkadlec.realmforge.spell.Proc.Action actionAt(int level) {
+            if (cast.isPresent()) {
+                return new io.github.matejkadlec.realmforge.spell.Proc.CastSpell(cast.get(), level);
+            }
+            if (openWindow.isPresent()) {
+                return new io.github.matejkadlec.realmforge.spell.Proc.OpenWindow(openWindow.get());
+            }
+            ProcEffect given = applyEffect.orElseThrow();
+            return new io.github.matejkadlec.realmforge.spell.Proc.ApplyEffect(given.effect(), given.durationTicks(),
+                    0, false);
+        }
+    }
+
+    /** The status effect a proc gives: its effect and how long it lasts. */
+    public record ProcEffect(Holder<MobEffect> effect, int durationTicks) {
+        public static final Codec<ProcEffect> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                        MobEffect.CODEC.fieldOf("effect").forGetter(ProcEffect::effect),
+                        Codec.intRange(1, ApplyEffectEffect.MAX_DURATION_TICKS).fieldOf("duration_ticks")
+                                .forGetter(ProcEffect::durationTicks))
+                .apply(instance, ProcEffect::new));
     }
 
     /** A two-handed block's cooldown, {@code reductionTicks} shorter from rank {@code fromLevel} on. */

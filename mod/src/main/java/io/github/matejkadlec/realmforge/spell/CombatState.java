@@ -16,13 +16,15 @@ import net.minecraft.resources.ResourceKey;
 
 /**
  * The value of the {@code realmforge:combat} attachment on players and on mobs that cast (architecture 7 and 11): the
- * resource pools (mana, rage), the cooldowns, the current cast, and whether a cast set Better Combat's disable tag.
+ * resource pools (mana, rage), the cooldowns, the current cast, the open windows of spells usable only for a while
+ * (RLM-540), and whether a cast set Better Combat's disable tag.
  *
  * <p>Unlike the other attachment values it is mutable, because it changes too often to replace and sync on every
  * change: the owner mutates it in place and calls {@code syncData} at most a few times per second or on important
  * changes (a cast or cooldown starting). Cooldowns are the server game time when they end, so they survive relogging
- * without per-tick updates. The current cast is transient: {@link #CODEC} leaves it out, so neither relogging nor the
- * copy on death (which round-trips the saved codec) brings it back; only the client sync carries it.
+ * without per-tick updates. The current cast and the open windows are transient: {@link #CODEC} leaves them out, so
+ * neither relogging nor the copy on death (which round-trips the saved codec) brings them back; only the client sync
+ * carries them.
  *
  * <p>Better Combat's tag {@value #BETTER_COMBAT_DISABLED_TAG} is saved with the player, so the flag that a cast set it
  * is saved too: an operator's own tag survives a cast, and a login removes a tag a crash left behind (ADR 0020,
@@ -57,11 +59,19 @@ public final class CombatState {
             ByteBufCodecs.VAR_LONG, CombatState::globalCooldownEnd,
             ByteBufCodecs.optional(Cast.STREAM_CODEC), CombatState::currentCast,
             ByteBufCodecs.BOOL, CombatState::setBetterCombatTag,
-            (resources, cooldowns, globalCooldownEnd, cast, setBetterCombatTag) ->
-                    new CombatState(resources, cooldowns, globalCooldownEnd, cast.orElse(null), setBetterCombatTag));
+            ByteBufCodecs.<ByteBuf, ResourceKey<Spell>, Long, Map<ResourceKey<Spell>, Long>>map(HashMap::new,
+                    ResourceKey.streamCodec(SpellRegistries.SPELL), ByteBufCodecs.VAR_LONG), CombatState::windows,
+            (resources, cooldowns, globalCooldownEnd, cast, setBetterCombatTag, windows) -> {
+                CombatState state = new CombatState(resources, cooldowns, globalCooldownEnd, cast.orElse(null),
+                        setBetterCombatTag);
+                windows.forEach(state::openWindow);
+                return state;
+            });
 
     private final Map<ResourceKey<ResourceType>, Float> resources;
     private final Map<ResourceKey<Spell>, Long> cooldowns;
+    /** Spell to the game time its window closes (RLM-540); transient. */
+    private final Map<ResourceKey<Spell>, Long> windows = new HashMap<>();
     private long globalCooldownEnd;
     @Nullable
     private Cast currentCast;
@@ -141,6 +151,28 @@ public final class CombatState {
         cooldowns.values().removeIf(end -> end <= now);
     }
 
+    /** Spell to the game time its window closes (RLM-540); read-only. Closed windows stay until {@link #closeWindow}. */
+    public Map<ResourceKey<Spell>, Long> windows() {
+        return Map.copyOf(windows);
+    }
+
+    /** Opens {@code spell}'s window until game time {@code endGameTime}, or keeps it open as long as it was. */
+    public void openWindow(ResourceKey<Spell> spell, long endGameTime) {
+        Objects.requireNonNull(spell, "spell");
+        windows.merge(spell, endGameTime, Math::max);
+    }
+
+    /** Whether {@code spell}'s window is open at game time {@code now}. */
+    public boolean isWindowOpen(ResourceKey<Spell> spell, long now) {
+        Long end = windows.get(spell);
+        return end != null && now < end;
+    }
+
+    /** Closes {@code spell}'s window: a cast used it. */
+    public void closeWindow(ResourceKey<Spell> spell) {
+        windows.remove(spell);
+    }
+
     /** The game time the global cooldown ends; 0 when it never ran. */
     public long globalCooldownEnd() {
         return globalCooldownEnd;
@@ -201,19 +233,20 @@ public final class CombatState {
                 && cooldowns.equals(state.cooldowns)
                 && globalCooldownEnd == state.globalCooldownEnd
                 && Objects.equals(currentCast, state.currentCast)
-                && setBetterCombatTag == state.setBetterCombatTag;
+                && setBetterCombatTag == state.setBetterCombatTag
+                && windows.equals(state.windows);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(resources, cooldowns, globalCooldownEnd, currentCast, setBetterCombatTag);
+        return Objects.hash(resources, cooldowns, globalCooldownEnd, currentCast, setBetterCombatTag, windows);
     }
 
     @Override
     public String toString() {
         return "CombatState[resources=" + resources + ", cooldowns=" + cooldowns + ", globalCooldownEnd="
                 + globalCooldownEnd + ", currentCast=" + currentCast + ", setBetterCombatTag=" + setBetterCombatTag
-                + "]";
+                + ", windows=" + windows + "]";
     }
 
     /**
@@ -225,13 +258,17 @@ public final class CombatState {
      * @param startGameTime the game time the cast started
      * @param durationTicks how long the cast or channel lasts after Cast Time Reduction, at least one tick
      * @param channel       whether it is a channel (a bar that empties) rather than a cast time (one that fills)
+     * @param swing         whether it is an instant spell playing out over its animation (RLM-399): no cast bar, no
+     *                      cast animation, no slow
      */
-    public record Cast(ResourceKey<Spell> spell, long startGameTime, int durationTicks, boolean channel) {
+    public record Cast(ResourceKey<Spell> spell, long startGameTime, int durationTicks, boolean channel,
+            boolean swing) {
         public static final StreamCodec<ByteBuf, Cast> STREAM_CODEC = StreamCodec.composite(
                 ResourceKey.streamCodec(SpellRegistries.SPELL), Cast::spell,
                 ByteBufCodecs.VAR_LONG, Cast::startGameTime,
                 ByteBufCodecs.VAR_INT, Cast::durationTicks,
                 ByteBufCodecs.BOOL, Cast::channel,
+                ByteBufCodecs.BOOL, Cast::swing,
                 Cast::new);
 
         public Cast {
@@ -241,6 +278,11 @@ public final class CombatState {
                         "A cast starts at a game time of 0 or more and lasts a tick or more: " + startGameTime + ", "
                                 + durationTicks);
             }
+        }
+
+        /** A cast time ({@code channel} false) or a channel, not a swing. */
+        public Cast(ResourceKey<Spell> spell, long startGameTime, int durationTicks, boolean channel) {
+            this(spell, startGameTime, durationTicks, channel, false);
         }
 
         /** The game time the cast completes. */

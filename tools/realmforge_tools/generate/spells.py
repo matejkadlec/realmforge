@@ -12,7 +12,7 @@ from realmforge_tools.generate.datapack import game_field, seconds_to_ticks, tra
 from realmforge_tools.generate.javagen import constant_name, header, java_file_path, string_literal
 from realmforge_tools.generate.textures import placeholder_orb_texture
 from realmforge_tools.project import JAVA_PACKAGE, MOD_ID, QA_JAVA_PACKAGE, RepoPaths
-from realmforge_tools.schema.spell import DAMAGE, HEAL, SpellDef
+from realmforge_tools.schema.spell import DAMAGE, DAMAGE_OVER_TIME, HEAL, SpellDef
 
 GENERATED_PACKAGE = f"{JAVA_PACKAGE}.generated"
 QA_GENERATED_PACKAGE = f"{QA_JAVA_PACKAGE}.generated"
@@ -120,7 +120,7 @@ def _effect(effect: BaseModel, indent: str) -> str:
         elif isinstance(value, int | float) and not isinstance(value, bool):
             field, converted = game_field(name, value)
             numbers[field] = converted
-    if effect.type in (DAMAGE, HEAL):
+    if effect.type in (DAMAGE, HEAL, DAMAGE_OVER_TIME):
         # The codec reads a missing share as 0.
         for share in ("attack_damage", "attack_damage_per_level", "spell_power", "spell_power_per_level"):
             numbers.setdefault(share, 0.0)

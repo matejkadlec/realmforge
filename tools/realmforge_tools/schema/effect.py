@@ -98,6 +98,28 @@ class PeriodicDef(StrictModel):
         return self
 
 
+class StacksDef(StrictModel):
+    """Damage over time that each caster's spell keeps on a target as a stack of its own (RLM-539, Bleeding): the
+    spell that applies it (``realmforge:damage_over_time``) names how much it deals in all, fixed from the caster's
+    stats when it is applied, and its ticks split that evenly. Two spells, or two casters, stack; the same spell from
+    the same caster refreshes its stack. The status effect shows while any stack lasts. Ticks never crit, are never
+    dodged or blocked, and never knock back."""
+
+    school: ResourceId = Field(description="The spell school of its ticks, e.g. realmforge:physical.")
+    interval_seconds: Seconds = Field(description="The time between two ticks, from 0.25 to 10 s.")
+    ignores_armor: bool = Field(
+        default=False, description="Whether its ticks ignore the target's armor, as bleeds do in WoW."
+    )
+
+    @model_validator(mode="after")
+    def _interval(self) -> StacksDef:
+        if not MIN_INTERVAL_SECONDS <= self.interval_seconds <= MAX_INTERVAL_SECONDS:
+            raise ValueError(
+                f"interval_seconds is from {MIN_INTERVAL_SECONDS:g} to {MAX_INTERVAL_SECONDS:g} seconds"
+            )
+        return self
+
+
 class EffectDef(StrictModel):
     """A status effect of ours, ``realmforge:<id>``: harmful, beneficial or neutral, with attribute modifiers, damage
     or healing over time, or both. Its name is the effect's translation, ``effect.realmforge.<id>``, shown in the
@@ -115,6 +137,16 @@ class EffectDef(StrictModel):
     periodic: PeriodicDef | None = Field(
         default=None, description="Damage or healing at the end of every interval while it lasts."
     )
+    stacks: StacksDef | None = Field(
+        default=None,
+        description="Damage over time kept per caster's spell (RLM-539, Bleeding): the spell that applies it through "
+        "realmforge:damage_over_time names the damage, fixed when applied. Instead of periodic.",
+    )
+    look: Literal["ice"] | None = Field(
+        default=None,
+        description="How clients draw its holder: ice covers its body in Packed Ice and makes it shiver (Frozen, "
+        "RLM-539).",
+    )
     stun: bool = Field(
         default=False,
         description="A stun (C4): its holder neither attacks nor casts, a mob's AI stands still, and a cast in "
@@ -124,8 +156,12 @@ class EffectDef(StrictModel):
 
     @model_validator(mode="after")
     def _does_something(self) -> EffectDef:
-        if not self.modifiers and self.periodic is None:
-            raise ValueError("an effect gives modifiers, periodic damage or healing, or both")
+        if not self.modifiers and self.periodic is None and self.stacks is None:
+            raise ValueError("an effect gives modifiers, periodic damage or healing, stacks, or both")
+        if self.periodic is not None and self.stacks is not None:
+            raise ValueError("an effect's ticks come from periodic or from stacks, not both")
+        if self.stacks is not None and self.category != "harmful":
+            raise ValueError("stacks deal damage over time, so the effect is harmful")
         if self.stun:
             if self.category != "harmful":
                 raise ValueError("a stun is harmful")

@@ -34,12 +34,18 @@ import net.minecraft.util.StringRepresentable;
  *                            cast time, growing to its size, and flies from there ({@link SpellVisuals})
  * @param animation           how a custom mob or boss moves its arms while a cast-time or channelled spell runs (its
  *                            model's animation); players' casts ignore it
+ * @param animationTicks      an instant spell that plays out over its animation (RLM-399, a Warrior's swing): how
+ *                            long, 0 for one that lands at once
+ * @param hitAt               when an animated instant spell's effects run: a share of its animation, the middle by
+ *                            default
  */
 public record SpellCast(Type type, int durationTicks, int intervalTicks, boolean castableWhileMoving,
         boolean lockOn, boolean keepSight, Optional<Double> keepRange, Optional<Identifier> sound,
-        boolean formsProjectile, Animation animation) {
+        boolean formsProjectile, Animation animation, int animationTicks, double hitAt) {
+    /** When an animated instant spell lands by default: the middle of its swing (Matěj, 2026-10-24). */
+    public static final double DEFAULT_HIT_AT = 0.5;
     public static final SpellCast INSTANT = new SpellCast(Type.INSTANT, 0, 0, false, false, false, Optional.empty(),
-            Optional.empty(), false, Animation.RAISE);
+            Optional.empty(), false, Animation.RAISE, 0, DEFAULT_HIT_AT);
 
     public static final Codec<SpellCast> CODEC = RecordCodecBuilder.<SpellCast>create(instance -> instance.group(
                     Type.CODEC.fieldOf("type").forGetter(SpellCast::type),
@@ -54,25 +60,44 @@ public record SpellCast(Type type, int durationTicks, int intervalTicks, boolean
                     Codec.doubleRange(0, 1).optionalFieldOf("keep_range").forGetter(SpellCast::keepRange),
                     Identifier.CODEC.optionalFieldOf("sound").forGetter(SpellCast::sound),
                     Codec.BOOL.optionalFieldOf("forms_projectile", false).forGetter(SpellCast::formsProjectile),
-                    Animation.CODEC.optionalFieldOf("animation", Animation.RAISE).forGetter(SpellCast::animation))
+                    Animation.CODEC.optionalFieldOf("animation", Animation.RAISE).forGetter(SpellCast::animation),
+                    ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("animation_ticks", 0)
+                            .forGetter(SpellCast::animationTicks),
+                    Codec.doubleRange(0, 1).optionalFieldOf("hit_at", DEFAULT_HIT_AT).forGetter(SpellCast::hitAt))
             .apply(instance, SpellCast::new)).validate(SpellCast::validate);
 
     /** A cast time of {@code ticks} (1 or more). */
     public static SpellCast castTime(int ticks, boolean castableWhileMoving, boolean lockOn) {
         return new SpellCast(Type.CAST_TIME, ticks, 0, castableWhileMoving, lockOn, false, Optional.empty(),
-                Optional.empty(), false, Animation.RAISE);
+                Optional.empty(), false, Animation.RAISE, 0, DEFAULT_HIT_AT);
+    }
+
+    /** An instant spell that plays out over {@code animationTicks}, its effects at the {@code hitAt} share of it. */
+    public static SpellCast swing(int animationTicks, double hitAt) {
+        return new SpellCast(Type.INSTANT, 0, 0, false, false, false, Optional.empty(), Optional.empty(), false,
+                Animation.RAISE, animationTicks, hitAt);
     }
 
     /** A channel of {@code durationTicks} that ticks every {@code intervalTicks}, which divides the duration. */
     public static SpellCast channel(int durationTicks, int intervalTicks, boolean castableWhileMoving,
             boolean lockOn) {
         return new SpellCast(Type.CHANNEL, durationTicks, intervalTicks, castableWhileMoving, lockOn, false,
-                Optional.empty(), Optional.empty(), false, Animation.RAISE);
+                Optional.empty(), Optional.empty(), false, Animation.RAISE, 0, DEFAULT_HIT_AT);
     }
 
     /** Whether the effects run at once, without a current cast. */
     public boolean instant() {
-        return type == Type.INSTANT;
+        return type == Type.INSTANT && animationTicks == 0;
+    }
+
+    /** Whether it is an instant spell that plays out over its animation (RLM-399): a swing. */
+    public boolean swing() {
+        return type == Type.INSTANT && animationTicks > 0;
+    }
+
+    /** The tick of a swing's animation its effects run on: its hit moment, at least 1 and at most the animation's last. */
+    public int hitTick() {
+        return Math.clamp(Math.round(animationTicks * hitAt), 1, Math.max(1, animationTicks));
     }
 
     /** How often a channel runs its effects: its duration over its interval; 1 for the other types. */
@@ -89,6 +114,10 @@ public record SpellCast(Type type, int durationTicks, int intervalTicks, boolean
         }
         if (cast.formsProjectile && cast.type != Type.CAST_TIME) {
             return DataResult.error(() -> "Only a cast time forms a projectile: " + cast);
+        }
+        if (cast.animationTicks > 0 && cast.type != Type.INSTANT || !(cast.hitAt > 0)) {
+            return DataResult.error(() -> "Only an instant spell plays out over an animation, its hit moment within "
+                    + "it: " + cast);
         }
         return switch (cast.type) {
             case INSTANT -> cast.durationTicks == 0 && cast.intervalTicks == 0 && !cast.castableWhileMoving

@@ -7,7 +7,9 @@ import io.github.matejkadlec.realmforge.combat.CritRule;
 import io.github.matejkadlec.realmforge.combat.HitBonus;
 import io.github.matejkadlec.realmforge.combat.SpellSchools;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
+import java.util.Optional;
 import net.minecraft.core.Holder;
+import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 
@@ -27,9 +29,11 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
  * @param armorShredPerLevel added to the armor shred for every spell level above 1
  * @param penetration the spell penetration at spell level 1, a share of the target's resistance
  * @param penetrationPerLevel added to the penetration for every spell level above 1
+ * @param againstEffect more damage against a target with a status effect (RLM-540: Ice Lance against Frozen), if any
  */
 public record DamageEffect(double amount, double perLevel, Coefficient coefficient, double armorShred,
-        double armorShredPerLevel, double penetration, double penetrationPerLevel) implements EntityEffect {
+        double armorShredPerLevel, double penetration, double penetrationPerLevel, Optional<AgainstEffect> againstEffect)
+        implements EntityEffect {
     public static final MapCodec<DamageEffect> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                     Codec.doubleRange(0, Double.MAX_VALUE).fieldOf("amount").forGetter(DamageEffect::amount),
                     Codec.doubleRange(0, Double.MAX_VALUE).optionalFieldOf("per_level", 0.0)
@@ -40,12 +44,37 @@ public record DamageEffect(double amount, double perLevel, Coefficient coefficie
                             .forGetter(DamageEffect::armorShredPerLevel),
                     Codec.doubleRange(0, 1).optionalFieldOf("penetration", 0.0).forGetter(DamageEffect::penetration),
                     Codec.doubleRange(0, 1).optionalFieldOf("penetration_per_level", 0.0)
-                            .forGetter(DamageEffect::penetrationPerLevel))
+                            .forGetter(DamageEffect::penetrationPerLevel),
+                    AgainstEffect.CODEC.optionalFieldOf("against_effect").forGetter(DamageEffect::againstEffect))
             .apply(instance, DamageEffect::new));
 
     /** A hit without armor shred or spell penetration. */
     public DamageEffect(double amount, double perLevel, Coefficient coefficient) {
-        this(amount, perLevel, coefficient, 0, 0, 0, 0);
+        this(amount, perLevel, coefficient, 0, 0, 0, 0, Optional.empty());
+    }
+
+    /** A hit with armor shred and spell penetration, and no bonus against an effect. */
+    public DamageEffect(double amount, double perLevel, Coefficient coefficient, double armorShred,
+            double armorShredPerLevel, double penetration, double penetrationPerLevel) {
+        this(amount, perLevel, coefficient, armorShred, armorShredPerLevel, penetration, penetrationPerLevel,
+                Optional.empty());
+    }
+
+    /**
+     * More damage against a target that has {@code effect}: × (1 + {@code damage}), Ice Lance's 200 % tripling it against
+     * a Frozen target (RLM-540).
+     */
+    public record AgainstEffect(Holder<MobEffect> effect, double damage) {
+        public static final Codec<AgainstEffect> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                        MobEffect.CODEC.fieldOf("effect").forGetter(AgainstEffect::effect),
+                        Codec.doubleRange(0, 100).fieldOf("damage").forGetter(AgainstEffect::damage))
+                .apply(instance, AgainstEffect::new));
+    }
+
+    /** What the hit's base is multiplied by against {@code target}: 1 + the bonus when it has the effect, else 1. */
+    public double againstFactor(LivingEntity target) {
+        return againstEffect.filter(against -> target.hasEffect(against.effect())).map(against -> 1 + against.damage())
+                .orElse(1.0);
     }
 
     /** The hit's damage at spell level {@code level} for a caster with {@code attackDamage} and {@code spellPower}. */
@@ -67,8 +96,9 @@ public record DamageEffect(double amount, double perLevel, Coefficient coefficie
     @Override
     public void applyTo(EffectContext context, LivingEntity target, SpellTarget spellTarget) {
         Spell spell = context.spell().value();
+        // A splash's share or extra rage's bonus (the context's scale), and a bonus against the target's effect.
         double damage = baseAt(context.spellLevel(), context.casterStat(Attributes.ATTACK_DAMAGE),
-                context.casterStat(GeneratedStats.SPELL_POWER));
+                context.casterStat(GeneratedStats.SPELL_POWER)) * context.damageScale() * againstFactor(target);
         LivingEntity caster = context.caster();
         // The caster's passive spells (RLM-541): more damage for this spell, more crit chance against this target.
         HitBonus bonus = bonusAt(context.spellLevel()).withDamage(context.spell().unwrapKey()

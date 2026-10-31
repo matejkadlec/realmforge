@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Engine test (RLM-540): castable only on an enemy below 20 % of its health, as the Arms Warrior's Execute will be
+# (RLM-543); it costs 15 rage and spends up to 30 more when the player has it, 3 % more damage for each. Not gameplay
+# content.
+id: test_execute
+name: {en_us: Test Execute}
+description: {en_us: "Finishes an enemy below 20% health for {damage} damage, more with more rage."}
+school: realmforge:physical
+scales_with: attack_damage
+targeting: {type: realmforge:enemy, range: 5}
+cast: {type: instant}
+cost: {resource: realmforge:rage, amount: 15, extra: {max: 30, damage_per_point_percent: 3}}
+requires: [melee_weapon]
+target_health_below_percent: 20
+effects:
+  - {type: realmforge:damage, amount: 10, attack_damage_percent: 0}

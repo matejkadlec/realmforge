@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/effects.schema.json
+# Physical damage over time (RLM-539; the Arms Warrior's Rend and Deep Wounds, RLM-543): every half second, like Burning,
+# a tick of the damage the spell that applied it fixed from its caster's Attack Damage then (spell/DamageOverTimeEffect).
+# Each caster's spell keeps its own bleed on a target and refreshes it with a new hit; two spells stack. Its ticks ignore
+# armor, as bleeds do in WoW (the ticket's proposal, for Matěj's playtest), and are never dodged or blocked.
+id: bleeding
+name: {en_us: Bleeding}
+category: harmful
+color: "#8A0303"
+stacks: {school: realmforge:physical, interval_seconds: 0.5, ignores_armor: true}

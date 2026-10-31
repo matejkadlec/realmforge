@@ -28,12 +28,17 @@ public final class GeneratedEffectExpectations {
             int intervalTicks) {
     }
 
+    /** Damage over time kept per caster's spell (RLM-539): the school of its ticks, their interval, armor. */
+    public record StacksExpectation(String school, int intervalTicks, boolean ignoresArmor) {
+    }
+
     /**
-     * Expected state of one effect: its category, particle colour (RGB), modifiers, periodic ticks and whether
-     * it stuns.
+     * Expected state of one effect: its category, particle colour (RGB), modifiers, periodic ticks, stacks and
+     * whether it stuns.
      */
     public record EffectExpectation(String id, String descriptionId, String category, int color,
-            List<ModifierExpectation> modifiers, Optional<PeriodicExpectation> periodic, boolean stun) {
+            List<ModifierExpectation> modifiers, Optional<PeriodicExpectation> periodic,
+            Optional<StacksExpectation> stacks, boolean stun) {
     }
 
     public static final List<EffectExpectation> EFFECTS = List.of(
@@ -44,6 +49,16 @@ public final class GeneratedEffectExpectations {
                     0xF5241B,
                     List.of(new ModifierExpectation("minecraft:attack_damage", "realmforge:effect.battle_shout.minecraft.attack_damage", 0.1, "add_multiplied_total", 0.15000000000000002)),
                     Optional.empty(),
+                    Optional.empty(),
+                    false),
+            new EffectExpectation(
+                    "realmforge:bleeding",
+                    "effect.realmforge.bleeding",
+                    "harmful",
+                    0x8A0303,
+                    List.of(),
+                    Optional.empty(),
+                    Optional.of(new StacksExpectation("realmforge:physical", 10, true)),
                     false),
             new EffectExpectation(
                     "realmforge:burning",
@@ -52,6 +67,7 @@ public final class GeneratedEffectExpectations {
                     0xFF7F1F,
                     List.of(),
                     Optional.of(new PeriodicExpectation("damage", "realmforge:fire", 0.5, 0.03, 10)),
+                    Optional.empty(),
                     false),
             new EffectExpectation(
                     "realmforge:cracked_stone",
@@ -59,6 +75,7 @@ public final class GeneratedEffectExpectations {
                     "beneficial",
                     0xB5654A,
                     List.of(new ModifierExpectation("minecraft:attack_damage", "realmforge:effect.cracked_stone.minecraft.attack_damage", 0.3, "add_multiplied_total", 0.6), new ModifierExpectation("minecraft:movement_speed", "realmforge:effect.cracked_stone.minecraft.movement_speed", 0.25, "add_multiplied_total", 0.5), new ModifierExpectation("minecraft:armor", "realmforge:effect.cracked_stone.minecraft.armor", -0.5, "add_multiplied_total", -1.0)),
+                    Optional.empty(),
                     Optional.empty(),
                     false),
             new EffectExpectation(
@@ -68,6 +85,7 @@ public final class GeneratedEffectExpectations {
                     0xA8E4FF,
                     List.of(new ModifierExpectation("minecraft:movement_speed", "realmforge:effect.frozen.minecraft.movement_speed", -1.0, "add_multiplied_total", -2.0), new ModifierExpectation("minecraft:jump_strength", "realmforge:effect.frozen.minecraft.jump_strength", -1.0, "add_multiplied_total", -2.0)),
                     Optional.empty(),
+                    Optional.empty(),
                     false),
             new EffectExpectation(
                     "realmforge:ice_barrier",
@@ -75,6 +93,7 @@ public final class GeneratedEffectExpectations {
                     "beneficial",
                     0x7FD4FF,
                     List.of(new ModifierExpectation("realmforge:magic_shield", "realmforge:effect.ice_barrier.realmforge.magic_shield", 10.0, "add_value", 20.0)),
+                    Optional.empty(),
                     Optional.empty(),
                     false),
             new EffectExpectation(
@@ -84,6 +103,7 @@ public final class GeneratedEffectExpectations {
                     0xF4D35E,
                     List.of(new ModifierExpectation("minecraft:movement_speed", "realmforge:effect.stunned.minecraft.movement_speed", -1.0, "add_multiplied_total", -2.0), new ModifierExpectation("minecraft:jump_strength", "realmforge:effect.stunned.minecraft.jump_strength", -1.0, "add_multiplied_total", -2.0)),
                     Optional.empty(),
+                    Optional.empty(),
                     true),
             new EffectExpectation(
                     "realmforge:test_burning",
@@ -92,6 +112,7 @@ public final class GeneratedEffectExpectations {
                     0xFF7F1F,
                     List.of(),
                     Optional.of(new PeriodicExpectation("damage", "realmforge:fire", 2.0, 0.1, 20)),
+                    Optional.empty(),
                     false),
             new EffectExpectation(
                     "realmforge:test_regrowth",
@@ -100,6 +121,7 @@ public final class GeneratedEffectExpectations {
                     0x4FCF6F,
                     List.of(),
                     Optional.of(new PeriodicExpectation("heal", "realmforge:arcane", 2.0, 0.1, 20)),
+                    Optional.empty(),
                     false),
             new EffectExpectation(
                     "realmforge:test_sapped",
@@ -107,6 +129,7 @@ public final class GeneratedEffectExpectations {
                     "harmful",
                     0x8F8FA0,
                     List.of(new ModifierExpectation("minecraft:movement_speed", "realmforge:effect.test_sapped.minecraft.movement_speed", -0.2, "add_multiplied_total", -0.4), new ModifierExpectation("realmforge:spell_power", "realmforge:effect.test_sapped.realmforge.spell_power", -1.0, "add_value", -2.0)),
+                    Optional.empty(),
                     Optional.empty(),
                     false));
 

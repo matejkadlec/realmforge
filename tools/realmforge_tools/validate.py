@@ -55,7 +55,7 @@ from realmforge_tools.schema.dungeon import (
     DungeonTypeDef,
     room_role,
 )
-from realmforge_tools.schema.effect import PeriodicDef, effect_id
+from realmforge_tools.schema.effect import PeriodicDef, StacksDef, effect_id
 from realmforge_tools.schema.item import (
     FIXED_ITEM_TAGS,
     GEAR_FORBIDDEN_ATTRIBUTES,
@@ -98,6 +98,7 @@ from realmforge_tools.schema.spell import (
     CLEANSE,
     CURRENT_TARGET,
     DAMAGE,
+    DAMAGE_OVER_TIME,
     DASH,
     DIRECTION,
     ENEMY,
@@ -105,6 +106,7 @@ from realmforge_tools.schema.spell import (
     GROUND_POINT,
     HEAL,
     KNOCKBACK,
+    MELEE,
     PERIODIC_PLACEHOLDERS,
     PROJECTILE,
     RANDOM_PLAYER,
@@ -862,13 +864,14 @@ def _check_spell_schools(content: Content, universe: IdUniverse) -> list[Problem
     return problems
 
 
-# Which targeting types each effect may use: damage and knockback hit enemies, heals and cleanses help the caster or
-# its allies, status effects go on anyone; a projectile flies at an enemy, a ground point or along a direction, an area lies at the
+# Which targeting types each effect may use: damage, damage over time and knockback hit enemies, heals and cleanses help
+# the caster or its allies, status effects go on anyone; a melee shape lies in front of the caster itself; a projectile flies at an enemy, a ground point or along a direction, an area lies at the
 # caster's feet, an enemy's or a ground point, a teleport needs a point to go to, and a dash rushes at an enemy, a
 # point or along a direction. The NPC targeting types choose an enemy, so they go wherever enemy does.
 _NPC = (CURRENT_TARGET, RANDOM_PLAYER, FARTHEST_PLAYER)
 _EFFECT_TARGETING: dict[str, tuple[str, ...]] = {
     DAMAGE: (ENEMY, *_NPC),
+    DAMAGE_OVER_TIME: (ENEMY, *_NPC),
     HEAL: (SELF, ALLY),
     APPLY_EFFECT: (SELF, ENEMY, ALLY, *_NPC),
     REMOVE_EFFECT: (SELF, ENEMY, ALLY, *_NPC),
@@ -876,6 +879,7 @@ _EFFECT_TARGETING: dict[str, tuple[str, ...]] = {
     KNOCKBACK: (ENEMY, *_NPC),
     PROJECTILE: (ENEMY, GROUND_POINT, DIRECTION, *_NPC),
     AREA: (SELF, ENEMY, GROUND_POINT, *_NPC),
+    MELEE: (SELF,),
     TELEPORT: (GROUND_POINT, DIRECTION),
     DASH: (ENEMY, GROUND_POINT, DIRECTION, *_NPC),
 }
@@ -895,6 +899,14 @@ def _check_effects(content: Content, universe: IdUniverse) -> list[Problem]:
     schools = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.spell_schools}
     for entry in content.effects:
         effect = entry.model
+        if effect.stacks is not None and not universe.contains(SPELL_SCHOOL_REGISTRY, effect.stacks.school):
+            problems.append(
+                Problem(
+                    entry.source,
+                    "stacks.school",
+                    _unknown(effect.stacks.school, SPELL_SCHOOL_REGISTRY, universe),
+                )
+            )
         if effect.periodic is not None and not universe.contains(
             SPELL_SCHOOL_REGISTRY, effect.periodic.school
         ):
@@ -991,8 +1003,101 @@ def _check_spells(content: Content, universe: IdUniverse) -> list[Problem]:
             problems += _check_hit_bonuses(entry.source, spell, school)
             problems += _check_melee_requirement(entry.source, spell, school)
         problems += _check_bonus_placeholder(entry.source, spell, content, universe)
+        problems += _check_damage_over_time(entry.source, spell, content, universe)
+        problems += _check_conditions(entry.source, spell, content, universe)
         if spell.passive is not None:
             problems += _check_passive(entry.source, spell, content, universe)
+    return problems
+
+
+def _check_damage_over_time(
+    source: str, spell: SpellDef, content: Content, universe: IdUniverse
+) -> list[Problem]:
+    """A damage over time (RLM-539) names one of our effects with stacks, lasts a whole number of its intervals at
+    every rank, and grows with the power of its ticks' school; a damage effect's bonus against a status effect names
+    one that exists (RLM-540)."""
+    problems: list[Problem] = []
+    stacked: dict[str, StacksDef] = {
+        effect_id(entry.model.id): entry.model.stacks
+        for entry in content.effects
+        if entry.model.stacks is not None
+    }
+    schools = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.spell_schools}
+    for path, effect in spell.all_effects():
+        if effect.type == DAMAGE and effect.against_effect is not None:
+            against = effect.against_effect.effect
+            if not universe.contains(MOB_EFFECT_REGISTRY, against):
+                problems.append(
+                    Problem(
+                        source,
+                        f"{path}.against_effect.effect",
+                        _unknown(against, MOB_EFFECT_REGISTRY, universe),
+                    )
+                )
+        if effect.type != DAMAGE_OVER_TIME:
+            continue
+        stacks = stacked.get(effect.effect)
+        if stacks is None:
+            problems.append(
+                Problem(
+                    source,
+                    f"{path}.effect",
+                    f"{effect.effect} is no effect of content/effects/ with stacks: a damage over time keeps its "
+                    "damage in one",
+                )
+            )
+            continue
+        for field in ("duration_seconds", "duration_per_level_seconds"):
+            seconds = getattr(effect, field)
+            if seconds is None:
+                continue
+            ticks = seconds / stacks.interval_seconds
+            if abs(ticks - round(ticks)) > 1e-9:
+                problems.append(
+                    Problem(
+                        source,
+                        f"{path}.{field}",
+                        f"{effect.effect} ticks every {stacks.interval_seconds:g} s, so it lasts a whole number of "
+                        f"its intervals at every level, and {field} {seconds:g} s is not one",
+                    )
+                )
+        school = schools.get(stacks.school)
+        if school is not None and SCALING_OF_KIND[school.kind] != spell.scales_with:
+            problems.append(
+                Problem(
+                    source,
+                    f"{path}.effect",
+                    f"{effect.effect} deals {stacks.school} damage, a {school.kind} school, so the spell scales with "
+                    f"{SCALING_OF_KIND[school.kind]}, not {spell.scales_with}",
+                )
+            )
+    return problems
+
+
+def _check_conditions(source: str, spell: SpellDef, content: Content, universe: IdUniverse) -> list[Problem]:
+    """A spell's conditions (RLM-540): a target health condition needs an enemy target; extra resource spent raises
+    damage, so the spell deals some; a hit moment belongs to a player's swing."""
+    problems: list[Problem] = []
+    if spell.target_health_below_percent is not None and spell.targeting.type not in (ENEMY, *_NPC):
+        problems.append(
+            Problem(
+                source,
+                "target_health_below_percent",
+                f"a target's health is read from an enemy target, and the spell targets {spell.targeting.type}",
+            )
+        )
+    if spell.cost is not None and spell.cost.extra is not None and spell.first_effect(DAMAGE) is None:
+        problems.append(
+            Problem(source, "cost.extra", "extra resource spent raises the spell's damage, and it deals none")
+        )
+    if getattr(spell.cast, "animation_seconds", None) is not None and spell.npc_only:
+        problems.append(
+            Problem(
+                source,
+                "cast.animation_seconds",
+                "a swing's animation is a player's; mobs land their spells at once",
+            )
+        )
     return problems
 
 
@@ -1034,6 +1139,8 @@ def _check_passive(source: str, spell: SpellDef, content: Content, universe: IdU
                 _unknown(critical.against, MOB_EFFECT_REGISTRY, universe),
             )
         )
+    for n, proc in enumerate(passive.procs):
+        problems += _check_proc(source, f"passive.procs.{n}", proc, spell, spells, universe)
     first = passive.modifiers[0] if passive.modifiers else None
     stat = stats.get(first.attribute) if first is not None else None
     if (
@@ -1050,6 +1157,62 @@ def _check_passive(source: str, spell: SpellDef, content: Content, universe: IdU
                 "operation or describe the number another way",
             )
         )
+    return problems
+
+
+def _check_proc(
+    source: str,
+    path: str,
+    proc: BaseModel,
+    spell: SpellDef,
+    spells: dict[str, SpellDef],
+    universe: IdUniverse,
+) -> list[Problem]:
+    """A passive's proc (RLM-540): the effects it watches or gives exist; the spell whose ticks it watches deals damage
+    over time; the spell it casts is active and a player's, at the passive's ranks; the spell whose window it opens has
+    one."""
+    problems: list[Problem] = []
+    for field, effect in (
+        ("effect", proc.effect),
+        ("apply_effect.effect", getattr(proc.apply_effect, "effect", None)),
+    ):
+        if effect is not None and not universe.contains(MOB_EFFECT_REGISTRY, effect):
+            problems.append(
+                Problem(source, f"{path}.{field}", _unknown(effect, MOB_EFFECT_REGISTRY, universe))
+            )
+    if proc.spell is not None:
+        watched = spells.get(proc.spell)
+        if watched is None:
+            problems.append(Problem(source, f"{path}.spell", _unknown(proc.spell, SPELL_REGISTRY, universe)))
+        elif watched.first_effect(DAMAGE_OVER_TIME) is None and watched.first_effect(APPLY_EFFECT) is None:
+            problems.append(
+                Problem(source, f"{path}.spell", f"{proc.spell} applies no damage over time to tick")
+            )
+    if proc.cast is not None:
+        cast = spells.get(proc.cast)
+        if cast is None:
+            problems.append(Problem(source, f"{path}.cast", _unknown(proc.cast, SPELL_REGISTRY, universe)))
+        elif cast.is_passive or cast.npc_only:
+            problems.append(Problem(source, f"{path}.cast", f"{proc.cast} is no spell a player casts"))
+        elif cast.max_level < spell.max_level:
+            problems.append(
+                Problem(
+                    source,
+                    f"{path}.cast",
+                    f"{proc.cast} has {cast.max_level} ranks, fewer than the passive's {spell.max_level}: it is cast at "
+                    "the passive's rank",
+                )
+            )
+    if proc.open_window is not None:
+        opened = spells.get(proc.open_window)
+        if opened is None:
+            problems.append(
+                Problem(source, f"{path}.open_window", _unknown(proc.open_window, SPELL_REGISTRY, universe))
+            )
+        elif opened.window is None:
+            problems.append(
+                Problem(source, f"{path}.open_window", f"{proc.open_window} has no window to open")
+            )
     return problems
 
 
@@ -1310,6 +1473,11 @@ def _check_bosses(content: Content, universe: IdUniverse) -> list[Problem]:
             )
         else:
             bodies[boss.entity] = entry.source
+        for n, immune in enumerate(boss.immune_to):
+            if not universe.contains(MOB_EFFECT_REGISTRY, immune):
+                problems.append(
+                    Problem(entry.source, f"immune_to.{n}", _unknown(immune, MOB_EFFECT_REGISTRY, universe))
+                )
         for p, phase in enumerate(boss.phases):
             casts = [(f"phases.{p}.on_enter.{n}", spell) for n, spell in enumerate(phase.on_enter)] + [
                 (f"phases.{p}.abilities.{n}.spell", ability.spell)
@@ -1379,6 +1547,8 @@ def _check_inner_effects(
         reached, what = (
             (ENEMY, "an area's enemies") if effect.affects == "enemies" else (ALLY, "an area's allies")
         )
+    elif effect.type == MELEE:
+        reached, what = ENEMY, "the enemies in a melee shape"
     else:
         return []
     problems: list[Problem] = []
@@ -1400,7 +1570,7 @@ def _check_channel_reapply(
     """A channel runs its effects at every interval: what it applies, and what the projectile or area it sends at
     every interval applies, is applied again then."""
     problems = _check_reapply(source, path, effect, interval, "the channel", effects)
-    if effect.type in (PROJECTILE, AREA):
+    if effect.type in (PROJECTILE, AREA, MELEE):
         for m, inner in enumerate(effect.effects):
             problems += _check_reapply(source, f"{path}.effects.{m}", inner, interval, "the channel", effects)
     return problems

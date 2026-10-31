@@ -22,9 +22,11 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
  * @param spellLevel the level the spell was cast at, 1 to its {@code max_level}
  * @param random the source of the crit rolls
  * @param procOrigin the proc whose spell this is, if a proc cast it
+ * @param damageScale what its damage effects' hits are multiplied by: 1, or less for a bolt's splash (RLM-399), more for
+ *                    extra rage spent (RLM-540)
  */
 public record EffectContext(ServerLevel level, LivingEntity caster, Entity direct, Holder<Spell> spell, int spellLevel,
-        RandomSource random, Optional<Identifier> procOrigin) {
+        RandomSource random, Optional<Identifier> procOrigin, double damageScale) {
     public EffectContext {
         if (spellLevel < 1 || spellLevel > spell.value().maxLevel()) {
             throw new IllegalArgumentException("Spell level " + spellLevel + " is outside 1 to "
@@ -38,12 +40,19 @@ public record EffectContext(ServerLevel level, LivingEntity caster, Entity direc
      */
     public static EffectContext of(ServerLevel level, LivingEntity caster, Holder<Spell> spell, int spellLevel,
             Optional<Identifier> procOrigin) {
-        return new EffectContext(level, caster, caster, spell, spellLevel, caster.getRandom(), procOrigin);
+        return new EffectContext(level, caster, caster, spell, spellLevel, caster.getRandom(), procOrigin, 1);
     }
 
     /** The same cast, delivered by {@code entity}: a projectile or an area in {@code level}. */
     public EffectContext through(ServerLevel entityLevel, Entity entity) {
-        return new EffectContext(entityLevel, caster, entity, spell, spellLevel, caster.getRandom(), procOrigin);
+        return new EffectContext(entityLevel, caster, entity, spell, spellLevel, caster.getRandom(), procOrigin,
+                damageScale);
+    }
+
+    /** The same cast, its damage multiplied by {@code factor} as well. */
+    public EffectContext scaled(double factor) {
+        return factor == 1 ? this : new EffectContext(level, caster, direct, spell, spellLevel, random, procOrigin,
+                damageScale * factor);
     }
 
     /** One of the caster's stats, 0 when it lacks the attribute (most mobs lack ours). */

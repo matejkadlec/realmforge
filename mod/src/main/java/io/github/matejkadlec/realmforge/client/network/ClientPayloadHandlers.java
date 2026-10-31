@@ -38,8 +38,12 @@ public final class ClientPayloadHandlers {
         event.register(HitDirectionPayload.TYPE, (payload, context) -> HitDirectionHud.add(payload));
         event.register(CastStartedPayload.TYPE, (payload, context) -> ClientCasts.start(payload));
         event.register(CastEndedPayload.TYPE, (payload, context) -> {
+            // A swing (RLM-399) has no cast bar, so its end shows nothing there either.
+            boolean swing = ClientCasts.isSwing(payload.casterId());
             ClientCasts.end(payload);
-            CastBarHud.ended(payload);
+            if (!swing) {
+                CastBarHud.ended(payload);
+            }
             TargetCircle.ended(payload);
         });
         event.register(CastRefusedPayload.TYPE, (payload, context) -> CastBarHud.refused(payload));

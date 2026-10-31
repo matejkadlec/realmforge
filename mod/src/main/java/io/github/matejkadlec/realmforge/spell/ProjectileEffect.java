@@ -22,7 +22,9 @@ import net.minecraft.world.phys.Vec3;
  * {@code effects} on the first enemy it hits (architecture 11.3). A spell that forms it during its cast
  * ({@link SpellCast#formsProjectile}) launches it from where it formed, in front of the caster
  * ({@link SpellVisuals#formPoint}), toward the target; a channel launches each from there too. A player's projectile
- * is aim assisted (RLM-345): it leaves toward the enemy it homes in on and curves after it ({@link #homing}).
+ * is aim assisted (RLM-345): it leaves toward the enemy it homes in on and curves after it ({@link #homing}). A bolt
+ * with a {@link Splash} explodes where it hits an enemy (RLM-399): the enemies round the target take its effects too,
+ * its damage at a share and every other effect at full strength.
  *
  * @param speed blocks per second
  * @param size the width and height of its hitbox, in blocks
@@ -32,10 +34,11 @@ import net.minecraft.world.phys.Vec3;
  * @param spares an entity type tag whose entities stop it but take none of its effects
  * @param impact its sound and particles where it hits a block or an entity
  * @param appearance how it looks; without it, a trail of sparks
+ * @param splash its small explosion where it hits an enemy, if it has one (RLM-399)
  */
 public record ProjectileEffect(double speed, double size, Optional<Integer> lifetimeTicks, List<SpellEffect> effects,
-        Optional<TagKey<EntityType<?>>> spares, Optional<Impact> impact, Optional<Appearance> appearance)
-        implements SpellEffect {
+        Optional<TagKey<EntityType<?>>> spares, Optional<Impact> impact, Optional<Appearance> appearance,
+        Optional<Splash> splash) implements SpellEffect {
     public static final double MAX_SPEED = 100;
     public static final double MAX_SIZE = 4;
     public static final int MAX_LIFETIME_TICKS = 200;
@@ -49,8 +52,25 @@ public record ProjectileEffect(double speed, double size, Optional<Integer> life
                             .forGetter(ProjectileEffect::effects),
                     TagKey.codec(Registries.ENTITY_TYPE).optionalFieldOf("spares").forGetter(ProjectileEffect::spares),
                     Impact.CODEC.optionalFieldOf("impact").forGetter(ProjectileEffect::impact),
-                    Appearance.CODEC.optionalFieldOf("appearance").forGetter(ProjectileEffect::appearance))
+                    Appearance.CODEC.optionalFieldOf("appearance").forGetter(ProjectileEffect::appearance),
+                    Splash.CODEC.optionalFieldOf("splash").forGetter(ProjectileEffect::splash))
             .apply(instance, ProjectileEffect::new));
+
+    /**
+     * A bolt's small explosion where it hits an enemy (RLM-399, Matěj, 2026-10-24): every other enemy whose hitbox lies
+     * within {@code radius} of the target's takes the projectile's effects too, its damage at the {@code damage} share
+     * (half for the Mage's bolts) and every other effect at full strength.
+     *
+     * @param radius in blocks from the target's hitbox
+     * @param damage the share of the damage the enemies round the target take
+     */
+    public record Splash(double radius, double damage) {
+        public static final double MAX_RADIUS = 4;
+        public static final Codec<Splash> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                        Codec.doubleRange(0, MAX_RADIUS).fieldOf("radius").forGetter(Splash::radius),
+                        Codec.doubleRange(0, 1).fieldOf("damage").forGetter(Splash::damage))
+                .apply(instance, Splash::new));
+    }
 
     public ProjectileEffect {
         effects = List.copyOf(effects);

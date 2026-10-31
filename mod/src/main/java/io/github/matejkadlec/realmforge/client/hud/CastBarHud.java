@@ -116,7 +116,7 @@ public final class CastBarHud {
                 ClientConfig.spellBarGroup(graphics.guiWidth(), graphics.guiHeight()));
         int x = (graphics.guiWidth() - SpellBarLayout.CAST_BAR_WIDTH) / 2;
         Font font = minecraft.font;
-        Optional<Cast> cast = ClientCasts.current(player);
+        Optional<Cast> cast = ClientCasts.current(player).filter(current -> !current.swing());
         if (cast.isPresent()) {
             Optional<Spell> spell = spell(player, cast.get().spell());
             float progress = CurrentCasts.progress(cast.get(), time);
