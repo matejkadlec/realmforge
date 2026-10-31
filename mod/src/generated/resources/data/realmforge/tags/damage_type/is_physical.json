@@ -1,0 +1,10 @@
+{
+  "values": [
+    "minecraft:mob_attack",
+    "minecraft:mob_attack_no_aggro",
+    "minecraft:sting",
+    "#minecraft:is_player_attack",
+    "#minecraft:is_projectile",
+    "realmforge:physical"
+  ]
+}

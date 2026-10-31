@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../tools/schemas/stats.schema.json
+# Less fall damage, in percent (RLM-233, Feathery): vanilla's #minecraft:is_fall (falls, ender pearls, stalagmites).
+# Capped at 75 % (architecture 9.1).
+id: fall_resistance
+name: {en_us: Fall Resistance}
+kind: secondary
+max_percent: 75
+resists: minecraft:is_fall

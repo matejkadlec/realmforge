@@ -1,8 +1,11 @@
 package io.github.matejkadlec.realmforge.combat;
 
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
+import io.github.matejkadlec.realmforge.stats.DamageTypeResistance;
 import io.github.matejkadlec.realmforge.stats.EntityLevel;
 import io.github.matejkadlec.realmforge.stats.StatsAttachments;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerLevel;
@@ -46,7 +49,8 @@ import net.neoforged.neoforge.event.entity.player.CriticalHitEvent;
  *   chance and deals 1 + crit damage. A school hit gets the school's power and its spell's passives ({@link HitBonus}; the
  *   caster's Spell Power is already in a spell's damage, RLM-534), a crit roll (by the spell's {@link CritRule} when a
  *   {@link SchoolDamageSource} brings one) and the defender's resistance (spell resistance added for magic), less the
- *   hit's spell penetration. The armor reduction becomes
+ *   hit's spell penetration. Every hit then meets the defender's damage type resistances, multiplied (Physical,
+ *   Projectile, Explosion and Fall Resistance by their tags, RLM-233). The armor reduction becomes
  *   vanilla's formula on the armor the attacker's armor pierce and shred leave (a spell's hit adding its own shred),
  *   except for damage in {@code #minecraft:bypasses_armor}. The defender's magic shield joins the absorption
  *   reduction ({@link MagicShields}).</li>
@@ -189,6 +193,28 @@ public final class DamagePipeline {
             HitTracker.start(defender, new HitTracker.Hit(source, level.getGameTime(), Optional.empty(), true,
                     Float.NaN));
         }
+        double resistance = damageTypeResistance(defender, source);
+        if (resistance > 0) {
+            event.setAmount((float) DamageCalculator.afterResistance(event.getAmount(), resistance));
+        }
+    }
+
+    /**
+     * What the defender's damage type resistances block of a hit (RLM-233): every stat of
+     * {@link GeneratedStats#DAMAGE_RESISTANCES} whose tag the hit's damage type is in (Physical Resistance on a melee
+     * hit, an arrow or a physical school hit, Projectile Resistance on an arrow, ...), multiplied, at most 75 %
+     * ({@link DamageCalculator#damageTypeResistance}). 0 for a defender without them: mobs have none.
+     */
+    public static double damageTypeResistance(LivingEntity defender, DamageSource source) {
+        List<DamageTypeResistance> resistances = GeneratedStats.DAMAGE_RESISTANCES;
+        double[] shares = new double[resistances.size()];
+        int count = 0;
+        for (DamageTypeResistance resistance : resistances) {
+            if (source.is(resistance.damage())) {
+                shares[count++] = stat(defender, resistance.stat());
+            }
+        }
+        return DamageCalculator.damageTypeResistance(Arrays.copyOf(shares, count));
     }
 
     /**
@@ -330,7 +356,8 @@ public final class DamagePipeline {
                 stat(defender, GeneratedStats.SPELL_RESISTANCE), school.magic()), bonus.penetration());
         DamageCalculator.SchoolHit hit = DamageCalculator.schoolHit(event.getAmount(), attacker, resistance,
                 SchoolDamageSource.critOf(source), level.getRandom());
-        event.setAmount((float) hit.damage());
+        // A physical school's hit also meets Physical Resistance (#realmforge:is_physical, RLM-233).
+        event.setAmount((float) DamageCalculator.afterResistance(hit.damage(), damageTypeResistance(defender, source)));
         // Keep the defender's window: the hit sets the invulnerable time to this (vanilla refuses 0, and 1 opens no
         // window), and Post restores the lastHurt vanilla overwrites.
         event.setInvulnerabilityTicks(Math.max(1, defender.invulnerableTime));

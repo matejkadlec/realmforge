@@ -134,6 +134,21 @@
     "name": {
       "$ref": "#/$defs/LocalizedText",
       "description": "The stat's name, shown on the character sheet and in tooltips."
+    },
+    "resists": {
+      "anyOf": [
+        {
+          "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "A damage type tag whose hits this stat lowers by its share, e.g. minecraft:is_projectile or realmforge:is_physical (architecture 9.1, RLM-233); a share only. Several such stats on one hit multiply.",
+      "title": "Resists"
     }
   },
   "required": [

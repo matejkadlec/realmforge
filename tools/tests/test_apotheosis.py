@@ -148,6 +148,33 @@ def test_an_affix_grants_our_stat_with_apotheosis_s_values(
     assert fitted == {**original, "attribute": stat}
 
 
+@pytest.mark.parametrize(
+    ("affix", "stat"),
+    [
+        ("blast_forged", "realmforge:explosion_resistance"),
+        ("blockading", "realmforge:physical_resistance"),
+        ("deflective", "realmforge:projectile_resistance"),
+        ("feathery", "realmforge:fall_resistance"),
+    ],
+)
+def test_a_damage_reduction_affix_becomes_our_resistance_with_apotheosis_s_values(
+    files: dict[str, bytes], affix: str, stat: str
+) -> None:
+    """RLM-233: the reduction share per rarity becomes an add_value of our stat, a share too; the items it rolls on and
+    its slot kind stay Apotheosis's."""
+    original = load_snapshot(RepoPaths()).entry("affixes", f"apotheosis:armor/dmg_reduction/{affix}")
+    assert original is not None and original["type"] == "apotheosis:damage_reduction"
+    fitted = generated_json(files, AFFIXES + f"armor/dmg_reduction/{affix}.json")
+    assert fitted == {
+        "type": "apotheosis:attribute",
+        "attribute": stat,
+        "categories": original["categories"],
+        "definition": original["definition"],
+        "operation": "add_value",
+        "values": original["values"],
+    }
+
+
 @pytest.mark.parametrize("affix", ["weapon/attribute/nullifying", "weapon/attribute/runebreaking"])
 def test_protection_pierce_and_shred_affixes_are_off(files: dict[str, bytes], affix: str) -> None:
     assert generated_json(files, AFFIXES + f"{affix}.json") == DISABLED
@@ -340,11 +367,57 @@ def test_a_replaced_field_is_checked(repo: RepoPaths, replace: str, message: str
         ({"disabled": True, "replace": {"weight": 1}}, "either disabled or has fields replaced"),
         ({}, "say what changes"),
         ({"affix": "melee/attribute/vampiric", "disabled": True}, "should match pattern"),
+        (
+            {"disabled": True, "to_attribute": "realmforge:fall_resistance"},
+            "a switched-off affix becomes no attribute affix",
+        ),
     ],
 )
 def test_invalid_entry_changes_are_refused(data: dict, message: str) -> None:
     with pytest.raises(ValidationError, match=message):
         ApotheosisAffixDef.model_validate({"id": "test", "affix": "apotheosis:melee/test", **data})
+
+
+def test_to_attribute_needs_a_damage_reduction_affix(repo: RepoPaths) -> None:
+    write(
+        repo.content / "apotheosis_affixes" / "vampiric.yaml",
+        "id: vampiric\naffix: apotheosis:melee/attribute/vampiric\nto_attribute: realmforge:fall_resistance\n",
+    )
+    assert_problem(
+        repo,
+        "to_attribute turns a damage reduction affix (apotheosis:damage_reduction) into an attribute affix; "
+        "apotheosis:melee/attribute/vampiric is apotheosis:attribute",
+    )
+
+
+@pytest.mark.parametrize(
+    ("target", "message"),
+    [
+        (
+            "realmforge:fall_resistanc",
+            "unknown id 'realmforge:fall_resistanc' in registry minecraft:attribute",
+        ),
+        ("realmforge:stamina", "realmforge:stamina must be one of our stats that is a share"),
+        ("minecraft:armor", "minecraft:armor must be one of our stats that is a share"),
+    ],
+)
+def test_to_attribute_names_a_share_of_ours(repo: RepoPaths, target: str, message: str) -> None:
+    write(
+        repo.content / "apotheosis_affixes" / "feathery.yaml",
+        f"id: feathery\naffix: apotheosis:armor/dmg_reduction/feathery\nto_attribute: {target}\n",
+    )
+    assert_problem(repo, message)
+
+
+def test_a_converted_affix_may_have_fields_replaced_first(repo: RepoPaths) -> None:
+    write(
+        repo.content / "apotheosis_affixes" / "feathery.yaml",
+        "id: feathery\naffix: apotheosis:armor/dmg_reduction/feathery\nto_attribute: realmforge:fall_resistance\n"
+        "replace:\n  categories: [apotheosis:boots, apotheosis:leggings]\n",
+    )
+    feathery = generated_json(generated(repo), AFFIXES + "armor/dmg_reduction/feathery.json")
+    assert feathery["type"] == "apotheosis:attribute"
+    assert feathery["categories"] == ["apotheosis:boots", "apotheosis:leggings"]
 
 
 def test_a_rarity_cannot_be_switched_off() -> None:

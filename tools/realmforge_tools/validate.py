@@ -114,7 +114,7 @@ from realmforge_tools.schema.spell import (
     TELEPORT,
     SpellDef,
 )
-from realmforge_tools.schema.spell_school import SpellSchoolDef
+from realmforge_tools.schema.spell_school import PHYSICAL_TAG, SpellSchoolDef
 from realmforge_tools.schema.stat import StatDef
 from realmforge_tools.schema.text import text_constant
 from realmforge_tools.schema.worldgen import WORLDGEN_REGISTRIES, data_path
@@ -227,6 +227,8 @@ def universe_with_content(vanilla: IdUniverse, content: Content) -> IdUniverse:
             universe.add(ITEM_REGISTRY, f"{MOD_ID}:{entry.model.id}")
     for entry in content.spell_schools:
         universe.add(DAMAGE_TYPE_REGISTRY, entry.model.damage_type)
+    # The damage type tag of physical hits generate/spell_schools.py writes (RLM-233).
+    universe.tags.setdefault(DAMAGE_TYPE_REGISTRY, set()).add(PHYSICAL_TAG)
     # The item tags generate/items.py writes with fixed members (melee weapons, sword-like weapons).
     universe.tags.setdefault(ITEM_REGISTRY, set()).update(FIXED_ITEM_TAGS)
     for entry in content.sounds:
@@ -260,6 +262,7 @@ def validate_content(content: Content, universe: IdUniverse) -> list[Problem]:
     problems += _check_ids(content)
     problems += _check_references(content, universe)
     problems += _check_stat_rules(content, universe)
+    problems += _check_stat_resistances(content, universe)
     problems += _check_spell_schools(content, universe)
     problems += _check_effects(content, universe)
     problems += _check_spells(content, universe)
@@ -826,6 +829,27 @@ def _check_stat_rules(content: Content, universe: IdUniverse) -> list[Problem]:
                             f"{modifier.attribute} counts points: add_value takes amount, not amount_percent",
                         )
                     )
+    return problems
+
+
+def _check_stat_resistances(content: Content, universe: IdUniverse) -> list[Problem]:
+    """A stat's ``resists`` names a damage type tag that exists (vanilla's, or our #realmforge:is_physical), and no two
+    stats resist the same tag: the damage pipeline would lower such hits twice (architecture 9.1, RLM-233)."""
+    problems: list[Problem] = []
+    used: dict[str, str] = {}
+    for entry in content.stats:
+        tag = entry.model.resists
+        if tag is None:
+            continue
+        if not universe.contains_tag(DAMAGE_TYPE_REGISTRY, tag):
+            message = f"unknown tag {tag!r} in registry {DAMAGE_TYPE_REGISTRY}"
+            close = difflib.get_close_matches(tag, universe.tags.get(DAMAGE_TYPE_REGISTRY, set()), n=3)
+            if close:
+                message += f" (did you mean: {', '.join(close)}?)"
+            problems.append(Problem(entry.source, "resists", message))
+        if tag in used:
+            problems.append(Problem(entry.source, "resists", f"{used[tag]} already resists #{tag}"))
+        used.setdefault(tag, entry.source)
     return problems
 
 
@@ -2501,6 +2525,24 @@ def _check_apotheosis(content: Content, universe: IdUniverse, paths: RepoPaths) 
     attributes = universe.registries.get(ATTRIBUTE_REGISTRY, set()) | _snapshot_attributes(snapshot)
     for entry in [*content.apotheosis_affixes, *content.apotheosis_gems, *content.apotheosis_tier_augments]:
         problems += _check_replaced_fields(entry, snapshot, attributes)
+    stats = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.stats}
+    for entry in content.apotheosis_affixes:
+        target = entry.model.to_attribute
+        if target is None:
+            continue
+        if not universe.contains(ATTRIBUTE_REGISTRY, target):
+            problems.append(
+                Problem(entry.source, "to_attribute", _unknown(target, ATTRIBUTE_REGISTRY, universe))
+            )
+        elif target not in stats or not stats[target].percent:
+            # Apotheosis's reduction is a share, so only a share of ours takes its values unchanged.
+            problems.append(
+                Problem(
+                    entry.source,
+                    "to_attribute",
+                    f"{target} must be one of our stats that is a share (content/stats/, max_percent)",
+                )
+            )
     seen: dict[str, str] = {}
     for entry in content.apotheosis_stat_remaps:
         remap = entry.model

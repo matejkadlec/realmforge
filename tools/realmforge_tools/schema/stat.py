@@ -7,7 +7,7 @@ from typing import Annotated, Literal
 from pydantic import Field, model_validator
 
 from realmforge_tools.project import MOD_ID
-from realmforge_tools.schema.common import ContentId, LocalizedText, StrictModel
+from realmforge_tools.schema.common import ContentId, LocalizedText, ResourceId, StrictModel
 
 NonNegative = Annotated[float, Field(ge=0, allow_inf_nan=False)]
 Positive = Annotated[float, Field(gt=0, allow_inf_nan=False)]
@@ -50,6 +50,13 @@ class StatDef(StrictModel):
         default=None,
         description="Each point lowers the food exhaustion the player gains (Stamina); a stat in points only.",
     )
+    resists: ResourceId | None = Field(
+        default=None,
+        description=(
+            "A damage type tag whose hits this stat lowers by its share, e.g. minecraft:is_projectile or "
+            "realmforge:is_physical (architecture 9.1, RLM-233); a share only. Several such stats on one hit multiply."
+        ),
+    )
 
     @model_validator(mode="after")
     def _one_unit(self) -> StatDef:
@@ -68,6 +75,8 @@ class StatDef(StrictModel):
             raise ValueError("the default must not be above the maximum")
         if self.lowers_exhaustion is not None and self.percent:
             raise ValueError("lowers_exhaustion counts per point: the stat needs max, not max_percent")
+        if self.resists is not None and (not self.percent or self.kind != "secondary"):
+            raise ValueError("resists takes a share of a hit: the stat needs kind: secondary and max_percent")
         return self
 
     @property

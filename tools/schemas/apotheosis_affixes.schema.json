@@ -32,6 +32,21 @@
       "description": "Top-level fields of the entry, each replaced as a whole, in Apotheosis's own format, e.g. categories: [apotheosis:bow]. Every field must exist in the entry and keep its JSON type.",
       "title": "Replace",
       "type": "object"
+    },
+    "to_attribute": {
+      "anyOf": [
+        {
+          "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Turns a damage reduction affix (apotheosis:damage_reduction) into an attribute affix of this stat of ours, a share (content/stats/), e.g. realmforge:fall_resistance: add_value with the affix's own values, its categories and definition kept (RLM-233). replace applies first.",
+      "title": "To Attribute"
     }
   },
   "required": [

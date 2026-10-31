@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Deflective (less damage from projectiles): Apotheosis's damage reduction becomes our Projectile Resistance, an
+# attribute the character sheet shows and the damage pipeline applies by damage type tag, to projectiles of every mob
+# and mod (Matěj, 2026-10-16, RLM-233). Apotheosis's values, items and rolls stay.
+id: deflective
+affix: apotheosis:armor/dmg_reduction/deflective
+to_attribute: realmforge:projectile_resistance

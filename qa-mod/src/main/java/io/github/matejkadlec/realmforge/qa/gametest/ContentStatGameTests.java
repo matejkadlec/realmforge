@@ -8,6 +8,7 @@ import io.github.matejkadlec.realmforge.qa.generated.GeneratedStatExpectations.S
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedStatExpectations.StatExpectation;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedStatExpectations.StatRuleExpectation;
 import io.github.matejkadlec.realmforge.stats.ClassRole;
+import io.github.matejkadlec.realmforge.stats.DamageTypeResistance;
 import io.github.matejkadlec.realmforge.stats.ExhaustionReduction;
 import io.github.matejkadlec.realmforge.stats.StatBonus;
 import io.github.matejkadlec.realmforge.stats.StatRule;
@@ -21,6 +22,7 @@ import java.util.TreeSet;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
@@ -80,6 +82,16 @@ public final class ContentStatGameTests {
                     expected.exhaustionPerPoint(), expected.id() + " lowers exhaustion per point by");
             helper.assertValueEqual(exhaustion.map(ExhaustionReduction::max).orElse(0.0), expected.exhaustionMax(),
                     expected.id() + " lowers exhaustion at most by");
+
+            // The damage type tag it resists (RLM-233), and the tag exists in the loaded data.
+            Optional<DamageTypeResistance> resistance = GeneratedStats.DAMAGE_RESISTANCES.stream()
+                    .filter(entry -> entry.stat().is(holder))
+                    .findFirst();
+            helper.assertValueEqual(resistance.map(entry -> entry.damage().location().toString()).orElse(null),
+                    expected.resists(), expected.id() + " resists");
+            resistance.ifPresent(entry -> helper.assertTrue(
+                    server.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).get(entry.damage()).isPresent(),
+                    "the tag #" + expected.resists() + " is loaded"));
         }
         server.getPlayerList().remove(player);
         helper.succeed();

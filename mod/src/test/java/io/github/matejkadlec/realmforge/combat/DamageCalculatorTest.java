@@ -86,6 +86,22 @@ class DamageCalculatorTest {
         assertEquals(0, DamageCalculator.penetrated(-0.2, 0.5), EPSILON, "a negative resistance counts as 0");
     }
 
+    /**
+     * RLM-233: Physical, Projectile, Explosion and Fall Resistance on one hit multiply, each at most 75 %, and their
+     * whole stops at 75 %.
+     */
+    @Test
+    void damageTypeResistancesMultiplyUpToTheCap() {
+        assertEquals(0.3, DamageCalculator.damageTypeResistance(0.3), EPSILON, "one resistance, its share");
+        assertEquals(0.65, DamageCalculator.damageTypeResistance(0.3, 0.5), EPSILON, "0.7 × 0.5 left: 65 % blocked");
+        assertEquals(0.75, DamageCalculator.damageTypeResistance(0.6, 0.5), EPSILON, "0.4 × 0.5 left would be 80 %");
+        assertEquals(0.75, DamageCalculator.damageTypeResistance(0.9), EPSILON, "each at most 75 %");
+        assertEquals(0, DamageCalculator.damageTypeResistance(), EPSILON, "no resistance, nothing blocked");
+        assertEquals(0.2, DamageCalculator.damageTypeResistance(-0.5, 0.2), EPSILON, "a negative share counts as 0");
+        assertEquals(10 * 0.35, DamageCalculator.afterResistance(10, DamageCalculator.damageTypeResistance(0.3, 0.5)),
+                EPSILON, "a 10 arrow against 30 % physical and 50 % projectile deals 3.5");
+    }
+
     @Test
     void resistanceLowersTheHit() {
         assertEquals(10 * 1.3 * 0.75, DamageCalculator.schoolHit(10, NO_CRIT, 0.25, random()).damage(), EPSILON);

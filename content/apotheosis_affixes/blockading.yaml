@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Blockading (less physical damage): Apotheosis's damage reduction becomes our Physical Resistance, an attribute the
+# character sheet shows and the damage pipeline applies by damage type tag to melee hits, projectiles and physical
+# spells, of every mob and mod (Matěj, 2026-10-16, RLM-233). Apotheosis's values, items and rolls stay.
+id: blockading
+affix: apotheosis:armor/dmg_reduction/blockading
+to_attribute: realmforge:physical_resistance

@@ -18,6 +18,7 @@ DATA = "mod/src/generated/resources/data"
 SCHOOL_DATA = f"{DATA}/realmforge/realmforge/spell_school"
 DAMAGE_TYPES = f"{DATA}/realmforge/damage_type"
 TAGS = f"{DATA}/minecraft/tags/damage_type"
+PHYSICAL_TAG_FILE = f"{DATA}/realmforge/tags/damage_type/is_physical.json"
 LANG = "mod/src/generated/resources/assets/realmforge/lang"
 KEYS_JAVA = "mod/src/generated/java/io/github/matejkadlec/realmforge/generated/GeneratedSpellSchools.java"
 EXPECTATIONS = (
@@ -229,6 +230,25 @@ def test_no_school_hit_knocks_back(repo: RepoPaths) -> None:
     assert json.loads(files[f"{TAGS}/no_knockback.json"]) == {
         "values": ["realmforge:arcane", "realmforge:fire", "realmforge:frost", "realmforge:physical"]
     }
+
+
+def test_physical_hits_are_melee_projectiles_and_physical_schools(repo: RepoPaths) -> None:
+    """RLM-233: #realmforge:is_physical, which Physical Resistance lowers, holds vanilla's melee and projectile damage
+    types and every physical school, not the magic ones."""
+    files = generate(repo)
+    assert json.loads(files[PHYSICAL_TAG_FILE]) == {
+        "values": [
+            "minecraft:mob_attack",
+            "minecraft:mob_attack_no_aggro",
+            "minecraft:sting",
+            "#minecraft:is_player_attack",
+            "#minecraft:is_projectile",
+            "realmforge:physical",
+        ]
+    }
+    school(repo, "might", SHADOW.replace("Shadow", "Might").replace("kind: magic", "kind: physical"))
+    values = json.loads(generate(repo)[PHYSICAL_TAG_FILE])["values"]
+    assert values[-2:] == ["realmforge:might", "realmforge:physical"]
 
 
 def test_no_magic_school_writes_no_armor_tag(repo: RepoPaths) -> None:

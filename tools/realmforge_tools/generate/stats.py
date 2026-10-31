@@ -90,13 +90,22 @@ def _registrations(content: Content) -> bytes:
         for e in content.stats
         if e.model.lowers_exhaustion is not None
     )
+    resistances = ", ".join(
+        f"new DamageTypeResistance({constant_name(e.model.id)}, "
+        f"TagKey.create(Registries.DAMAGE_TYPE, Identifier.parse({string_literal(e.model.resists)})))"
+        for e in content.stats
+        if e.model.resists is not None
+    )
     source = (
         header(Path(__file__), "content/stats/") + f"package {GENERATED_PACKAGE};\n"
         "\n"
         f"import {JAVA_PACKAGE}.Realmforge;\n"
+        f"import {JAVA_PACKAGE}.stats.DamageTypeResistance;\n"
         f"import {JAVA_PACKAGE}.stats.ExhaustionReduction;\n"
         "import java.util.List;\n"
         "import net.minecraft.core.registries.Registries;\n"
+        "import net.minecraft.resources.Identifier;\n"
+        "import net.minecraft.tags.TagKey;\n"
         "import net.minecraft.world.entity.ai.attributes.Attribute;\n"
         "import net.minecraft.world.entity.ai.attributes.RangedAttribute;\n"
         "import net.neoforged.bus.api.IEventBus;\n"
@@ -120,6 +129,9 @@ def _registrations(content: Content) -> bytes:
         "    /** The stats that lower the food exhaustion players gain ({@code lowers_exhaustion}), in id order. */\n"
         f"    public static final List<ExhaustionReduction> LOWER_EXHAUSTION = List.of({exhaustion});\n"
         "\n"
+        "    /** The stats that lower the hits of a damage type tag ({@code resists}), in id order. */\n"
+        f"    public static final List<DamageTypeResistance> DAMAGE_RESISTANCES = List.of({resistances});\n"
+        "\n"
         "    private GeneratedStats() {\n"
         "    }\n"
         "\n"
@@ -142,7 +154,8 @@ def _stat_rows(content: Content) -> str:
         f"                    {_double(stat.game_default)},\n"
         f"                    {_double(stat.game_max)},\n"
         f"                    {_double(_exhaustion_per_point(stat))},\n"
-        f"                    {_double(_exhaustion_max(stat))})"
+        f"                    {_double(_exhaustion_max(stat))},\n"
+        f"                    {'null' if stat.resists is None else string_literal(stat.resists)})"
         for stat in (entry.model for entry in content.stats)
     ]
     return "List.of(\n" + ",\n".join(rows) + ")" if rows else "List.of()"
@@ -200,11 +213,12 @@ def _expectations(content: Content) -> bytes:
         "public final class GeneratedStatExpectations {\n"
         "    /**\n"
         "     * Expected state of one stat's attribute; {@code exhaustionPerPoint} and {@code exhaustionMax} are how it\n"
-        "     * lowers food exhaustion, both 0 for a stat that does not.\n"
+        "     * lowers food exhaustion, both 0 for a stat that does not; {@code resists} is the damage type tag whose hits\n"
+        "     * it lowers, null for none.\n"
         "     */\n"
         "    public record StatExpectation(String id, String descriptionId, boolean primary, boolean percent, "
         "double defaultValue,\n"
-        "            double maxValue, double exhaustionPerPoint, double exhaustionMax) {\n"
+        "            double maxValue, double exhaustionPerPoint, double exhaustionMax, String resists) {\n"
         "    }\n"
         "\n"
         "    /** One attribute modifier a stat rule gives. */\n"

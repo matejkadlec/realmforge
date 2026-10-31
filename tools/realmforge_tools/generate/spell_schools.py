@@ -14,7 +14,12 @@ from realmforge_tools.generate.javagen import constant_name, header, java_file_p
 from realmforge_tools.generate.textures import placeholder_school_icon
 from realmforge_tools.project import JAVA_PACKAGE, MOD_ID, QA_JAVA_PACKAGE, RepoPaths
 from realmforge_tools.schema.common import LocalizedText
-from realmforge_tools.schema.spell_school import SpellSchoolDef, death_message_keys
+from realmforge_tools.schema.spell_school import (
+    PHYSICAL_DAMAGE_TYPES,
+    PHYSICAL_TAG,
+    SpellSchoolDef,
+    death_message_keys,
+)
 
 GENERATED_PACKAGE = f"{JAVA_PACKAGE}.generated"
 QA_GENERATED_PACKAGE = f"{QA_JAVA_PACKAGE}.generated"
@@ -56,6 +61,13 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
     ):
         if members:
             files[tags / f"{tag}.json"] = dump_json({"values": sorted(s.damage_type for s in members)})
+    # Physical hits, which Physical Resistance lowers (RLM-233): vanilla's melee and projectiles, and every physical
+    # school.
+    physical = sorted(school.damage_type for school in schools if school.kind == "physical")
+    namespace, path = PHYSICAL_TAG.split(":", 1)
+    files[data / namespace / "tags" / "damage_type" / f"{path}.json"] = dump_json(
+        {"values": [*PHYSICAL_DAMAGE_TYPES, *physical]}
+    )
     files[java_file_path(paths.mod_generated / "java", GENERATED_PACKAGE, "GeneratedSpellSchools")] = _keys(
         content
     )

@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Feathery (less fall damage): Apotheosis's damage reduction becomes our Fall Resistance, an attribute the character
+# sheet shows and the damage pipeline applies by damage type tag (Matěj, 2026-10-16, RLM-233). Apotheosis's values,
+# items and rolls stay.
+id: feathery
+affix: apotheosis:armor/dmg_reduction/feathery
+to_attribute: realmforge:fall_resistance

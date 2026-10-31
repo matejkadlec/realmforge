@@ -4,9 +4,12 @@
 package io.github.matejkadlec.realmforge.generated;
 
 import io.github.matejkadlec.realmforge.Realmforge;
+import io.github.matejkadlec.realmforge.stats.DamageTypeResistance;
 import io.github.matejkadlec.realmforge.stats.ExhaustionReduction;
 import java.util.List;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.RangedAttribute;
 import net.neoforged.bus.api.IEventBus;
@@ -72,6 +75,16 @@ public final class GeneratedStats {
             ATTRIBUTES.register("dodge_chance",
                     () -> new PercentageAttribute("attribute.realmforge.dodge_chance", 0.0, 0.0, 1.0).setSyncable(true));
 
+    /** {@code realmforge:explosion_resistance} from {@code content/stats/explosion_resistance.yaml}: secondary, "Explosion Resistance". */
+    public static final DeferredHolder<Attribute, Attribute> EXPLOSION_RESISTANCE =
+            ATTRIBUTES.register("explosion_resistance",
+                    () -> new PercentageAttribute("attribute.realmforge.explosion_resistance", 0.0, 0.0, 0.75).setSyncable(true));
+
+    /** {@code realmforge:fall_resistance} from {@code content/stats/fall_resistance.yaml}: secondary, "Fall Resistance". */
+    public static final DeferredHolder<Attribute, Attribute> FALL_RESISTANCE =
+            ATTRIBUTES.register("fall_resistance",
+                    () -> new PercentageAttribute("attribute.realmforge.fall_resistance", 0.0, 0.0, 0.75).setSyncable(true));
+
     /** {@code realmforge:fire_power} from {@code content/stats/fire_power.yaml}: secondary, "Fire Power". */
     public static final DeferredHolder<Attribute, Attribute> FIRE_POWER =
             ATTRIBUTES.register("fire_power",
@@ -127,6 +140,16 @@ public final class GeneratedStats {
             ATTRIBUTES.register("overheal",
                     () -> new PercentageAttribute("attribute.realmforge.overheal", 0.0, 0.0, 1.0).setSyncable(true));
 
+    /** {@code realmforge:physical_resistance} from {@code content/stats/physical_resistance.yaml}: secondary, "Physical Resistance". */
+    public static final DeferredHolder<Attribute, Attribute> PHYSICAL_RESISTANCE =
+            ATTRIBUTES.register("physical_resistance",
+                    () -> new PercentageAttribute("attribute.realmforge.physical_resistance", 0.0, 0.0, 0.75).setSyncable(true));
+
+    /** {@code realmforge:projectile_resistance} from {@code content/stats/projectile_resistance.yaml}: secondary, "Projectile Resistance". */
+    public static final DeferredHolder<Attribute, Attribute> PROJECTILE_RESISTANCE =
+            ATTRIBUTES.register("projectile_resistance",
+                    () -> new PercentageAttribute("attribute.realmforge.projectile_resistance", 0.0, 0.0, 0.75).setSyncable(true));
+
     /** {@code realmforge:spell_power} from {@code content/stats/spell_power.yaml}: secondary, "Spell Power". */
     public static final DeferredHolder<Attribute, Attribute> SPELL_POWER =
             ATTRIBUTES.register("spell_power",
@@ -161,10 +184,13 @@ public final class GeneratedStats {
     public static final List<DeferredHolder<Attribute, Attribute>> PRIMARY = List.of(DEXTERITY, INTELLECT, STRENGTH, VITALITY);
 
     /** Every stat above, in id order. */
-    public static final List<DeferredHolder<Attribute, Attribute>> ALL = List.of(ARCANE_POWER, ARCANE_RESISTANCE, ARMOR_PIERCE, ARMOR_SHRED, CAST_TIME_REDUCTION, COOLDOWN_REDUCTION, CRIT_CHANCE, CRIT_DAMAGE, DEXTERITY, DODGE_CHANCE, FIRE_POWER, FIRE_RESISTANCE, FROST_POWER, FROST_RESISTANCE, HEALTH_REGENERATION, INTELLECT, LIFESTEAL, MAGIC_SHIELD, MANA_REGENERATION, MAX_MANA, OVERHEAL, SPELL_POWER, SPELL_RESISTANCE, STAMINA, STRENGTH, VITALITY, XP_MULTIPLIER);
+    public static final List<DeferredHolder<Attribute, Attribute>> ALL = List.of(ARCANE_POWER, ARCANE_RESISTANCE, ARMOR_PIERCE, ARMOR_SHRED, CAST_TIME_REDUCTION, COOLDOWN_REDUCTION, CRIT_CHANCE, CRIT_DAMAGE, DEXTERITY, DODGE_CHANCE, EXPLOSION_RESISTANCE, FALL_RESISTANCE, FIRE_POWER, FIRE_RESISTANCE, FROST_POWER, FROST_RESISTANCE, HEALTH_REGENERATION, INTELLECT, LIFESTEAL, MAGIC_SHIELD, MANA_REGENERATION, MAX_MANA, OVERHEAL, PHYSICAL_RESISTANCE, PROJECTILE_RESISTANCE, SPELL_POWER, SPELL_RESISTANCE, STAMINA, STRENGTH, VITALITY, XP_MULTIPLIER);
 
     /** The stats that lower the food exhaustion players gain ({@code lowers_exhaustion}), in id order. */
     public static final List<ExhaustionReduction> LOWER_EXHAUSTION = List.of(new ExhaustionReduction(STAMINA, 0.01, 0.5));
+
+    /** The stats that lower the hits of a damage type tag ({@code resists}), in id order. */
+    public static final List<DamageTypeResistance> DAMAGE_RESISTANCES = List.of(new DamageTypeResistance(EXPLOSION_RESISTANCE, TagKey.create(Registries.DAMAGE_TYPE, Identifier.parse("minecraft:is_explosion"))), new DamageTypeResistance(FALL_RESISTANCE, TagKey.create(Registries.DAMAGE_TYPE, Identifier.parse("minecraft:is_fall"))), new DamageTypeResistance(PHYSICAL_RESISTANCE, TagKey.create(Registries.DAMAGE_TYPE, Identifier.parse("realmforge:is_physical"))), new DamageTypeResistance(PROJECTILE_RESISTANCE, TagKey.create(Registries.DAMAGE_TYPE, Identifier.parse("minecraft:is_projectile"))));
 
     private GeneratedStats() {
     }
