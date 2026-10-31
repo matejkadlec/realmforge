@@ -1319,8 +1319,9 @@ Its name and description are translation keys from C3b, the description's number
   against Frozen), added to the hit's crit rule; and a two-handed block's cooldown shorter from a rank on
   (`block_cooldown`, [9.3](#93-blocking-with-two-handed-weapons)). The spellbook lists it with its rank and "Passive";
   its tooltip shows the rank's description and the next rank's (`SpellTooltip#passiveLines`), and an active spell's
-  damage number counts the player's passives. Mobs know no spells, so passives give them nothing. Procs (Frostbite,
-  Taste for Blood, Deep Wounds) come with the windows-and-procs ticket and will live in a passive spell. The first are
+  damage number counts the player's passives. Mobs know no spells, so passives give them nothing. A passive's `procs`
+  (RLM-540: Frostbite, Taste for Blood, Deep Wounds) reach the proc engine through `Passives#procs`, at the rank, each with
+  its internal cooldown per target ([12](#12-talents)). The first are
   Improved Frostbolt, Shatter and Two-Handed Weapon Specialization (Attack Damage +4/8/12 % with
   `#realmforge:two_handed_weapons` in hand, as the Human's Sword Specialization gives its +10 %), which the M1 spell
   trees teach (RLM-542, RLM-543); `/qa spell learn` does until then.
@@ -1335,6 +1336,12 @@ Its name and description are translation keys from C3b, the description's number
   `#realmforge:melee_weapons`: swords, axes, maces, spears, tridents and their like, never a wand) in the main hand
   or `shield` (`#c:tools/shield`) in either hand; a player's physical spell that deals damage in melee needs one of
   them (the pipeline checks it), and `spell/SpellRequirement` refuses the cast without it. Mobs need nothing.
+- **Conditions** (RLM-540, `spell/SpellConditions`): a spell may be usable only in its **window** (`spell/SpellWindow`,
+  Overpower 5 s after a block, Victory Rush 20 s after a kill), and only on a target **below a share of its health**
+  (Execute's 20 %, `CastFailure.TARGET_HEALTH_TOO_HIGH`). A cost may name **extra** resource (`SpellCost.Extra`, Execute's
+  up to 30 more rage): a player's cast spends as much of it as they have after the cost, and its damage effects are
+  multiplied by 1 + the share a point times the points spent (the `EffectContext`'s damage scale). A damage effect may
+  deal more against a target with a status effect (`against_effect`, Ice Lance's × 3 against Frozen).
 
 A player knows a spell through their class (by level), race, talents (`grant_spell`) or items (an item component
 lists spells granted while equipped or on use): the vision's "some from the race or class, some from items".
@@ -1374,6 +1381,25 @@ lists spells granted while equipped or on use): the vision's "some from the race
 6. Mobs and bosses use the same `SpellCaster`, without a payload. Their cooldowns and current cast live in their
    own `combat` attachment ([7](#7-player-state)), and their cast bars, the telegraphs players react to, reach
    clients only through the cast payloads.
+
+**In code (RLM-540): windows.** `spell/Windows` opens a spell's window for a player who knows it: a hit they block with
+a shield or a raised two-handed weapon (`CombatEvent.Block`, which `WeaponBlocks` and the shield's
+`LivingShieldBlockEvent` post) opens the windows opened by `block`, a kill of an enemy at most 3 levels below them (not
+gray) those opened by `kill`, and a passive's proc any spell's (`Proc.OpenWindow`, Taste for Blood). A window is the game
+time it closes, in the `combat` attachment (transient, synced to the owner); `SpellCaster` refuses a player's spell
+whose window is closed (`CastFailure.NO_WINDOW`) and a cast closes it. The spell bar greys out a closed window's slot
+and draws an open one with a glow and its seconds left (`SpellBarView.Slot#windowTicks`, `client/hud/SpellSlots`).
+`WindowsAndProcsGameTests` covers both openers, a gray kill, and Execute's condition and extra rage.
+
+**In code (RLM-399): swings.** An instant spell may play out over an animation (`SpellCast#animationTicks`, Slam's 1 s
+swing): it starts at once, paying its cost and starting the global and its own cooldown, but `Casting` keeps it as a
+cast of its own (`CombatState.Cast#swing`), without a cast bar, a cast animation, the slow or the sprint stop: its
+caster moves freely and cannot swing a weapon meanwhile (the cast's Better Combat tag and the cancelled
+`AttackEntityEvent`, as for any cast). Its effects run once, at its hit moment (`SpellCast#hitAt`, a share of the
+animation: Slam's middle, Reckless Strike's and Shield Bash's first contact after 0.25 s), with the caster's look as it is
+then. A new spell from the bar cuts it (Matěj, 2026-10-29), so its damage lands only if its hit moment had passed; a stun
+or death before the hit moment gives half its cost and half its cooldown back. Attack Speed shortens neither the
+animation nor the hit moment. `Spells#landSwing` brings a swing to its end at once, for QA and GameTests.
 
 **In code (C3a-4, RLM-212): NPC casting.** Mobs and bosses cast through the same `SpellCaster`, without a spellbook,
 a payload or a cost: their spells are paced by their cooldowns and the global cooldown, which their own `combat`
@@ -1570,6 +1596,23 @@ type only for genuinely new behaviour.
   appears (RLM-436): Test Scorch, 3 s of 1 s, pulses at 0, 1 and 2 s and is gone at 3 s. Its client draws its ring
   from its first tick: dust in the area's `ring_color` (synced with its radius; Astone's grey, RLM-491), or purple
   sparks without one, until C6 (RLM-29).
+- **A bolt's splash** (RLM-399, Matěj, 2026-10-24; `ProjectileEffect.Splash`): a projectile with a splash explodes where
+  it hits an enemy: the caster's other enemies whose hitboxes lie within its radius of the target's take its effects too,
+  its damage at the splash's share (the Mage's bolts: 1 block, 50 %) and every other effect at full strength (Burning,
+  Slowness, spell penetration), and its impact's particles burst over the whole of it. Each of Arcane Missiles' missiles
+  explodes on its own.
+- **`realmforge:melee`** (RLM-399, `MeleeEffect`, `MeleeShape`): a melee spell's hit shape in front of the caster, in
+  the frame of its look so it tilts with the pitch: a `sector` (Slam's 120°, Better Combat's sword swing, and 1.5 blocks
+  round the eyes) or a `box` (Reckless Strike's and Shield Bash's, 2 blocks wide and 1 deep from the front of the body),
+  each `height` tall round the crosshair (2 blocks: twice Better Combat's sword swing, which is its 3-block reach / 3
+  tall). Every enemy whose hitbox reaches into it (a grid of points at most a quarter of a block apart) takes its
+  effects, the same for each, so most melee spells hit an area and need no target (Matěj, 2026-10-24 and 2026-10-30);
+  single target stays for spells like Execute. **Cover:** never through a wall, and an enemy more than half behind
+  blocks is spared: of 27 points spread through its hitbox, at least half must have no block between them and the
+  caster's eyes (Matěj's rule; Better Combat hits a mob whose middle or nearest point a ray reaches). With vanilla's
+  hitbox display on (F3 + B), clients draw the shape of every swing in progress as outlines
+  (`client/render/SwingShapes`, a debug renderer of NeoForge's `RegisterDebugRenderersEvent`). `SwingAndSplashGameTests`
+  covers the shapes, the hit moment, a stun's refund, the splash, a wall and a corner; `MeleeShapeTest` the geometry.
 - Both deliver their effects themselves: the hit's direct entity is the projectile or the area, its causing entity
   the caster, so kill credit and the hit direction work as for an arrow. Their effects read the caster's stats when
   they land; no snapshot is taken at the cast, as nothing (talents, procs) needs one yet. A spell entity ends when its
@@ -1648,9 +1691,27 @@ for every rank above 1 (at most a minute) and `stronger_at_levels` lists the ran
 (Frostbolt's Slowness II at rank 5). An effect's modifier may grow by a fixed step per amplifier level instead of
 vanilla's multiplying by the level (`per_amplifier`, NeoForge's attribute curve: Battle Shout's 10, 15 and 20 %).
 `realmforge:cleanse` (`spell/CleanseEffect`, Will To Survive) removes every harmful effect from the caster or an ally,
-a stun included. **Frozen** (`realmforge:frozen`, RLM-541) is a root: -100 % movement speed and jump strength, but no
-`stun`, so its holder still attacks and casts; Shatter's crit chance reads it, and the Frost Mage's tree (RLM-542)
-applies it.
+a stun included. **Frozen** (`realmforge:frozen`, RLM-541, RLM-539) is a root: -100 % movement speed and jump strength,
+but no `stun`, so its holder still attacks and casts; Shatter's crit chance and Ice Lance's bonus read it, Frostbite's
+proc applies it, and Will To Survive's cleanse breaks it as a loss of control. Bosses are immune boss by boss
+([14.3](#143-bosses)). **Its look** (Matěj, 2026-10-30): an effect's `look` (`StatusEffect.Look`, Frozen's `ice`) reaches
+clients through the synced `realmforge:effect_looks` attachment (`effect/EffectLooks`), as vanilla tells clients only of
+a player's own effects; `client/render/FrozenLook` makes an iced entity shake as a fully frozen one does in powder snow
+and draws its model again in vanilla's Packed Ice texture (referenced where it lies, never copied), for every vanilla
+living renderer and the players'. Our GeckoLib mobs shiver (`CustomMob#isFullyFrozen` on the client) without the ice,
+whose GeckoLib layer does not compile against our render state, until the Frost visuals (RLM-544).
+
+**In code (RLM-539): stacks of damage over time.** An effect with `stacks` (`effect/StackedDamage`, Bleeding: physical,
+every 0.5 s, ignoring armor) deals no damage of its own: each caster's spell keeps a stack on the target
+(`realmforge:effect_stacks`, `effect/EffectStacks`, saved, never synced), which `realmforge:damage_over_time`
+(`spell/DamageOverTimeEffect`) adds through `effect/StackTicks#apply`: its amount plus its coefficient of the caster's
+power, fixed when applied, split evenly over its ticks. Another spell or caster adds a stack; the same spell from the same
+caster replaces its own. The status effect shows while any stack lasts and counts the stacks down every tick; its removal
+(milk, a cleanse) or expiry forgets them. A tick is a school hit from the stack's caster (from nobody once the caster is
+gone) that carries `SchoolDamageSource.Tick` (the effect, the spell, whether it ignores armor): the damage pipeline never
+dodges it, a raised weapon or a shield never blocks it, and armor stops none of a Bleeding tick; it never crits, and it
+carries the stack's proc origin. `FrozenAndBleedingGameTests` covers a Frozen zombie that stays and still hits, an immune
+boss, Will To Survive, Bleeding's 12 ticks through armor, two stacks and a refresh.
 
 ### 11.5 Resources, cooldowns, modifiers
 
@@ -2025,6 +2086,14 @@ return; the proc engine at its end exists since C3a.
   `apply_effect` records it in the effect's source, and the effect's ticks carry it.
   Internal cooldowns are transient, by holder and proc id. `ProcGameTests` covers a proc on hit and its internal
   cooldown, a proc's own hit triggering nothing, and the crit and kill triggers.
+- **In code (RLM-540): procs of passive spells.** Two more triggers: `APPLIES_EFFECT` (the holder gave another entity a
+  status effect, `MobEffectEvent.Added`; Frostbite on the player's Slowness) and `TICK` (a tick of the holder's damage
+  over time, which `SchoolDamageSource.Tick` names; Taste for Blood on Rend's), each watching a named effect and, for a
+  tick, a named spell; a third action, `OpenWindow`. A proc's internal cooldown may run per target
+  (`Proc#perTarget`), as every passive spell's does (research SP-15). While a proc's action runs, nothing it sets off (a
+  status effect it gives, a spell it casts) fires another proc, so the rule holds for synchronous chains too; a
+  proc's `ApplyEffect` records its origin in the effect's source. `WindowsAndProcsGameTests` covers Frostbite's per-target
+  cooldown, Taste for Blood and Deep Wounds.
 
 ## 13. Items, gear and loot
 
@@ -2392,6 +2461,9 @@ phases:
   was aimed at when it began (`Spells#currentCastTarget`; a ground point never follows its target,
   [11.2](#112-casting-server-authoritative)), so a player who steps out of the ring dodges it. The spell engine's own
   spell visuals are C6 (RLM-29).
+- **Immunities** (RLM-539): a boss's `immune_to` lists the status effects it never takes (`MobEffectEvent.Applicable`
+  refuses them, `boss/BossFeature`), boss by boss, as ordinary mobs have no stun or root immunity (Matěj, 2026-10-24).
+  The test titan is immune to Frozen; Astone to nothing yet.
 - **Arena:** its home is where its AI first finds it on the ground (a guard's post, [14.2](#142-custom-mobs)). It
   attacks only what stands within the arena's radius of home (`BossMob#canAttack`, which vanilla's target goals and
   `Mob#getTarget` ask, so a target that leaves the arena is let go and forgotten), and takes no hurt from an attacker
