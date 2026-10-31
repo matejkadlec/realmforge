@@ -87,3 +87,11 @@ texts:
     en_us: Lowers the damage of hits, most against small ones. It never blocks more than 80% of a hit.
   armor_toughness:
     en_us: Makes your armor hold up against big hits. Armor Pierce and Armor Shred never lower it.
+  physical_resistance:
+    en_us: Lowers the damage you take from melee hits, projectiles and physical spells by this share, up to 75%. On a projectile it multiplies with Projectile Resistance, and together they block at most 75%.
+  projectile_resistance:
+    en_us: Lowers the damage you take from arrows, tridents, fireballs and other projectiles by this share, up to 75%. It multiplies with Physical Resistance, and together they block at most 75%.
+  explosion_resistance:
+    en_us: Lowers the damage you take from explosions (creepers, TNT, fireworks) by this share, up to 75%.
+  fall_resistance:
+    en_us: Lowers the damage you take from falls and ender pearls by this share, up to 75%.

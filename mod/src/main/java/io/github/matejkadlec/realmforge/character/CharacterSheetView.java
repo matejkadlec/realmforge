@@ -236,8 +236,10 @@ public record CharacterSheetView(Component title, CharacterTab character, List<S
             entry(GeneratedStats.HEALTH_REGENERATION));
     private static final List<Entry> HEALTH_AFTER = List.of(entry(GeneratedStats.MAGIC_SHIELD),
             entry(GeneratedStats.DODGE_CHANCE));
-    /** RLM-233's Physical, Projectile, Explosion and Fall Resistance join here. */
-    private static final List<Entry> MITIGATION = List.of(entry(Attributes.ARMOR), entry(Attributes.ARMOR_TOUGHNESS));
+    /** Armor first, then the damage type resistances (RLM-233). */
+    private static final List<Entry> MITIGATION = List.of(entry(Attributes.ARMOR), entry(Attributes.ARMOR_TOUGHNESS),
+            entry(GeneratedStats.PHYSICAL_RESISTANCE), entry(GeneratedStats.PROJECTILE_RESISTANCE),
+            entry(GeneratedStats.EXPLOSION_RESISTANCE), entry(GeneratedStats.FALL_RESISTANCE));
 
     /** Apothic Attributes' stats on the sheet (RLM-235), there when it is loaded. */
     private static final String APOTHIC = "apothic_attributes";

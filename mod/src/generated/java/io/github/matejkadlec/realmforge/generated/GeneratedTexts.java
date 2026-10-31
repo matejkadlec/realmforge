@@ -596,6 +596,12 @@ public final class GeneratedTexts {
     /** {@code stat_tooltip.realmforge.entity_interaction_range} from {@code content/texts/stat_tooltip.yaml}: "How far away, in blocks, you can hit and use creatures." */
     public static final String STAT_TOOLTIP_ENTITY_INTERACTION_RANGE = "stat_tooltip.realmforge.entity_interaction_range";
 
+    /** {@code stat_tooltip.realmforge.explosion_resistance} from {@code content/texts/stat_tooltip.yaml}: "Lowers the damage you take from explosions (creepers, TNT, fireworks) by this share, up to 75%." */
+    public static final String STAT_TOOLTIP_EXPLOSION_RESISTANCE = "stat_tooltip.realmforge.explosion_resistance";
+
+    /** {@code stat_tooltip.realmforge.fall_resistance} from {@code content/texts/stat_tooltip.yaml}: "Lowers the damage you take from falls and ender pearls by this share, up to 75%." */
+    public static final String STAT_TOOLTIP_FALL_RESISTANCE = "stat_tooltip.realmforge.fall_resistance";
+
     /** {@code stat_tooltip.realmforge.fire_power} from {@code content/texts/stat_tooltip.yaml}: "More damage and healing for your Fire spells, on top of spell power." */
     public static final String STAT_TOOLTIP_FIRE_POWER = "stat_tooltip.realmforge.fire_power";
 
@@ -634,6 +640,12 @@ public final class GeneratedTexts {
 
     /** {@code stat_tooltip.realmforge.overheal} from {@code content/texts/stat_tooltip.yaml}: "Healing beyond your max health becomes absorption, up to this share of your max health. It fades 10 seconds after the last heal that added to it." */
     public static final String STAT_TOOLTIP_OVERHEAL = "stat_tooltip.realmforge.overheal";
+
+    /** {@code stat_tooltip.realmforge.physical_resistance} from {@code content/texts/stat_tooltip.yaml}: "Lowers the damage you take from melee hits, projectiles and physical spells by this share, up to 75%. On a projectile it multiplies with Projectile Resistance, and together they block at most 75%." */
+    public static final String STAT_TOOLTIP_PHYSICAL_RESISTANCE = "stat_tooltip.realmforge.physical_resistance";
+
+    /** {@code stat_tooltip.realmforge.projectile_resistance} from {@code content/texts/stat_tooltip.yaml}: "Lowers the damage you take from arrows, tridents, fireballs and other projectiles by this share, up to 75%. It multiplies with Physical Resistance, and together they block at most 75%." */
+    public static final String STAT_TOOLTIP_PROJECTILE_RESISTANCE = "stat_tooltip.realmforge.projectile_resistance";
 
     /** {@code stat_tooltip.realmforge.spell_power} from {@code content/texts/stat_tooltip.yaml}: "Adds to the damage and healing of your magic spells. Each spell adds its own share of it." */
     public static final String STAT_TOOLTIP_SPELL_POWER = "stat_tooltip.realmforge.spell_power";

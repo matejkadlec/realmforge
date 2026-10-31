@@ -579,9 +579,11 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
   name for it, RLM-234; both lower the armor a hit meets, never its toughness), lifesteal (a share of a melee or ranged hit's damage healed back), overheal (a
   share of max health that healing past it fills as absorption), spell resistance (a share, added to a magic
   school's resistance, the sum at most 75 %), health regeneration (points healed every 5 seconds) and magic shield (a
-  pool of points that takes damage before health). Cast time reduction (C3a-2, RLM-210: `spell/Casting#begin` and the
-  spell tooltips) and the XP multiplier (100 % by default; C2, RLM-23: `character/Leveling` applies it to character
-  XP) work too. Max mana, mana regeneration and cooldown reduction (which replaced haste)
+  pool of points that takes damage before health), and the damage type resistances (RLM-233): Physical, Projectile,
+  Explosion and Fall Resistance, shares of at most 75 % that lower the hits of a damage type tag (a stat's
+  `resists`). Cast time reduction (C3a-2, RLM-210: `spell/Casting#begin` and the spell tooltips) and the XP
+  multiplier (100 % by default; C2, RLM-23: `character/Leveling` applies it to character XP) work too. Max mana,
+  mana regeneration and cooldown reduction (which replaced haste)
   work since C3a-1 ([11.5](#115-resources-cooldowns-modifiers)).
   Healing power is gone: healing spells scale with Spell Power (their coefficient) and their school's power. Protection pierce, flat and in
   percent, is gone too (Matěj, 2026-10-14: mainly a PvP stat; RLM-159 rejected, RLM-170).
@@ -803,6 +805,18 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
      (`/damage`, a trap) gets none. The hit's passives are the share its caster's passive spells add to it (RLM-541:
      Improved Frostbolt), carried on its `HitBonus` with the armor shred and penetration; a passive spell's crit chance
      against the target (Shatter on a Frozen one) is in the hit's crit rule already.
+   - **Damage type resistances** (RLM-233; Matěj, 2026-10-16: Apotheosis's reduction affixes must work against every
+     source, ours and other mods' too): a stat with `resists` (`content/stats/`, `GeneratedStats.DAMAGE_RESISTANCES`,
+     `stats/DamageTypeResistance`) lowers every hit whose damage type is in its tag by its share, through
+     `setAmount`: Physical Resistance `#realmforge:is_physical` (vanilla's mob and player melee, a bee's sting, a spear
+     or mace hit, every projectile, and every physical school, which `rf gen` adds to the tag with the schools),
+     Projectile Resistance `#minecraft:is_projectile`, Explosion Resistance `#minecraft:is_explosion` and Fall
+     Resistance `#minecraft:is_fall`. NeoForge's `#neoforge:is_physical` is broader (falls, cactus, suffocation), so
+     it is not used. Each is at most 75 %; several on one hit multiply, and their whole stops at 75 % too
+     (`DamageCalculator#damageTypeResistance`: an arrow against 30 % physical and 50 % projectile keeps 35 %). On a
+     school hit they multiply with the school's resistance; a magic school is in none of the tags, so a player's magic
+     defense stays Magic Protection, the magic shield, dodge and health. Mobs have none of these stats. Apotheosis's
+     Blast-Forged, Blockading, Deflective and Feathery give them ([19.4](#194-optional-integrations)).
    - **Crit overflow** (C4, RLM-392): a crit chance above 100 % (Reckless Strike's bonus can take it there) turns
      into crit damage 1:1, every 1 % above 100 % adding 1 % crit damage (`DamageCalculator#critMultiplier`), for
      melee, ranged and school hits alike. Talents act through those attributes or are already part of
@@ -921,9 +935,12 @@ translucent bar over the bottom row of hearts, a new colour every 10 points ([18
 Like absorption hearts, it takes any damage that reaches health (falls, drowning, starvation included).
 
 `DamageCalculatorTest` covers the formulas, the armor formula against vanilla's `CombatRules` over a grid of damage,
-armor and toughness; `CombatStatGameTests` plays each stat in a world: armor pierce and shred against a training
-dummy with 15 armor, spell resistance and its cap on a pillager, and a fake player for lifesteal (melee and a
-thrown hit heal, a fire hit does not), overheal (its cap, its expiry, damage taking it before a golden apple's
+armor and toughness; `DamageTypeResistanceGameTests` plays each damage type resistance against a vanilla source (a
+zombie's melee hit, a thrown projectile, an explosion, a fall) and Physical Resistance against our physical school,
+their multiplying and cap, and hits outside each tag left alone; `CombatStatGameTests` plays each stat in a world:
+armor pierce and shred against a training dummy with 15 armor, spell resistance and its cap on a pillager, and a
+fake player for lifesteal (melee and a thrown hit heal, a fire hit does not), overheal (its cap, its expiry, damage
+taking it before a golden apple's
 absorption, the overheal kept when the Absorption effect ends, an apple eaten while overhealed), health regeneration
 (its schedule, no overheal) and the magic shield (before health, after absorption hearts, `lastHurt` kept, the
 refill).
@@ -3465,7 +3482,8 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
       mana, mana regeneration, spell power, cast time and cooldown reduction, crit, then each school's power in the
       school's colour). A stat that counts for several shows in each.
     - **Defense**: Health (max health, health regeneration, Apothic Attributes' Healing Received, magic shield,
-      dodge) and Mitigation (armor, armor toughness; RLM-233's resistances join it). Spell Resistance and the schools'
+      dodge) and Mitigation (armor, armor toughness, then RLM-233's Physical, Projectile, Explosion and Fall
+      Resistance). Spell Resistance and the schools'
       resistances are mob-only stats (RLM-233), so the sheet never shows them.
 
     Every stat has a tooltip: its name, then what it does from `content/texts/stat_tooltip.yaml`
@@ -3785,6 +3803,12 @@ NeoForge stacks the mods' data packs in that order, so a file of ours replaces t
   multiplier is character XP (Matěj, 2026-10-29). The monsters' tier augments give our armor pierce, which every mob
   has, with armor shred and lifesteal, for its gear too (`combat/MobCombatStats`, [8.1](#81-the-attribute-set)); a
   tier augment skips a mob without its attribute (`AttributeAugment#apply`).
+- **Reduction affixes become our resistances** (RLM-233): Apotheosis's `damage_reduction` affixes are no attributes,
+  so the sheet could not show them, and their damage-type matching is Apotheosis's own. Blast-Forged, Blockading,
+  Deflective and Feathery become attribute affixes (`to_attribute` in `content/apotheosis_affixes/`) of our Explosion,
+  Physical, Projectile and Fall Resistance, with Apotheosis's reduction shares as `add_value` amounts and its
+  categories and slot kinds kept, so they roll on the same items, in the same slots, as often as before; the damage
+  pipeline applies them by damage type tag ([9.1](#91-damage-pipeline)). Grounded and Runed are off (RLM-232).
 - **Removed recipes** come from `content/recipe_removals/`: a file at the recipe's own path with the `neoforge:never`
   condition, which NeoForge's recipe loader skips. Apotheosis's potion charms are the first (its crafting recipe and
   Apothic Enchanting's infusion; Matěj dislikes them by design, RLM-205). Apotheosis's client still marks a potion

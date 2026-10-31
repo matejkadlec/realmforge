@@ -61,8 +61,8 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   (F1), datapack registries (F2), player state (F3), stats (F4) with their names, a character sheet (F4b; its tabs
   Character, Offense and Defense, a tooltip on every stat and values with one decimal since RLM-509, RLM-235 and
   RLM-530, laid out with our flexbox-style helper, RLM-560) and raised attribute caps (F4c), Matěj's second stat numbers with bonuses by class role (melee, caster, ranged) and
-  Stamina, which slows the hunger drain (RLM-170, RLM-171), and the combat
-  core (F5: spell schools, crit, dodge, resistances, our armor formula, combat text, the QA training dummy), and
+  Stamina, which slows the hunger drain (RLM-170, RLM-171), Physical, Projectile, Explosion and Fall Resistance
+  by damage type tag, which Apotheosis's reduction affixes give (RLM-233), and the combat core (F5: spell schools, crit, dodge, resistances, our armor formula, combat text, the QA training dummy), and
   hostile mobs get levels near the nearest player's, floored per realm (W1, RLM-303), scaled by curves. The first
   custom mobs exist (W3): Undervault's Hewn, the Hewn Sentinel (melee, of one of three gems it may drop) and the
   Hewn Chanter (a caster of Stoneform that kites), from `content/mobs/`, wandering as vanilla's mobs do, with

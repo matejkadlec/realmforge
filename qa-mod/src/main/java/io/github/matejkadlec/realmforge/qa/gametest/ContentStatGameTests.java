@@ -16,6 +16,7 @@ import io.github.matejkadlec.realmforge.stats.StatRules;
 import io.github.matejkadlec.realmforge.stats.StatsRegistries;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -87,8 +88,9 @@ public final class ContentStatGameTests {
             Optional<DamageTypeResistance> resistance = GeneratedStats.DAMAGE_RESISTANCES.stream()
                     .filter(entry -> entry.stat().is(holder))
                     .findFirst();
-            helper.assertValueEqual(resistance.map(entry -> entry.damage().location().toString()).orElse(null),
-                    expected.resists(), expected.id() + " resists");
+            String resists = resistance.map(entry -> entry.damage().location().toString()).orElse(null);
+            helper.assertTrue(Objects.equals(resists, expected.resists()),
+                    expected.id() + " resists " + expected.resists() + ", not " + resists);
             resistance.ifPresent(entry -> helper.assertTrue(
                     server.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).get(entry.damage()).isPresent(),
                     "the tag #" + expected.resists() + " is loaded"));

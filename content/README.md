@@ -105,7 +105,10 @@ Rules:
     `disabled: true` (switched off: Apotheosis skips it; a rarity cannot be) or `replace:`, top-level fields of the
     entry in Apotheosis's own format, each replaced as a whole and keeping its JSON type. Replaced `categories` or
     `types` name Apotheosis's loot categories (never `apotheosis:charm`, which needs Curios), an affix's `values` its
-    rarities, and an affix's `definition.exclusive_set` other affixes that exist.
+    rarities, and an affix's `definition.exclusive_set` other affixes that exist. An affix may instead (or after its
+    `replace`) set `to_attribute`: a damage reduction affix (`apotheosis:damage_reduction`) becomes an attribute affix
+    of that stat of ours, a share, with `add_value` and Apotheosis's own values, categories and definition (RLM-233:
+    Blast-Forged, Blockading, Deflective and Feathery give our four resistances).
   - `apotheosis_stat_remaps/` replaces an Apothic Attributes stat (`source`) with ours (`target`) wherever an affix, a
     gem bonus or a tier augment grants it, or switches it off there (`off: true`): an attribute affix or tier augment
     is switched off, a gem bonus dropped (a multi-attribute bonus as a whole), and the stat leaves an all-stats
@@ -210,7 +213,11 @@ Rules:
   share (`default_percent`, `max_percent`, shown as a percentage); its minimum is 0, and a primary stat counts
   points. A stat in points may set `lowers_exhaustion` (`per_point_percent`, `max_percent` of at most 100): each
   point lowers the food exhaustion its player gains by that much, at most the cap (Stamina, RLM-171; natural
-  regeneration's food cost stays vanilla's). `stat_rules/` says what one primary stat gives, per point (with an
+  regeneration's food cost stays vanilla's). A secondary stat that is a share may set `resists`, a damage type tag
+  (vanilla's, such as `minecraft:is_fall`, or our `realmforge:is_physical`, which `rf gen` writes with the spell
+  schools: melee hits, projectiles and every physical school): the damage pipeline lowers every hit of that tag by the
+  stat's share; several on one hit multiply, at most 75 % together, and one tag has one stat (RLM-233,
+  [architecture 9.1](../docs/architecture.md#91-damage-pipeline)). `stat_rules/` says what one primary stat gives, per point (with an
   optional cap, `max` or `max_percent` in the amount's unit) and at milestones
   ([8.3](../docs/architecture.md#83-derived-stats-and-milestones)). A rule reads a primary stat no other rule reads
   and writes only secondary stats, vanilla attributes (`minecraft:attack_damage`) and NeoForge's
