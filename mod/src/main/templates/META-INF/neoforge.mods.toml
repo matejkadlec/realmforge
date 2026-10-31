@@ -15,6 +15,11 @@ description = '''
 An RPG overhaul inspired by World of Warcraft: Wrath of the Lich King.
 '''
 
+# The release phase (Alpha, Beta, or empty from v1.0.0) that the welcome message shows after the version
+# (core/WelcomeMessage, RLM-520), from mod_phase in gradle.properties.
+[modproperties.realmforge]
+phase = "${mod_phase}"
+
 # Applied by FML when the game loads (architecture 19.3); ModDevGradle applies the same file for compiling.
 [[accessTransformers]]
 file = "META-INF/accesstransformer.cfg"
@@ -123,6 +128,15 @@ side = "BOTH"
 # Pick Up Notifier's list of pickups starts mid-screen at the right edge (RLM-308, architecture 19.4).
 [[dependencies.realmforge]]
 modId = "pickupnotifier"
+type = "optional"
+versionRange = "*"
+ordering = "NONE"
+side = "CLIENT"
+
+# Inventory Sorting leaves Sophisticated Backpacks' backpacks in their slots, so an open backpack stays open (RLM-519,
+# architecture 19.4).
+[[dependencies.realmforge]]
+modId = "inventorysorter"
 type = "optional"
 versionRange = "*"
 ordering = "NONE"

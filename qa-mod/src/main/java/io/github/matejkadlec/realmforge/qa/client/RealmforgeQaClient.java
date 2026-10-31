@@ -17,5 +17,6 @@ public final class RealmforgeQaClient {
         QaBossRenderers.register(modEventBus);
         QaKeyCategories.register();
         QaKeyBindShots.registerIfRequested();
+        FtbLibraryGreetingFilter.register();
     }
 }

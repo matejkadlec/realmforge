@@ -5,6 +5,7 @@ import io.github.matejkadlec.realmforge.client.animation.CastAnimation;
 import io.github.matejkadlec.realmforge.client.compat.apotheosis.PotionCharmTooltip;
 import io.github.matejkadlec.realmforge.client.compat.bettercombat.TwoHandedWeaponsClient;
 import io.github.matejkadlec.realmforge.client.compat.neat.NeatCompat;
+import io.github.matejkadlec.realmforge.client.compat.inventorysorter.BackpacksStayInPlace;
 import io.github.matejkadlec.realmforge.client.compat.pickupnotifier.PickUpListPosition;
 import io.github.matejkadlec.realmforge.client.hud.CastBarHud;
 import io.github.matejkadlec.realmforge.client.hud.CombatTextHud;
@@ -63,6 +64,7 @@ public final class RealmforgeClient {
         NeatCompat.register(modBus);
         TwoHandedWeaponsClient.register();
         PickUpListPosition.register();
+        BackpacksStayInPlace.register();
         PotionCharmTooltip.register();
         ClientCasts.register();
         CastAnimation.register(modBus);

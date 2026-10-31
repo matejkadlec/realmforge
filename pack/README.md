@@ -167,7 +167,11 @@ backpack's of RLM-501 ([ADR 0062](../docs/decisions/0062-backpack-keys-and-alt-k
   Quests works while none is; Inventory Sorting's Open Settings is unbound (its
   default, P, is the spellbook's). Sophisticated Core's Sort Storage/Backpack is
   on `;` as well (RLM-501): in a backpack's screen it sorts the backpack and
-  swallows the key, so Inventory Sorting does not sort it a second time. Open
+  swallows the key, so Inventory Sorting does not sort it a second time; over
+  the player's own slots Inventory Sorting sorts the inventory around every
+  backpack, which keeps its slot, so a backpack open from the inventory stays
+  open (RLM-519, [ADR 0065](../docs/decisions/0065-inventory-sorting-leaves-backpacks-in-their-slots.md):
+  a sort rule the core mod adds, no config file here). Open
   Backpack on B (RLM-501), Tom's Simple Storage's Open Terminal on V (RLM-25),
   Just Zoom's Zoom on Z (Czech QWERTZ);
 - Xaero's Minimap (2026-10-20): Minimap Settings on `ú` (right of P on a Czech

@@ -4,6 +4,13 @@ id: message
 texts:
   night_vision_off:
     en_us: Night Vision Off
+  # In chat once per login, on joining a world (RLM-520, Matěj's format of 2026-10-29). %1$s the version from the
+  # mod's metadata, without its "+mc" suffix; welcome_phase adds %2$s, the release phase (Alpha, Beta), and welcome
+  # is the line once the phase is empty (v1.0.0).
+  welcome:
+    en_us: Welcome to Realmforge v%1$s
+  welcome_phase:
+    en_us: Welcome to Realmforge v%1$s (%2$s)
   night_vision_on:
     en_us: Night Vision On
   # Leveling (C2, architecture 10.2). XP a kill gave, in the action bar: "+50 XP" (%1$s the XP).

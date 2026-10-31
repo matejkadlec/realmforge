@@ -73,9 +73,10 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0059](0059-the-status-overview-ends-with-verification-and-the-claimed-tickets.md) | The status overview ends with Verification and the claimed tickets, without a batch ledger | Accepted (amends 0021) |
 | [0060](0060-what-counts-as-the-owners-confirmation-of-an-adr-conflicting-change.md) | What counts as the owner's confirmation of an ADR-conflicting change | Accepted (amends 0030) |
 | [0061](0061-the-target-circle-is-a-smooth-light-ring-and-the-highlight-toggles.md) | The target circle is a smooth light ring, and its highlight toggles | Accepted (amends 0055) |
-| [0062](0062-backpack-keys-and-alt-k-amend-the-pack-defaults.md) | The backpack keys and Alt+K amend the pack's default keys | Accepted (amends 0043) |
+| [0062](0062-backpack-keys-and-alt-k-amend-the-pack-defaults.md) | The backpack keys and Alt+K amend the pack's default keys | Accepted (amends 0043), amended by [0065](0065-inventory-sorting-leaves-backpacks-in-their-slots.md) (backpacks stay in their slots) |
 | [0063](0063-apotheosis-data-is-fitted-from-a-pinned-snapshot.md) | Apotheosis's data is fitted from a pinned snapshot | Accepted |
 | [0064](0064-neoforges-attributes-join-the-id-universe.md) | NeoForge's attributes join the ID universe | Accepted (amends 0005) |
+| [0065](0065-inventory-sorting-leaves-backpacks-in-their-slots.md) | Inventory Sorting leaves backpacks in their slots | Accepted (amends 0062) |
 
 ## Open questions (not decided)
 

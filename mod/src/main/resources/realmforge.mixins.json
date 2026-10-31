@@ -4,6 +4,7 @@
   "package": "io.github.matejkadlec.realmforge.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
+    "InventorySortingStacksMixin",
     "PlayerBlockActionMixin",
     "PlayerExhaustionMixin",
     "RangedAttributeAccessor"
