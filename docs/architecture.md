@@ -3313,7 +3313,8 @@ depth limit.
     config, `seedPackConfig`) with the expectations: while `content/quests/` is empty, it holds no chapter. The
     comparison's FTB Quests types live in `QuestBook`, out of every GameTest class: the QA mod lists those classes'
     methods when it is constructed, which resolves the types in their signatures, and the lean dev client has no FTB
-    mod (a GameTest checks that no GameTest class names a `dev.ftb` type there).
+    mod (a GameTest checks that no GameTest class names a `dev.ftb` or `dev.shadowsoffire` type there; Apotheosis's
+    tests keep theirs in `ApotheosisLoot` the same way).
 - Procedural contracts come later (M7), in our own `contract/` package.
 
 ## 17. Networking
@@ -3806,7 +3807,9 @@ the QA mod), and registers the category only when Apotheosis is loaded.
 a data pack reaches them: an Intricate sword raises our crit chance and nothing of Apothic Attributes', a switched-off
 affix cannot be applied, a Summit monster gets our armor pierce and no protection pierce, every mob has the three
 combat stats, a mob's lifesteal heals it, and no potion charm recipe loads. `ApotheosisLootGameTests` read
-Apotheosis's registries and loot code: the review's affixes are off, its Rare rolls apply (Giant Slaying adds its Rare
+Apotheosis's registries and loot code through `ApotheosisLoot`, which holds every Apotheosis type out of the GameTest
+classes, as `QuestBook` does for FTB Quests ([16](#16-progression-and-quests)), since the lean dev client runs without
+Apotheosis: the review's affixes are off, its Rare rolls apply (Giant Slaying adds its Rare
 value) and Magical stays Epic, about a quarter of Rare swords carry one ability, every loot category of Apotheosis's
 rolls at every rarity at Haven and Pinnacle (the GameTest log then holds no `AffixLootRule` error) with no ability on a
 helmet or a Rare boot and at most one basic effect on a helmet or shears, no tier caps max Eterna, and every wand is
