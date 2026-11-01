@@ -96,6 +96,7 @@ from realmforge_tools.schema.spell import (
     APPLY_EFFECT,
     AREA,
     CLEANSE,
+    CONE,
     CURRENT_TARGET,
     DAMAGE,
     DAMAGE_OVER_TIME,
@@ -865,7 +866,8 @@ def _check_spell_schools(content: Content, universe: IdUniverse) -> list[Problem
 
 
 # Which targeting types each effect may use: damage, damage over time and knockback hit enemies, heals and cleanses help
-# the caster or its allies, status effects go on anyone; a melee shape lies in front of the caster itself; a projectile flies at an enemy, a ground point or along a direction, an area lies at the
+# the caster or its allies, status effects go on anyone; a melee shape and a cone lie in front of the caster itself; a
+# projectile flies at an enemy, a ground point or along a direction, an area lies at the
 # caster's feet, an enemy's or a ground point, a teleport needs a point to go to, and a dash rushes at an enemy, a
 # point or along a direction. The NPC targeting types choose an enemy, so they go wherever enemy does.
 _NPC = (CURRENT_TARGET, RANDOM_PLAYER, FARTHEST_PLAYER)
@@ -880,6 +882,7 @@ _EFFECT_TARGETING: dict[str, tuple[str, ...]] = {
     PROJECTILE: (ENEMY, GROUND_POINT, DIRECTION, *_NPC),
     AREA: (SELF, ENEMY, GROUND_POINT, *_NPC),
     MELEE: (SELF,),
+    CONE: (SELF,),
     TELEPORT: (GROUND_POINT, DIRECTION),
     DASH: (ENEMY, GROUND_POINT, DIRECTION, *_NPC),
 }
@@ -990,6 +993,8 @@ def _check_spells(content: Content, universe: IdUniverse) -> list[Problem]:
             problems += _check_inner_effects(entry.source, path, effect, spell, universe, effects)
             if effect.type == PROJECTILE:
                 problems += _check_projectile(entry.source, path, effect, mob_tags, universe)
+            if effect.type == CONE:
+                problems += _check_cone(entry.source, path, effect, universe)
             if spell.cast.type == "channel":
                 problems += _check_channel_reapply(
                     entry.source, path, effect, spell.cast.interval_seconds, effects
@@ -1129,6 +1134,22 @@ def _check_passive(source: str, spell: SpellDef, content: Content, universe: IdU
             elif target.is_passive or target.first_effect(DAMAGE) is None:
                 problems.append(
                     Problem(source, path, f"{named} deals no damage, so more damage does nothing")
+                )
+    for n, bonus in enumerate(passive.splash_radius):
+        for m, named in enumerate(bonus.spells):
+            path = f"passive.splash_radius.{n}.spells.{m}"
+            target = spells.get(named)
+            if target is None:
+                problems.append(Problem(source, path, _unknown(named, SPELL_REGISTRY, universe)))
+            elif not any(
+                effect.type == PROJECTILE and effect.splash is not None for _, effect in target.all_effects()
+            ):
+                problems.append(
+                    Problem(
+                        source,
+                        path,
+                        f"{named} launches no projectile with a splash, so a wider splash does nothing",
+                    )
                 )
     critical = passive.crit_chance
     if critical is not None and not universe.contains(MOB_EFFECT_REGISTRY, critical.against):
@@ -1338,6 +1359,20 @@ def _check_projectile(
     ):
         problems.append(
             Problem(source, f"{path}.impact.particles", _unknown(impact.particles, BLOCK_REGISTRY, universe))
+        )
+    return problems
+
+
+def _check_cone(source: str, path: str, cone: BaseModel, universe: IdUniverse) -> list[Problem]:
+    """A cone's sound and particle block exist (RLM-542)."""
+    problems: list[Problem] = []
+    if cone.sound is not None and not universe.contains(SOUND_EVENT_REGISTRY, cone.sound):
+        problems.append(
+            Problem(source, f"{path}.sound", _unknown(cone.sound, SOUND_EVENT_REGISTRY, universe))
+        )
+    if cone.particles is not None and not universe.contains(BLOCK_REGISTRY, cone.particles):
+        problems.append(
+            Problem(source, f"{path}.particles", _unknown(cone.particles, BLOCK_REGISTRY, universe))
         )
     return problems
 
@@ -1558,6 +1593,8 @@ def _check_inner_effects(
         )
     elif effect.type == MELEE:
         reached, what = ENEMY, "the enemies in a melee shape"
+    elif effect.type == CONE:
+        reached, what = ENEMY, "the enemies in a cone"
     else:
         return []
     problems: list[Problem] = []
@@ -1579,7 +1616,7 @@ def _check_channel_reapply(
     """A channel runs its effects at every interval: what it applies, and what the projectile or area it sends at
     every interval applies, is applied again then."""
     problems = _check_reapply(source, path, effect, interval, "the channel", effects)
-    if effect.type in (PROJECTILE, AREA, MELEE):
+    if effect.type in (PROJECTILE, AREA, MELEE, CONE):
         for m, inner in enumerate(effect.effects):
             problems += _check_reapply(source, f"{path}.effects.{m}", inner, interval, "the channel", effects)
     return problems
@@ -1803,7 +1840,9 @@ def _check_racials(
 
 def _check_class_spells(entry: Entry, spells: dict[str, SpellDef], content: Content) -> list[Problem]:
     """A class's spells are our player spells that cost the class's resource (or nothing), and the class teaches at
-    most 4 x N of them by the last level of chapter N (decision D4: chapter 1 allows 4 spells, chapter 2 eight)."""
+    most 4 x N active ones by the last level of chapter N (decision D4: chapter 1 allows 4 spells, chapter 2 eight;
+    passive spells are never on the bar, so they do not count: Matěj, 2026-10-30, RLM-333, "rows 1-2 hold 4 actives,
+    within D4's 4 x N spells for chapter 1")."""
     problems: list[Problem] = []
     player_class = entry.model
     for n, taught in enumerate(player_class.spells):
@@ -1827,14 +1866,20 @@ def _check_class_spells(entry: Entry, spells: dict[str, SpellDef], content: Cont
                 )
             )
     for chapter in sorted((entry.model for entry in content.chapters), key=lambda chapter: chapter.order):
-        known = sum(1 for taught in player_class.spells if taught.level <= chapter.level_cap)
+        known = sum(
+            1
+            for taught in player_class.spells
+            if taught.level <= chapter.level_cap
+            and not (taught.spell in spells and spells[taught.spell].is_passive)
+        )
         allowed = 4 * chapter.order
         if known > allowed:
             problems.append(
                 Problem(
                     entry.source,
                     "spells",
-                    f"{known} spells by level {chapter.level_cap}, the end of chapter {chapter.order}, which allows "
+                    f"{known} active spells by level {chapter.level_cap}, the end of chapter {chapter.order}, which "
+                    "allows "
                     f"{allowed} (decision D4: 4 x N)",
                 )
             )

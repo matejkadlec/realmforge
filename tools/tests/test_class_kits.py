@@ -441,7 +441,7 @@ def test_class_spells_are_players_spells_that_exist(repo: RepoPaths) -> None:
 def test_a_chapter_allows_four_spells_a_chapter(repo: RepoPaths) -> None:
     warrior = repo.content / "classes" / "warrior.yaml"
     warrior.write_text(warrior.read_text() + "  - {spell: realmforge:will_to_survive, level: 9}\n")
-    assert_problem(repo, "5 spells by level 10, the end of chapter 1, which allows 4")
+    assert_problem(repo, "5 active spells by level 10, the end of chapter 1, which allows 4")
 
 
 @pytest.mark.parametrize(

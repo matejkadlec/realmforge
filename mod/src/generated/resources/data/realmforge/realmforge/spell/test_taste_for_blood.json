@@ -32,6 +32,7 @@
         "cooldown_ticks": 120,
         "open_window": "realmforge:test_overpower"
       }
-    ]
+    ],
+    "splash_radius": []
   }
 }

@@ -2,10 +2,24 @@
   "$defs": {
     "AgainstEffectDef": {
       "additionalProperties": false,
-      "description": "More damage against a target that has a status effect (RLM-540: Ice Lance against a Frozen target).",
+      "description": "More damage against a target that has a status effect (RLM-540: Ice Lance against a Frozen target), growing per\nrank (RLM-542: Ice Lance's x 2 to x 3).",
       "properties": {
+        "damage_per_level_percent": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Added to damage_percent for every spell level above 1.",
+          "title": "Damage Per Level Percent"
+        },
         "damage_percent": {
-          "description": "How much more damage the hit deals then, in percent: 200 triples it.",
+          "description": "How much more damage the hit deals then at spell level 1, in percent: 200 triples it.",
           "exclusiveMinimum": 0,
           "maximum": 1000,
           "title": "Damage Percent",
@@ -444,6 +458,112 @@
         "type"
       ],
       "title": "CleanseEffectDef",
+      "type": "object"
+    },
+    "ConeEffectDef": {
+      "additionalProperties": false,
+      "description": "A cone along the caster's look (RLM-542: Cone of Cold): every enemy whose hitbox lies within ``range`` blocks of\nthe cone's tip (the caster's eyes, lowered as a melee shape's origin) and within half of ``angle_degrees`` of the\nlook (its middle or its nearest point) takes ``effects``, the same for each; none behind a wall (more than half\nhidden from the caster's eyes, as for a melee shape). It follows the look, so the spell needs no target: an empty\ncone hits nothing. Its sound plays from the caster, and its particle block's break particles fill it.",
+      "properties": {
+        "angle_degrees": {
+          "description": "How wide it opens, in degrees: 60 is 30 to each side.",
+          "exclusiveMinimum": 0,
+          "maximum": 180,
+          "title": "Angle Degrees",
+          "type": "number"
+        },
+        "effects": {
+          "description": "What it does to each enemy inside, in order.",
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "realmforge:apply_effect": "#/$defs/ApplyEffectEffectDef",
+                "realmforge:cleanse": "#/$defs/CleanseEffectDef",
+                "realmforge:damage": "#/$defs/DamageEffectDef",
+                "realmforge:damage_over_time": "#/$defs/DamageOverTimeEffectDef",
+                "realmforge:heal": "#/$defs/HealEffectDef",
+                "realmforge:knockback": "#/$defs/KnockbackEffectDef",
+                "realmforge:remove_effect": "#/$defs/RemoveEffectEffectDef"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DamageEffectDef"
+              },
+              {
+                "$ref": "#/$defs/HealEffectDef"
+              },
+              {
+                "$ref": "#/$defs/DamageOverTimeEffectDef"
+              },
+              {
+                "$ref": "#/$defs/ApplyEffectEffectDef"
+              },
+              {
+                "$ref": "#/$defs/RemoveEffectEffectDef"
+              },
+              {
+                "$ref": "#/$defs/CleanseEffectDef"
+              },
+              {
+                "$ref": "#/$defs/KnockbackEffectDef"
+              }
+            ]
+          },
+          "minItems": 1,
+          "title": "Effects",
+          "type": "array"
+        },
+        "particles": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A block whose break particles fill the cone, e.g. minecraft:packed_ice.",
+          "title": "Particles"
+        },
+        "range": {
+          "description": "How far it reaches, in blocks, at most 16.",
+          "exclusiveMinimum": 0,
+          "maximum": 16.0,
+          "title": "Range",
+          "type": "number"
+        },
+        "sound": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A sound event played from the caster.",
+          "title": "Sound"
+        },
+        "type": {
+          "const": "realmforge:cone",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "range",
+        "angle_degrees",
+        "effects"
+      ],
+      "title": "ConeEffectDef",
       "type": "object"
     },
     "CostDef": {
@@ -1339,6 +1459,14 @@
           "title": "Spell Damage",
           "type": "array"
         },
+        "splash_radius": {
+          "description": "A wider splash for named spells' bolts from a rank on.",
+          "items": {
+            "$ref": "#/$defs/SplashRadiusDef"
+          },
+          "title": "Splash Radius",
+          "type": "array"
+        },
         "while_wielding": {
           "anyOf": [
             {
@@ -1453,6 +1581,18 @@
           "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
           "title": "Effect",
           "type": "string"
+        },
+        "from_level": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ProcDurationFromLevelDef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A longer duration from a rank on, e.g. {level: 3, duration_seconds: 3}."
         }
       },
       "required": [
@@ -1586,6 +1726,31 @@
         "chance_percent"
       ],
       "title": "ProcDef",
+      "type": "object"
+    },
+    "ProcDurationFromLevelDef": {
+      "additionalProperties": false,
+      "description": "A proc's effect that lasts longer from a rank on (RLM-542: Frostbite's Frozen, 3 s instead of 2 at rank 3).",
+      "properties": {
+        "duration_seconds": {
+          "description": "How long it lasts from that rank; more than 0, at most 60.",
+          "minimum": 0,
+          "title": "Duration Seconds",
+          "type": "number"
+        },
+        "level": {
+          "description": "The rank from which it lasts longer; at least 2.",
+          "maximum": 100,
+          "minimum": 2,
+          "title": "Level",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "level",
+        "duration_seconds"
+      ],
+      "title": "ProcDurationFromLevelDef",
       "type": "object"
     },
     "ProjectileAppearanceDef": {
@@ -1924,6 +2089,44 @@
       "title": "SplashDef",
       "type": "object"
     },
+    "SplashRadiusDef": {
+      "additionalProperties": false,
+      "description": "A wider splash for named spells' bolts from a rank on (RLM-542: Improved Frostbolt's rank 3 widens Frostbolt's\nsplash from 1 to 1.5 blocks, Matěj, 2026-10-31).",
+      "properties": {
+        "from_level": {
+          "default": 1,
+          "description": "The rank from which it applies.",
+          "maximum": 100,
+          "minimum": 1,
+          "title": "From Level",
+          "type": "integer"
+        },
+        "radius": {
+          "description": "Blocks added to the splash's radius.",
+          "exclusiveMinimum": 0,
+          "maximum": 4.0,
+          "title": "Radius",
+          "type": "number"
+        },
+        "spells": {
+          "description": "The spells whose projectiles' splash grows, e.g. [realmforge:frostbolt].",
+          "items": {
+            "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Spells",
+          "type": "array"
+        }
+      },
+      "required": [
+        "spells",
+        "radius"
+      ],
+      "title": "SplashRadiusDef",
+      "type": "object"
+    },
     "TeleportEffectDef": {
       "additionalProperties": false,
       "description": "Moves the caster at once to the target: a ground point, or as far along a direction as its range allows. It\nstops short of blocks, and does not move when no free spot is found on the way.",
@@ -2038,6 +2241,7 @@
             "realmforge:apply_effect": "#/$defs/ApplyEffectEffectDef",
             "realmforge:area": "#/$defs/AreaEffectDef",
             "realmforge:cleanse": "#/$defs/CleanseEffectDef",
+            "realmforge:cone": "#/$defs/ConeEffectDef",
             "realmforge:damage": "#/$defs/DamageEffectDef",
             "realmforge:damage_over_time": "#/$defs/DamageOverTimeEffectDef",
             "realmforge:dash": "#/$defs/DashEffectDef",
@@ -2080,6 +2284,9 @@
           },
           {
             "$ref": "#/$defs/MeleeEffectDef"
+          },
+          {
+            "$ref": "#/$defs/ConeEffectDef"
           },
           {
             "$ref": "#/$defs/TeleportEffectDef"

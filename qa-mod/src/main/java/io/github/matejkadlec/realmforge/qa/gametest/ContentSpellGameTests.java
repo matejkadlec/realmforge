@@ -9,6 +9,7 @@ import io.github.matejkadlec.realmforge.spell.AllyTargeting;
 import io.github.matejkadlec.realmforge.spell.ApplyEffectEffect;
 import io.github.matejkadlec.realmforge.spell.AreaEffect;
 import io.github.matejkadlec.realmforge.spell.Coefficient;
+import io.github.matejkadlec.realmforge.spell.ConeEffect;
 import io.github.matejkadlec.realmforge.spell.CurrentTargetTargeting;
 import io.github.matejkadlec.realmforge.spell.DamageEffect;
 import io.github.matejkadlec.realmforge.spell.DamageOverTimeEffect;
@@ -179,11 +180,22 @@ public final class ContentSpellGameTests {
             case MeleeEffect melee -> new EffectExpectation(type, Map.of(),
                     Map.of("shape", melee.shape().getSerializedName()),
                     melee.effects().stream().map(ContentSpellGameTests::effect).toList());
+            case ConeEffect cone -> new EffectExpectation(type, Map.of("range", cone.range(), "angle_degrees",
+                    cone.angleDegrees()), coneNames(cone),
+                    cone.effects().stream().map(ContentSpellGameTests::effect).toList());
             case AreaEffect area -> new EffectExpectation(type, Map.of("radius", area.radius(), "duration_ticks",
                     (double) area.durationTicks(), "interval_ticks", (double) area.intervalTicks()),
                     areaNames(area), area.effects().stream().map(ContentSpellGameTests::effect).toList());
             default -> new EffectExpectation(type, Map.of(), Map.of(), List.of());
         };
+    }
+
+    /** A cone's names (RLM-542): its sound and particle block, each only when it has one. */
+    private static Map<String, String> coneNames(ConeEffect cone) {
+        Map<String, String> names = new HashMap<>();
+        cone.sound().ifPresent(sound -> names.put("sound", sound.toString()));
+        cone.particles().ifPresent(block -> names.put("particles", block.toString()));
+        return Map.copyOf(names);
     }
 
     /**

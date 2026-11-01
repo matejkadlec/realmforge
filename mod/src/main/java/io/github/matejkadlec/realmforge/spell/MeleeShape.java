@@ -189,13 +189,13 @@ public record MeleeShape(Kind kind, double reach) {
                 && Math.abs(offset.dot(frame.forward())) <= half.z;
     }
 
-    private static Vec3 nearestPoint(AABB box, Vec3 point) {
+    static Vec3 nearestPoint(AABB box, Vec3 point) {
         return new Vec3(Mth.clamp(point.x, box.minX, box.maxX), Mth.clamp(point.y, box.minY, box.maxY),
                 Mth.clamp(point.z, box.minZ, box.maxZ));
     }
 
     /** The angle between two vectors, in degrees. */
-    private static double angle(Vec3 a, Vec3 b) {
+    static double angle(Vec3 a, Vec3 b) {
         return Math.toDegrees(Math.acos(Mth.clamp(a.normalize().dot(b.normalize()), -1, 1)));
     }
 

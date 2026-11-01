@@ -21,7 +21,7 @@ import net.minecraft.world.entity.player.Player;
  * through {@link #SOURCE}, which {@code stats} recomputes like race and class (architecture 8.2): a held item changes
  * them at the end of the same tick, and learning a spell marks the stats for a recompute. The damage engine reads the
  * rest per hit: {@link #damageBonus} for a spell's hit (the passives of system C's (1 + School Power + passives)),
- * {@link #critChanceAgainst} against its target, and {@code combat} asks {@link #blockCooldownReductionTicks} for a
+ * {@link #critChanceAgainst} against its target, {@link #splashRadiusBonus} for a bolt's splash, and {@code combat} asks {@link #blockCooldownReductionTicks} for a
  * raised two-handed weapon's cooldown. Their procs reach the proc engine through {@link #procs} (RLM-540), each with its
  * internal cooldown per target and its id {@code realmforge:spell/<namespace>/proc/<n>/<path>}. Mobs know no spells, so their passives give nothing. Works on the client too,
  * from the synced spellbook, for the tooltips.
@@ -81,6 +81,15 @@ public final class Passives {
     /** The crit chance {@code caster}'s passive spells add to its spell hits on {@code target}: Shatter's on Frozen. */
     public static double critChanceAgainst(LivingEntity caster, LivingEntity target) {
         return active(caster).stream().mapToDouble(known -> known.passive().critChanceAgainst(target, known.level()))
+                .sum();
+    }
+
+    /**
+     * The blocks {@code caster}'s passive spells add to {@code spell}'s splash radius: Improved Frostbolt's half a block
+     * at rank 3 (RLM-542).
+     */
+    public static double splashRadiusBonus(LivingEntity caster, ResourceKey<Spell> spell) {
+        return active(caster).stream().mapToDouble(known -> known.passive().splashRadiusFor(spell, known.level()))
                 .sum();
     }
 

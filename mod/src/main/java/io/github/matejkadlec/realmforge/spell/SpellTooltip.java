@@ -21,8 +21,10 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
  * A spell's tooltip in the spellbook (architecture 11.6, 18; C3b, RLM-25), built from data with live numbers: its name,
  * its rank, its cost at that rank (a channel's per second), its range ({@link #range}), its cast after Cast Time
  * Reduction, its cooldown after Cooldown Reduction, and its description with the placeholders filled
- * ({@link SpellText}): its damage numbers with their school's icon and colour. A passive spell (RLM-541) shows its rank's description and the next rank's
- * instead of cost, range and cast. A view model in common code, so the screen only draws it.
+ * ({@link SpellText}): its damage numbers with their school's icon and colour; below its highest rank, "Next rank:" with
+ * the description at the next rank, from the same stats (RLM-542). A passive spell (RLM-541) shows its rank's
+ * description and the next rank's instead of cost, range and cast. A view model in common code, so the screen only
+ * draws it.
  */
 public final class SpellTooltip {
     private static final double TICKS_PER_SECOND = 20;
@@ -42,8 +44,9 @@ public final class SpellTooltip {
 
     /**
      * The tooltip's lines for {@code spell} at {@code level} and a caster with {@code stats} whose passive spells add
-     * {@code passiveDamage} to its hits (RLM-541). A passive spell's tooltip has its name, rank, "Passive", its
-     * description at the rank and, below the highest rank, the next rank's ({@link #passiveLines}).
+     * {@code passiveDamage} to its hits (RLM-541). Below the highest rank, the description at the next rank follows its
+     * own (RLM-542). A passive spell's tooltip has its name, rank, "Passive", its description at the rank and, below the
+     * highest rank, the next rank's ({@link #passiveLines}).
      */
     public static List<Component> lines(Spell spell, int level, ToDoubleFunction<Holder<Attribute>> stats,
             Function<ResourceKey<SpellSchool>, Optional<SpellSchool>> schools, double passiveDamage) {
@@ -68,9 +71,16 @@ public final class SpellTooltip {
         if (cooldown > 0) {
             lines.add(Component.translatable(GeneratedTexts.SPELL_TOOLTIP_COOLDOWN, seconds(cooldown)));
         }
-        lines.add(SpellText.fill(Language.getInstance().getOrDefault(spell.description()),
-                SpellText.values(spell, level, stats, schools, passiveDamage), SpellText.placeholderSchools(spell),
-                schools).withStyle(ChatFormatting.YELLOW));
+        String description = Language.getInstance().getOrDefault(spell.description());
+        Map<String, ResourceKey<SpellSchool>> placeholderSchools = SpellText.placeholderSchools(spell);
+        lines.add(SpellText.fill(description, SpellText.values(spell, level, stats, schools, passiveDamage),
+                placeholderSchools, schools).withStyle(ChatFormatting.YELLOW));
+        if (level < spell.maxLevel()) {
+            // RLM-542: the next rank's numbers too, from the same stats, so a player sees what a point would give.
+            lines.add(Component.translatable(GeneratedTexts.SPELL_TOOLTIP_NEXT_RANK).withStyle(ChatFormatting.GRAY));
+            lines.add(SpellText.fill(description, SpellText.values(spell, level + 1, stats, schools, passiveDamage),
+                    placeholderSchools, schools).withStyle(ChatFormatting.YELLOW));
+        }
         return lines;
     }
 
