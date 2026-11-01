@@ -43,6 +43,21 @@
       "description": "Colour of its floating combat text, \"#RRGGBB\"; the school's color when left out.",
       "title": "Combat Text Color"
     },
+    "crit_color": {
+      "anyOf": [
+        {
+          "description": "An RGB colour, \"#RRGGBB\".",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Colour of a magic school's crit in floating combat text, \"#RRGGBB\": a darker shade of its combat text colour, readable on dark backgrounds (RLM-553). Left out, the game darkens the combat text colour by a fixed factor. Hits that are not magic (melee, ranged, the Physical school) crit in red whatever it says.",
+      "title": "Crit Color"
+    },
     "death_message": {
       "$ref": "#/$defs/LocalizedText",
       "description": "Death message when this school kills: \"%1$s burned to ashes\". %1$s is the victim; the game passes the killer only sometimes, so no other placeholder is allowed."

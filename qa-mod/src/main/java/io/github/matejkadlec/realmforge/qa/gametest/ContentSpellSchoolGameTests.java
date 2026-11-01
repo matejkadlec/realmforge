@@ -54,6 +54,7 @@ public final class ContentSpellSchoolGameTests {
             helper.assertValueEqual(school.color(), expected.color(), expected.id() + " colour");
             helper.assertValueEqual(school.combatTextColor(), expected.combatTextColor(),
                     expected.id() + " combat text colour");
+            helper.assertValueEqual(school.critColor(), expected.critColor(), expected.id() + " crit colour");
             helper.assertValueEqual(school.power().map(Holder::getRegisteredName), expected.power(),
                     expected.id() + " power");
             helper.assertValueEqual(school.resistance().map(Holder::getRegisteredName), expected.resistance(),

@@ -170,6 +170,7 @@ def test_school_entries_name_their_damage_type_and_stats(repo: RepoPaths) -> Non
         "kind": "magic",
         "color": "#FF7F1F",
         "combat_text_color": "#FF7F1F",
+        "crit_color": "#CC5500",
         "damage_type": "realmforge:fire",
         "power": "realmforge:fire_power",
         "resistance": "realmforge:fire_resistance",
@@ -188,6 +189,24 @@ def test_combat_text_takes_the_school_colour_unless_it_has_its_own(repo: RepoPat
     assert json.loads(generate(repo)[f"{SCHOOL_DATA}/shadow.json"])["combat_text_color"] == "#663399"
     school(repo, "shadow", SHADOW + 'combat_text_color: "#aa88ff"\n')
     assert json.loads(generate(repo)[f"{SCHOOL_DATA}/shadow.json"])["combat_text_color"] == "#AA88FF"
+
+
+def test_a_crit_colour_is_written_only_when_the_school_names_one(repo: RepoPaths) -> None:
+    # RLM-553: without one, the game darkens the combat text colour itself (SpellSchool#combatTextCritColor).
+    school(repo, "shadow", SHADOW)
+    assert "crit_color" not in json.loads(generate(repo)[f"{SCHOOL_DATA}/shadow.json"])
+    school(repo, "shadow", SHADOW + 'crit_color: "#4b2a6e"\n')
+    files = generate(repo)
+    assert json.loads(files[f"{SCHOOL_DATA}/shadow.json"])["crit_color"] == "#4B2A6E"
+    expectations = files[
+        "qa-mod/src/generated/java/io/github/matejkadlec/realmforge/qa/generated/GeneratedSpellSchoolExpectations.java"
+    ].decode()
+    assert "Optional.of(0xFF4B2A6E)" in expectations
+
+
+def test_a_crit_colour_must_be_a_colour(repo: RepoPaths) -> None:
+    school(repo, "shadow", SHADOW + "crit_color: dark purple\n")
+    assert_problem(repo, "crit_color")
 
 
 def test_every_school_has_an_icon_for_tooltips(repo: RepoPaths) -> None:
@@ -296,12 +315,16 @@ def test_keys_and_expectations_cover_every_school(repo: RepoPaths) -> None:
         "                    true,\n"
         "                    0xFFFF7F1F,\n"
         "                    0xFFFF7F1F,\n"
+        "                    Optional.of(0xFFCC5500),\n"
         '                    "realmforge:fire",\n'
         '                    "realmforge.fire",\n'
         '                    Optional.of("realmforge:fire_power"),\n'
         '                    Optional.of("realmforge:fire_resistance"))' in expectations
     )
-    assert "0xFFB2560D,\n                    0xFFFFAA00,\n" in expectations
+    assert (
+        "0xFFB2560D,\n                    0xFFFFAA00,\n                    Optional.empty(),\n"
+        in expectations
+    )
     assert "Optional.empty(),\n                    Optional.empty())" in expectations
 
 

@@ -24,17 +24,26 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
  * @param color colour of the school's spells: spell bar frames, the cast bar, damage numbers in tooltips; opaque ARGB
  *              (written {@code "#RRGGBB"})
  * @param combatTextColor colour of the school's floating combat text, opaque ARGB
+ * @param critColor colour of a magic school's crit in floating combat text, opaque ARGB; without one, the combat text
+ *     colour darkened ({@link #combatTextCritColor})
  * @param damageType the vanilla damage type of the school's hits
  * @param power the secondary stat that raises the school's damage dealt, if any
  * @param resistance the secondary stat that lowers the school's damage taken, if any
  */
-public record SpellSchool(String name, Kind kind, int color, int combatTextColor,
+public record SpellSchool(String name, Kind kind, int color, int combatTextColor, Optional<Integer> critColor,
         ResourceKey<DamageType> damageType, Optional<Holder<Attribute>> power, Optional<Holder<Attribute>> resistance) {
+    /**
+     * What a school without a crit colour keeps of each channel of its combat text colour for a crit: dark enough to
+     * tell from a hit at a glance, light enough to read at night (RLM-553).
+     */
+    public static final double CRIT_SHADE = 0.65;
+
     public static final Codec<SpellSchool> CODEC = RecordCodecBuilder.<SpellSchool>create(instance -> instance.group(
                     Codec.STRING.fieldOf("name").forGetter(SpellSchool::name),
                     Kind.CODEC.fieldOf("kind").forGetter(SpellSchool::kind),
                     ExtraCodecs.STRING_RGB_COLOR.fieldOf("color").forGetter(SpellSchool::color),
                     ExtraCodecs.STRING_RGB_COLOR.fieldOf("combat_text_color").forGetter(SpellSchool::combatTextColor),
+                    ExtraCodecs.STRING_RGB_COLOR.optionalFieldOf("crit_color").forGetter(SpellSchool::critColor),
                     ResourceKey.codec(Registries.DAMAGE_TYPE).fieldOf("damage_type").forGetter(SpellSchool::damageType),
                     Attribute.CODEC.optionalFieldOf("power").forGetter(SpellSchool::power),
                     Attribute.CODEC.optionalFieldOf("resistance").forGetter(SpellSchool::resistance))
@@ -44,6 +53,22 @@ public record SpellSchool(String name, Kind kind, int color, int combatTextColor
     /** Whether the school is magic: bypasses armor, cannot be dodged, its spells scale with Spell Power. */
     public boolean magic() {
         return kind == Kind.MAGIC;
+    }
+
+    /**
+     * The colour of the school's crit in floating combat text (RLM-553): its crit colour, or else its combat text
+     * colour darkened to {@link #CRIT_SHADE}, so a crit never looks like a hit.
+     */
+    public int combatTextCritColor() {
+        return critColor.orElseGet(() -> darker(combatTextColor));
+    }
+
+    /** {@code argb} with each colour channel kept to {@link #CRIT_SHADE} of itself; the alpha stays. */
+    static int darker(int argb) {
+        int red = (int) Math.round(((argb >> 16) & 0xFF) * CRIT_SHADE);
+        int green = (int) Math.round(((argb >> 8) & 0xFF) * CRIT_SHADE);
+        int blue = (int) Math.round((argb & 0xFF) * CRIT_SHADE);
+        return (argb & 0xFF000000) | red << 16 | green << 8 | blue;
     }
 
     /** The two kinds of damage (architecture 9.1). */
