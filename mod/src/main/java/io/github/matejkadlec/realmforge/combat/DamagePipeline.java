@@ -37,8 +37,9 @@ import net.neoforged.neoforge.event.entity.player.CriticalHitEvent;
  * lets {@link DamageCalculator} decide, and applies the result. Logical server only.
  *
  * <ol>
- *   <li>{@code CriticalHitEvent}: a player's full-strength melee attack crits on our crit chance and deals 1 + crit
- *   damage (plus the chance above 100 %, crit overflow), instead of vanilla's jump crit; vanilla still plays the crit
+ *   <li>{@code CriticalHitEvent}: a player's full-strength melee attack crits on our crit chance, pseudo-randomly
+ *   ({@link CritCounters}, RLM-526), and deals 1 + crit damage (plus the chance above 100 %, crit overflow), instead
+ *   of vanilla's jump crit; vanilla still plays the crit
  *   sound and particles, and a crit no longer stops a sword's sweep (vanilla's jump crits never met one on the
  *   ground).</li>
  *   <li>{@code ProjectileImpactEvent}, last: a player's arrow from a full draw (vanilla's crit arrow: a fully drawn bow
@@ -134,7 +135,7 @@ public final class DamagePipeline {
         // Neo resets the attack strength only at the end of Player#attack, so it is still this attack's here.
         double critChance = stat(player, GeneratedStats.CRIT_CHANCE);
         boolean crit = player.getAttackStrengthScale(0.5F) > FULL_STRENGTH
-                && DamageCalculator.crits(critChance, player.getRandom());
+                && CritCounters.roll(player, CritCounters.Kind.ATTACK, critChance, player.getRandom());
         event.setCriticalHit(crit);
         event.setDamageMultiplier(crit
                 ? (float) DamageCalculator.critMultiplier(stat(player, GeneratedStats.CRIT_DAMAGE), critChance)
@@ -299,7 +300,7 @@ public final class DamagePipeline {
             return false;
         }
         double critChance = stat(shooter, GeneratedStats.CRIT_CHANCE);
-        if (!DamageCalculator.crits(critChance, shooter.getRandom())) {
+        if (!CritCounters.roll(shooter, CritCounters.Kind.ATTACK, critChance, shooter.getRandom())) {
             return false;
         }
         event.setAmount(event.getAmount()
@@ -378,8 +379,11 @@ public final class DamagePipeline {
         double schoolResistance = school.resistance().map(stat -> stat(defender, stat)).orElse(0.0);
         double resistance = DamageCalculator.penetrated(DamageCalculator.resistance(schoolResistance,
                 stat(defender, GeneratedStats.SPELL_RESISTANCE), school.magic()), bonus.penetration());
+        DamageCalculator.CritRoll roll = source.getEntity() instanceof LivingEntity living
+                ? CritCounters.roller(living, CritCounters.Kind.SPELL, level.getRandom())
+                : DamageCalculator.CritRoll.plain(level.getRandom());
         DamageCalculator.SchoolHit hit = DamageCalculator.schoolHit(event.getAmount(), attacker, resistance,
-                SchoolDamageSource.critOf(source), level.getRandom());
+                SchoolDamageSource.critOf(source), roll);
         event.setAmount((float) hit.damage());
         // Keep the defender's window: the hit sets the invulnerable time to this (vanilla refuses 0, and 1 opens no
         // window), and Post restores the lastHurt vanilla overwrites.

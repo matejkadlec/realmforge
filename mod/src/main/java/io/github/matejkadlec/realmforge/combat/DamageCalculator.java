@@ -13,7 +13,8 @@ import net.minecraft.util.RandomSource;
  *   <li><b>Crit:</b> a roll against the attacker's crit chance; a crit multiplies the damage by 1 + crit damage. A
  *   spell's hit or heal crits by its {@link CritRule}: it may not crit at all, add to the chance, or bring its own
  *   multiplier (Matěj, 2026-10-15). A chance above 100 % always crits, and what lies above 100 % adds to the
- *   multiplier 1:1, 1 % of chance for 1 % of crit damage (crit overflow, RLM-392; C4).</li>
+ *   multiplier 1:1, 1 % of chance for 1 % of crit damage (crit overflow, RLM-392; C4). A player's roll is
+ *   pseudo-random ({@link CritDistribution}, RLM-526), so the formulas take how to roll ({@link CritRoll}).</li>
  *   <li><b>Dodge:</b> a roll against the defender's dodge chance; a dodged hit deals nothing.</li>
  *   <li><b>School hit:</b> damage × (1 + the school's power + the hit's own damage bonus, its spell's passives), then
  *   the crit roll, then × (1 − the defender's resistance). Spell Power is no multiplier: since scaling system C
@@ -66,6 +67,21 @@ public final class DamageCalculator {
     public record SchoolHit(double damage, boolean crit) {
     }
 
+    /**
+     * How a crit is rolled against a chance: plainly ({@link #plain}), or on a player's pseudo-random counter
+     * ({@link CritCounters#roller}).
+     */
+    @FunctionalInterface
+    public interface CritRoll {
+        /** Whether a roll on {@code chance} crits. */
+        boolean crits(double chance);
+
+        /** A plain roll against the chance, as mobs roll. */
+        static CritRoll plain(RandomSource random) {
+            return chance -> DamageCalculator.crits(chance, random);
+        }
+    }
+
     /** A crit roll's outcome: whether it crit, and what the hit or heal is multiplied by (1 without a crit). */
     public record Crit(boolean crit, double multiplier) {
         /** No crit: × 1. */
@@ -106,8 +122,13 @@ public final class DamageCalculator {
      * multiplier or 1 + crit damage, plus the chance above 100 % (crit overflow).
      */
     public static Crit crit(CritRule rule, double critChance, double critDamage, RandomSource random) {
+        return crit(rule, critChance, critDamage, CritRoll.plain(random));
+    }
+
+    /** A crit roll as {@link #crit(CritRule, double, double, RandomSource)}, rolled by {@code roll}. */
+    public static Crit crit(CritRule rule, double critChance, double critDamage, CritRoll roll) {
         double chance = rule.chance(critChance);
-        return rule.canCrit() && crits(chance, random)
+        return rule.canCrit() && roll.crits(chance)
                 ? new Crit(true, rule.multiplier(critDamage) + critOverflow(chance))
                 : Crit.NONE;
     }
@@ -127,7 +148,13 @@ public final class DamageCalculator {
      */
     public static SchoolHit schoolHit(double damage, Attacker attacker, double resistance, CritRule rule,
             RandomSource random) {
-        Crit crit = crit(rule, attacker.critChance(), attacker.critDamage(), random);
+        return schoolHit(damage, attacker, resistance, rule, CritRoll.plain(random));
+    }
+
+    /** A school hit as {@link #schoolHit(double, Attacker, double, CritRule, RandomSource)}, rolled by {@code roll}. */
+    public static SchoolHit schoolHit(double damage, Attacker attacker, double resistance, CritRule rule,
+            CritRoll roll) {
+        Crit crit = crit(rule, attacker.critChance(), attacker.critDamage(), roll);
         double dealt = damage * Math.max(0, 1 + attacker.damageBonus()) * crit.multiplier();
         return new SchoolHit(afterResistance(dealt, resistance), crit.crit());
     }

@@ -42,6 +42,14 @@ public final class CombatAttachments {
                     () -> AttachmentType.builder(() -> EnchantmentProtection.NONE)
                             .sync(Attachments::toOwner, EnchantmentProtection.STREAM_CODEC).build());
 
+    /**
+     * {@code realmforge:crit_counters}: a player's crit rolls without a crit since the last one, for weapon attacks
+     * and for spells ({@link CritCounters}, RLM-526). Transient: neither saved nor copied, so a login or a respawn
+     * starts both counts again. Not synced: only the server rolls.
+     */
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<CritCounters>> CRIT_COUNTERS =
+            ATTACHMENTS.register("crit_counters", () -> AttachmentType.builder(() -> CritCounters.NONE).build());
+
     private CombatAttachments() {
     }
 

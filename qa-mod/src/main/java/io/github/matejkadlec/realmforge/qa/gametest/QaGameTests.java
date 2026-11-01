@@ -71,6 +71,7 @@ public final class QaGameTests {
             ContentSpellGameTests.class,
             ContentSpellSchoolGameTests.class,
             ContentStatGameTests.class,
+            CritGameTests.class,
             CustomMobGameTests.class,
             DamageTypeResistanceGameTests.class,
             DungeonLevelGameTests.class,

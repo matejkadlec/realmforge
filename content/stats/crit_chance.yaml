@@ -1,5 +1,7 @@
 # yaml-language-server: $schema=../../tools/schemas/stats.schema.json
 # Chance that a hit or a spell is critical (F5 rolls it, spells included: D5). WotLK starts everyone near 5 %.
+# A player's is a pseudo-random chance (RLM-526, Dota 2's distribution): each roll without a crit raises the next
+# one's, so 30 % never misses 9 times in a row, and the long-run rate stays this stat.
 id: crit_chance
 name: {en_us: Crit Chance}
 kind: secondary
