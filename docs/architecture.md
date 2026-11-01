@@ -791,9 +791,23 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
    - **Dodge** (the defender's dodge chance) cancels a melee hit, a projectile or a physical school hit from an
      attacker; magic, explosions and damage from the world cannot be dodged. Cancelling stops a hit cleanly since
      NeoForge 26.1 (below), and `CombatEvent.Dodge` reports it.
-   - **A raised two-handed weapon** blocks a hit on a player after the dodge: in full in the first half second
-     after raising it (the event is cancelled), by half after that, before armor and resistances
-     ([9.3](#93-blocking-with-two-handed-weapons)), unless the hurt cooldown drops the hit anyway (step 4).
+   - **Damage type resistances** (RLM-233; Matěj, 2026-10-16: Apotheosis's reduction affixes must work against every
+     source, ours and other mods' too), right after the dodge, so a raised weapon and the hurt cooldown judge the same
+     amount: a stat with `resists` (`content/stats/`, `GeneratedStats.DAMAGE_RESISTANCES`,
+     `stats/DamageTypeResistance`) lowers every hit whose damage type is in its tag by its share, through
+     `setAmount`: Physical Resistance `#realmforge:is_physical` (vanilla's mob and player melee, a bee's sting, a spear
+     or mace hit, every projectile, and every physical school, which `rf gen` adds to the tag with the schools),
+     Projectile Resistance `#minecraft:is_projectile`, Explosion Resistance `#minecraft:is_explosion` and Fall
+     Resistance `#minecraft:is_fall`. NeoForge's `#neoforge:is_physical` is broader (falls, cactus, suffocation), so
+     it is not used. Each is at most 75 %; several on one hit multiply, and their whole stops at 75 % too
+     (`DamageCalculator#damageTypeResistance`: an arrow against 30 % physical and 50 % projectile keeps 35 %). On a
+     school hit they multiply with the school's resistance; a magic school is in none of the tags, so a player's magic
+     defense stays Magic Protection, the magic shield, dodge and health. Mobs have none of these stats. Apotheosis's
+     Blast-Forged, Blockading, Deflective and Feathery give them ([19.4](#194-optional-integrations)).
+   - **A raised two-handed weapon** blocks a hit on a player after the damage type resistances: in full in the first
+     half second after raising it (the event is cancelled), by half after that, before armor and the school
+     resistances ([9.3](#93-blocking-with-two-handed-weapons)), unless the hurt cooldown drops the hit anyway
+     (step 4).
    - **A ranged crit:** a projectile hit marked in step 2 crits on its shooter's crit chance and deals 1 + crit
      damage (150 % by default, as for melee and spells; Matěj, 2026-10-19), through `setAmount`, with the crit combat
      text.
@@ -809,18 +823,6 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
      (`/damage`, a trap) gets none. The hit's passives are the share its caster's passive spells add to it (RLM-541:
      Improved Frostbolt), carried on its `HitBonus` with the armor shred and penetration; a passive spell's crit chance
      against the target (Shatter on a Frozen one) is in the hit's crit rule already.
-   - **Damage type resistances** (RLM-233; Matěj, 2026-10-16: Apotheosis's reduction affixes must work against every
-     source, ours and other mods' too): a stat with `resists` (`content/stats/`, `GeneratedStats.DAMAGE_RESISTANCES`,
-     `stats/DamageTypeResistance`) lowers every hit whose damage type is in its tag by its share, through
-     `setAmount`: Physical Resistance `#realmforge:is_physical` (vanilla's mob and player melee, a bee's sting, a spear
-     or mace hit, every projectile, and every physical school, which `rf gen` adds to the tag with the schools),
-     Projectile Resistance `#minecraft:is_projectile`, Explosion Resistance `#minecraft:is_explosion` and Fall
-     Resistance `#minecraft:is_fall`. NeoForge's `#neoforge:is_physical` is broader (falls, cactus, suffocation), so
-     it is not used. Each is at most 75 %; several on one hit multiply, and their whole stops at 75 % too
-     (`DamageCalculator#damageTypeResistance`: an arrow against 30 % physical and 50 % projectile keeps 35 %). On a
-     school hit they multiply with the school's resistance; a magic school is in none of the tags, so a player's magic
-     defense stays Magic Protection, the magic shield, dodge and health. Mobs have none of these stats. Apotheosis's
-     Blast-Forged, Blockading, Deflective and Feathery give them ([19.4](#194-optional-integrations)).
    - **Crit overflow** (C4, RLM-392): a crit chance above 100 % (Reckless Strike's bonus can take it there) turns
      into crit damage 1:1, every 1 % above 100 % adding 1 % crit damage (`DamageCalculator#critMultiplier`), for
      melee, ranged and school hits alike. Talents act through those attributes or are already part of
@@ -996,11 +998,11 @@ own parry and damage reduction off (pack README, "Configuration"), and **`combat
 does**, in step 3 of the pipeline ([9.1](#91-damage-pipeline)), after the dodge:
 
 - a hit from the arc in front of the player within the first `fullBlockTicks` after raising the weapon is blocked in
-  full (the event is cancelled); a later one loses `blockedShare` of its damage through `setAmount`, before armor and
-  resistances take their share of the rest, and still reports `CombatEvent.Hit` and its combat text with what it
-  dealt. The time since raising comes from the use duration Sword Blocking Mechanics gives the raise
-  (`LivingEntityUseItemEvent.Start`, read last) less the ticks remaining: `LivingEntity#getTicksUsingItem` reads the
-  item's own duration, 0;
+  full (the event is cancelled); a later one loses `blockedShare` of what the damage type resistances left of it
+  through `setAmount`, before armor and the school resistances take their share of the rest, and still reports
+  `CombatEvent.Hit` and its combat text with what it dealt. The time since raising comes from the use duration Sword
+  Blocking Mechanics gives the raise (`LivingEntityUseItemEvent.Start`, read last) less the ticks remaining:
+  `LivingEntity#getTicksUsingItem` reads the item's own duration, 0;
 - after any blocked hit the weapon goes on its cooldown at once and goes down at the end of the server tick;
 - the weapon goes on its cooldown whenever it goes down, by hand (`LivingEntityUseItemEvent.Stop`, at once) or by
   switching items (the player's tick), so a new block always starts after it and spamming right click never chains
@@ -1013,7 +1015,8 @@ does**, in step 3 of the pipeline ([9.1](#91-damage-pipeline)), after the dodge:
   bypasses nor lands through the window ([9.1](#91-damage-pipeline), step 4: `DamagePipeline#droppedByCooldown`),
   is left to the window: no block sound, no cooldown, the weapon stays raised for the next real hit. Without this, a
   second zombie's equal hit right after a first one lowered the weapon and the first zombie's next swing landed in
-  full.
+  full. The hit it judges is the one after the damage type resistances, as the `lastHurt` the window keeps is: a
+  player with Physical Resistance would otherwise spend the weapon on a hit the window then drops.
 
 The numbers are in the common config (`combat/CombatConfig`, [19.2](#192-configuration)) for Matěj to tune in
 playtests: the full block 0.5 s, the share 50 %, the cooldown 1 s, the arc 180° (the front half). A player's passive
