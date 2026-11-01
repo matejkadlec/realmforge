@@ -75,9 +75,12 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   (a boulder, then a quake and a rockfall, then cracked stone), and the Stone Heart and the twins' shards on every
   kill; `/summon realmforge:astone` until W6's altar. A new player
   creates a character (C1): the Human race and the Warrior and Mage classes, with their stats and starting kits,
-  and their class kits (C4, RLM-27): four spells each, taught by level to 8 (Slam, Reckless Strike, Shield Bash,
-  Battle Shout; Frostbolt, Fireball, Arcane Missiles, Ice Barrier), the first spells of rank 5, and the Human's
-  Will To Survive in the racial slot and Sword Specialization; melee spells need a melee weapon in the main hand and
+  and their class kits (C4, RLM-27): the Warrior's four spells, taught by level to 8 (Slam, Reckless Strike, Shield
+  Bash, Battle Shout), and the Mage's kit, the Frost Mage's "Shatter" tree (RLM-542): nine spells at rank 1 by its rows
+  to level 18 until C5 spends points (Improved Frostbolt, Frostbolt, Cone of Cold; Ice Lance, Frost Nova, Frostbite;
+  Shatter, Ice Barrier; Blizzard), with a cone along the look, Ice Lance's × 2 to × 3 against Frozen and Frostbite's
+  freeze on a Slowness; the first spells of rank 5, and the Human's Will To Survive in the racial slot and Sword
+  Specialization; melee spells need a melee weapon in the main hand and
   Shield Bash a shield (RLM-499), stuns stop mobs and casts, crit chance above 100 % turns into crit damage, and a
   player's channel ticks every 0.5 s (RLM-518). Slam, Reckless Strike and Shield Bash are swings with hit shapes in
   front of the player (Better Combat's sword swing, the default, and its stab, at the player's melee reach, so they grow

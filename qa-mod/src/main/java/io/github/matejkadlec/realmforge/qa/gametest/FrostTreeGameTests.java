@@ -3,6 +3,7 @@ package io.github.matejkadlec.realmforge.qa.gametest;
 import io.github.matejkadlec.realmforge.character.Characters;
 import io.github.matejkadlec.realmforge.combat.DamagePipeline;
 import io.github.matejkadlec.realmforge.generated.GeneratedEffects;
+import io.github.matejkadlec.realmforge.generated.GeneratedItems;
 import io.github.matejkadlec.realmforge.generated.GeneratedSpells;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.mob.MobLevels;
@@ -33,19 +34,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import net.minecraft.advancements.AdvancementHolder;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.PermissionSet;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.zombie.Husk;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
 
@@ -64,6 +72,24 @@ public final class FrostTreeGameTests {
     private static final Vec3 NORTH_EDGE = new Vec3(8.5, 1, 1.5);
     /** Enough tries that a 15 % proc that has not fired is a broken proc: 0.85^300 is about 10^-21. */
     private static final int PROC_TRIES = 300;
+    /** The protection and durability every Netherite caster piece gets for the Astone check: level V (gear.md). */
+    private static final String LEVEL_V = "[enchantments={\"minecraft:protection\":5,\"minecraft:unbreaking\":5}]";
+    /**
+     * The playtest's setup line against Astone (RLM-542, RLM-503; gear.md's expected gear for Astone, RLM-551): a new
+     * Human Mage, chapter 1's raised cap, level 18, the tree at a 17-point build on top of the kit's rank 1 (Frostbolt 5,
+     * Ice Lance 5, Improved Frostbolt, Frostbite, Shatter and Frost Nova 3, Cone of Cold 2, Ice Barrier and Blizzard 1),
+     * and the Netherite caster set and wand at level V. The handoff gives it to Matěj as
+     * {@code execute as @p at @p run} and this line.
+     */
+    static final String ASTONE_SETUP = "qa run qa character reset; qa character create realmforge:human realmforge:mage; "
+            + "advancement grant @s only realmforge:chapter/chapter_1; qa level 18; "
+            + "qa spell learn realmforge:frostbolt 5; qa spell learn realmforge:ice_lance 5; "
+            + "qa spell learn realmforge:improved_frostbolt 3; qa spell learn realmforge:frostbite 3; "
+            + "qa spell learn realmforge:shatter 3; qa spell learn realmforge:frost_nova 3; "
+            + "qa spell learn realmforge:cone_of_cold 2; "
+            + "give @s realmforge:netherite_cap" + LEVEL_V + "; give @s realmforge:netherite_robes" + LEVEL_V + "; "
+            + "give @s realmforge:netherite_pants" + LEVEL_V + "; give @s realmforge:netherite_sandals" + LEVEL_V + "; "
+            + "give @s realmforge:netherite_wand[enchantments={\"minecraft:unbreaking\":5}]";
 
     private FrostTreeGameTests() {
     }
@@ -319,6 +345,50 @@ public final class FrostTreeGameTests {
                 GeneratedSpells.BLIZZARD), "the bar holds the six actives in the tree's order");
         logout(player);
         helper.succeed();
+    }
+
+    /**
+     * The handoff's setup line ({@link #ASTONE_SETUP}) reaches its state: a Human Mage at level 18 knowing the tree at
+     * the build's ranks, holding the Netherite caster set with Protection V and Unbreaking V and the wand.
+     */
+    @QaGameTest
+    public static void theAstoneSetupLineReachesItsState(GameTestHelper helper) {
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-frost-astone");
+        player.connection.markClientLoaded();
+        CommandSourceStack source = player.createCommandSourceStack().withPermission(PermissionSet.ALL_PERMISSIONS);
+        helper.getLevel().getServer().getCommands().performPrefixedCommand(source, ASTONE_SETUP);
+        helper.assertValueEqual(Characters.mainClass(player).map(entry -> entry.key().identifier().getPath()),
+                Optional.of("mage"), "a Mage");
+        helper.assertValueEqual(Characters.level(player), 18, "at level 18");
+        Spellbook book = player.getData(SpellAttachments.SPELLBOOK);
+        Map<ResourceKey<Spell>, Integer> build = Map.of(GeneratedSpells.FROSTBOLT, 5, GeneratedSpells.ICE_LANCE, 5,
+                GeneratedSpells.IMPROVED_FROSTBOLT, 3, GeneratedSpells.FROSTBITE, 3, GeneratedSpells.SHATTER, 3,
+                GeneratedSpells.FROST_NOVA, 3, GeneratedSpells.CONE_OF_COLD, 2, GeneratedSpells.ICE_BARRIER, 1,
+                GeneratedSpells.BLIZZARD, 1);
+        build.forEach((spell, rank) -> helper.assertValueEqual(book.level(spell), Optional.of(rank),
+                spell.identifier() + "'s rank"));
+        helper.assertValueEqual(build.values().stream().mapToInt(Integer::intValue).sum(), 9 + 17,
+                "the kit's 9 ranks and 17 points");
+        Holder<Enchantment> protection = helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT)
+                .getOrThrow(Enchantments.PROTECTION);
+        for (Item piece : List.of(GeneratedItems.NETHERITE_CAP.get(), GeneratedItems.NETHERITE_ROBES.get(),
+                GeneratedItems.NETHERITE_PANTS.get(), GeneratedItems.NETHERITE_SANDALS.get())) {
+            ItemStack stack = held(player, piece);
+            helper.assertTrue(!stack.isEmpty(), "holds " + piece);
+            helper.assertValueEqual(stack.getEnchantments().getLevel(protection), 5, piece + "'s Protection");
+        }
+        helper.assertTrue(!held(player, GeneratedItems.NETHERITE_WAND.get()).isEmpty(), "holds the Netherite Wand");
+        logout(player);
+        helper.succeed();
+    }
+
+    private static ItemStack held(ServerPlayer player, Item item) {
+        for (ItemStack stack : player.getInventory()) {
+            if (stack.is(item)) {
+                return stack;
+            }
+        }
+        return ItemStack.EMPTY;
     }
 
     /**

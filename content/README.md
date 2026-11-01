@@ -374,10 +374,11 @@ Rules:
   a `name` and a `description` (what it does in a sentence or two, shown in its tooltip; numbers come from data
   through placeholders, never prose: `{damage}` and `{heal}` read the first damage or heal effect, a projectile's or
   an area's included, `{duration}` the first `apply_effect`'s seconds, `{periodic}`, `{periodic_total}` and
-  `{interval}` that effect's ticks when it is one of ours with `periodic`, `{radius}` the first area's radius,
-  `{armor_shred}` and `{penetration}` the first damage effect's, `{crit_chance}` the crit block's bonus chance and
-  `{bonus}` the one modifier of the first applied effect (in percent for a multiplied operation); each at the
-  player's rank;
+  `{interval}` that effect's ticks when it is one of ours with `periodic`, `{radius}` the first area's radius (or with
+  no area the first cone's range), `{against_damage}` the first damage effect's damage against a target with its
+  `against_effect`'s status effect, `{armor_shred}` and `{penetration}` the first damage effect's, `{crit_chance}` the
+  crit block's bonus chance and `{bonus}` the one modifier of the first applied effect (in percent for a multiplied
+  operation); each at the player's rank, and in the tooltip at the next rank too, below the player's (RLM-542);
   validation checks that each has its effect, [architecture 11.6](../docs/architecture.md#116-client-side); a damage
   number shows its school's icon and colour, so write "for {damage} damage", never the school's name); the
   `school` whose damage they deal (a spell that neither deals damage nor heals may leave it out and belongs to no
@@ -435,8 +436,9 @@ Rules:
   25 % a rank, 200 % at rank 5); a spell names only its own power's; a damage
   effect may add `armor_shred_percent` (that share of the target's armor ignored by this hit) and
   `penetration_percent` (that share of its resistance to the school ignored), each with a `_per_level_percent` for
-  every rank above 1, at most 100 % at `max_level`, and `against_effect` (`effect`, `damage_percent`: more damage against
-  a target with that status effect, Ice Lance's 200 against Frozen, RLM-540); `realmforge:damage_over_time` (RLM-539:
+  every rank above 1, at most 100 % at `max_level`, and `against_effect` (`effect`, `damage_percent` with
+  `damage_per_level_percent`: more damage against a target with that status effect, Ice Lance's 100 to 200 against
+  Frozen, RLM-540, RLM-542); `realmforge:damage_over_time` (RLM-539:
   `effect`, one of ours with `stacks`, `amount` the damage over the whole `duration_seconds`, a whole number of the
   effect's intervals, with `per_level`, its coefficient as for damage and `duration_per_level_seconds`);
   `realmforge:apply_effect` (`effect`, a status effect id: one of ours from `effects/`, or a vanilla one such as
@@ -462,7 +464,10 @@ Rules:
   front of the player, one of Better Combat's sword hitboxes at the caster's melee reach, its entity interaction range,
   so it grows with the reach: `shape: swing`, the default melee hit shape, 2 × reach wide, reach / 3 tall, reach deep
   and 120°, or `shape: stab`, reach / 2 wide and tall and as deep; its own `effects` on every enemy whose hitbox it
-  strikes, none behind a wall or more than half hidden by a corner); `realmforge:area` (`radius`, `duration_seconds`, `interval_seconds`, `affects: enemies` or
+  strikes, none behind a wall or more than half hidden by a corner); `realmforge:cone` (RLM-542, on a `realmforge:self`
+  spell: a cone along the caster's look, `range` blocks long, at most 16, and `angle_degrees` wide, from a melee shape's
+  origin; its own `effects` on every enemy whose hitbox it holds, none behind a wall; an optional `sound` and a block's
+  break `particles` through it: Cone of Cold); `realmforge:area` (`radius`, `duration_seconds`, `interval_seconds`, `affects: enemies` or
   `allies`, its own `effects` on each of them inside as it appears and then at every interval, once per interval
   of its duration, and an optional `ring_color`, the dust ring that shows its edge instead of purple sparks) at the
   caster's feet, an enemy's or a ground point; `realmforge:teleport` (the caster to a ground
@@ -484,14 +489,19 @@ Rules:
   hits deal `damage_percent` more, `damage_per_level_percent` more a rank: the passives of the damage formula);
   `crit_chance` (`chance_percent`, `chance_per_level_percent`, at most 100 % at `max_level`, for the player's spell hits
   on a target with the status effect `against`); `block_cooldown` (`reduction_seconds` off a two-handed block's
-  cooldown from rank `from_level`); and `procs` (RLM-540: each a `trigger`, `hit`, `crit`, `kill`, `hit_taken`,
+  cooldown from rank `from_level`); `splash_radius` (RLM-542: a list of `spells`, each launching a projectile with a
+  `splash`, whose splash reaches `radius` blocks farther from rank `from_level`: Improved Frostbolt's rank 3); and
+  `procs` (RLM-540: each a `trigger`, `hit`, `crit`, `kill`, `hit_taken`,
   `applies_effect` (the player gives an enemy the status effect `effect`) or `tick` (a tick of the player's damage over
   time of `effect`, of `spell` when named), a `chance_percent` with `chance_per_level_percent`, an internal
-  `cooldown_seconds` on each target, and one action: `apply_effect` (`effect`, `duration_seconds`), `cast` (a spell cast
+  `cooldown_seconds` on each target, and one action: `apply_effect` (`effect`, `duration_seconds`, and `from_level`,
+  `{level, duration_seconds}`, a longer duration from a rank on: Frostbite's 3 s at rank 3), `cast` (a spell cast
   at the other entity at the passive's rank) or `open_window` (a spell with a `window`)). Its description's placeholders are its own, at the player's rank and, in the
   tooltip, at the next: `{bonus}` (the first modifier), `{spell_damage}`, `{crit_chance}`, `{block_cooldown}` and
-  `{block_cooldown_rank}`. It never goes onto the spell bar and is never cast. Improved Frostbolt, Shatter and
-  Two-Handed Weapon Specialization are the first, of the M1 trees that RLM-542 and RLM-543 teach.
+  `{block_cooldown_rank}`, `{splash_radius}` and `{splash_radius_rank}`, and the first proc's `{proc_chance}`,
+  `{proc_duration}` and `{proc_cooldown}`. It never goes onto the spell bar and is never cast. Improved Frostbolt,
+  Frostbite, Shatter and Two-Handed Weapon Specialization are the first, of the M1 trees: the Frost Mage's "Shatter"
+  (RLM-542) and the Arms Warrior's (RLM-543).
 - `worldgen/` is the one exception to YAML: Minecraft's own worldgen JSON (`dimension/`, `dimension_type/`,
   `biome/`, `noise_settings/`, ...), validated (location, id, JSON, dimension types, no clash with the core mod's
   own `realmforge:instances`) and copied byte for byte; the game decodes it when a world loads.
