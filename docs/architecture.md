@@ -3662,8 +3662,14 @@ names under `[[mixins]]`. The core mod has four: `RangedAttributeAccessor`, whic
 `StaminaGameTests`), and `InventorySortingStacksMixin`, which keeps a stack that Inventory Sorting's sort would only
 replace with an identical copy, so an open backpack stays open ([19.4](#194-optional-integrations), RLM-519;
 `InventorySortingGameTests`). It targets another mod's class by name and is `@Pseudo`, so the core mod loads without
-Inventory Sorting; with it, its injector is required, so a changed target fails at load. The QA mod has one too, for tests only: `GameTestServerMixin` gives the GameTest world the data
-pack dimensions, which vanilla leaves out ([20](#20-tests-per-layer)).
+Inventory Sorting; with it, its injector is required, so a changed target fails at load. The QA mod has two, for
+dev runs only: `GameTestServerMixin` gives the GameTest world the data pack dimensions, which vanilla leaves out
+([20](#20-tests-per-layer)), and `MinecraftProfileLookupMixin`, a client mixin (the config's `client` list), retries
+the dev client's one profile lookup at startup up to three times, 1 s and then 2 s apart (`ProfileLookupRetry`,
+RLM-570; `ProfileLookupRetryGameTests`). Mojang's session server sometimes times out there, and vanilla then plays
+the whole session with the account's default skin. It names `net.minecraft.client.Minecraft` by string and wraps an
+authlib call, so it imports no client code; its target is the constructor's lambda `lambda$new$0`, and a Minecraft
+update that renames it fails the dev client at load.
 
 Access transformers live in `src/main/resources/META-INF/accesstransformer.cfg`, which ModDevGradle applies to the
 Minecraft jar a project compiles against (its default location), and which `neoforge.mods.toml` lists under

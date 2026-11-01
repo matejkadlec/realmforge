@@ -6,6 +6,9 @@
   "mixins": [
     "GameTestServerMixin"
   ],
+  "client": [
+    "MinecraftProfileLookupMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   }

@@ -92,6 +92,7 @@ public final class QaGameTests {
             NpcCastGameTests.class,
             PassiveSpellGameTests.class,
             PlayerStateGameTests.class,
+            ProfileLookupRetryGameTests.class,
             ProcGameTests.class,
             QaCastGameTests.class,
             QaCommandGameTests.class,
