@@ -24,6 +24,7 @@ from realmforge_tools.generate.javagen import constant_name, header, java_file_p
 from realmforge_tools.generate.mobs import drop_expectation, drop_pool
 from realmforge_tools.generate.textures import placeholder_equipment_texture, placeholder_texture
 from realmforge_tools.project import JAVA_PACKAGE, MOD_ID, QA_JAVA_PACKAGE, RepoPaths
+from realmforge_tools.schema.apotheosis import ROBE_LOOT_CATEGORIES
 from realmforge_tools.schema.item import (
     ARMOR_KINDS,
     FIXED_ITEM_TAGS,
@@ -144,6 +145,7 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
         files[tag_file] = dump_json({"values": sorted(items)})
 
     files.update(_drops(content, paths))
+    files.update(_loot_categories(content, paths))
 
     qa_java_root = paths.qa_generated / "java"
     files[java_file_path(qa_java_root, QA_GENERATED_PACKAGE, "GeneratedItemExpectations")] = _expectations(
@@ -180,6 +182,23 @@ def _looks(content: Content, assets: Path) -> dict[Path, bytes]:
         for name in EQUIPMENT_LAYERS:
             files[assets / "textures" / "entity" / "equipment" / name / f"{look}.png"] = texture
     return files
+
+
+def _loot_categories(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
+    """Apotheosis's loot category of every armor piece of ours (RLM-546): our armor is the caster's (architecture 13),
+    so each piece is a robe of its slot's category, never Apotheosis's armor. Its data map
+    ``apotheosis:loot_category_overrides`` comes before any category's test (``LootCategory#forItem``), so the order of
+    the tests never matters; NeoForge merges it with Apotheosis's own file. Wands find theirs by ``#realmforge:wands``
+    (RLM-273)."""
+    values = {
+        f"{MOD_ID}:{entry.model.id}": ROBE_LOOT_CATEGORIES[entry.model.gear.kind]
+        for entry in content.items
+        if entry.model.gear is not None and entry.model.gear.kind in ARMOR_KINDS
+    }
+    if not values:
+        return {}
+    path = paths.mod_generated / "resources" / "data" / "apotheosis" / "data_maps" / "item"
+    return {path / "loot_category_overrides.json": dump_json({"values": dict(sorted(values.items()))})}
 
 
 def _drops(content: Content, paths: RepoPaths) -> dict[Path, bytes]:

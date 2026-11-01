@@ -8,8 +8,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 /**
- * RLM-232 and RLM-273: the affix set of Matěj's review and our wands' loot category, as Apotheosis loads them with
- * the pack (ADR 0042). The tests that read Apotheosis's registries and loot code delegate to {@link ApotheosisLoot},
+ * RLM-232, RLM-273 and RLM-546: the affix set of Matěj's review and our wands' and robes' loot categories, as
+ * Apotheosis loads them with the pack (ADR 0042). The tests that read Apotheosis's registries and loot code delegate to {@link ApotheosisLoot},
  * so this class names no Apotheosis type (the lean dev client runs without it). Rolling items there also checks that
  * no category meets a slot it has nothing left for: Apotheosis logs "Failed to execute AffixLootRule (no affixes
  * available)" at ERROR then, which {@code rf gametest-log} refuses.
@@ -90,5 +90,23 @@ public final class ApotheosisLootGameTests {
     @QaGameTest
     public static void aWandNeverRollsAMeleeAffix(GameTestHelper helper) {
         ApotheosisLoot.aWandNeverRollsAMeleeAffix(helper);
+    }
+
+    /** Done when of RLM-546: every robe piece is the robe category of its slot, never Apotheosis's armor. */
+    @QaGameTest
+    public static void aRobeIsARobeNotArmor(GameTestHelper helper) {
+        ApotheosisLoot.aRobeIsARobeNotArmor(helper);
+    }
+
+    /** Done when of RLM-546: a Guardian gem, armor bonuses only, cannot be socketed into a robe. */
+    @QaGameTest
+    public static void aGuardianGemFitsNoRobe(GameTestHelper helper) {
+        ApotheosisLoot.aGuardianGemFitsNoRobe(helper);
+    }
+
+    /** RLM-546: a robe or a wand rolled at every rarity gets the rarity and no affix, without an empty slot's error. */
+    @QaGameTest(timeoutTicks = 200)
+    public static void aRobeOrAWandRollsARarityWithoutAffixes(GameTestHelper helper) {
+        ApotheosisLoot.aRobeOrAWandRollsARarityWithoutAffixes(helper);
     }
 }

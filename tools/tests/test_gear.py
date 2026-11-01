@@ -155,6 +155,21 @@ def test_armor_gets_its_slot_look_and_placeholder_textures(repo: RepoPaths) -> N
     )
 
 
+def test_every_armor_piece_is_the_robe_category_of_its_slot_to_apotheosis(repo: RepoPaths) -> None:
+    """RLM-546: our armor is the caster's, so Apotheosis's data map files each piece under its slot's robe category,
+    never its armor; a wand keeps its tag-based category (RLM-273)."""
+    write(repo.content / "items" / "test_cap.yaml", CAP)
+    write(repo.content / "items" / "test_wand.yaml", WAND)
+    files = generate(repo)
+    overrides = json.loads(files[f"{DATA}/apotheosis/data_maps/item/loot_category_overrides.json"])["values"]
+    assert overrides["realmforge:test_cap"] == "realmforge:robe_head"
+    assert overrides["realmforge:netherite_robes"] == "realmforge:robe_chest"
+    assert overrides["realmforge:netherite_pants"] == "realmforge:robe_legs"
+    assert overrides["realmforge:netherite_sandals"] == "realmforge:robe_feet"
+    assert "realmforge:test_wand" not in overrides
+    assert list(overrides) == sorted(overrides)
+
+
 @pytest.mark.parametrize(
     ("gear", "message"),
     [

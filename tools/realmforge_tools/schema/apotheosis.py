@@ -19,7 +19,7 @@ Apotheosis 9.1.0 registers in Java; update them with an Apotheosis update.
 
 from __future__ import annotations
 
-from typing import Annotated, ClassVar, Literal
+from typing import Annotated, ClassVar, Literal, get_args
 
 from pydantic import Field, JsonValue, StringConstraints, model_validator
 
@@ -41,6 +41,16 @@ LOOT_CATEGORIES = (
 # Registered only when Curios is installed (compat/curios/CuriosCompat), which the pack is not yet: Apotheosis skips
 # a whole affix that lists one, with an error (RLM-271, RLM-273).
 CURIOS_LOOT_CATEGORIES = ("apotheosis:charm",)
+# Our own loot categories (compat/apotheosis/ApotheosisCompat): the wand (RLM-273), and a robe category per armor slot
+# (RLM-546), which generate/items.py files every armor piece of ours under by its gear kind, since our armor is the
+# caster's (architecture 13).
+ROBE_LOOT_CATEGORIES: dict[str, str] = {
+    "head": "realmforge:robe_head",
+    "chest": "realmforge:robe_chest",
+    "legs": "realmforge:robe_legs",
+    "feet": "realmforge:robe_feet",
+}
+OUR_LOOT_CATEGORIES: tuple[str, ...] = ("realmforge:wand", *ROBE_LOOT_CATEGORIES.values())
 
 # Apotheosis 9.1.0's rarities (data/apotheosis/apotheosis/rarities/), lowest first; mythic shows as Legendary
 # (RLM-272, the core mod's assets/apotheosis/lang/en_us.json).
@@ -177,6 +187,7 @@ ENTRY_MODELS: tuple[type[ApotheosisEntryDef], ...] = (
 
 # The kinds of affix slot a rarity's rules hold (Apotheosis's AffixType).
 AffixKind = Literal["stat", "basic_effect", "ability"]
+AFFIX_KINDS: tuple[str, ...] = get_args(AffixKind)
 
 
 class ApotheosisRarityOverrideDef(StrictModel):
@@ -187,19 +198,40 @@ class ApotheosisRarityOverrideDef(StrictModel):
     The category's rules at each rarity listed are the rarity's own (as ``content/apotheosis_rarities/`` fits them),
     or those of Apotheosis's override for the category where it has one, keeping at most the number of slots given
     for each kind: chanced slots go first, the last first, then plain ones from the end. The other rarities keep what
-    they had."""
+    they had.
+
+    A category of ours with no affix of its own yet (the wand and the robes until the caster affixes, RLM-557) takes
+    ``no_affixes`` instead: every rarity keeps its other rules (sockets, durability) and drops every affix slot, so
+    reforging rolls a rarity without an error for each empty slot (RLM-546)."""
 
     id: ContentId
-    category: ResourceId = Field(description="The loot category, e.g. apotheosis:helmet.")
-    max_slots: Annotated[
-        dict[ResourceId, Annotated[dict[AffixKind, Annotated[int, Field(ge=0)]], Field(min_length=1)]],
-        Field(min_length=1),
+    category: ResourceId = Field(
+        description="The loot category, e.g. apotheosis:helmet, or one of ours, e.g. realmforge:robe_chest."
+    )
+    max_slots: dict[
+        ResourceId, Annotated[dict[AffixKind, Annotated[int, Field(ge=0)]], Field(min_length=1)]
     ] = Field(
+        default_factory=dict,
         description=(
             "Rarity -> affix kind -> the most slots of that kind the category keeps there, e.g. "
             "apotheosis:rare: {ability: 0, basic_effect: 1}."
-        )
+        ),
     )
+    no_affixes: bool = Field(
+        default=False,
+        description=(
+            "Every affix slot dropped at every rarity: a category of ours with no affix to roll yet. Instead of "
+            "max_slots."
+        ),
+    )
+
+    @model_validator(mode="after")
+    def _one_way(self) -> ApotheosisRarityOverrideDef:
+        if self.no_affixes == bool(self.max_slots):
+            raise ValueError(
+                "say how the slots change: max_slots, or no_affixes: true for a category with no affix"
+            )
+        return self
 
 
 class ApotheosisStatRemapDef(StrictModel):

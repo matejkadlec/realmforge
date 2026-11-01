@@ -356,6 +356,30 @@ public final class GeneratedTexts {
     /** {@code key.category.realmforge.spell_bar} from {@code content/texts/key.category.yaml}: "Realmforge Spell Bar" */
     public static final String KEY_CATEGORY_SPELL_BAR = "key.category.realmforge.spell_bar";
 
+    /** {@code loot_category.realmforge.robe_chest} from {@code content/texts/loot_category.yaml}: "Caster Robes" */
+    public static final String LOOT_CATEGORY_ROBE_CHEST = "loot_category.realmforge.robe_chest";
+
+    /** {@code loot_category.realmforge.robe_chest.plural} from {@code content/texts/loot_category.yaml}: "Caster Robes" */
+    public static final String LOOT_CATEGORY_ROBE_CHEST_PLURAL = "loot_category.realmforge.robe_chest.plural";
+
+    /** {@code loot_category.realmforge.robe_feet} from {@code content/texts/loot_category.yaml}: "Caster Sandals" */
+    public static final String LOOT_CATEGORY_ROBE_FEET = "loot_category.realmforge.robe_feet";
+
+    /** {@code loot_category.realmforge.robe_feet.plural} from {@code content/texts/loot_category.yaml}: "Caster Sandals" */
+    public static final String LOOT_CATEGORY_ROBE_FEET_PLURAL = "loot_category.realmforge.robe_feet.plural";
+
+    /** {@code loot_category.realmforge.robe_head} from {@code content/texts/loot_category.yaml}: "Caster Cap" */
+    public static final String LOOT_CATEGORY_ROBE_HEAD = "loot_category.realmforge.robe_head";
+
+    /** {@code loot_category.realmforge.robe_head.plural} from {@code content/texts/loot_category.yaml}: "Caster Caps" */
+    public static final String LOOT_CATEGORY_ROBE_HEAD_PLURAL = "loot_category.realmforge.robe_head.plural";
+
+    /** {@code loot_category.realmforge.robe_legs} from {@code content/texts/loot_category.yaml}: "Caster Pants" */
+    public static final String LOOT_CATEGORY_ROBE_LEGS = "loot_category.realmforge.robe_legs";
+
+    /** {@code loot_category.realmforge.robe_legs.plural} from {@code content/texts/loot_category.yaml}: "Caster Pants" */
+    public static final String LOOT_CATEGORY_ROBE_LEGS_PLURAL = "loot_category.realmforge.robe_legs.plural";
+
     /** {@code loot_category.realmforge.wand} from {@code content/texts/loot_category.yaml}: "Wand" */
     public static final String LOOT_CATEGORY_WAND = "loot_category.realmforge.wand";
 
