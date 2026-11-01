@@ -376,7 +376,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | --- | --- | --- |
 | `items/` (exists), `stats/` (exists: attributes, [8.1](#81-the-attribute-set)), `blocks/` (exists: blocks with their items, loot tables, mining tags and recipes; a block's kind picks its class, below), `effects/` (exists: status effects, [11.4](#114-status-effects)), `mobs/` (exists: entity types of an archetype with their attributes, loot tables, tags and placeholder GeckoLib models, [14.2](#142-custom-mobs)), `sounds/` (exists: our sound events `realmforge:<category>.<subject>.<name>` playing vanilla sounds by reference with their own pitch and volume, [ADR 0007](decisions/0007-asset-pipeline.md); `GeneratedSounds` belongs to `core`) | `Generated*.java` registrations; models, blockstates, textures (placeholders until art exists), lang, `sounds.json`; QA expectations | static registries |
 | `races/`, `classes/`, `spells/`, `spell_schools/`, `talents/`, `stat_rules/`, `curves/`, `chapters/`, `dimensions/`, `realms/`, `bosses/`, `dungeons/` | `data/realmforge/realmforge/<registry>/<id>.json`, lang, `ResourceKey` constants where needed, QA expectations | datapack registries |
-| `spell_schools/` (also) | `data/realmforge/damage_type/<school>.json` (death messages `death.attack.realmforge.<school>`), the tag entries in `#minecraft:bypasses_cooldown` and, for magic schools, `#minecraft:bypasses_armor` ([9.1](#91-damage-pipeline)); the school's power and resistance are stats in `content/stats/` that it names | vanilla damage types, tags |
+| `spell_schools/` (also) | `data/realmforge/damage_type/<school>.json` (death messages `death.attack.realmforge.<school>`), the tag entries in `#minecraft:bypasses_cooldown` and, for magic schools, `#minecraft:bypasses_armor` and `#realmforge:is_magic`, for physical ones `#neoforge:is_physical` ([9.1](#91-damage-pipeline)); the school's power and resistance are stats in `content/stats/` that it names | vanilla damage types, tags |
 | `dungeons/` (also) | the entry carries its pool's rooms resolved (template, size, role, weight, and the connectors read from the templates' jigsaw blocks; `generate/dungeons.py`), so the planner needs no template, and each room's set-piece spots with the pieces that may fill them ([15.4](#154-rooms)); a biome per type, `worldgen/biome/dungeon_<id>.json`, named like it (`generate/instance_biomes.py`, [15.5](#155-instances)) | the planner ([15.3](#153-generation-pure-first-then-minecraft)); the builder's set pieces (RLM-282) |
 | `loot/`, tags; the `recipe` of an item or block (exists, W4d); an item's `dropped_by` (RLM-172) | `data/realmforge/loot_table/`, `recipe/<id>.json` (vanilla's `crafting_shaped`, `crafting_shapeless` or `smithing_transform`, with item or tag ingredients, the result the entry itself), `tags/`; per `dropped_by` mob a loot table `loot_table/item_drops/<item>/<ns>/<entity>.json` and a NeoForge `neoforge:add_table` loot modifier `loot_modifiers/item_drops/<item>/<ns>/<entity>.json` that adds it to the mob's own table ([13](#13-items-gear-and-loot)) | reloadable vanilla data; global loot modifiers |
 | `chapters/`, `realms/`, `quests/` | `data/realmforge/advancement/` (a chapter's `chapter/<id>`, a realm's unlock `realm/<id>`, a quest task of ours `quest/<quest>/<key>`); `pack/config/ftbquests/quests/` (FTB Quests' JSON5, stable ids per ADR 0006; exists, Q1-1, [16](#16-progression-and-quests)) | advancements; the FTB Quests book |
@@ -388,6 +388,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | mob YAML | Xaero's Minimap icon files (*verify* format) | read by Xaero's Minimap |
 | `texts/` (exists) | lang keys `<group>.realmforge.<name>`, `GeneratedTexts` constants | translations |
 | `apotheosis_affixes/` (exists, RLM-271), `apotheosis_gems/`, `apotheosis_tier_augments/`, `apotheosis_rarities/`, `apotheosis_stat_remaps/` (exist, RLM-272), `apotheosis_rarity_overrides/` (exists, RLM-232) | each Apotheosis entry they change, from its snapshot, at Apotheosis's own path `data/apotheosis/apotheosis/<kind>/<path>.json`, and Apotheosis's MIT `LICENSE` with our `NOTICE` in `META-INF/third_party/apotheosis/` ([19.4](#194-optional-integrations)) | Apotheosis's affix, gem, tier augment, rarity and rarity override registries |
+| `enchantments/` (exists, RLM-537) | `data/realmforge/enchantment/<id>.json`, the vanilla enchantment tags it joins, its highest level with Apothic Enchanting (`data/apothic_enchanting/data_maps/enchantment/enchantment_info.json`), `#realmforge:protections` and `#minecraft:exclusive_set/armor` without Fire, Blast and Projectile Protection, `GeneratedEnchantments` keys, lang ([13](#13-items-gear-and-loot)) | vanilla's enchantment registry (datapack) |
 | `recipe_removals/` (exists, RLM-272) | `data/<namespace>/recipe/<path>.json` per recipe, a file NeoForge skips (`neoforge:never`) | reloadable vanilla data |
 | `recipes/` (exists, RLM-447) | `data/minecraft/recipe/<path>.json`, replacing the vanilla recipe at that path, since the core mod's data pack sits above vanilla's (`generate/recipes.py`) | reloadable vanilla data |
 | every type | `tools/schemas/<type>.schema.json` | editor completion |
@@ -776,6 +777,21 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
    spell's crit rules reach the pipeline in `combat/SchoolDamageSource`, a damage source with a `combat/CritRule`
    (C3a-1, `SpellSchools#damage(registries, school, direct, causing, crit)`); its level and scaling are already in
    the amount the spell engine deals ([11.2](#112-casting-server-authoritative)).
+
+   **Other mods' damage type tags** (RLM-549, RLM-537; Matěj, 2026-10-30, RLM-536 decision G4): physical schools
+   join NeoForge's common `#neoforge:is_physical` (1.21.1's `#c:is_physical`), which its readers in the pack take for
+   a weapon's hit: Apotheosis's physical damage reduction (`DamageReductionAffix.DamageType.PHYSICAL`: Combatant's
+   chestplate and leggings bonus, its physical reduction affixes) now lowers Slam and a mob's physical spells such as
+   Astone's, and Apothic Attributes' `AttributeEvents#meleeDamageAttributes` adds an attacker's Fire Damage, Cold
+   Damage and Current HP Damage attributes to them, as to a melee hit, when the direct attacker is a living entity
+   (`AttributesUtil#isPhysicalDamage`: `#neoforge:is_physical` and not `#apothic_attributes:is_non_physical`); its
+   lifesteal and overheal read the same check but are ours now and inert ([19.4](#194-optional-integrations)). The
+   magic schools stay **out of `#neoforge:is_magic`**: Apotheosis's magic reduction (Verdant Ruin's chestplate bonus,
+   `DamageReductionAffix.DamageType.MAGIC`), Mageslayer's heal and its magic arrows read it, and a player's magic
+   defense is Magic Protection, Magic Shield, Dodge and health, so nothing of Apotheosis's stacks with Magic Protection
+   ([13](#13-items-gear-and-loot)). Instead they join our `#realmforge:is_magic` with vanilla's `magic` and
+   `indirect_magic` (not NeoForge's poison, wither, thorns or dragon's breath): the hits Magic Protection lowers.
+   `ApotheosisGemGameTests` check both gems.
 2. **`CriticalHitEvent`**, for a player's melee attack: a full-strength attack crits on the player's crit chance and
    deals 1 + crit damage, instead of vanilla's jump crit (a jump no longer matters). Vanilla still plays its crit
    sound and particles, and a crit keeps a sword's sweep (vanilla's jump crits never happened on the ground). Our crit
@@ -2234,6 +2250,34 @@ return; the proc engine at its end exists since C3a.
   Recipes come in vanilla's three kinds (shaped, shapeless, smithing upgrade), with vanilla item tags as ingredients.
   Better Combat presets for weapons and vanilla's rarity (`Item.Properties#rarity`) come with the first weapons that
   need them.
+- **Robes are no armor to Apotheosis** (RLM-546): every armor piece of ours is the caster's, so the pipeline files it
+  under the robe loot category of its slot (`realmforge:robe_head`, `robe_chest`, `robe_legs`, `robe_feet`) in
+  Apotheosis's data map `apotheosis:loot_category_overrides`; armor affixes and armor gem bonuses never reach it
+  ([19.4](#194-optional-integrations)).
+- **Enchantments** (RLM-537): `content/enchantments/` writes vanilla's data-driven enchantments
+  (`data/realmforge/enchantment/<id>.json`), protections for now: points per level in vanilla's shared protection
+  pool against one damage type tag, as Projectile Protection's. The pool stops at 20 points, 80 % (the pack's Apothic
+  Attributes formula `1 - min(protPoints, 20) / 25`, vanilla's; Apothic Enchanting changes no cap). An enchantment's
+  highest level with Apothic Enchanting goes into that mod's data map `apothic_enchanting:enchantment_info`, which
+  NeoForge merges with its own (its default extends a level until the table's power reaches 200, past VIII for
+  Projectile Protection's costs); vanilla's `max_level` counts where it does not reach.
+  - **Magic Protection** (`realmforge:magic_protection`; Matěj's pick of 2026-11-01): 0.5 point per level against
+    `#realmforge:is_magic` (every magic school and vanilla's magic, [9.1](#91-damage-pipeline)), up to VIII (IV in
+    vanilla), Projectile Protection's weight and costs, in `#minecraft:non_treasure` (the table, random loot, mobs'
+    and traders' gear). VIII on all four pieces is 16 points, 64 % against magic, Protection IV's twin; together they
+    stop at the cap. It is no stat: the sheet's Resistances column reads the pool through
+    `combat/EnchantmentProtection` (RLM-235), so it counts there.
+  - **Two protections per piece** (Matěj, 2026-10-30): any two different of Protection, Fire, Blast, Projectile and
+    Magic Protection, never a third. Vanilla can only exclude pairs, so `#minecraft:exclusive_set/armor` loses Fire,
+    Blast and Projectile Protection (NeoForge's tag `remove`; Apothic Enchanting already takes Protection out) and
+    `item/ProtectionLimit` counts `#realmforge:protections`: the anvil's result with a third protection added is
+    refused (`AnvilUpdateEvent`, which carries vanilla's result); vanilla's enchantment selection (loot's
+    `enchant_with_levels`, mobs' and traders' gear) and Apothic Enchanting's table pick one enchantment at a time and
+    drop the candidates that do not combine with each pick, and after the second protection two mixins drop the
+    other protections too, so a roll keeps its size ([19.3](#193-mixins-and-access-transformers)). Apothic
+    Enchanting's library hands out books of one enchantment, which go through the anvil. `MagicProtectionGameTests`
+    cover a frost hit (16 % off at VIII on one piece) and a physical one (untouched), the cap, the anvil, 300 loot
+    and 300 table rolls, and the levels.
 - **Item uses** (RLM-196): an item's `use` in content says what right-clicking it does, one item used up each time;
   a scroll's use comes after a 3 s charge ([10.2](#102-leveling), `character/Scrolls`).
   Each use is game code in the feature it belongs to, which finds its items through the item tag
@@ -2572,6 +2616,18 @@ phases:
   finds it whole again.
 - **Level:** the definition's fixed `level`, through `MobLevels.FixedLevel` ([14.1](#141-mob-levels)): the sources
   (a dungeon run's level) come first, the fixed level before the dimension's rule.
+- **No flight in the arena** (RLM-559; Matěj, 2026-10-16 and 2026-10-29, RLM-232): creative flight, Apotheosis's
+  Unbound or any other source of `neoforge:creative_flight`, is off in a living boss's arena (`boss/ArenaFlight`).
+  Every 5 ticks a boss with a home holds every player within its arena: a transient modifier zeroes the attribute, so
+  `IPlayerExtension#mayFly` turns false and `ServerPlayer#tick` lands a flying player; creative mode keeps its own
+  flight. A player who could fly on entering sees a title and a chat line (`message.realmforge.arena_no_flight*`)
+  and gets Slow Falling for 5 s, so losing flight mid-air never kills. Flight returns on leaving the arena (another
+  dimension, a death and a logout included: a respawned or relogged player has neither the transient modifier nor an
+  entry) and when the boss dies, is removed or resets; a player still inside after a reset is held again at the next
+  check. The bosses holding a player are counted (weak identity keys per player object), so overlapping arenas give
+  flight back only once the player left them all. Skyhearth, which turns flight off too, takes the same modifier once
+  it exists. `ArenaFlightGameTests` cover entering flying (landed, Slow Falling, the warning), leaving, coming back,
+  the boss's death and its reset, and a player without flight (held, no warning).
 - **Persistence:** a boss never despawns, however far the players are (`requiresCustomPersistence`), as vanilla's
   bosses do not; the QA mod's test boss neither (RLM-482). It never goes through a portal either (`canUsePortal`, as
   the Wither), since its arena and home belong to the dimension it stands in.
@@ -3777,21 +3833,25 @@ changes. Once they settle they can move into content.
 
 Last resort, only where no event or API exists. Each one sits in `mixin/` (or the access transformer file) with a
 comment saying why, and gets a test. A mod lists its mixins in `<modid>.mixins.json`, which `neoforge.mods.toml`
-names under `[[mixins]]`. The core mod has four: `RangedAttributeAccessor`, which raises attribute caps
+names under `[[mixins]]`. The core mod has seven: `RangedAttributeAccessor`, which raises attribute caps
 ([8.4](#84-caps)) and caps two of Apothic Attributes' down ([19.4](#194-optional-integrations)),
 `PlayerBlockActionMixin`, which lets Adventure mode break the allowlist inside instances ([15.5](#155-instances)),
 `PlayerExhaustionMixin`, which lowers a player's food exhaustion by their Stamina ([8.1](#81-the-attribute-set);
 `StaminaGameTests`), and `InventorySortingStacksMixin`, which keeps a stack that Inventory Sorting's sort would only
 replace with an identical copy, so an open backpack stays open ([19.4](#194-optional-integrations), RLM-519;
 `InventorySortingGameTests`). It targets another mod's class by name and is `@Pseudo`, so the core mod loads without
-Inventory Sorting; with it, its injector is required, so a changed target fails at load. The QA mod has two, for
-dev runs only: `GameTestServerMixin` gives the GameTest world the data pack dimensions, which vanilla leaves out
-([20](#20-tests-per-layer)), and `MinecraftProfileLookupMixin`, a client mixin (the config's `client` list), retries
-the dev client's one profile lookup at startup up to three times, 1 s and then 2 s apart (`ProfileLookupRetry`,
-RLM-570; `ProfileLookupRetryGameTests`). Mojang's session server sometimes times out there, and vanilla then plays
-the whole session with the account's default skin. It names `net.minecraft.client.Minecraft` by string and wraps an
-authlib call, so it imports no client code; its target is the constructor's lambda `lambda$new$0`, and a Minecraft
-update that renames it fails the dev client at load.
+Inventory Sorting; with it, its injector is required, so a changed target fails at load. Three keep at most two
+protection enchantments in a roll ([13](#13-items-gear-and-loot), RLM-537; `MagicProtectionGameTests`):
+`EnchantmentSelectionMixin` after vanilla's `EnchantmentHelper#filterCompatibleEnchantments`, and
+`ApothicTableSelectionMixin` after Apothic Enchanting's `ApothEnchantmentHelper#pickEnchantment` with
+`ArcanaEnchantmentDataAccessor` for its candidates' package-private enchantment, the last two `@Pseudo` as above.
+The QA mod has two, for dev runs only: `GameTestServerMixin` gives the GameTest world the data pack dimensions, which
+vanilla leaves out ([20](#20-tests-per-layer)), and `MinecraftProfileLookupMixin`, a client mixin (the config's
+`client` list), retries the dev client's one profile lookup at startup up to three times, 1 s and then 2 s apart
+(`ProfileLookupRetry`, RLM-570; `ProfileLookupRetryGameTests`). Mojang's session server sometimes times out there, and
+vanilla then plays the whole session with the account's default skin. It names `net.minecraft.client.Minecraft` by
+string and wraps an authlib call, so it imports no client code; its target is the constructor's lambda `lambda$new$0`,
+and a Minecraft update that renames it fails the dev client at load.
 
 Access transformers live in `src/main/resources/META-INF/accesstransformer.cfg`, which ModDevGradle applies to the
 Minecraft jar a project compiles against (its default location), and which `neoforge.mods.toml` lists under
@@ -4024,11 +4084,23 @@ whose test it passes, unless its data map `apotheosis:loot_category_overrides` n
 `melee_weapon` takes anything whose default modifiers give more than 1 attack damage in the main hand, our wands (2 to
 5) too, so the wand category takes Apotheosis's default priority, 1000, before `melee_weapon`'s 2000. Its name and
 plural, which gem tooltips and the reforging screens show, are `loot_category.realmforge.wand` and `.plural`
-(`content/texts/loot_category.yaml`). No affix lists it yet, so a wand never rolls a melee affix, and a wand
-reforged now gets a rarity, sockets and durability, while Apotheosis logs the empty slots' errors; its own affixes are
-the caster affixes (RLM-557), the robes' categories RLM-546's and the curios' RLM-556's. The core mod compiles against
-the pack's Apotheosis, Apothic Attributes and Placebo (`compileOnlyApi` in `mod/build.gradle`, which hands them to
-the QA mod), and registers the category only when Apotheosis is loaded.
+(`content/texts/loot_category.yaml`). No affix lists it yet, so a wand never rolls a melee affix; its own affixes are
+the caster affixes (RLM-557, RLM-562), and the curios' categories RLM-556's.
+
+**The robe categories** (RLM-546; Matěj, 2026-10-30, RLM-536 decision G2): Apotheosis files any item whose
+`EQUIPPABLE` slot is an armor slot as armor, our robes too, so armor affixes and armor gem bonuses (Guardian's armor,
+Tyrannical's toughness) would reach them against the caster rule of no armor, and a gem has one bonus per category,
+so the robes' own bonuses (RLM-548) need categories of their own. `realmforge:robe_head`, `robe_chest`, `robe_legs`
+and `robe_feet` take their armor slot's group (`ALObjects.EquipmentSlotGroups.HEAD` and so on) and a test that passes
+nothing: the pipeline files every armor piece of ours, all of it the caster's, under its slot's robe category in the
+data map, which NeoForge merges with Apotheosis's own file, so the order of the tests never matters. Their names and
+plurals ("Caster Robes") are in `loot_category.yaml`; sockets come from the rarities' rules, which apply to every
+category, and salvaging goes by rarity, not category. **No empty slots:** no affix lists the wand or the robe
+categories yet, so their rarity overrides (`content/apotheosis_rarity_overrides/`, `no_affixes`) drop every affix slot
+at every rarity: a wand or a robe reforged gets a rarity, sockets and durability, and Apotheosis logs no "no affixes
+available" error, which it did for a wand before. The core mod compiles against the pack's Apotheosis, Apothic
+Attributes, Placebo and Apothic Enchanting (`compileOnlyApi` in `mod/build.gradle`, which hands them to the QA mod),
+and registers the categories only when Apotheosis is loaded.
 
 `ApotheosisGameTests` check the fitted data in the game, through Apotheosis's own commands and its ids, as a player or
 a data pack reaches them: an Intricate sword raises our crit chance and nothing of Apothic Attributes', a switched-off
@@ -4039,8 +4111,19 @@ classes, as `QuestBook` does for FTB Quests ([16](#16-progression-and-quests)), 
 Apotheosis: the review's affixes are off, its Rare rolls apply (Giant Slaying adds its Rare
 value) and Magical stays Epic, about a quarter of Rare swords carry one ability, every loot category of Apotheosis's
 rolls at every rarity at Haven and Pinnacle (the GameTest log then holds no `AffixLootRule` error) with no ability on a
-helmet or a Rare boot and at most one basic effect on a helmet or shears, no tier caps max Eterna, and every wand is
-`realmforge:wand` with no affix to roll.
+helmet or a Rare boot and at most one basic effect on a helmet or shears, no tier caps max Eterna, every wand is
+`realmforge:wand` with no affix to roll, every robe piece is its slot's robe category and no armor (a Guardian gem
+fits no robe), and robes and wands roll every rarity at Haven and Pinnacle with no affix and no error.
+`ApotheosisGemGameTests` (through `ApotheosisGems`) socket gems into a player's chestplate against our school hits
+([9.1](#91-damage-pipeline)).
+- **Area mining** (RLM-559): Apotheosis's Radial and Super-Massive (`RadialUtil#breakExtraBlocks`) break the blocks
+  around the one a player breaks through `ServerPlayerGameMode#destroyBlock`, so each posts `BreakBlockEvent` and
+  meets Adventure mode, and an instance's protection refuses them ([15.5](#155-instances)). Vanilla checks
+  `Level#mayInteract` (spawn protection and the world border) only for the block a player starts breaking, so
+  `world/BlockBreakGuard` cancels every break event that fails it. `AreaMiningGameTests` break a stone with a Mythic
+  Radial pickaxe outside an instance (3 by 3 breaks) and a cobweb inside one (no room block breaks), and post a break
+  past the world border. The realm tool tiers (RLM-194, M4) cap every block it breaks once they exist, and Skyhearth
+  refuses them all.
 - **Apothic Enchanting's stale list of loot modifiers** (`data/neoforge/loot_modifiers/global_loot_modifiers.json`,
   the NeoForge 21.1 format) is replaced by a file in the core mod's resources whose `neoforge:never` condition makes
   NeoForge skip it quietly. NeoForge 26.1 reads every file in `loot_modifiers/` as a modifier and logged an error for
