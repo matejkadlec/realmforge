@@ -233,10 +233,21 @@ public abstract class CustomMob extends Monster implements GeoEntity, SpellVisua
         if (post == null && spec.idle() == CustomMobSpec.Idle.GUARD && onGround()) {
             post = blockPosition();
         }
-        entityData.set(CAST_ANIMATION, (byte) Spells.currentCast(this)
-                .flatMap(cast -> Spells.get(registryAccess(), cast.spell()))
-                .map(spell -> spell.value().cast().animation().ordinal() + 1)
-                .orElse(0).intValue());
+    }
+
+    /**
+     * After the AI step, which a stun skips (RLM-532), so the cast animation also ends with a cast the stun
+     * interrupted.
+     */
+    @Override
+    public void aiStep() {
+        super.aiStep();
+        if (!level().isClientSide()) {
+            entityData.set(CAST_ANIMATION, (byte) Spells.currentCast(this)
+                    .flatMap(cast -> Spells.get(registryAccess(), cast.spell()))
+                    .map(spell -> spell.value().cast().animation().ordinal() + 1)
+                    .orElse(0).intValue());
+        }
     }
 
     @Override

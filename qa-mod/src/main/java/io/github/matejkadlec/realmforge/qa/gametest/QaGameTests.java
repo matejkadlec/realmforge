@@ -112,6 +112,7 @@ public final class QaGameTests {
             StaminaGameTests.class,
             StatPointsGameTests.class,
             StatsGameTests.class,
+            StunGameTests.class,
             SwingAndSplashGameTests.class,
             WeaponBlockGameTests.class,
             WelcomeGameTests.class,
