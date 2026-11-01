@@ -236,8 +236,11 @@ Rules:
   `resistance` name secondary stats that are shares (`fire_power`, `fire_resistance`), each serving one school.
   The death message names only the victim, `%1$s`: the game passes the killer only sometimes. `color` is the
   colour of the school's spells (spell bar frames, the cast bar, damage numbers in tooltips); `combat_text_color`
-  (the `color` when left out) is the floating combat text's colour of the school's hits. The Physical school's combat
-  text colour is every hit's that is not magic (melee and ranged too), red on a crit.
+  (the `color` when left out) is the floating combat text's colour of the school's hits. `crit_color` is a magic
+  school's crit in combat text, a darker shade of its combat text colour that stays readable on dark backgrounds
+  (RLM-553: Frost's deep blue, Fire's burnt orange, Arcane's deep violet); left out, the game darkens the combat text
+  colour to 65 % of each channel, so a crit never looks like a hit. The Physical school's combat text colour is every
+  hit's that is not magic (melee and ranged too), red on a crit, whatever a `crit_color` says.
 - `dimensions/` holds the gameplay rules of a dimension, which `dimension` names (`minecraft:overworld`, or one of
   ours from `worldgen/dimension/`); at most one entry per dimension
   ([architecture 14.1](../docs/architecture.md#141-mob-levels)). Its optional `mob_levels` rule gives every hostile
@@ -369,8 +372,8 @@ Rules:
   `spell_power_percent`, the share of the caster's Spell Power a tick adds (a magic school only; scaling system C,
   RLM-534: a damage over time splits its spell's coefficient over its ticks), both of which each amplifier level adds
   again, and `interval_seconds` from 0.25 to 10): at least one of the two. `stun: true`
-  makes it a stun (C4): its holder neither moves, jumps, attacks nor casts, a mob's AI waits, and a cast is
-  interrupted; it needs -100 % `minecraft:movement_speed` and `minecraft:jump_strength` among its `modifiers`. A tick is a hit
+  makes it a stun (C4): its holder neither moves, jumps, attacks nor casts, a mob's AI waits (its goals and its brain:
+  an evoker's spells, a ghast's fireballs and a piglin's crossbow too, RLM-532), and a cast is interrupted; it needs -100 % `minecraft:movement_speed` and `minecraft:jump_strength` among its `modifiers`. A tick is a hit
   or heal of the school from the caster that applied the effect, its share of the caster's Spell Power added and
   raised by the school's power, and it never crits. `frozen` roots its holder (no walking, no jumping) but lets it
   attack and cast, unlike a stun; Shatter reads it (RLM-541). `breaks_on_damage_percent` is the chance that any damage
