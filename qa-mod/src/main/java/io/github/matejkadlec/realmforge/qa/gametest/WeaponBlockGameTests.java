@@ -142,12 +142,28 @@ public final class WeaponBlockGameTests {
      */
     @QaGameTest
     public static void aRaisedWeaponIgnoresAHitTheWindowDrops(GameTestHelper helper) {
+        ignoresAHitTheWindowDrops(helper, "qa-block-window", 0);
+    }
+
+    /**
+     * The same with Physical Resistance (RLM-233): the window keeps the first hit after the resistance as its
+     * {@code lastHurt}, so the weapon judges the second hit after it too, and leaves the equal hit to the window.
+     */
+    @QaGameTest
+    public static void aRaisedWeaponIgnoresAHitTheWindowDropsWithResistance(GameTestHelper helper) {
+        ignoresAHitTheWindowDrops(helper, "qa-block-res", 0.25);
+    }
+
+    private static void ignoresAHitTheWindowDrops(GameTestHelper helper, String name, double physicalResistance) {
         ServerLevel level = helper.getLevel();
-        ServerPlayer player = blocker(helper, "qa-block-window", 0);
+        ServerPlayer player = blocker(helper, name, 0);
+        StatsCommands.setBase(player, GeneratedStats.PHYSICAL_RESISTANCE, physicalResistance);
         Zombie first = zombieInFront(helper);
         Zombie second = zombieInFront(helper);
         player.hurtServer(level, level.damageSources().mobAttack(first), SMALL_HIT);
         helper.assertTrue(player.invulnerableTime > 10, "the first hit opened a window: " + player.invulnerableTime);
+        helper.assertTrue(close(player.lastHurt, (float) (SMALL_HIT * (1 - physicalResistance))),
+                "the window keeps the hit after the resistance: " + player.lastHurt);
         ItemStack greatsword = raise(player, new ItemStack(QaItems.TEST_GREATSWORD.get()), 2);
         long sounds = blockSounds(helper, player);
 

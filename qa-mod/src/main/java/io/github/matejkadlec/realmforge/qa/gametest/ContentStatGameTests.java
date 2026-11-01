@@ -8,6 +8,7 @@ import io.github.matejkadlec.realmforge.qa.generated.GeneratedStatExpectations.S
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedStatExpectations.StatExpectation;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedStatExpectations.StatRuleExpectation;
 import io.github.matejkadlec.realmforge.stats.ClassRole;
+import io.github.matejkadlec.realmforge.stats.DamageTypeResistance;
 import io.github.matejkadlec.realmforge.stats.ExhaustionReduction;
 import io.github.matejkadlec.realmforge.stats.StatBonus;
 import io.github.matejkadlec.realmforge.stats.StatRule;
@@ -15,12 +16,14 @@ import io.github.matejkadlec.realmforge.stats.StatRules;
 import io.github.matejkadlec.realmforge.stats.StatsRegistries;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
@@ -80,6 +83,17 @@ public final class ContentStatGameTests {
                     expected.exhaustionPerPoint(), expected.id() + " lowers exhaustion per point by");
             helper.assertValueEqual(exhaustion.map(ExhaustionReduction::max).orElse(0.0), expected.exhaustionMax(),
                     expected.id() + " lowers exhaustion at most by");
+
+            // The damage type tag it resists (RLM-233), and the tag exists in the loaded data.
+            Optional<DamageTypeResistance> resistance = GeneratedStats.DAMAGE_RESISTANCES.stream()
+                    .filter(entry -> entry.stat().is(holder))
+                    .findFirst();
+            String resists = resistance.map(entry -> entry.damage().location().toString()).orElse(null);
+            helper.assertTrue(Objects.equals(resists, expected.resists()),
+                    expected.id() + " resists " + expected.resists() + ", not " + resists);
+            resistance.ifPresent(entry -> helper.assertTrue(
+                    server.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).get(entry.damage()).isPresent(),
+                    "the tag #" + expected.resists() + " is loaded"));
         }
         server.getPlayerList().remove(player);
         helper.succeed();

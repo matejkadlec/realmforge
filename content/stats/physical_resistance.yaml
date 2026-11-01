@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/stats.schema.json
+# Less damage from physical hits, in percent (RLM-233, Blockading): melee hits, projectiles and physical school hits,
+# whoever deals them (#realmforge:is_physical, which content/spell_schools/'s physical schools join). Capped at 75 %,
+# like the school resistances (research BM-18); with another resistance on the same hit it multiplies, and the hit's
+# whole reduction stops at 75 % too (architecture 9.1).
+id: physical_resistance
+name: {en_us: Physical Resistance}
+kind: secondary
+max_percent: 75
+resists: realmforge:is_physical

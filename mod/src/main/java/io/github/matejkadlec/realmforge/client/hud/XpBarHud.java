@@ -71,19 +71,24 @@ public final class XpBarHud {
         Gui gui = minecraft.gui;
         int stack = XpBarLayout.stack(gui.leftHeight, gui.rightHeight);
         int top = XpBarLayout.barTop(graphics.guiHeight(), stack);
-        drawBar(graphics, (graphics.guiWidth() - WIDTH) / 2, top, view);
+        drawBar(graphics, (graphics.guiWidth() - WIDTH) / 2, top, WIDTH, HEIGHT, view);
         drawLevel(graphics, minecraft.font, XpBarLayout.textTop(top), view);
         int raised = XpBarLayout.raisedStack(stack, minecraft.gameMode.canHurtPlayer());
         gui.leftHeight = raised;
         gui.rightHeight = raised;
     }
 
-    private static void drawBar(GuiGraphicsExtractor graphics, int left, int top, XpBarView view) {
-        graphics.fill(left, top, left + WIDTH, top + HEIGHT, BORDER);
-        graphics.fill(left + 1, top + 1, left + WIDTH - 1, top + HEIGHT - 1, BACKGROUND);
-        int filled = Math.round(view.progress() * (WIDTH - 2));
+    /**
+     * The bar of {@code view} with its top left corner at ({@code left}, {@code top}): the HUD's, and the character
+     * sheet's of another size (RLM-509).
+     */
+    public static void drawBar(GuiGraphicsExtractor graphics, int left, int top, int width, int height,
+            XpBarView view) {
+        graphics.fill(left, top, left + width, top + height, BORDER);
+        graphics.fill(left + 1, top + 1, left + width - 1, top + height - 1, BACKGROUND);
+        int filled = Math.round(view.progress() * (width - 2));
         if (filled > 0) {
-            graphics.fill(left + 1, top + 1, left + 1 + filled, top + HEIGHT - 1, view.capped() ? CAPPED_FILL : FILL);
+            graphics.fill(left + 1, top + 1, left + 1 + filled, top + height - 1, view.capped() ? CAPPED_FILL : FILL);
             graphics.fill(left + 1, top + 1, left + 1 + filled, top + 2,
                     view.capped() ? CAPPED_HIGHLIGHT : FILL_HIGHLIGHT);
         }

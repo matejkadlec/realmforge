@@ -149,6 +149,18 @@ def test_the_classes_name_their_roles() -> None:
             "kind: secondary\nmax: 100\nlowers_exhaustion: {per_point_percent: 0, max_percent: 50}\n",
             "lowers_exhaustion.per_point_percent: Input should be greater than 0",
         ),
+        (
+            "kind: secondary\nmax: 100\nresists: minecraft:is_fall\n",
+            "resists takes a share of a hit: the stat needs kind: secondary and max_percent",
+        ),
+        (
+            "kind: secondary\nmax_percent: 75\nresists: minecraft:is_fal\n",
+            "unknown tag 'minecraft:is_fal' in registry minecraft:damage_type (did you mean: minecraft:is_fall",
+        ),
+        (
+            "kind: secondary\nmax_percent: 75\nresists: minecraft:is_fall\n",
+            "content/stats/fall_resistance.yaml already resists #minecraft:is_fall",
+        ),
     ],
 )
 def test_invalid_stats_are_rejected(repo: RepoPaths, body: str, expected: str) -> None:
@@ -682,13 +694,13 @@ def test_expectations_hold_stats_and_rule_samples(repo: RepoPaths) -> None:
         'new StatExpectation(\n                    "realmforge:crit_chance",\n'
         '                    "attribute.realmforge.crit_chance",\n                    false,\n'
         "                    true,\n                    0.05,\n                    1.0,\n"
-        "                    0.0,\n                    0.0)" in java
+        "                    0.0,\n                    0.0,\n                    null)" in java
     )
     assert (
         'new StatExpectation(\n                    "realmforge:stamina",\n'
         '                    "attribute.realmforge.stamina",\n                    false,\n'
         "                    false,\n                    0.0,\n                    1000.0,\n"
-        "                    0.01,\n                    0.5)" in java
+        "                    0.01,\n                    0.5,\n                    null)" in java
     )
     assert (
         'new Sample(12.5, null, List.of(new Bonus("realmforge:stat/realmforge/0/vitality", "minecraft:max_health", '
@@ -735,6 +747,43 @@ def test_the_stamina_stat_lowers_exhaustion(repo: RepoPaths) -> None:
     assert crit.exhaustion_reduction_at(80) == 0, "a stat without lowers_exhaustion takes nothing away"
 
 
+def test_the_resistance_stats_name_the_damage_types_they_lower(repo: RepoPaths) -> None:
+    """RLM-233: Physical, Projectile, Explosion and Fall Resistance, 75 % at most, each by its damage type tag."""
+    files = generate(repo)
+    java = files[STATS_JAVA].decode()
+    for name, tag in (
+        ("EXPLOSION_RESISTANCE", "minecraft:is_explosion"),
+        ("FALL_RESISTANCE", "minecraft:is_fall"),
+        ("PHYSICAL_RESISTANCE", "realmforge:is_physical"),
+        ("PROJECTILE_RESISTANCE", "minecraft:is_projectile"),
+    ):
+        assert (
+            f'new DamageTypeResistance({name}, TagKey.create(Registries.DAMAGE_TYPE, Identifier.parse("{tag}")))'
+            in java
+        )
+    content, _ = load_and_validate(repo)
+    resisting = {e.model.id: e.model for e in content.stats if e.model.resists is not None}
+    assert sorted(resisting) == [
+        "explosion_resistance",
+        "fall_resistance",
+        "physical_resistance",
+        "projectile_resistance",
+    ]
+    assert all(stat.percent and stat.game_max == 0.75 for stat in resisting.values())
+    expectations = files[EXPECTATIONS].decode()
+    assert '0.0,\n                    "realmforge:is_physical")' in expectations
+    assert "0.0,\n                    null)" in expectations, "a stat that resists nothing"
+
+
+def test_without_resistance_stats_nothing_resists(repo: RepoPaths) -> None:
+    for name in ("explosion", "fall", "physical", "projectile"):
+        (repo.content / "stats" / f"{name}_resistance.yaml").unlink()
+    # Apotheosis's reduction affixes turn into these stats.
+    for affix in ("blast_forged", "blockading", "deflective", "feathery"):
+        (repo.content / "apotheosis_affixes" / f"{affix}.yaml").unlink()
+    assert "DAMAGE_RESISTANCES = List.of();" in generate(repo)[STATS_JAVA].decode()
+
+
 def test_without_a_stamina_stat_nothing_lowers_exhaustion(repo: RepoPaths) -> None:
     (repo.content / "stats" / "stamina.yaml").unlink()
     vitality = (repo.content / "stat_rules" / "vitality.yaml").read_text(encoding="utf-8")
@@ -765,6 +814,10 @@ def test_no_stats_or_rules_still_compile(repo: RepoPaths) -> None:
             file.unlink()
     for file in (repo.content / "items").glob("*.yaml"):
         if "\ngear:" in file.read_text(encoding="utf-8"):
+            file.unlink()
+    # Apotheosis's reduction affixes that turn into our resistances (RLM-233).
+    for file in (repo.content / "apotheosis_affixes").glob("*.yaml"):
+        if "\nto_attribute:" in file.read_text(encoding="utf-8"):
             file.unlink()
     # Astone's kill XP rank names her body.
     (repo.content / "kill_xp_multipliers" / "astone.yaml").unlink()

@@ -31,6 +31,17 @@ public final class CombatAttachments {
             ATTACHMENTS.register("in_combat", () -> AttachmentType.builder(() -> CombatTime.NONE)
                     .sync(Attachments::toOwner, CombatTime.STREAM_CODEC).build());
 
+    /**
+     * {@code realmforge:enchantment_protection}: what a player's protection enchantments block of a hit of each
+     * {@link DamageKind}, for the character sheet's Resistances column ({@link EnchantmentProtection}, RLM-235). The
+     * server works it out, as enchantment effects need a server level. Transient: neither saved nor copied, as the
+     * server works it out again within half a second. Synced to the owner.
+     */
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<EnchantmentProtection>>
+            ENCHANTMENT_PROTECTION = ATTACHMENTS.register("enchantment_protection",
+                    () -> AttachmentType.builder(() -> EnchantmentProtection.NONE)
+                            .sync(Attachments::toOwner, EnchantmentProtection.STREAM_CODEC).build());
+
     private CombatAttachments() {
     }
 

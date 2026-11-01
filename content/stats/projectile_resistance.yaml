@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../tools/schemas/stats.schema.json
+# Less damage from projectiles, in percent (RLM-233, Deflective): vanilla's #minecraft:is_projectile, so arrows,
+# tridents, thrown things and fireballs of any mob or mod count. Capped at 75 %; it multiplies with Physical Resistance
+# on the same hit (architecture 9.1).
+id: projectile_resistance
+name: {en_us: Projectile Resistance}
+kind: secondary
+max_percent: 75
+resists: minecraft:is_projectile

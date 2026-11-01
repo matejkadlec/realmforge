@@ -38,6 +38,7 @@ from realmforge_tools.schema.apotheosis import (
     CURIOS_LOOT_CATEGORIES,
     LOOT_CATEGORIES,
     RARITIES,
+    ApotheosisAffixDef,
     ApotheosisEntryDef,
     ApotheosisRarityOverrideDef,
     ApotheosisStatRemapDef,
@@ -61,6 +62,7 @@ LICENSE_SPDX = "MIT"
 DISABLED: dict[str, Any] = {"neoforge:conditions": [{"type": "neoforge:never"}]}
 
 ATTRIBUTE = "apotheosis:attribute"
+DAMAGE_REDUCTION = "apotheosis:damage_reduction"
 MULTI_ATTRIBUTE = "apotheosis:multi_attribute"
 ALL_STATS = "apotheosis:all_stats"
 ADD_MULTIPLIED_BASE = "add_multiplied_base"
@@ -225,6 +227,8 @@ def fit(content: Content, snapshot: Snapshot) -> Fitted:
             continue
         sources[key] = entry.source
         changed[key] = DISABLED if model.disabled else _replaced(entry, original, fitted.problems)
+        if isinstance(model, ApotheosisAffixDef) and model.to_attribute is not None:
+            changed[key] = _as_attribute(entry, changed[key], model.to_attribute, fitted.problems)
 
     remaps = {entry.model.source: entry for entry in content.apotheosis_stat_remaps}
     granted: set[str] = set()
@@ -424,6 +428,32 @@ def _replaced(
         else:
             data[name] = value
     return data
+
+
+def _as_attribute(
+    entry: Entry[ApotheosisEntryDef], data: dict[str, Any], attribute: str, problems: list[Problem]
+) -> dict[str, Any]:
+    """A damage reduction affix as an attribute affix of ``attribute`` (RLM-233): Apotheosis's reduction share per
+    rarity becomes an add_value of that share on our stat, a share too; its categories and definition stay, so it rolls
+    on the same items, in the same slots and as often as before."""
+    if data.get("type") != DAMAGE_REDUCTION:
+        problems.append(
+            Problem(
+                entry.source,
+                "to_attribute",
+                f"to_attribute turns a damage reduction affix ({DAMAGE_REDUCTION}) into an attribute affix; "
+                f"{entry.model.target} is {data.get('type')}",
+            )
+        )
+        return data
+    return {
+        "type": ATTRIBUTE,
+        "attribute": attribute,
+        "categories": data["categories"],
+        "definition": data["definition"],
+        "operation": ADD_VALUE,
+        "values": data["values"],
+    }
 
 
 def _json_kind(value: Any) -> str:

@@ -9,7 +9,7 @@ import io.github.matejkadlec.realmforge.character.CharacterCreation.Result;
 import io.github.matejkadlec.realmforge.character.CharacterData;
 import io.github.matejkadlec.realmforge.character.CharacterRegistries;
 import io.github.matejkadlec.realmforge.character.CharacterSheetView;
-import io.github.matejkadlec.realmforge.character.CharacterSheetView.Row;
+import io.github.matejkadlec.realmforge.character.CharacterSheetView.PrimaryStat;
 import io.github.matejkadlec.realmforge.character.Characters;
 import io.github.matejkadlec.realmforge.character.Scrolls;
 import io.github.matejkadlec.realmforge.character.StatPoints;
@@ -243,27 +243,28 @@ public final class StatPointsGameTests {
         MinecraftServer server = helper.getLevel().getServer();
         ServerPlayer newcomer = login(helper, new GameProfile(UUID.randomUUID(), "qa-points-none"));
         CharacterSheetView none = CharacterSheetView.of(newcomer);
-        helper.assertTrue(primaryStats(helper, none).note() == null, "no unspent points without a character");
-        helper.assertTrue(none.rows().stream().allMatch(row -> row.spend() == null), "and no + anywhere");
+        helper.assertTrue(none.character().unspent() == null, "no unspent points without a character");
+        helper.assertTrue(none.character().primary().stream().allMatch(stat -> stat.spend() == null),
+                "and no + anywhere");
         server.getPlayerList().remove(newcomer);
 
         ServerPlayer player = loginWithCharacter(helper, "qa-points-sheet");
         reachLevel(helper, server, player, 2);
         CharacterSheetView view = CharacterSheetView.of(player);
-        Component note = primaryStats(helper, view).note();
+        Component note = primaryStats(helper, view).unspent();
         helper.assertTrue(note != null, "the title ends with the unspent points");
         helper.assertValueEqual(note.getString(), "Unspent: " + expected(2), "the note");
         helper.assertValueEqual(numberColor(note), CharacterSheetView.TITLE & 0xFFFFFF, "a yellow number while > 0");
         for (Holder<Attribute> stat : GeneratedStats.PRIMARY) {
-            CharacterSheetView.Spend spend = row(helper, view, stat.value().getDescriptionId()).spend();
+            CharacterSheetView.Spend spend = primary(helper, view, stat.value().getDescriptionId()).spend();
             helper.assertTrue(spend != null && spend.stat().equals(key(stat)),
                     stat.getRegisteredName() + " offers a +");
             helper.assertFalse(spend.gains().isEmpty(), stat.getRegisteredName() + "'s point gives something");
         }
-        helper.assertTrue(view.rows().stream().filter(row -> row.spend() != null).count()
-                == GeneratedStats.PRIMARY.size(), "only the primary stats offer a +");
+        helper.assertTrue(view.character().primary().stream().filter(stat -> stat.spend() != null).count()
+                == GeneratedStats.PRIMARY.size(), "every primary stat offers a +");
         // Strength's rule: 0.5 attack damage and 0.5% lifesteal a point (content/stat_rules/strength.yaml, RLM-170).
-        helper.assertValueEqual(row(helper, view, GeneratedStats.STRENGTH.value().getDescriptionId()).spend().gains()
+        helper.assertValueEqual(primary(helper, view, GeneratedStats.STRENGTH.value().getDescriptionId()).spend().gains()
                 .stream().map(Component::getString).toList(), List.of("+0.5 Attack Damage", "+0.5% Lifesteal"),
                 "what a Strength point gives");
 
@@ -271,18 +272,19 @@ public final class StatPointsGameTests {
             StatPoints.spend(player, key(GeneratedStats.STRENGTH));
         }
         CharacterSheetView spent = CharacterSheetView.of(player);
-        Component noneLeft = primaryStats(helper, spent).note();
+        Component noneLeft = primaryStats(helper, spent).unspent();
         helper.assertValueEqual(noneLeft.getString(), "Unspent: 0", "none left");
         helper.assertValueEqual(numberColor(noneLeft), CharacterSheetView.STAT & 0xFFFFFF, "a white 0");
-        helper.assertTrue(spent.rows().stream().allMatch(row -> row.spend() == null), "and no + left");
+        helper.assertTrue(spent.character().primary().stream().allMatch(stat -> stat.spend() == null),
+                "and no + left");
         server.getPlayerList().remove(player);
         helper.succeed();
     }
 
-    private static CharacterSheetView.Section primaryStats(GameTestHelper helper, CharacterSheetView view) {
-        CharacterSheetView.Section section = view.tabs().getFirst().left().getFirst();
-        helper.assertValueEqual(section.title().getString(), "Primary Stats", "the Stats tab's first section");
-        return section;
+    private static CharacterSheetView.CharacterTab primaryStats(GameTestHelper helper, CharacterSheetView view) {
+        CharacterSheetView.CharacterTab tab = view.character();
+        helper.assertValueEqual(tab.primaryTitle().getString(), "Primary Stats", "the Character tab's heading");
+        return tab;
     }
 
     /** The colour of the note's number, its translation's only argument. */
@@ -353,9 +355,9 @@ public final class StatPointsGameTests {
         helper.assertValueEqual(Characters.level(player), level, "level " + level);
     }
 
-    private static Row row(GameTestHelper helper, CharacterSheetView view, String id) {
-        return view.rows().stream().filter(row -> row.id().equals(id)).findFirst()
-                .orElseThrow(() -> helper.assertionException(Component.literal("the sheet has no row " + id)));
+    private static PrimaryStat primary(GameTestHelper helper, CharacterSheetView view, String id) {
+        return view.character().primary().stream().filter(stat -> stat.row().id().equals(id)).findFirst()
+                .orElseThrow(() -> helper.assertionException(Component.literal("no primary stat " + id)));
     }
 
     static ResourceKey<Attribute> key(Holder<Attribute> attribute) {

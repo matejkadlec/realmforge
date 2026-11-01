@@ -17,6 +17,19 @@ HexColor = Annotated[
     Field(description='An RGB colour, "#RRGGBB".'),
 ]
 
+# The damage type tag of physical hits (RLM-233): what Physical Resistance lowers (content/stats/). Melee hits (a mob's,
+# a player's, a bee's sting, a spear's or a mace's), every projectile, and the damage types of every physical school,
+# which generate/spell_schools.py adds; vanilla's own damage types, so other mods' mobs count too. NeoForge's
+# #neoforge:is_physical is broader (falls, cactus, suffocation, /damage's generic), so it is not used.
+PHYSICAL_TAG = f"{MOD_ID}:is_physical"
+PHYSICAL_DAMAGE_TYPES: tuple[str, ...] = (
+    "minecraft:mob_attack",
+    "minecraft:mob_attack_no_aggro",
+    "minecraft:sting",
+    "#minecraft:is_player_attack",
+    "#minecraft:is_projectile",
+)
+
 # Every format sequence in a translated text: %s, %1$s, %d, %%, ...
 _FORMAT = re.compile(r"%(?:\d+\$)?[a-zA-Z%]")
 

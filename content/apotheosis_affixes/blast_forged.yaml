@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Blast-Forged (less damage from explosions): Apotheosis's damage reduction becomes our Explosion Resistance, an
+# attribute the character sheet shows and the damage pipeline applies by damage type tag, to explosions of every mob and
+# mod (Matěj, 2026-10-16, RLM-233). Apotheosis's values, items and rolls stay.
+id: blast_forged
+affix: apotheosis:armor/dmg_reduction/blast_forged
+to_attribute: realmforge:explosion_resistance

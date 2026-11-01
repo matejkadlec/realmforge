@@ -188,60 +188,54 @@ public final class CharacterGameTests {
     }
 
     /**
-     * The character sheet's Origin tab names the race and the class, with their descriptions and what the race gives,
-     * and a specialization placeholder; the heading stays name and level (Matěj, 2026-10-14).
+     * The character sheet's Character tab names race and class in one line (RLM-509): hovering the race shows its
+     * description, what it gives and its racials, the class its description, as the Origin tab did; with no
+     * specialization points yet the line is "Human Warrior". The heading stays name and level (Matěj, 2026-10-14).
      */
     @QaGameTest
-    public static void originTabShowsRaceAndClass(GameTestHelper helper) {
+    public static void identityLineShowsRaceAndClass(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
         ServerPlayer player = login(helper, "qa-char-sheet");
-        CharacterSheetView.Tab before = origin(helper, CharacterSheetView.of(player));
-        helper.assertValueEqual(before.left().getFirst().title().getString(), "Race: None", "no race yet");
-        helper.assertValueEqual(before.right().getFirst().title().getString(), "Class: None", "no class yet");
+        helper.assertTrue(CharacterSheetView.of(player).character().identity().parts().isEmpty(),
+                "no race or class yet");
 
         RaceExpectation race = firstRace();
         ClassExpectation playerClass = firstClass();
         create(player, race.id(), playerClass.id());
         CharacterSheetView view = CharacterSheetView.of(player);
         helper.assertValueEqual(view.title().getString(), "qa-char-sheet · Lv. 1", "the heading is name and level");
-        CharacterSheetView.Tab origin = origin(helper, view);
-        CharacterSheetView.Section raceSection = origin.left().getFirst();
-        helper.assertValueEqual(raceSection.title().getString(),
-                "Race: " + Component.translatable(race.nameKey()).getString(), "the race");
-        helper.assertValueEqual(raceSection.rows().getFirst().label().getString(),
+        List<CharacterSheetView.Part> parts = view.character().identity().parts();
+        String raceName = Component.translatable(race.nameKey()).getString();
+        String className = Component.translatable(playerClass.nameKey()).getString();
+        helper.assertValueEqual(view.character().identity().line().getString(), raceName + " " + className,
+                "race and class: no specialization points before C5");
+        helper.assertValueEqual(parts.size(), 2, "two parts, each with its tooltip");
+        List<Component> raceTooltip = parts.getFirst().tooltip();
+        helper.assertValueEqual(raceTooltip.getFirst().getString(),
                 Component.translatable(race.descriptionKey()).getString(), "the race's description");
         Race raceEntry = server.registryAccess().lookupOrThrow(CharacterRegistries.RACE).getValue(
                 Identifier.parse(race.id()));
-        helper.assertValueEqual(raceSection.rows().size(), 1 + raceEntry.modifiers().size()
+        helper.assertValueEqual(raceTooltip.size(), 1 + raceEntry.modifiers().size()
                 + (raceEntry.racialSpell().isPresent() ? 2 : 0) + (raceEntry.racialPassive().isPresent() ? 2 : 0),
                 "the description, a line for each modifier of the race, then its racial ability and passive (C4)");
         if (raceEntry.racialSpell().isPresent() && raceEntry.racialPassive().isPresent()) {
-            List<CharacterSheetView.Row> rows = raceSection.rows();
-            List<CharacterSheetView.Row> racial = rows.subList(rows.size() - 4, rows.size());
-            helper.assertValueEqual(racial.stream().map(row -> row.label().getString()).toList(), List.of(
+            List<Component> racial = raceTooltip.subList(raceTooltip.size() - 4, raceTooltip.size());
+            helper.assertValueEqual(racial.stream().map(Component::getString).toList(), List.of(
                     "Racial Ability", Component.translatable(raceEntry.racialSpell().get().value().name()).getString(),
                     Component.translatable(raceEntry.racialPassive().get().name()).getString(),
                     RacialPassives.description(raceEntry.racialPassive().get())),
-                    "each racial on two rows: its heading or name, then what it is (Matěj, 2026-10-30)");
-            helper.assertValueEqual(racial.stream().map(CharacterSheetView.Row::color).toList(), List.of(
-                    CharacterSheetView.RACIAL_NAME, CharacterSheetView.RACIAL_DETAIL, CharacterSheetView.RACIAL_NAME,
-                    CharacterSheetView.RACIAL_DETAIL), "gold over yellow");
+                    "each racial on two lines: its heading or name, then what it is (Matěj, 2026-10-30)");
+            helper.assertValueEqual(racial.stream().map(line -> 0xFF000000 | line.getStyle().getColor().getValue())
+                    .toList(), List.of(CharacterSheetView.RACIAL_NAME, CharacterSheetView.RACIAL_DETAIL,
+                    CharacterSheetView.RACIAL_NAME, CharacterSheetView.RACIAL_DETAIL), "gold over yellow");
         }
-        CharacterSheetView.Section classSection = origin.right().getFirst();
-        helper.assertValueEqual(classSection.title().getString(),
-                "Class: " + Component.translatable(playerClass.nameKey()).getString(), "the class");
-        helper.assertValueEqual(classSection.rows().getFirst().label().getString(),
-                Component.translatable(playerClass.descriptionKey()).getString(), "the class's description");
-        helper.assertValueEqual(origin.right().get(1).title().getString(), "Specialization: WIP",
-                "the specialization placeholder");
+        helper.assertValueEqual(parts.get(1).tooltip().stream().map(Component::getString).toList(),
+                List.of(Component.translatable(playerClass.descriptionKey()).getString()), "the class's description");
+        helper.assertTrue(view.character().xp().isPresent(), "a character has its XP bar");
         server.getPlayerList().remove(player);
         helper.succeed();
     }
 
-    private static CharacterSheetView.Tab origin(GameTestHelper helper, CharacterSheetView view) {
-        helper.assertValueEqual(view.tabs().getLast().name().getString(), "Origin", "the last tab");
-        return view.tabs().getLast();
-    }
 
     /** The creation screen's view offers every race with the classes it allows, in the content's order. */
     @QaGameTest

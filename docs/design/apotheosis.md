@@ -127,6 +127,10 @@ Matěj reviewed all 99 affixes of Apotheosis 9.1.0 on 2026-10-16 (RLM-232) and c
   only one) and one basic effect (Blinding is off, Deflective is left) at Rare, Epic and Legendary; boots no ability
   at Rare (Unhurried rolls from Epic); shears one basic effect at Epic and Legendary (Gardening and Leaf-Forming are
   off, Radial is left). Without that, Apotheosis would log an error and roll one affix fewer.
+- **Damage reduction becomes our stats** (Matěj, 2026-10-16, RLM-233): Blast-Forged, Blockading, Deflective and
+  Feathery give our Explosion, Physical, Projectile and Fall Resistance, at Apotheosis's values, on the same items and
+  in the same slots. The character sheet shows them, and they work against every source by damage type tag, other
+  mods' mobs included ([architecture 9.1](../architecture.md#91-damage-pipeline)).
 - **Executing and Giant Slaying** are no longer exclusive: Executing is off.
 - **Still RLM-232's rules, not data yet:** Unbound (creative flight, Pinnacle only) is off in Skyhearth and in boss
   arenas (Matěj, 2026-10-29), and Super-Massive and Radial never break protected blocks, with the realm tool tiers

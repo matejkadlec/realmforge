@@ -94,11 +94,18 @@ class ApotheosisEntryDef(StrictModel):
     def _one_change(self) -> ApotheosisEntryDef:
         if self.disabled and self.replace:
             raise ValueError("an entry is either disabled or has fields replaced, not both")
-        if not self.disabled and not self.replace:
+        if self.disabled and self.converted:
+            raise ValueError("a switched-off affix becomes no attribute affix: drop disabled or to_attribute")
+        if not self.disabled and not self.replace and not self.converted:
             raise ValueError("say what changes: disabled: true, or the fields to replace")
         if self.disabled and not self.CAN_DISABLE:
             raise ValueError(f"Apotheosis needs every one of its {self.KIND}: replace fields instead")
         return self
+
+    @property
+    def converted(self) -> bool:
+        """Whether the entry becomes another kind of entry (an affix's ``to_attribute``)."""
+        return False
 
     @property
     def target(self) -> str:
@@ -115,6 +122,18 @@ class ApotheosisAffixDef(ApotheosisEntryDef):
     affix: ApotheosisEntryId = Field(
         description="The affix it changes, e.g. apotheosis:generic/attribute/lucky."
     )
+    to_attribute: ResourceId | None = Field(
+        default=None,
+        description=(
+            "Turns a damage reduction affix (apotheosis:damage_reduction) into an attribute affix of this stat of ours, "
+            "a share (content/stats/), e.g. realmforge:fall_resistance: add_value with the affix's own values, its "
+            "categories and definition kept (RLM-233). replace applies first."
+        ),
+    )
+
+    @property
+    def converted(self) -> bool:
+        return self.to_attribute is not None
 
 
 class ApotheosisGemDef(ApotheosisEntryDef):

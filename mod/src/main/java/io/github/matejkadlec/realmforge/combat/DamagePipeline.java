@@ -1,8 +1,11 @@
 package io.github.matejkadlec.realmforge.combat;
 
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
+import io.github.matejkadlec.realmforge.stats.DamageTypeResistance;
 import io.github.matejkadlec.realmforge.stats.EntityLevel;
 import io.github.matejkadlec.realmforge.stats.StatsAttachments;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerLevel;
@@ -42,12 +45,13 @@ import net.neoforged.neoforge.event.entity.player.CriticalHitEvent;
  *   or a player's crossbow) or a thrown trident is marked as one that may crit, and an arrow stops being vanilla's
  *   crit arrow, so vanilla's random crit-arrow bonus never stacks with our crit.</li>
  *   <li>{@code LivingIncomingDamageEvent}: a dodge cancels the hit (melee, projectiles and physical school hits; never
- *   magic, explosions or the world); then a raised two-handed weapon blocks it in full or in part
- *   ({@link WeaponBlocks}), before armor and resistances. A marked projectile's hit crits on its shooter's crit
- *   chance and deals 1 + crit damage. A school hit gets the school's power and its spell's passives ({@link HitBonus}; the
- *   caster's Spell Power is already in a spell's damage, RLM-534), a crit roll (by the spell's {@link CritRule} when a
- *   {@link SchoolDamageSource} brings one) and the defender's resistance (spell resistance added for magic), less the
- *   hit's spell penetration. The armor reduction becomes
+ *   magic, explosions or the world); then the hit meets the defender's damage type resistances, multiplied (Physical,
+ *   Projectile, Explosion and Fall Resistance by their tags, RLM-233), and a raised two-handed weapon blocks what is
+ *   left in full or in part ({@link WeaponBlocks}), before armor and the school resistances. A marked projectile's hit
+ *   crits on its shooter's crit chance and deals 1 + crit damage. A school hit gets the school's power and its spell's
+ *   passives ({@link HitBonus}; the caster's Spell Power is already in a spell's damage, RLM-534), a crit roll (by the
+ *   spell's {@link CritRule} when a {@link SchoolDamageSource} brings one) and the defender's resistance (spell
+ *   resistance added for magic), less the hit's spell penetration. The armor reduction becomes
  *   vanilla's formula on the armor the attacker's armor pierce and shred leave (a spell's hit adding its own shred),
  *   except for damage in {@code #minecraft:bypasses_armor} and the ticks of a damage over time that ignores armor
  *   (Bleeding, RLM-539). A damage over time's tick is never dodged, nor blocked by a raised weapon or a shield. The
@@ -189,6 +193,12 @@ public final class DamagePipeline {
             CombatText.dodge(defender, source);
             return;
         }
+        // The damage type resistances come first (RLM-233), so a raised weapon judges the hit by what it deals, as the
+        // hurt cooldown window does with the lastHurt it keeps (RLM-387); every later step multiplies the amount.
+        double resistance = damageTypeResistance(defender, source);
+        if (resistance > 0) {
+            event.setAmount((float) DamageCalculator.afterResistance(event.getAmount(), resistance));
+        }
         if (WeaponBlocks.block(event, level)) {
             HitTracker.takeMeleeCrit(source, defender);
             InCombat.mark(defender, source);
@@ -211,6 +221,24 @@ public final class DamagePipeline {
             HitTracker.start(defender, new HitTracker.Hit(source, level.getGameTime(), Optional.empty(), true,
                     Float.NaN));
         }
+    }
+
+    /**
+     * What the defender's damage type resistances block of a hit (RLM-233): every stat of
+     * {@link GeneratedStats#DAMAGE_RESISTANCES} whose tag the hit's damage type is in (Physical Resistance on a melee
+     * hit, an arrow or a physical school hit, Projectile Resistance on an arrow, ...), multiplied, at most 75 %
+     * ({@link DamageCalculator#damageTypeResistance}). 0 for a defender without them: mobs have none.
+     */
+    public static double damageTypeResistance(LivingEntity defender, DamageSource source) {
+        List<DamageTypeResistance> resistances = GeneratedStats.DAMAGE_RESISTANCES;
+        double[] shares = new double[resistances.size()];
+        int count = 0;
+        for (DamageTypeResistance resistance : resistances) {
+            if (source.is(resistance.damage())) {
+                shares[count++] = stat(defender, resistance.stat());
+            }
+        }
+        return DamageCalculator.damageTypeResistance(Arrays.copyOf(shares, count));
     }
 
     /**

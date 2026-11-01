@@ -20,6 +20,9 @@ import net.minecraft.util.RandomSource;
  *   (RLM-534) a spell adds its coefficient of the caster's Spell Power to the damage before the hit. The resistance: the resistance to the school, plus spell resistance for a magic school, at
  *   most 75 % together ({@link #RESISTANCE_CAP}), less the hit's spell penetration share of it
  *   ({@link #penetrated}; C4).</li>
+ *   <li><b>Damage type resistances</b> (RLM-233): every one whose damage type tag the hit is in (physical,
+ *   projectile, explosion, fall) blocks its share, each at most 75 %; several multiply, and their whole stops at 75 %
+ *   ({@link #damageTypeResistance}). On a school hit they multiply with its school resistance.</li>
  *   <li><b>Armor:</b> vanilla's formula ({@code CombatRules#getDamageAfterAbsorb}; Matěj, 2026-10-16), on the armor
  *   the attacker's armor pierce leaves (the flat points first, then the armor shred share of what is left). With D the
  *   hit's damage, effective armor = clamp(armor − D / (2 + toughness / 4), armor / 5, 20) blocks effective / 25 of
@@ -144,6 +147,20 @@ public final class DamageCalculator {
      */
     public static double penetrated(double resistance, double penetration) {
         return Math.max(0, resistance) * (1 - Mth.clamp(penetration, 0, 1));
+    }
+
+    /**
+     * What a hit's damage type resistances block together, a share (RLM-233): Physical, Projectile, Explosion and Fall
+     * Resistance whose tags the hit is in. Each is kept between 0 and {@link #RESISTANCE_CAP}, they multiply (30 % and
+     * 50 % on an arrow leave 0.7 × 0.5 = 35 % of it, so they block 65 %), and the whole stops at the cap too: two
+     * resistances never make a hit harmless, and adding them up could pass 100 %.
+     */
+    public static double damageTypeResistance(double... shares) {
+        double left = 1;
+        for (double share : shares) {
+            left *= 1 - Mth.clamp(share, 0, RESISTANCE_CAP);
+        }
+        return Math.min(RESISTANCE_CAP, 1 - left);
     }
 
     /** Damage after a resistance: × (1 − resistance), the resistance kept between 0 and 1. */

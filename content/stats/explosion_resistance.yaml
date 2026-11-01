@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../tools/schemas/stats.schema.json
+# Less damage from explosions, in percent (RLM-233, Blast-Forged): vanilla's #minecraft:is_explosion (creepers, TNT,
+# fireworks, beds and respawn anchors). Capped at 75 % (architecture 9.1).
+id: explosion_resistance
+name: {en_us: Explosion Resistance}
+kind: secondary
+max_percent: 75
+resists: minecraft:is_explosion
