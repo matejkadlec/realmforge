@@ -3,8 +3,8 @@
 # RLM-235, RLM-509): one text per stat, so the guide's Character section (M4) can reuse them. A text says what the stat
 # does and in which units, plus what a player needs to read the number: what it applies to, a cap, how it stacks
 # (Matěj, 2026-10-30). Mining Speed and Health Regeneration are Matěj's own words. A primary stat's tooltip lists what
-# its points give below its text, from the stat rules. Spell Resistance and the schools' resistances are mob-only
-# stats (RLM-233), so they have none.
+# its points give below its text, from the stat rules. The schools' resistances are mob-only stats (RLM-233), so they
+# have none, and Spell Resistance counts in the Magic row of Resistances.
 id: stat_tooltip
 texts:
   # The primary stats (realmforge:strength, ...).
@@ -110,4 +110,4 @@ texts:
   resistance_fire:
     en_us: How much less damage you take from fire and lava, from your protection enchantments. Armor is not counted.
   resistance_magic:
-    en_us: How much less damage you take from spells of the magic schools, from your protection enchantments.
+    en_us: How much less damage you take from spells of the magic schools, from Spell Resistance and your protection enchantments together.

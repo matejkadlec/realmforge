@@ -206,8 +206,9 @@ public final class CharacterSheetGameTests {
     /**
      * RLM-235, RLM-233 (Matěj, 2026-10-31): a Resistances row per kind of hit shows what the player's resistance stats
      * and protection enchantments block of it together, 1 − (1 − stats) × (1 − enchantments), the enchantments' part
-     * from the game's own protection rules; the tooltip splits the two parts, and Fire and Magic have enchantments
-     * only. The server keeps the synced copy the client reads current.
+     * from the game's own protection rules; the tooltip splits the two parts, Fire has enchantments only, and Magic's
+     * stats are Spell Resistance, which a magic school's hit meets. The server keeps the synced copy the client reads
+     * current.
      */
     @QaGameTest
     public static void resistancesCombineStatsAndEnchantments(GameTestHelper helper) {
@@ -223,7 +224,8 @@ public final class CharacterSheetGameTests {
                 "no armor: 50% Physical Resistance counts for melee hits and projectiles");
         helper.assertValueEqual(tooltip(rows.getFirst()), List.of("From stats: 50%", "From enchantments: 0%"),
                 "Physical's split");
-        helper.assertValueEqual(tooltip(rows.getLast()), List.of("From enchantments: 0%"), "Magic: enchantments only");
+        helper.assertValueEqual(tooltip(rows.getLast()), List.of("From stats: 0%", "From enchantments: 0%"),
+                "Magic's split");
         helper.assertValueEqual(tooltip(rows.get(4)), List.of("From enchantments: 0%"), "Fire: enchantments only");
 
         ItemStack chest = new ItemStack(Items.DIAMOND_CHESTPLATE);
@@ -231,6 +233,7 @@ public final class CharacterSheetGameTests {
                 4);
         player.setItemSlot(EquipmentSlot.CHEST, chest);
         StatsCommands.setBase(player, GeneratedStats.PROJECTILE_RESISTANCE, 0.5);
+        StatsCommands.setBase(player, GeneratedStats.SPELL_RESISTANCE, 0.2);
         EnchantmentProtection protection = EnchantmentProtection.compute(helper.getLevel(), player);
         for (DamageKind kind : DamageKind.values()) {
             helper.assertTrue(protection.share(kind) > 0, "Protection IV counts against " + kind);
@@ -243,8 +246,11 @@ public final class CharacterSheetGameTests {
                 "From enchantments: " + StatNumbers.share(physical)), "the split");
         helper.assertValueEqual(tooltip(enchanted.get(1)).getFirst(), "From stats: 75%",
                 "Projectile: 50% Physical and 50% Projectile multiply to 75%, the cap");
-        helper.assertValueEqual(enchanted.getLast().value(), StatNumbers.share(protection.share(DamageKind.MAGIC)),
-                "Magic: Protection alone");
+        double magic = protection.share(DamageKind.MAGIC);
+        helper.assertValueEqual(enchanted.getLast().value(), StatNumbers.share(1 - 0.8 * (1 - magic)),
+                "Magic: 20% Spell Resistance (Vitality's milestone at 25) with Protection");
+        helper.assertValueEqual(tooltip(enchanted.getLast()), List.of("From stats: 20%",
+                "From enchantments: " + StatNumbers.share(magic)), "Magic's split");
 
         // The client's sheet reads the copy the server keeps current every half second.
         for (int tick = 0; tick < 10; tick++) {

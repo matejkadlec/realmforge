@@ -802,8 +802,9 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
      it is not used. Each is at most 75 %; several on one hit multiply, and their whole stops at 75 % too
      (`DamageCalculator#damageTypeResistance`: an arrow against 30 % physical and 50 % projectile keeps 35 %). On a
      school hit they multiply with the school's resistance; a magic school is in none of the tags, so a player's magic
-     defense stays Magic Protection, the magic shield, dodge and health. Mobs have none of these stats. Apotheosis's
-     Blast-Forged, Blockading, Deflective and Feathery give them ([19.4](#194-optional-integrations)).
+     defense stays Magic Protection, Spell Resistance (Vitality's milestone at 25), the magic shield and health. Mobs
+     have none of these stats. Apotheosis's Blast-Forged, Blockading, Deflective and Feathery give them
+     ([19.4](#194-optional-integrations)).
    - **A raised two-handed weapon** blocks a hit on a player after the damage type resistances: in full in the first
      half second after raising it (the event is cancelled), by half after that, before armor and the school
      resistances ([9.3](#93-blocking-with-two-handed-weapons)), unless the hurt cooldown drops the hit anyway
@@ -3588,9 +3589,11 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
       (`EnchantmentHelper#getDamageProtection`, then `CombatRules#getDamageAfterMagicAbsorb`, whose formula Apothic
       Attributes replaces), so Apothic Enchanting's levels and RLM-537's Magic Protection count without code of ours.
       The server works it out every half second and syncs it to the player (`realmforge:enchantment_protection`, [7](#7-player-state)).
-      Armor is not in it, as what it blocks depends on the hit's size. The tooltip splits the value: from stats (where
-      any count; Fire and Magic have none), from enchantments. Spell Resistance and the schools' resistances are
-      mob-only stats (RLM-233), and the four damage type resistances have no rows of their own.
+      Armor is not in it, as what it blocks depends on the hit's size. Magic's stats part is Spell Resistance, at most
+      75 %, as the pipeline applies it to a magic school's hit: players get it from Vitality's milestone at 25. The
+      tooltip splits the value: from stats (where any count; Fire has none), from enchantments. The schools'
+      resistances are mob-only stats (RLM-233), and Spell Resistance and the four damage type resistances have no rows
+      of their own.
 
     Every stat has a tooltip: its name, then what it does from `content/texts/stat_tooltip.yaml`
     (`stat_tooltip.realmforge.<path of the attribute's id>`, one text per stat, which the guide can reuse); a primary

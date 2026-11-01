@@ -695,7 +695,7 @@ public final class GeneratedTexts {
     /** {@code stat_tooltip.realmforge.resistance_fire} from {@code content/texts/stat_tooltip.yaml}: "How much less damage you take from fire and lava, from your protection enchantments. Armor is not counted." */
     public static final String STAT_TOOLTIP_RESISTANCE_FIRE = "stat_tooltip.realmforge.resistance_fire";
 
-    /** {@code stat_tooltip.realmforge.resistance_magic} from {@code content/texts/stat_tooltip.yaml}: "How much less damage you take from spells of the magic schools, from your protection enchantments." */
+    /** {@code stat_tooltip.realmforge.resistance_magic} from {@code content/texts/stat_tooltip.yaml}: "How much less damage you take from spells of the magic schools, from Spell Resistance and your protection enchantments together." */
     public static final String STAT_TOOLTIP_RESISTANCE_MAGIC = "stat_tooltip.realmforge.resistance_magic";
 
     /** {@code stat_tooltip.realmforge.resistance_physical} from {@code content/texts/stat_tooltip.yaml}: "How much less damage you take from melee hits, projectiles and physical spells, from Physical Resistance and your protection enchantments together. Armor is not counted." */

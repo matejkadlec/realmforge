@@ -311,8 +311,8 @@ public record CharacterSheetView(Component title, CharacterTab character, List<S
                 .forEach(school -> schools.add(school.value()));
 
         // By key: the schools' holders come from the attribute registry, ours from GeneratedStats. The schools'
-        // resistances are mob-only, so they count as placed and never show; the damage type resistances show in the
-        // Resistances rows.
+        // resistances are mob-only, so they count as placed and never show; Spell Resistance and the damage type
+        // resistances show in the Resistances rows.
         Set<ResourceKey<Attribute>> placed = new HashSet<>();
         placed.add(key(GeneratedStats.SPELL_RESISTANCE));
         GeneratedStats.DAMAGE_RESISTANCES.forEach(resistance -> placed.add(key(resistance.stat())));
@@ -380,9 +380,11 @@ public record CharacterSheetView(Component title, CharacterTab character, List<S
      * The Resistances rows (Matěj, 2026-10-31), one per {@link DamageKind}: the share of such a hit the player does not
      * take, from their resistance stats and protection enchantments together ({@link #combined}). The stats are those
      * of {@link GeneratedStats#DAMAGE_RESISTANCES} whose tag the kind's damage type is in, multiplied and at most 75 %,
-     * as the damage pipeline applies them ({@link DamageCalculator#damageTypeResistance}); Fire and Magic have none.
-     * Armor is not in it: what it blocks depends on the hit's size. The tooltip says what the row counts, then splits
-     * the value: from stats (where any count), from enchantments.
+     * as the damage pipeline applies them ({@link DamageCalculator#damageTypeResistance}); Fire has none. A magic
+     * school's hit meets Spell Resistance instead, at most 75 % ({@link DamageCalculator#resistance}), which players get
+     * from Vitality's milestone at 25; the schools' own resistances are mob-only. Armor is not in it: what it blocks
+     * depends on the hit's size. The tooltip says what the row counts, then splits the value: from stats (where any
+     * count), from enchantments.
      */
     static List<Row> resistanceRows(ToDoubleFunction<Holder<Attribute>> value, HolderLookup.Provider registries,
             ToDoubleFunction<DamageKind> enchantmentProtection) {
@@ -394,12 +396,14 @@ public record CharacterSheetView(Component title, CharacterTab character, List<S
                     .map(type -> GeneratedStats.DAMAGE_RESISTANCES.stream()
                             .filter(resistance -> type.is(resistance.damage())).toList())
                     .orElse(List.of());
-            double stats = DamageCalculator.damageTypeResistance(counted.stream()
-                    .mapToDouble(resistance -> value.applyAsDouble(resistance.stat())).toArray());
+            double stats = kind == DamageKind.MAGIC
+                    ? DamageCalculator.resistance(0, value.applyAsDouble(GeneratedStats.SPELL_RESISTANCE), true)
+                    : DamageCalculator.damageTypeResistance(counted.stream()
+                            .mapToDouble(resistance -> value.applyAsDouble(resistance.stat())).toArray());
             double enchantments = enchantmentProtection.applyAsDouble(kind);
             List<Component> tooltip = new ArrayList<>();
             tooltip.add(colored(Component.translatable(TOOLTIP_PREFIX + "resistance_" + name), TEXT));
-            if (!counted.isEmpty()) {
+            if (!counted.isEmpty() || kind == DamageKind.MAGIC) {
                 tooltip.add(colored(Component.translatable(GeneratedTexts.GUI_RESISTANCE_FROM_STATS,
                         StatNumbers.share(stats)), BONUS));
             }

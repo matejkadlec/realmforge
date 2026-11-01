@@ -488,7 +488,7 @@
   "stat_tooltip.realmforge.resistance_explosion": "How much less damage you take from explosions, from Explosion Resistance and your protection enchantments together. Armor is not counted.",
   "stat_tooltip.realmforge.resistance_fall": "How much less damage you take from falls, from Fall Resistance and your protection enchantments together.",
   "stat_tooltip.realmforge.resistance_fire": "How much less damage you take from fire and lava, from your protection enchantments. Armor is not counted.",
-  "stat_tooltip.realmforge.resistance_magic": "How much less damage you take from spells of the magic schools, from your protection enchantments.",
+  "stat_tooltip.realmforge.resistance_magic": "How much less damage you take from spells of the magic schools, from Spell Resistance and your protection enchantments together.",
   "stat_tooltip.realmforge.resistance_physical": "How much less damage you take from melee hits, projectiles and physical spells, from Physical Resistance and your protection enchantments together. Armor is not counted.",
   "stat_tooltip.realmforge.resistance_projectile": "How much less damage you take from arrows, tridents and other projectiles, from Physical and Projectile Resistance and your protection enchantments together. Armor is not counted.",
   "stat_tooltip.realmforge.spell_power": "Adds to the damage and healing of your magic spells. Each spell adds its own share of it.",
