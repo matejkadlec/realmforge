@@ -9,6 +9,7 @@ import io.github.matejkadlec.realmforge.mob.MobLevels;
 import io.github.matejkadlec.realmforge.mob.MobScaling;
 import io.github.matejkadlec.realmforge.qa.combat.CombatLog;
 import io.github.matejkadlec.realmforge.qa.combat.TrainingDummy;
+import io.github.matejkadlec.realmforge.qa.combat.TrainingDummyMob;
 import io.github.matejkadlec.realmforge.qa.command.StatsCommands;
 import io.github.matejkadlec.realmforge.stats.EntityLevel;
 import java.io.IOException;
@@ -186,7 +187,7 @@ public final class CombatGameTests {
     public static void fullyDrawnArrowsAndTridentsCritOnCritChance(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-combat-ranged-crit", EDGE);
-        Pillager dummy = TrainingDummy.spawn(level, helper.absoluteVec(new Vec3(2.5, 1, 2.5)), 0, 0);
+        TrainingDummyMob dummy = TrainingDummy.spawn(level, helper.absoluteVec(new Vec3(2.5, 1, 2.5)), 0, 0);
         double arrow = 2 * ARROW_BASE;
 
         StatsCommands.setBase(player, GeneratedStats.CRIT_CHANCE, 0);
@@ -236,7 +237,7 @@ public final class CombatGameTests {
     public static void trainingDummyMetersAndLogsHits(GameTestHelper helper) throws IOException {
         ServerLevel level = helper.getLevel();
         Zombie zombie = attacker(helper);
-        Pillager dummy = TrainingDummy.spawn(level, helper.absoluteVec(new Vec3(2.5, 1, 2.5)), 0, 0);
+        TrainingDummyMob dummy = TrainingDummy.spawn(level, helper.absoluteVec(new Vec3(2.5, 1, 2.5)), 0, 0);
         dummy.hurtServer(level, level.damageSources().mobAttack(zombie), 30);
         helper.assertTrue(close(dummy.getHealth(), dummy.getMaxHealth()), "the dummy refilled after the hit");
         TrainingDummy.Session session = TrainingDummy.session(dummy);
@@ -261,7 +262,7 @@ public final class CombatGameTests {
     @QaGameTest
     public static void trainingDummyTakesPoisonHarmingAndHealingLikeAPlayer(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
-        Pillager dummy = TrainingDummy.spawn(level, helper.absoluteVec(new Vec3(2.5, 1, 2.5)), 0, 0);
+        TrainingDummyMob dummy = TrainingDummy.spawn(level, helper.absoluteVec(new Vec3(2.5, 1, 2.5)), 0, 0);
         helper.assertFalse(dummy.isInvertedHealAndHarm(), "the dummy is not undead");
         helper.assertFalse(dummy.is(EntityTypeTags.BURN_IN_DAYLIGHT), "daylight does not burn the dummy");
         helper.assertTrue(dummy.getMainHandItem().isEmpty(), "the dummy holds no crossbow");
@@ -277,9 +278,9 @@ public final class CombatGameTests {
         session = TrainingDummy.session(dummy);
         helper.assertTrue(session != null && close(session.total(), 6), "harming hurt the dummy: " + session);
 
-        dummy.setHealth(500);
+        dummy.setHealth(50);
         MobEffects.INSTANT_HEALTH.value().applyInstantenousEffect(level, null, null, dummy, 0, 1);
-        helper.assertTrue(close(dummy.getHealth(), 504), "healing healed the dummy: " + dummy.getHealth());
+        helper.assertTrue(close(dummy.getHealth(), 54), "healing healed the dummy: " + dummy.getHealth());
         TrainingDummy.remove(dummy);
         helper.succeed();
     }
@@ -374,7 +375,7 @@ public final class CombatGameTests {
      * without gravity, and ticks it once, so it hits at that speed; the dummy's meter shows what it dealt and whether
      * it crit.
      */
-    private static void assertShot(GameTestHelper helper, Pillager dummy, AbstractArrow projectile, double expected,
+    private static void assertShot(GameTestHelper helper, TrainingDummyMob dummy, AbstractArrow projectile, double expected,
             boolean crit, String what) {
         settle(dummy);
         TrainingDummy.Session before = TrainingDummy.session(dummy);
