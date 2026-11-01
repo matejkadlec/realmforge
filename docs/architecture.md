@@ -1323,7 +1323,7 @@ Its name and description are translation keys from C3b, the description's number
   against Frozen), added to the hit's crit rule; a two-handed block's cooldown shorter from a rank on
   (`block_cooldown`, [9.3](#93-blocking-with-two-handed-weapons)); and a named spell's splash wider from a rank on
   (`splash_radius`, [11.3](#113-spell-entities); RLM-542). A proc's status effect may last longer from a rank on
-  (`apply_effect.from_level`: Frostbite's Frozen, 3 s at rank 3). The spellbook lists it with its rank and "Passive";
+  (`apply_effect.from_level`: Frostbite's Frozen, 5 s at rank 3). The spellbook lists it with its rank and "Passive";
   its tooltip shows the rank's description and the next rank's (`SpellTooltip#passiveLines`; an active spell's tooltip
   shows its next rank's numbers below its own too, RLM-542), and an active spell's
   damage number counts the player's passives. Mobs know no spells, so passives give them nothing. A passive's `procs`
@@ -1724,8 +1724,12 @@ vanilla's multiplying by the level (`per_amplifier`, NeoForge's attribute curve:
 `realmforge:cleanse` (`spell/CleanseEffect`, Will To Survive) removes every harmful effect from the caster or an ally,
 a stun included. **Frozen** (`realmforge:frozen`, RLM-541, RLM-539) is a root: -100 % movement speed and jump strength,
 but no `stun`, so its holder still attacks and casts; Shatter's crit chance and Ice Lance's bonus read it, Frostbite's
-proc applies it, and Will To Survive's cleanse breaks it as a loss of control. Bosses are immune boss by boss
-([14.3](#143-bosses)). **Its look** (Matěj, 2026-10-30): an effect's `look` (`StatusEffect.Look`, Frozen's `ice`) reaches
+proc applies it, and Will To Survive's cleanse breaks it as a loss of control. **Damage breaks it** (Matěj's playtest
+of 2026-11-01, RLM-542): an effect with `breaks_on_damage` (`StatusEffect#breakChance`, Frozen's 50 %, every Frost
+freeze's) ends at that chance whenever its holder takes damage of any kind, rolled for each hit after it lands
+(`effect/DamageBreaks`, `LivingDamageEvent.Post`), so the hit itself still sees it: Ice Lance's bonus and Shatter's crit
+chance count on the hit that may break it, and a spell that damages and then freezes (Frost Nova) freezes after its own
+damage. Bosses are immune boss by boss ([14.3](#143-bosses)). **Its look** (Matěj, 2026-10-30): an effect's `look` (`StatusEffect.Look`, Frozen's `ice`) reaches
 clients through the synced `realmforge:effect_looks` attachment (`effect/EffectLooks`), as vanilla tells clients only of
 a player's own effects; `client/render/FrozenLook` makes an iced entity shake as a fully frozen one does in powder snow
 and draws its model again in vanilla's Packed Ice texture (referenced where it lies, never copied), for every vanilla
@@ -1830,7 +1834,9 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
   SHIFT reads CTR-S), drawn smaller when it would leave the slot.
 - **Learning and placing:** `Spells#learn` puts a newly learned spell into the bar's first empty slot, unless it is a
   mob's. Learning a known spell again, at any level (a class level, C4, or a specialization point, C5), leaves the bar
-  as the player arranged it, so a spell taken off stays off (RLM-374). The spellbook (`client/screen/SpellbookScreen`) moves a known spell into a slot, swapping with
+  as the player arranged it, so a spell taken off stays off (RLM-374). The spellbook (`client/screen/SpellbookScreen`;
+  a scrollbar beside its Known Spells while they do not fit, `client/screen/ScrollBar`, RLM-542) moves a known spell
+  into a slot, swapping with
   the one there, or empties one, through `SetSpellBarSlotPayload` and `Spells#placeOnBar`, which refuses another slot
   or an unknown spell.
 - **Casting** (Matěj, 2026-10-19): `client/spell/CastQueue` decides every client tick, from the presses and the held
@@ -2072,19 +2078,25 @@ Missiles leave the M1 kit and come back with their trees in M3 (RLM-218).
 - **The loop:** slow (Frostbolt, Cone of Cold, Blizzard), freeze (Frost Nova; Frostbite on a Slowness), then Ice Lance,
   × 2 to × 3 against a Frozen target, with Shatter's crit chance against it.
 - **Numbers** (rank 1 to the highest, SP = Spell Power): **Cone of Cold** 5/6/7 + 60/70/80 % SP to every enemy in a
-  5-block, 60° cone ([11.3](#113-spell-entities)), Slowness II 3/4/5 s, 10 s, 30 mana. **Ice Lance** instant, 3 to 5 +
-  40 to 60 % SP, × 2/2.25/2.5/2.75/3 against Frozen, 4 s, 15 mana. **Frost Nova** 3/4/5 + 30/35/40 % SP within 4
-  blocks, Frozen 2/3/4 s, 20 s, 30 mana. **Blizzard** a 3 s channel at a ground spot, six waves of 2/2.5/3 +
-  20/25/30 % SP within 3 blocks, Slowness I (II at rank 3), 13 mana a second (the document's 40 a cast, 39).
+  5-block, 60° cone ([11.3](#113-spell-entities)), Slowness II 3/4/5 s, 10 s, 30/40/50 mana. **Ice Lance** instant,
+  3 to 5 + 40 to 60 % SP, × 2/2.25/2.5/2.75/3 against Frozen, 4 s, 15/25/35/45/55 mana. **Frost Nova** 3/4/5 +
+  30/35/40 % SP within 4 blocks, Frozen 5/7.5/10 s, 20 s, 30/40/50 mana. **Blizzard** a 6 s channel at a ground spot,
+  twelve waves of 2/2.5/3 + 20/25/30 % SP within 4 blocks, Slowness I (II at rank 3), 13/18/23 mana a second.
   **Improved Frostbolt** +5/10/15 % Frostbolt damage; rank 3 widens Frostbolt's splash from 1 to 1.5 blocks instead of
   the document's "its Slowness also hits the enemies its splash damages", which the splash already does (Matěj,
-  2026-10-31). **Frostbite** a 5/10/15 % chance on the Mage's Slowness to Freeze for 2 s (3 s at rank 3), once every 5 s
-  on each target. **Shatter** +10/20/30 % crit chance against Frozen targets. Frostbolt and Ice Barrier keep their
-  numbers (below).
+  2026-10-31). **Frostbite** a 5/10/15 % chance on the Mage's Slowness to Freeze for 3 s (5 s at rank 3), once every 5 s
+  on each target. **Shatter** +10/20/30 % crit chance against Frozen targets. Frostbolt costs 10/15/20/25/30 mana and
+  Ice Barrier 25/35/45; their other numbers are below. Damage ends Frozen at a 50 % chance
+  ([11.4](#114-status-effects)).
+- **Matěj's playtest of 2026-11-01** set Blizzard's 6 s, its 4 blocks and its cost, Frostbite's and Frost Nova's
+  Frozen at their top ranks (5 s and 10 s; the lower ranks scaled by Claude, Frostbite 3 s, Frost Nova × 2.5), every
+  cost per rank and Frozen's break on damage; Astone died too fast with little effort, and a separate ticket of his
+  balances the spells.
 - **The target** (RLM-503): an L18 Mage in good M1 gear kills Astone (about 3,000 health) in about 40 casts, 2.5 to
   3 minutes; at 60 or more, Astone is nerfed rather than the spells buffed.
 - `FrostTreeGameTests` covers every active's damage at rank 1 and its highest rank, Ice Lance against Frozen,
-  Frostbite's chance and cooldown, the cone, the nova, Blizzard's waves, the wider splash and the kit by rows.
+  Frostbite's chance and cooldown, Frozen breaking on about half the hits, the cone, the nova, Blizzard's waves, the
+  wider splash and the kit by rows.
 
 - **Slam:** 4 + 1.5 per rank + 120 % of attack damage, 30 rage, 6 s, needs a melee weapon (RLM-499); armor shred
   5 % per rank. **Reckless Strike:** 2 + 1 per rank + 100 % of attack damage, 20 rage, 4 s, a melee weapon; crit

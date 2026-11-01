@@ -364,7 +364,8 @@ Rules:
   interrupted; it needs -100 % `minecraft:movement_speed` and `minecraft:jump_strength` among its `modifiers`. A tick is a hit
   or heal of the school from the caster that applied the effect, its share of the caster's Spell Power added and
   raised by the school's power, and it never crits. `frozen` roots its holder (no walking, no jumping) but lets it
-  attack and cast, unlike a stun; Shatter reads it (RLM-541). `look: ice` makes clients draw its holder covered in
+  attack and cast, unlike a stun; Shatter reads it (RLM-541). `breaks_on_damage_percent` is the chance that any damage
+  its holder takes ends it, rolled after each hit (Frozen's 50, RLM-542). `look: ice` makes clients draw its holder covered in
   Packed Ice and shivering (Frozen, RLM-539). `stacks` (`school`, `interval_seconds`, `ignores_armor`; instead of
   `periodic`, harmful only) makes it damage over time kept per caster's spell (Bleeding, RLM-539): the spell that applies
   it through `realmforge:damage_over_time` names the damage, fixed when applied; two spells or casters stack, the same

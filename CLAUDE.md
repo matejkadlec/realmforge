@@ -85,7 +85,8 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   player's channel ticks every 0.5 s (RLM-518). Slam, Reckless Strike and Shield Bash are swings with hit shapes in
   front of the player (Better Combat's sword swing, the default, and its stab, at the player's melee reach, so they grow
   with it), counted down on the cast bar, that hit every enemy in them at their hit moment, never through walls, and the
-  Mage's bolts splash half their damage within a block (RLM-399); Frozen roots and shows ice, Bleeding keeps a stack per
+  Mage's bolts splash half their damage within a block (RLM-399); Frozen roots and shows ice (any damage ends it at
+  a 50 % chance, RLM-542), Bleeding keeps a stack per
   caster's spell, bosses have per-boss immunities (RLM-539); spells may have windows (after a block, after a kill),
   target health conditions and extra rage, and passive spells' procs have internal cooldowns per target (RLM-540).
   Spells scale by system C (RLM-534): an amount plus a coefficient of the caster's Spell Power (points) or Attack
