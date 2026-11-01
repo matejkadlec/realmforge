@@ -137,6 +137,8 @@ public final class PassiveSpellGameTests {
 
         StatsCommands.setBase(player, GeneratedStats.CRIT_CHANCE, 0.7);
         for (int hit = 0; hit < 5; hit++) {
+            // Any damage ends Frozen at a 50 % chance (RLM-542), so each hit freezes the husk again first.
+            frozen.addEffect(new MobEffectInstance(GeneratedEffects.FROZEN, 200));
             assertBolt(helper, player, frozen, 8 * 1.5, "hit " + (hit + 1) + " on the Frozen husk crits");
         }
         StatsCommands.setBase(player, GeneratedStats.CRIT_CHANCE, 0);

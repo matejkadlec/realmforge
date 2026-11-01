@@ -21,14 +21,15 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
  * One of our status effects, from {@code content/effects/} through {@code GeneratedEffects} (architecture 11.4):
  * vanilla's attribute modifiers, damage or healing at the end of every interval ({@link Periodic}), which takes the
  * stats of the caster that applied it ({@link EffectTicks}), damage over time kept per caster's spell
- * ({@link StackedDamage}, RLM-539), whether it stuns ({@link Stuns}, C4) and how clients draw its holder
- * ({@link Look}).
+ * ({@link StackedDamage}, RLM-539), whether it stuns ({@link Stuns}, C4), how clients draw its holder ({@link Look}),
+ * and the chance that damage ends it ({@link DamageBreaks}, RLM-542).
  */
 public class StatusEffect extends MobEffect {
     private final Optional<Periodic> periodic;
     private Optional<StackedDamage> stacks = Optional.empty();
     private Optional<Look> look = Optional.empty();
     private boolean stuns;
+    private double breakChance;
 
     public StatusEffect(MobEffectCategory category, int color, Optional<Periodic> periodic) {
         super(category, color);
@@ -69,6 +70,20 @@ public class StatusEffect extends MobEffect {
     public StatusEffect stuns() {
         stuns = true;
         return this;
+    }
+
+    /**
+     * Makes any damage its holder takes end it at {@code chance}, a fraction ({@link DamageBreaks}; Frozen's 0.5,
+     * RLM-542). The generated registration calls it while it builds the effect.
+     */
+    public StatusEffect breaksOnDamage(double chance) {
+        breakChance = chance;
+        return this;
+    }
+
+    /** The chance that any damage its holder takes ends it, a fraction; 0 when damage never does. */
+    public double breakChance() {
+        return breakChance;
     }
 
     /** Whether it is a stun: its holder neither attacks nor casts, and a mob's AI stands still. */

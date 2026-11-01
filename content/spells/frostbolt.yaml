@@ -1,12 +1,13 @@
 # yaml-language-server: $schema=../../tools/schemas/spells.schema.json
 # The Mage's first spell (C4; Frost's first spell, RLM-391; decision D4's starting spell "a Frostbolt-like fast
-# single-target cast that slows"), the Frost Mage's tree, row 1 (level 1), middle (RLM-542): a 1.5 s cast at every rank, no cooldown, so only the cast time limits it. Medium damage
-# and Slowness for 3 s, 0.5 s longer per rank, Slowness II from rank 5. The bolt forms in the hands during the cast and
-# flies where the crosshair points (RLM-344), homing on an enemy near it (RLM-345). Scaling system C (Matěj,
-# 2026-10-30, RLM-534): 8/9/10/11/12 + 100/125/150/175/200 % of Spell Power, the highest coefficient per cast (a
-# single-target cast with no cooldown). A level 1 Mage (Stone Wand 2, Apprentice's set 2, Intellect 6 × 0.5) has 7
-# Spell Power: 15 damage a cast. Its hit explodes in ice (RLM-399, Matěj, 2026-10-24): every other enemy within a block of
-# the target takes half the damage and the full Slowness.
+# single-target cast that slows"), the Frost Mage's tree, row 1 (level 1), middle (RLM-542): a 1.5 s cast at every rank,
+# no cooldown, so only the cast time limits it. Medium damage and Slowness for 3 s, 0.5 s longer per rank, Slowness II
+# from rank 5. The bolt forms in the hands during the cast and flies where the crosshair points (RLM-344), homing on an
+# enemy near it (RLM-345). Scaling system C (Matěj, 2026-10-30, RLM-534): 8/9/10/11/12 + 100/125/150/175/200 % of Spell
+# Power, the highest coefficient per cast (a single-target cast with no cooldown). A level 1 Mage (Stone Wand 2,
+# Apprentice's set 2, Intellect 6 × 0.5) has 7 Spell Power: 15 damage a cast. 10/15/20/25/30 mana (Matěj's playtest of
+# 2026-11-01). Its hit explodes in ice (RLM-399, Matěj, 2026-10-24): every other enemy within a block of the target
+# takes half the damage and the full Slowness.
 id: frostbolt
 name: {en_us: Frostbolt}
 description: {en_us: "Hurls a bolt of frost for {damage} damage that slows the target for {duration} sec."}
@@ -14,7 +15,7 @@ school: realmforge:frost
 scales_with: spell_power
 targeting: {type: realmforge:direction, range: 40}
 cast: {type: cast_time, duration_seconds: 1.5, forms_projectile: true}
-cost: {resource: realmforge:mana, amount: 10}
+cost: {resource: realmforge:mana, amount: 10, per_level: 5}
 max_level: 5
 effects:
   - type: realmforge:projectile

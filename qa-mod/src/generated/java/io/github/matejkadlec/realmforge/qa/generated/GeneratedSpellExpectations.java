@@ -296,7 +296,7 @@ public final class GeneratedSpellExpectations {
                     "realmforge:ground_point",
                     30.0,
                     "channel",
-                    60,
+                    120,
                     10,
                     false,
                     false,
@@ -307,7 +307,7 @@ public final class GeneratedSpellExpectations {
                     "raise",
                     Optional.of("realmforge:mana"),
                     13.0,
-                    0.0,
+                    5.0,
                     0,
                     10,
                     3,
@@ -320,7 +320,7 @@ public final class GeneratedSpellExpectations {
                     false,
                     false,
                     List.of(
-                            new EffectExpectation("realmforge:area", Map.of("duration_ticks", 10.0, "interval_ticks", 10.0, "radius", 3.0), Map.of("affects", "enemies", "ring_color", "#BFEFFF"), List.of(
+                            new EffectExpectation("realmforge:area", Map.of("duration_ticks", 10.0, "interval_ticks", 10.0, "radius", 4.0), Map.of("affects", "enemies", "ring_color", "#BFEFFF"), List.of(
                                     new EffectExpectation("realmforge:damage", Map.of("amount", 2.0, "attack_damage", 0.0, "attack_damage_per_level", 0.0, "per_level", 0.5, "spell_power", 0.2, "spell_power_per_level", 0.05), Map.of(), List.of()),
                                     new EffectExpectation("realmforge:apply_effect", Map.of("amplifier", 0.0, "duration_ticks", 30.0), Map.of("effect", "minecraft:slowness", "stronger_at_levels", "3"), List.of()))))),
             new SpellExpectation(
@@ -343,7 +343,7 @@ public final class GeneratedSpellExpectations {
                     "raise",
                     Optional.of("realmforge:mana"),
                     30.0,
-                    0.0,
+                    10.0,
                     200,
                     10,
                     3,
@@ -415,7 +415,7 @@ public final class GeneratedSpellExpectations {
                     "raise",
                     Optional.of("realmforge:mana"),
                     30.0,
-                    0.0,
+                    10.0,
                     400,
                     10,
                     3,
@@ -430,7 +430,7 @@ public final class GeneratedSpellExpectations {
                     List.of(
                             new EffectExpectation("realmforge:area", Map.of("duration_ticks", 10.0, "interval_ticks", 10.0, "radius", 4.0), Map.of("affects", "enemies", "ring_color", "#BFEFFF"), List.of(
                                     new EffectExpectation("realmforge:damage", Map.of("amount", 3.0, "attack_damage", 0.0, "attack_damage_per_level", 0.0, "per_level", 1.0, "spell_power", 0.3, "spell_power_per_level", 0.05), Map.of(), List.of()),
-                                    new EffectExpectation("realmforge:apply_effect", Map.of("amplifier", 0.0, "duration_per_level_ticks", 20.0, "duration_ticks", 40.0), Map.of("effect", "realmforge:frozen"), List.of()))))),
+                                    new EffectExpectation("realmforge:apply_effect", Map.of("amplifier", 0.0, "duration_per_level_ticks", 50.0, "duration_ticks", 100.0), Map.of("effect", "realmforge:frozen"), List.of()))))),
             new SpellExpectation(
                     "realmforge:frostbite",
                     "spell.realmforge.frostbite.name",
@@ -484,7 +484,7 @@ public final class GeneratedSpellExpectations {
                     "raise",
                     Optional.of("realmforge:mana"),
                     10.0,
-                    0.0,
+                    5.0,
                     0,
                     10,
                     5,
@@ -520,7 +520,7 @@ public final class GeneratedSpellExpectations {
                     "raise",
                     Optional.of("realmforge:mana"),
                     25.0,
-                    0.0,
+                    10.0,
                     1200,
                     10,
                     3,
@@ -554,7 +554,7 @@ public final class GeneratedSpellExpectations {
                     "raise",
                     Optional.of("realmforge:mana"),
                     15.0,
-                    0.0,
+                    10.0,
                     80,
                     10,
                     5,

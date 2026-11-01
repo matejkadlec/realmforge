@@ -12,12 +12,12 @@
     "lock_on": false,
     "keep_sight": false,
     "type": "channel",
-    "duration_ticks": 60,
+    "duration_ticks": 120,
     "interval_ticks": 10
   },
   "cost": {
     "amount": 13.0,
-    "per_level": 0,
+    "per_level": 5.0,
     "resource": "realmforge:mana"
   },
   "cooldown_ticks": 0,
@@ -33,7 +33,7 @@
   "effects": [
     {
       "type": "realmforge:area",
-      "radius": 3.0,
+      "radius": 4.0,
       "duration_ticks": 10,
       "interval_ticks": 10,
       "affects": "enemies",

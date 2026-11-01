@@ -2,12 +2,15 @@
 # Frozen in place (RLM-541; the Frost Mage's tree, RLM-542, freezes with Frost Nova and Frostbite): a root, so its holder
 # neither walks nor jumps, but unlike a stun it still attacks and casts. Shatter's crit chance reads it. Its holder is
 # covered in Packed Ice and shivers from the cold (RLM-539, Matěj, 2026-10-30), until RLM-544's art. Bosses are immune
-# one by one (immune_to in content/bosses/); Will To Survive's cleanse breaks it, as every harmful effect.
+# one by one (immune_to in content/bosses/); Will To Survive's cleanse breaks it, as every harmful effect. Any damage its
+# holder takes ends it at a 50 % chance (Matěj, 2026-11-01, RLM-542: Frostbite's, Frost Nova's and every Frost freeze
+# to come); the hit itself still sees it, so Ice Lance's bonus and Shatter's crit chance count.
 id: frozen
 name: {en_us: Frozen}
 category: harmful
 color: "#A8E4FF"
 look: ice
+breaks_on_damage_percent: 50
 modifiers:
   - {attribute: minecraft:movement_speed, operation: add_multiplied_total, amount_percent: -100}
   - {attribute: minecraft:jump_strength, operation: add_multiplied_total, amount_percent: -100}

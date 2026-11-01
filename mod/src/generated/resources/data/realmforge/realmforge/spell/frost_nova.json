@@ -11,7 +11,7 @@
   },
   "cost": {
     "amount": 30.0,
-    "per_level": 0,
+    "per_level": 10.0,
     "resource": "realmforge:mana"
   },
   "cooldown_ticks": 400,
@@ -42,8 +42,8 @@
         {
           "type": "realmforge:apply_effect",
           "effect": "realmforge:frozen",
-          "duration_ticks": 40,
-          "duration_per_level_ticks": 20,
+          "duration_ticks": 100,
+          "duration_per_level_ticks": 50,
           "amplifier": 0,
           "stronger_at_levels": []
         }

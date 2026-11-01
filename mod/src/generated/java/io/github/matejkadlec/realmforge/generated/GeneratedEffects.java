@@ -55,6 +55,7 @@ public final class GeneratedEffects {
             EFFECTS.register("frozen", () -> new StatusEffect(MobEffectCategory.HARMFUL, 0xA8E4FF,
                     Optional.empty())
                     .looks(StatusEffect.Look.ICE)
+                    .breaksOnDamage(0.5)
                     .modifier("minecraft:movement_speed", "realmforge:effect.frozen.minecraft.movement_speed", -1.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)
                     .modifier("minecraft:jump_strength", "realmforge:effect.frozen.minecraft.jump_strength", -1.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
 

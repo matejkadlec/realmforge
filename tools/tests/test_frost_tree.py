@@ -1,6 +1,7 @@
 """The Frost Mage's "Shatter" tree (RLM-542) in the pipeline: the cone (Cone of Cold), a bonus against a status effect
 that grows per rank (Ice Lance), a proc's effect that lasts longer from a rank on (Frostbite), a passive's wider splash
-(Improved Frostbolt), their placeholders, the Mage's kit by the tree's rows, and D4 counting only active spells."""
+(Improved Frostbolt), their placeholders, the Mage's kit by the tree's rows, D4 counting only active spells, and
+an effect that damage ends at a chance (Frozen)."""
 
 from __future__ import annotations
 
@@ -10,6 +11,10 @@ import pytest
 
 from realmforge_tools.project import RepoPaths
 from realmforge_tools.validate import load_and_validate
+from tests.test_effects import EXPECTATIONS as EFFECT_EXPECTATIONS
+from tests.test_effects import REGISTRATIONS, effect
+from tests.test_effects import assert_problem as effects_problem
+from tests.test_effects import generate as effects_generate
 from tests.test_spells import SPELL_DATA, assert_problem, generate, spell
 
 CONE = (
@@ -57,6 +62,14 @@ BITE = (
     "        effect: realmforge:frozen\n"
     "        duration_seconds: 2\n"
     "        from_level: {level: 3, duration_seconds: 3}\n"
+)
+BREAKS = (
+    "category: harmful\n"
+    'color: "#A8E4FF"\n'
+    "look: ice\n"
+    "breaks_on_damage_percent: 50\n"
+    "modifiers:\n"
+    "  - {attribute: minecraft:movement_speed, operation: add_multiplied_total, amount_percent: -100}\n"
 )
 WIDER = (
     "school: realmforge:frost\n"
@@ -271,3 +284,33 @@ def test_passive_spells_do_not_count_against_d4(repo: RepoPaths) -> None:
         encoding="utf-8",
     )
     assert_problem(repo, "5 active spells by level 10, the end of chapter 1, which allows 4")
+
+
+# Frozen breaks on damage (Matěj's playtest of 2026-11-01)
+
+
+def test_frozen_breaks_on_half_the_damage() -> None:
+    content, _ = load_and_validate(RepoPaths())
+    frozen = next(entry.model for entry in content.effects if entry.model.id == "frozen")
+    assert frozen.breaks_on_damage_percent == 50
+
+
+def test_a_break_chance_is_generated(repo: RepoPaths) -> None:
+    effect(repo, "test_chill_lock", BREAKS)
+    files = effects_generate(repo)
+    assert (
+        ".looks(StatusEffect.Look.ICE)\n                    .breaksOnDamage(0.5)"
+        in files[REGISTRATIONS].decode()
+    )
+    expectation = files[EFFECT_EXPECTATIONS].decode()
+    assert "Optional.empty(),\n                    false,\n                    0.5)" in expectation
+
+
+@pytest.mark.parametrize("chance", ["0", "120"])
+def test_a_break_chance_is_a_share(repo: RepoPaths, chance: str) -> None:
+    effect(
+        repo,
+        "test_chill_lock",
+        BREAKS.replace("breaks_on_damage_percent: 50", f"breaks_on_damage_percent: {chance}"),
+    )
+    effects_problem(repo, "breaks_on_damage_percent")
