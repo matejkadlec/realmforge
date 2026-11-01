@@ -188,6 +188,21 @@
   "additionalProperties": false,
   "description": "A status effect of ours, ``realmforge:<id>``: harmful, beneficial or neutral, with attribute modifiers, damage\nor healing over time, or both. Its name is the effect's translation, ``effect.realmforge.<id>``, shown in the\ninventory and on the HUD with its icon (a placeholder until the art exists).",
   "properties": {
+    "breaks_on_damage_percent": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "maximum": 100,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "The chance that any damage its holder takes ends it, in percent (Frozen: 50, Matěj, 2026-11-01, RLM-542). The hit that deals the damage still sees it.",
+      "title": "Breaks On Damage Percent"
+    },
     "category": {
       "description": "beneficial: a buff; harmful: a debuff (it can be dispelled as one); neutral: neither.",
       "enum": [

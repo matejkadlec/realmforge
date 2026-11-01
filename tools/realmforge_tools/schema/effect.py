@@ -147,6 +147,11 @@ class EffectDef(StrictModel):
         description="How clients draw its holder: ice covers its body in Packed Ice and makes it shiver (Frozen, "
         "RLM-539).",
     )
+    breaks_on_damage_percent: Annotated[float, Field(gt=0, le=100, allow_inf_nan=False)] | None = Field(
+        default=None,
+        description="The chance that any damage its holder takes ends it, in percent (Frozen: 50, Matěj, 2026-11-01, "
+        "RLM-542). The hit that deals the damage still sees it.",
+    )
     stun: bool = Field(
         default=False,
         description="A stun (C4): its holder neither attacks nor casts, a mob's AI stands still, and a cast in "

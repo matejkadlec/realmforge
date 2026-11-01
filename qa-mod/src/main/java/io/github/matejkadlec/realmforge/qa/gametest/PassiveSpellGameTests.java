@@ -137,6 +137,8 @@ public final class PassiveSpellGameTests {
 
         StatsCommands.setBase(player, GeneratedStats.CRIT_CHANCE, 0.7);
         for (int hit = 0; hit < 5; hit++) {
+            // Any damage ends Frozen at a 50 % chance (RLM-542), so each hit freezes the husk again first.
+            frozen.addEffect(new MobEffectInstance(GeneratedEffects.FROZEN, 200));
             assertBolt(helper, player, frozen, 8 * 1.5, "hit " + (hit + 1) + " on the Frozen husk crits");
         }
         StatsCommands.setBase(player, GeneratedStats.CRIT_CHANCE, 0);
@@ -153,10 +155,13 @@ public final class PassiveSpellGameTests {
     public static void aPassivesTooltipShowsItsRankAndTheNext(GameTestHelper helper) {
         ServerPlayer player = player(helper, "qa-passive-tooltip");
         helper.assertValueEqual(tooltip(helper, player, GeneratedSpells.IMPROVED_FROSTBOLT, 1), List.of(
-                "Improved Frostbolt", "Rank 1 of 3", "Passive", "Your Frostbolt deals 5% more damage.", "Next rank:",
-                "Your Frostbolt deals 10% more damage."), "rank 1 and the next");
+                "Improved Frostbolt", "Rank 1 of 3", "Passive",
+                "Your Frostbolt deals 5% more damage. From rank 3, its splash reaches 0.5 blocks farther.", "Next rank:",
+                "Your Frostbolt deals 10% more damage. From rank 3, its splash reaches 0.5 blocks farther."),
+                "rank 1 and the next (RLM-542: rank 3 widens the splash)");
         helper.assertValueEqual(tooltip(helper, player, GeneratedSpells.IMPROVED_FROSTBOLT, 3), List.of(
-                "Improved Frostbolt", "Rank 3 of 3", "Passive", "Your Frostbolt deals 15% more damage."),
+                "Improved Frostbolt", "Rank 3 of 3", "Passive",
+                "Your Frostbolt deals 15% more damage. From rank 3, its splash reaches 0.5 blocks farther."),
                 "the highest rank has no next");
         helper.assertValueEqual(tooltip(helper, player, GeneratedSpells.TWO_HANDED_WEAPON_SPECIALIZATION, 1)
                         .subList(3, 4), List.of("+4% damage with a two-handed weapon in your main hand. From rank 3, "

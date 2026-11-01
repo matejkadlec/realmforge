@@ -94,6 +94,8 @@ def _registration(effect: EffectDef) -> str:
     stun = "\n                    .stuns()" if effect.stun else ""
     if effect.look is not None:
         stun += f"\n                    .looks(StatusEffect.Look.{effect.look.upper()})"
+    if effect.breaks_on_damage_percent is not None:
+        stun += f"\n                    .breaksOnDamage({_double(effect.breaks_on_damage_percent / 100)})"
     stacks = effect.stacks
     if stacks is not None:
         stun += (
@@ -185,7 +187,8 @@ def _expectation(effect: EffectDef) -> str:
         f"                    List.of({modifiers}),\n"
         f"                    {periodic_expectation},\n"
         f"                    {stacks_expectation},\n"
-        f"                    {'true' if effect.stun else 'false'})"
+        f"                    {'true' if effect.stun else 'false'},\n"
+        f"                    {_double((effect.breaks_on_damage_percent or 0) / 100)})"
     )
 
 
@@ -225,12 +228,12 @@ def _expectations(content: Content) -> bytes:
         "    }\n"
         "\n"
         "    /**\n"
-        "     * Expected state of one effect: its category, particle colour (RGB), modifiers, periodic ticks, stacks and\n"
-        "     * whether it stuns.\n"
+        "     * Expected state of one effect: its category, particle colour (RGB), modifiers, periodic ticks, stacks,\n"
+        "     * whether it stuns and the chance that damage ends it (a fraction, 0 for none).\n"
         "     */\n"
         "    public record EffectExpectation(String id, String descriptionId, String category, int color,\n"
         "            List<ModifierExpectation> modifiers, Optional<PeriodicExpectation> periodic,\n"
-        "            Optional<StacksExpectation> stacks, boolean stun) {\n"
+        "            Optional<StacksExpectation> stacks, boolean stun, double breaksOnDamage) {\n"
         "    }\n"
         "\n"
         f"    public static final List<EffectExpectation> EFFECTS = {effects};\n"

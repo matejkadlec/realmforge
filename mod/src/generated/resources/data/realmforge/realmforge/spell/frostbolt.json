@@ -17,7 +17,7 @@
   },
   "cost": {
     "amount": 10.0,
-    "per_level": 0,
+    "per_level": 5.0,
     "resource": "realmforge:mana"
   },
   "cooldown_ticks": 0,

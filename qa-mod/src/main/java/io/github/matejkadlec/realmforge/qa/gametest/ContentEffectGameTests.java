@@ -50,6 +50,7 @@ public final class ContentEffectGameTests {
             helper.assertValueEqual(status.stacks().map(ContentEffectGameTests::stacks), expected.stacks(),
                     id + " stacks");
             helper.assertValueEqual(status.isStun(), expected.stun(), id + " stuns");
+            helper.assertValueEqual(status.breakChance(), expected.breaksOnDamage(), id + " breaks on damage");
             List<ModifierExpectation> modifiers = new ArrayList<>();
             status.createModifiers(0, (attribute, modifier) -> modifiers.add(new ModifierExpectation(
                     attribute.getRegisteredName(), modifier.id().toString(), modifier.amount(),

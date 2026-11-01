@@ -8,7 +8,8 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
  * The spell effect types (architecture 5.3), the first set: {@code damage} and {@code heal} (C3a-1), the status
- * effects, the spell entities, the movements and {@code knockback} (C3a-3), and {@code cleanse} (C4). The pipeline knows the same ids
+ * effects, the spell entities, the movements and {@code knockback} (C3a-3), {@code cleanse} (C4), the melee shapes
+ * (RLM-399) and the {@code cone} (RLM-542). The pipeline knows the same ids
  * ({@code tools/realmforge_tools/schema/spell.py}).
  */
 public final class SpellEffectTypes {
@@ -50,6 +51,10 @@ public final class SpellEffectTypes {
     /** {@code realmforge:melee}: a melee spell's hit shape in front of the caster ({@link MeleeEffect}, RLM-399). */
     public static final DeferredHolder<MapCodec<? extends SpellEffect>, MapCodec<MeleeEffect>> MELEE =
             TYPES.register("melee", () -> MeleeEffect.MAP_CODEC);
+
+    /** {@code realmforge:cone}: a cone along the caster's look ({@link ConeEffect}, RLM-542). */
+    public static final DeferredHolder<MapCodec<? extends SpellEffect>, MapCodec<ConeEffect>> CONE =
+            TYPES.register("cone", () -> ConeEffect.MAP_CODEC);
 
     /** {@code realmforge:teleport}: moves the caster to the target at once ({@link TeleportEffect}). */
     public static final DeferredHolder<MapCodec<? extends SpellEffect>, MapCodec<TeleportEffect>> TELEPORT =

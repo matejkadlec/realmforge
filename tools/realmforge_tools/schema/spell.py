@@ -56,6 +56,8 @@ MAX_STRENGTH = 5.0
 PLAYER_CHANNEL_INTERVAL = 0.5
 # A bolt's splash (RLM-399): within about a block of its target, at most 4.
 MAX_SPLASH_RADIUS = 4.0
+# A cone in front of the caster (RLM-542: Cone of Cold's 5 blocks): at most as far as an area's radius.
+MAX_CONE_RANGE = 16.0
 # What a window or an internal cooldown lasts at most: a minute.
 MAX_WINDOW_SECONDS = 60.0
 
@@ -75,6 +77,7 @@ MELEE = f"{MOD_ID}:melee"
 AREA = f"{MOD_ID}:area"
 TELEPORT = f"{MOD_ID}:teleport"
 DASH = f"{MOD_ID}:dash"
+CONE = f"{MOD_ID}:cone"
 SELF = f"{MOD_ID}:self"
 ENEMY = f"{MOD_ID}:enemy"
 ALLY = f"{MOD_ID}:ally"
@@ -93,7 +96,9 @@ NPC_TARGETING: tuple[str, ...] = (CURRENT_TARGET, RANDOM_PLAYER, FARTHEST_PLAYER
 # - duration: the first apply_effect's duration in seconds;
 # - periodic, periodic_total, interval: one tick, every tick and the time between two ticks of that effect's damage or
 #   healing over time (one of ours with periodic), raised by the caster's stats as its ticks are;
-# - radius: the first area's radius in blocks;
+# - against_damage: the first damage effect's damage against a target with its against_effect's status effect
+#   (RLM-542: Ice Lance against a Frozen target), as damage reads;
+# - radius: the first area's radius in blocks, or with no area the first cone's range;
 # - armor_shred, penetration: the first damage effect's extra armor shred and spell penetration, in percent;
 # - crit_chance: the spell's bonus crit chance, in percent;
 # - bonus: the one attribute modifier of the first apply_effect's status effect at its strength, in percent for a
@@ -101,6 +106,7 @@ NPC_TARGETING: tuple[str, ...] = (CURRENT_TARGET, RANDOM_PLAYER, FARTHEST_PLAYER
 # Every number is the one at the player's spell level (rank).
 PLACEHOLDERS: tuple[str, ...] = (
     "damage",
+    "against_damage",
     "heal",
     "duration",
     "periodic",
@@ -119,13 +125,22 @@ PERIODIC_PLACEHOLDERS: frozenset[str] = frozenset({"periodic", "periodic_total",
 # - spell_damage: its first spell damage bonus, in percent;
 # - crit_chance: its crit chance against the condition, in percent;
 # - block_cooldown, block_cooldown_rank: how much shorter a two-handed block's cooldown is, in seconds, and from which
-#   rank.
+#   rank;
+# - splash_radius, splash_radius_rank: how many blocks its first splash bonus adds to a bolt's splash, and from which
+#   rank (RLM-542: Improved Frostbolt);
+# - proc_chance, proc_duration, proc_cooldown: its first proc's chance in percent, how long the effect it gives lasts
+#   and its internal cooldown on each target, in seconds (RLM-542: Frostbite).
 PASSIVE_PLACEHOLDERS: tuple[str, ...] = (
     "bonus",
     "spell_damage",
     "crit_chance",
     "block_cooldown",
     "block_cooldown_rank",
+    "splash_radius",
+    "splash_radius_rank",
+    "proc_chance",
+    "proc_duration",
+    "proc_cooldown",
 )
 _PLACEHOLDER = re.compile(r"\{([^{}]*)\}")
 
@@ -184,12 +199,20 @@ class _ScaledAmount(_LeveledAmount):
 
 
 class AgainstEffectDef(StrictModel):
-    """More damage against a target that has a status effect (RLM-540: Ice Lance against a Frozen target)."""
+    """More damage against a target that has a status effect (RLM-540: Ice Lance against a Frozen target), growing per
+    rank (RLM-542: Ice Lance's x 2 to x 3)."""
 
     effect: ResourceId = Field(description="The status effect the target has, e.g. realmforge:frozen.")
     damage_percent: Annotated[float, Field(gt=0, le=1000, allow_inf_nan=False)] = Field(
-        description="How much more damage the hit deals then, in percent: 200 triples it."
+        description="How much more damage the hit deals then at spell level 1, in percent: 200 triples it."
     )
+    damage_per_level_percent: NonNegative | None = Field(
+        default=None, description="Added to damage_percent for every spell level above 1."
+    )
+
+    def damage_at(self, level: int) -> float:
+        """How much more damage at ``level``, in percent."""
+        return _leveled_percent(self.damage_percent, self.damage_per_level_percent, level)
 
 
 class DamageEffectDef(_ScaledAmount):
@@ -518,6 +541,29 @@ class MeleeEffectDef(StrictModel):
     )
 
 
+class ConeEffectDef(StrictModel):
+    """A cone along the caster's look (RLM-542: Cone of Cold): every enemy whose hitbox lies within ``range`` blocks of
+    the cone's tip (the caster's eyes, lowered as a melee shape's origin) and within half of ``angle_degrees`` of the
+    look (its middle or its nearest point) takes ``effects``, the same for each; none behind a wall (more than half
+    hidden from the caster's eyes, as for a melee shape). It follows the look, so the spell needs no target: an empty
+    cone hits nothing. Its sound plays from the caster, and its particle block's break particles fill it."""
+
+    type: Literal["realmforge:cone"]
+    range: float = Field(
+        gt=0, le=MAX_CONE_RANGE, allow_inf_nan=False, description="How far it reaches, in blocks, at most 16."
+    )
+    angle_degrees: float = Field(
+        gt=0, le=180, allow_inf_nan=False, description="How wide it opens, in degrees: 60 is 30 to each side."
+    )
+    effects: list[EntityEffectDef] = Field(
+        min_length=1, description="What it does to each enemy inside, in order."
+    )
+    sound: ResourceId | None = Field(default=None, description="A sound event played from the caster.")
+    particles: ResourceId | None = Field(
+        default=None, description="A block whose break particles fill the cone, e.g. minecraft:packed_ice."
+    )
+
+
 class TeleportEffectDef(StrictModel):
     """Moves the caster at once to the target: a ground point, or as far along a direction as its range allows. It
     stops short of blocks, and does not move when no free spot is found on the way."""
@@ -549,6 +595,7 @@ SpellEffectDef = Annotated[
     | ProjectileEffectDef
     | AreaEffectDef
     | MeleeEffectDef
+    | ConeEffectDef
     | TeleportEffectDef
     | DashEffectDef,
     Field(discriminator="type"),
@@ -893,6 +940,21 @@ class SpellDamageDef(StrictModel):
         return _leveled_percent(self.damage_percent, self.damage_per_level_percent, level)
 
 
+class SplashRadiusDef(StrictModel):
+    """A wider splash for named spells' bolts from a rank on (RLM-542: Improved Frostbolt's rank 3 widens Frostbolt's
+    splash from 1 to 1.5 blocks, Matěj, 2026-10-31)."""
+
+    spells: Annotated[list[ResourceId], Field(min_length=1)] = Field(
+        description="The spells whose projectiles' splash grows, e.g. [realmforge:frostbolt]."
+    )
+    radius: float = Field(
+        gt=0, le=MAX_SPLASH_RADIUS, allow_inf_nan=False, description="Blocks added to the splash's radius."
+    )
+    from_level: int = Field(
+        default=1, ge=1, le=MAX_SPELL_LEVEL, description="The rank from which it applies."
+    )
+
+
 class CritChanceDef(StrictModel):
     """More crit chance for the player's spell hits on a target with a status effect (RLM-541: Shatter, against Frozen
     targets)."""
@@ -924,17 +986,40 @@ class BlockCooldownDef(StrictModel):
         return self
 
 
+class ProcDurationFromLevelDef(StrictModel):
+    """A proc's effect that lasts longer from a rank on (RLM-542: Frostbite's Frozen, 3 s instead of 2 at rank 3)."""
+
+    level: int = Field(
+        ge=2, le=MAX_SPELL_LEVEL, description="The rank from which it lasts longer; at least 2."
+    )
+    duration_seconds: Seconds = Field(
+        description="How long it lasts from that rank; more than 0, at most 60."
+    )
+
+
 class ProcApplyEffectDef(StrictModel):
     """A status effect a proc gives the other entity."""
 
     effect: ResourceId = Field(description="The status effect, e.g. realmforge:frozen.")
     duration_seconds: Seconds = Field(description="How long it lasts; more than 0, at most 60.")
+    from_level: ProcDurationFromLevelDef | None = Field(
+        default=None, description="A longer duration from a rank on, e.g. {level: 3, duration_seconds: 3}."
+    )
 
     @model_validator(mode="after")
     def _duration(self) -> ProcApplyEffectDef:
-        if not 0 < self.duration_seconds <= MAX_EFFECT_SECONDS:
+        durations = [self.duration_seconds]
+        if self.from_level is not None:
+            durations.append(self.from_level.duration_seconds)
+        if not all(0 < duration <= MAX_EFFECT_SECONDS for duration in durations):
             raise ValueError(f"duration_seconds is more than 0 and at most {MAX_EFFECT_SECONDS:g}")
         return self
+
+    def duration_at(self, level: int) -> float:
+        """How long it lasts at rank ``level``, in seconds."""
+        if self.from_level is not None and level >= self.from_level.level:
+            return self.from_level.duration_seconds
+        return self.duration_seconds
 
 
 class ProcDef(StrictModel):
@@ -1022,11 +1107,23 @@ class PassiveDef(StrictModel):
     block_cooldown: BlockCooldownDef | None = Field(
         default=None, description="A two-handed block's cooldown, shorter from a rank on."
     )
+    splash_radius: list[SplashRadiusDef] = Field(
+        default_factory=list, description="A wider splash for named spells' bolts from a rank on."
+    )
 
     @model_validator(mode="after")
     def _does_something(self) -> PassiveDef:
-        if not (self.modifiers or self.spell_damage or self.crit_chance or self.block_cooldown or self.procs):
-            raise ValueError("a passive gives modifiers, spell_damage, crit_chance, block_cooldown or procs")
+        if not (
+            self.modifiers
+            or self.spell_damage
+            or self.crit_chance
+            or self.block_cooldown
+            or self.procs
+            or self.splash_radius
+        ):
+            raise ValueError(
+                "a passive gives modifiers, spell_damage, crit_chance, block_cooldown, splash_radius or procs"
+            )
         return self
 
     def grows(self) -> bool:
@@ -1037,6 +1134,11 @@ class PassiveDef(StrictModel):
             or (self.crit_chance is not None and self.crit_chance.chance_per_level_percent is not None)
             or (self.block_cooldown is not None and self.block_cooldown.from_level > 1)
             or any(proc.chance_per_level_percent is not None for proc in self.procs)
+            or any(
+                proc.apply_effect is not None and proc.apply_effect.from_level is not None
+                for proc in self.procs
+            )
+            or any(bonus.from_level > 1 for bonus in self.splash_radius)
         )
 
 
@@ -1062,6 +1164,7 @@ REQUIRED_ACTIVE_FIELDS: tuple[str, ...] = ("scales_with", "targeting", "cast", "
 # The effect type each placeholder reads; crit_chance reads the spell's crit data instead.
 _PLACEHOLDER_EFFECT: dict[str, str] = {
     "damage": DAMAGE,
+    "against_damage": DAMAGE,
     "heal": HEAL,
     "duration": APPLY_EFFECT,
     "periodic": APPLY_EFFECT,
@@ -1074,6 +1177,7 @@ _PLACEHOLDER_EFFECT: dict[str, str] = {
 }
 # Placeholders that read a field of the first damage effect, which it must set.
 _DAMAGE_FIELD_PLACEHOLDERS: dict[str, str] = {
+    "against_damage": "against_effect",
     "armor_shred": "armor_shred_percent",
     "penetration": "penetration_percent",
 }
@@ -1236,6 +1340,14 @@ class SpellDef(StrictModel):
         for path, effect in self.all_effects():
             if effect.type == DAMAGE and max(effect.armor_shred_at(top), effect.penetration_at(top)) > 100:
                 raise ValueError(f"{path}: armor shred and penetration stay at most 100 % at max_level {top}")
+            if (
+                effect.type == DAMAGE
+                and effect.against_effect is not None
+                and effect.against_effect.damage_at(top) > 1000
+            ):
+                raise ValueError(
+                    f"{path}.against_effect: stays at most 1000 % more damage at max_level {top}"
+                )
             if effect.type == APPLY_EFFECT:
                 if effect.duration_at(top) > MAX_EFFECT_SECONDS:
                     raise ValueError(
@@ -1255,6 +1367,18 @@ class SpellDef(StrictModel):
                 raise ValueError(
                     f"passive.block_cooldown.from_level: a rank above max_level {top} is never reached"
                 )
+            for n, bonus in enumerate(self.passive.splash_radius):
+                if bonus.from_level > top:
+                    raise ValueError(
+                        f"passive.splash_radius.{n}.from_level: a rank above max_level {top} is never reached"
+                    )
+            for n, proc in enumerate(self.passive.procs):
+                longer = proc.apply_effect.from_level if proc.apply_effect is not None else None
+                if longer is not None and longer.level > top:
+                    raise ValueError(
+                        f"passive.procs.{n}.apply_effect.from_level.level: a rank above max_level {top} is never "
+                        "reached"
+                    )
         return self
 
     @model_validator(mode="after")
@@ -1324,6 +1448,8 @@ class SpellDef(StrictModel):
                 continue
             needed = _PLACEHOLDER_EFFECT[name]
             first = self.first_effect(needed)
+            if name == "radius" and first is None:
+                needed, first = f"{AREA} or {CONE}", self.first_effect(CONE)
             if first is None:
                 raise ValueError(f"description: {{{name}}} needs a {needed} effect, and the spell has none")
             field = _DAMAGE_FIELD_PLACEHOLDERS.get(name)
@@ -1342,6 +1468,11 @@ class SpellDef(StrictModel):
             "crit_chance": passive.crit_chance is not None,
             "block_cooldown": passive.block_cooldown is not None,
             "block_cooldown_rank": passive.block_cooldown is not None,
+            "splash_radius": bool(passive.splash_radius),
+            "splash_radius_rank": bool(passive.splash_radius),
+            "proc_chance": bool(passive.procs),
+            "proc_duration": bool(passive.procs) and passive.procs[0].apply_effect is not None,
+            "proc_cooldown": bool(passive.procs) and passive.procs[0].cooldown_seconds > 0,
         }
         for name in self.placeholders():
             if name not in PASSIVE_PLACEHOLDERS:
@@ -1378,6 +1509,7 @@ def _grows_with_level(effect: BaseModel) -> bool:
         or getattr(effect, "spell_power_per_level_percent", None) is not None
         or getattr(effect, "armor_shred_per_level_percent", None) is not None
         or getattr(effect, "penetration_per_level_percent", None) is not None
+        or getattr(getattr(effect, "against_effect", None), "damage_per_level_percent", None) is not None
         or getattr(effect, "duration_per_level_seconds", None) is not None
         or bool(getattr(effect, "stronger_at_levels", ()))
     )

@@ -29,5 +29,6 @@ public final class EffectFeature {
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, MobEffectEvent.Expired.class,
                 EffectLooks::onEffectExpired);
         Stuns.register();
+        DamageBreaks.register();
     }
 }

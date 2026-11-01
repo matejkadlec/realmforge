@@ -1,0 +1,54 @@
+{
+  "name": "spell.realmforge.frost_nova.name",
+  "description": "spell.realmforge.frost_nova.description",
+  "school": "realmforge:frost",
+  "scales_with": "spell_power",
+  "targeting": {
+    "type": "realmforge:self"
+  },
+  "cast": {
+    "type": "instant"
+  },
+  "cost": {
+    "amount": 30.0,
+    "per_level": 10.0,
+    "resource": "realmforge:mana"
+  },
+  "cooldown_ticks": 400,
+  "global_cooldown_ticks": 10,
+  "max_level": 3,
+  "crit": {
+    "can_crit": true,
+    "bonus_chance": 0.0
+  },
+  "npc_only": false,
+  "requires": [],
+  "castable_while_stunned": false,
+  "effects": [
+    {
+      "type": "realmforge:area",
+      "radius": 4.0,
+      "duration_ticks": 10,
+      "interval_ticks": 10,
+      "affects": "enemies",
+      "effects": [
+        {
+          "amount": 3.0,
+          "per_level": 1.0,
+          "spell_power": 0.3,
+          "spell_power_per_level": 0.05,
+          "type": "realmforge:damage"
+        },
+        {
+          "type": "realmforge:apply_effect",
+          "effect": "realmforge:frozen",
+          "duration_ticks": 100,
+          "duration_per_level_ticks": 50,
+          "amplifier": 0,
+          "stronger_at_levels": []
+        }
+      ],
+      "ring_color": "#BFEFFF"
+    }
+  ]
+}

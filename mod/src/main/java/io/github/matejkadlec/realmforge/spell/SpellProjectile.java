@@ -275,11 +275,14 @@ public final class SpellProjectile extends Projectile implements IEntityWithComp
     /**
      * Its small explosion round {@code hit} (RLM-399): the caster's other enemies within the radius of the target's
      * hitbox take its effects, the damage at the splash's share, the rest at full strength, pushed out from the target;
-     * its impact's particles burst over the whole of it.
+     * its impact's particles burst over the whole of it. The caster's passive spells may widen it (RLM-542: Improved
+     * Frostbolt's rank 3, {@link Passives#splashRadiusBonus}).
      */
     private void splash(ServerLevel level, EffectContext context, LivingEntity hit, ProjectileEffect.Splash explosion) {
         LivingEntity caster = context.caster();
-        AABB reach = hit.getBoundingBox().inflate(explosion.radius());
+        double radius = explosion.radius() + context.spell().unwrapKey()
+                .map(key -> Passives.splashRadiusBonus(caster, key)).orElse(0.0);
+        AABB reach = hit.getBoundingBox().inflate(radius);
         List<LivingEntity> around = level.getEntitiesOfClass(LivingEntity.class, reach, entity -> entity != hit
                 && entity != caster && entity.isAlive() && !entity.isSpectator() && !Targets.allied(caster, entity)
                 && entity.canBeSeenAsEnemy() && !spared(entity));
@@ -297,8 +300,7 @@ public final class SpellProjectile extends Projectile implements IEntityWithComp
                 .filter(block -> block != Blocks.AIR)
                 .ifPresent(block -> level.sendParticles(
                         new BlockParticleOption(ParticleTypes.BLOCK, block.defaultBlockState()), middle.x, middle.y,
-                        middle.z, IMPACT_PARTICLES * 2, explosion.radius() / 2, hit.getBbHeight() / 3,
-                        explosion.radius() / 2, 0.15));
+                        middle.z, IMPACT_PARTICLES * 2, radius / 2, hit.getBbHeight() / 3, radius / 2, 0.15));
     }
 
     /** A block stops it, without its effects and without touching the block (no bell, no target block). */

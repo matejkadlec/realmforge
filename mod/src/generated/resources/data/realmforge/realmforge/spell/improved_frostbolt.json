@@ -31,6 +31,15 @@
         "damage_per_level": 0.05
       }
     ],
-    "procs": []
+    "procs": [],
+    "splash_radius": [
+      {
+        "spells": [
+          "realmforge:frostbolt"
+        ],
+        "radius": 0.5,
+        "from_level": 3
+      }
+    ]
   }
 }

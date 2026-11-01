@@ -46,7 +46,9 @@ import org.lwjgl.glfw.GLFW;
  * only shows. A passive spell (RLM-541) is listed with its rank and "Passive" and never goes onto the bar; its tooltip
  * shows its rank and the next one. The gear button top right, level with the title (RLM-497; Matěj, 2026-10-29: an
  * icon instead of the word), opens the Realmforge config screen ({@link RealmforgeConfigScreen}), "Options" in its
- * tooltip. The panel is drawn as the background, under the button, so the button shows at full brightness.
+ * tooltip. The panel is drawn as the background, under the button, so the button shows at full brightness. A list
+ * longer than the panel scrolls with the wheel and shows a scrollbar beside it ({@link ScrollBar}, RLM-542), whose
+ * thumb can be dragged and whose track takes a click.
  */
 public final class SpellbookScreen extends Screen {
     private static final int PANEL_WIDTH = 236;
@@ -64,11 +66,20 @@ public final class SpellbookScreen extends Screen {
     /** The gear button and its sprite ({@code realmforge:icon/gear}, drawn in {@code generate/gui_icons.py}). */
     private static final int GEAR_BUTTON = 16;
     private static final int GEAR_SPRITE = 12;
+    /** The Known Spells scrollbar: its width, its gap to the rows, and its colours. */
+    private static final int SCROLLBAR_WIDTH = 4;
+    private static final int SCROLLBAR_GAP = 2;
+    private static final int TRACK = 0x40FFFFFF;
+    private static final int THUMB = 0xFFA0A0A0;
+    private static final int THUMB_HELD = 0xFFFFFFFF;
 
     /** The spell picked up to put on the bar, if any. */
     @Nullable
     private ResourceKey<Spell> selected;
     private int scroll;
+    /** Where on the thumb the mouse holds it while it drags it, from the thumb's top; null while none does. */
+    @Nullable
+    private Double grab;
 
     public SpellbookScreen() {
         super(Component.translatable(GeneratedTexts.GUI_SPELLBOOK));
@@ -104,7 +115,43 @@ public final class SpellbookScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double x, double y, double scrollX, double scrollY) {
-        scroll = Math.clamp(scroll - (int) Math.signum(scrollY), 0, Math.max(0, known().size() - visibleRows()));
+        scroll = Math.clamp(scroll - (int) Math.signum(scrollY), 0, scrollBar().maxScroll());
+        return true;
+    }
+
+    @Override
+    public boolean mouseDragged(MouseButtonEvent event, double dx, double dy) {
+        if (grab != null) {
+            scroll = scrollBar().scrollFor(event.y() - grab);
+            return true;
+        }
+        return super.mouseDragged(event, dx, dy);
+    }
+
+    @Override
+    public boolean mouseReleased(MouseButtonEvent event) {
+        if (grab != null && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            grab = null;
+            return true;
+        }
+        return super.mouseReleased(event);
+    }
+
+    /**
+     * A left click on the scrollbar: on the thumb it takes hold of it, on the track it moves the thumb's middle there and
+     * takes hold of it. Whether the click was the scrollbar's.
+     */
+    private boolean clickScrollBar(MouseButtonEvent event) {
+        ScrollBar bar = scrollBar();
+        if (!bar.shown() || event.button() != GLFW.GLFW_MOUSE_BUTTON_LEFT || event.x() < scrollBarX()
+                || event.x() >= scrollBarX() + SCROLLBAR_WIDTH || event.y() < bar.top()
+                || event.y() >= bar.top() + bar.height()) {
+            return false;
+        }
+        if (!bar.onThumb(event.y(), scroll)) {
+            scroll = bar.scrollFor(event.y() - bar.thumbHeight() / 2.0);
+        }
+        grab = event.y() - bar.thumbTop(scroll);
         return true;
     }
 
@@ -113,6 +160,9 @@ public final class SpellbookScreen extends Screen {
         LocalPlayer player = minecraft.player;
         if (player == null) {
             return super.mouseClicked(event, doubleClick);
+        }
+        if (clickScrollBar(event)) {
+            return true;
         }
         int slot = slotAt(event.x(), event.y());
         if (slot >= 0 && slot < Spellbook.BAR_SLOTS) {
@@ -181,13 +231,24 @@ public final class SpellbookScreen extends Screen {
             graphics.text(font, Component.translatable(GeneratedTexts.GUI_NO_KNOWN_SPELLS), x + PADDING,
                     listY() + 4, HINT);
         }
+        ScrollBar scrollBar = scrollBar();
+        scroll = Math.clamp(scroll, 0, scrollBar.maxScroll());
+        if (scrollBar.shown()) {
+            graphics.fill(scrollBarX(), scrollBar.top(), scrollBarX() + SCROLLBAR_WIDTH,
+                    scrollBar.top() + scrollBar.height(), TRACK);
+            int thumbTop = scrollBar.thumbTop(scroll);
+            boolean held = grab != null || mouseX >= scrollBarX() && mouseX < scrollBarX() + SCROLLBAR_WIDTH
+                    && scrollBar.onThumb(mouseY, scroll);
+            graphics.fill(scrollBarX(), thumbTop, scrollBarX() + SCROLLBAR_WIDTH, thumbTop + scrollBar.thumbHeight(),
+                    held ? THUMB_HELD : THUMB);
+        }
         int hoveredRow = rowAt(mouseX, mouseY);
         for (int row = scroll; row < Math.min(known.size(), scroll + visibleRows()); row++) {
             Map.Entry<ResourceKey<Spell>, Integer> entry = known.get(row);
             int rowY = listY() + (row - scroll) * ROW;
             Optional<Spell> spell = Spells.get(player.registryAccess(), entry.getKey()).map(Holder::value);
             if (row == hoveredRow) {
-                graphics.fill(x + PADDING - 2, rowY - 1, x + PANEL_WIDTH - PADDING, rowY + ROW - 1, HOVER);
+                graphics.fill(x + PADDING - 2, rowY - 1, listRight(), rowY + ROW - 1, HOVER);
             }
             SpellSlots.draw(graphics, font, x + PADDING, rowY, LIST_SLOT, new SpellBarView.Slot(
                     Optional.of(entry.getKey()), spell, entry.getValue(), 0, 0, true, false), Optional.empty());
@@ -292,7 +353,7 @@ public final class SpellbookScreen extends Screen {
 
     /** The known spell's index under the screen position, or -1. */
     private int rowAt(double mouseX, double mouseY) {
-        if (mouseX < left() + PADDING || mouseX >= left() + PANEL_WIDTH - PADDING || mouseY < listY()) {
+        if (mouseX < left() + PADDING || mouseX >= listRight() || mouseY < listY()) {
             return -1;
         }
         int row = scroll + (int) ((mouseY - listY()) / ROW);
@@ -338,5 +399,20 @@ public final class SpellbookScreen extends Screen {
 
     private int visibleRows() {
         return Math.max(1, (bottom() - 30 - listY()) / ROW);
+    }
+
+    /** The Known Spells scrollbar: beside the visible rows, for every known spell. */
+    private ScrollBar scrollBar() {
+        return new ScrollBar(listY() - 1, visibleRows() * ROW, known().size(), visibleRows());
+    }
+
+    /** The scrollbar's left edge, at the panel's right padding. */
+    private int scrollBarX() {
+        return left() + PANEL_WIDTH - PADDING - SCROLLBAR_WIDTH;
+    }
+
+    /** Where the rows end: before the scrollbar while it shows, at the panel's right padding otherwise. */
+    private int listRight() {
+        return scrollBar().shown() ? scrollBarX() - SCROLLBAR_GAP : left() + PANEL_WIDTH - PADDING;
     }
 }

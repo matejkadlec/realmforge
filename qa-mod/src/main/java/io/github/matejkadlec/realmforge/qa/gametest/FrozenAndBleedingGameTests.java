@@ -24,10 +24,13 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.zombie.Husk;
 import net.minecraft.world.entity.monster.zombie.Zombie;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
 
@@ -54,6 +57,8 @@ public final class FrozenAndBleedingGameTests {
         // A block from the player: within a zombie's melee reach, without a step.
         Zombie zombie = helper.spawn(EntityType.ZOMBIE, new Vec3(2.5, 1, 2.5));
         zombie.setTarget(player);
+        // A helmet keeps daylight from burning it: any damage ends Frozen at a 50 % chance (RLM-542).
+        zombie.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.LEATHER_HELMET));
         zombie.addEffect(new MobEffectInstance(GeneratedEffects.FROZEN, 100));
         Vec3 start = zombie.position();
         helper.assertTrue(EffectLooks.has(zombie, StatusEffect.Look.ICE), "clients draw it in ice");

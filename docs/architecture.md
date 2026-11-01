@@ -1150,8 +1150,9 @@ the playtest covers it.
   `CharacterCreationView`. M1 has one race, Human, and decision D1's classes, Warrior (rage) and Mage (mana)
   ([content/README](../content/README.md)).
 - **In code (C4, RLM-27): the class kits.** A class lists its spells with the level that teaches each (`spells`,
-  `character/ClassSpell`); every class starts with one at level 1 (decision D4), and the pipeline allows 4 × N spells
-  by the end of chapter N's level cap. `character/ClassSpells` teaches the due ones at rank 1 into the spell bar's
+  `character/ClassSpell`); every class starts with one at level 1 (decision D4), and the pipeline allows 4 × N active
+  spells by the end of chapter N's level cap (passive spells are never on the bar, so they do not count: Matěj,
+  2026-10-30, RLM-333). `character/ClassSpells` teaches the due ones at rank 1 into the spell bar's
   first empty slot: at creation and level-up with a chat line each, and silently at login and on a quiet level change
   (commands), so a character made before its class had spells catches up; a known spell keeps its rank, and a level
   that falls takes nothing away. A race names its racial spell (`racial_spell`), taught at creation into the racial
@@ -1319,15 +1320,19 @@ Its name and description are translation keys from C3b, the description's number
   race and class ([8.2](#82-where-modifiers-come-from)), recomputed when a spell is learned and when the held item
   changes; more damage for named spells (`spell_damage`), added to their hits' passives layer through the hit's
   `HitBonus`; more crit chance for the player's spell hits on a target with a status effect (`crit_chance`, Shatter
-  against Frozen), added to the hit's crit rule; and a two-handed block's cooldown shorter from a rank on
-  (`block_cooldown`, [9.3](#93-blocking-with-two-handed-weapons)). The spellbook lists it with its rank and "Passive";
-  its tooltip shows the rank's description and the next rank's (`SpellTooltip#passiveLines`), and an active spell's
+  against Frozen), added to the hit's crit rule; a two-handed block's cooldown shorter from a rank on
+  (`block_cooldown`, [9.3](#93-blocking-with-two-handed-weapons)); and a named spell's splash wider from a rank on
+  (`splash_radius`, [11.3](#113-spell-entities); RLM-542). A proc's status effect may last longer from a rank on
+  (`apply_effect.from_level`: Frostbite's Frozen, 5 s at rank 3). The spellbook lists it with its rank and "Passive";
+  its tooltip shows the rank's description and the next rank's (`SpellTooltip#passiveLines`; an active spell's tooltip
+  shows its next rank's numbers below its own too, RLM-542), and an active spell's
   damage number counts the player's passives. Mobs know no spells, so passives give them nothing. A passive's `procs`
   (RLM-540: Frostbite, Taste for Blood, Deep Wounds) reach the proc engine through `Passives#procs`, at the rank, each with
   its internal cooldown per target ([12](#12-talents)). The first are
-  Improved Frostbolt, Shatter and Two-Handed Weapon Specialization (Attack Damage +4/8/12 % with
+  Improved Frostbolt, Frostbite, Shatter and Two-Handed Weapon Specialization (Attack Damage +4/8/12 % with
   `#realmforge:two_handed_weapons` in hand, as the Human's Sword Specialization gives its +10 %), which the M1 spell
-  trees teach (RLM-542, RLM-543); `/qa spell learn` does until then.
+  trees teach (the Frost Mage's kit by its rows since RLM-542, [11.7](#117-class-spells-and-stances); the Arms
+  Warrior's with RLM-543).
 - **Knockback:** a spell's damage is school damage, which never knocks back ([9.1](#91-damage-pipeline), RLM-214);
   a spell pushes its target only through a `realmforge:knockback` effect (C3a-3).
 - **Crits** (Matěj, 2026-10-15): every spell can crit, heals too, on the caster's crit chance for 1 + the caster's
@@ -1344,7 +1349,8 @@ Its name and description are translation keys from C3b, the description's number
   (Execute's 20 %, `CastFailure.TARGET_HEALTH_TOO_HIGH`). A cost may name **extra** resource (`SpellCost.Extra`, Execute's
   up to 30 more rage): a player's cast spends as much of it as they have after the cost, and its damage effects are
   multiplied by 1 + the share a point times the points spent (the `EffectContext`'s damage scale). A damage effect may
-  deal more against a target with a status effect (`against_effect`, Ice Lance's × 3 against Frozen).
+  deal more against a target with a status effect (`against_effect`, growing per rank: Ice Lance's × 2 to × 3 against
+  Frozen, RLM-542).
 
 A player knows a spell through their class (by level), race, talents (`grant_spell`) or items (an item component
 lists spells granted while equipped or on use): the vision's "some from the race or class, some from items".
@@ -1605,7 +1611,9 @@ type only for genuinely new behaviour.
   it hits an enemy: the caster's other enemies whose hitboxes lie within its radius of the target's take its effects too,
   its damage at the splash's share (the Mage's bolts: 1 block, 50 %) and every other effect at full strength (Burning,
   Slowness, spell penetration), and its impact's particles burst over the whole of it. Each of Arcane Missiles' missiles
-  explodes on its own.
+  explodes on its own. A passive spell may widen a named spell's splash from a rank on (`splash_radius`,
+  `Passives#splashRadiusBonus`, RLM-542: Improved Frostbolt's rank 3 adds half a block to Frostbolt's, Matěj,
+  2026-10-31).
 - **`realmforge:melee`** (RLM-399, `MeleeEffect`, `MeleeShape`): a melee spell's hit shape in front of the caster:
   one of Better Combat's sword hitboxes at the caster's **melee reach**, its entity interaction range (3, 5 in creative
   mode; vanilla's 3 for a mob without the attribute), so a melee spell hits where a melee attack does and **every melee
@@ -1628,6 +1636,14 @@ type only for genuinely new behaviour.
   after the first slash it draws the second's, and after the second slash the stab's. `SwingAndSplashGameTests` covers
   the shapes, the reach, the hit moment, a stun's refund, the splash, a wall and a corner; `MeleeShapeTest` the
   geometry.
+- **`realmforge:cone`** (RLM-542, `ConeEffect`, `ConeShape`): a cone along the caster's look, `range` blocks long and
+  `angle_degrees` wide (Cone of Cold: 5 blocks, 60°), from a melee shape's origin (the eyes lowered by 15 % of the
+  caster's height), so it tilts with the pitch. An enemy is in it when its hitbox's nearest point lies within the range
+  of the tip and its middle or its nearest point within half the angle of the look, a swing's angle rule with a range of
+  its own. Every enemy in it takes its effects, the same for each, with a melee shape's cover rule (never through a
+  wall, none more than half behind blocks); it needs no target, so its spell targets `self`. Its optional `sound`
+  plays from the caster and its `particles` block's break particles fill it, placeholders until the Frost visuals
+  (RLM-544). `FrostTreeGameTests` covers Cone of Cold's cone, `ConeShapeTest` the geometry.
 - Both deliver their effects themselves: the hit's direct entity is the projectile or the area, its causing entity
   the caster, so kill credit and the hit direction work as for an arrow. Their effects read the caster's stats when
   they land; no snapshot is taken at the cast, as nothing (talents, procs) needs one yet. A spell entity ends when its
@@ -1708,8 +1724,12 @@ vanilla's multiplying by the level (`per_amplifier`, NeoForge's attribute curve:
 `realmforge:cleanse` (`spell/CleanseEffect`, Will To Survive) removes every harmful effect from the caster or an ally,
 a stun included. **Frozen** (`realmforge:frozen`, RLM-541, RLM-539) is a root: -100 % movement speed and jump strength,
 but no `stun`, so its holder still attacks and casts; Shatter's crit chance and Ice Lance's bonus read it, Frostbite's
-proc applies it, and Will To Survive's cleanse breaks it as a loss of control. Bosses are immune boss by boss
-([14.3](#143-bosses)). **Its look** (Matěj, 2026-10-30): an effect's `look` (`StatusEffect.Look`, Frozen's `ice`) reaches
+proc applies it, and Will To Survive's cleanse breaks it as a loss of control. **Damage breaks it** (Matěj's playtest
+of 2026-11-01, RLM-542): an effect with `breaks_on_damage` (`StatusEffect#breakChance`, Frozen's 50 %, every Frost
+freeze's) ends at that chance whenever its holder takes damage of any kind, rolled for each hit after it lands
+(`effect/DamageBreaks`, `LivingDamageEvent.Post`), so the hit itself still sees it: Ice Lance's bonus and Shatter's crit
+chance count on the hit that may break it, and a spell that damages and then freezes (Frost Nova) freezes after its own
+damage. Bosses are immune boss by boss ([14.3](#143-bosses)). **Its look** (Matěj, 2026-10-30): an effect's `look` (`StatusEffect.Look`, Frozen's `ice`) reaches
 clients through the synced `realmforge:effect_looks` attachment (`effect/EffectLooks`), as vanilla tells clients only of
 a player's own effects; `client/render/FrozenLook` makes an iced entity shake as a fully frozen one does in powder snow
 and draws its model again in vanilla's Packed Ice texture (referenced where it lies, never copied), for every vanilla
@@ -1814,7 +1834,9 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
   SHIFT reads CTR-S), drawn smaller when it would leave the slot.
 - **Learning and placing:** `Spells#learn` puts a newly learned spell into the bar's first empty slot, unless it is a
   mob's. Learning a known spell again, at any level (a class level, C4, or a specialization point, C5), leaves the bar
-  as the player arranged it, so a spell taken off stays off (RLM-374). The spellbook (`client/screen/SpellbookScreen`) moves a known spell into a slot, swapping with
+  as the player arranged it, so a spell taken off stays off (RLM-374). The spellbook (`client/screen/SpellbookScreen`;
+  a scrollbar beside its Known Spells while they do not fit, `client/screen/ScrollBar`, RLM-542) moves a known spell
+  into a slot, swapping with
   the one there, or empties one, through `SetSpellBarSlotPayload` and `Spells#placeOnBar`, which refuses another slot
   or an unknown spell.
 - **Casting** (Matěj, 2026-10-19): `client/spell/CastQueue` decides every client tick, from the presses and the held
@@ -2031,21 +2053,57 @@ aura spell.
   stays on and only its bonuses pause; that neither turns it off nor starts the 5 minutes.
 
 **C4's first balance pass** (RLM-27; the numbers are in `content/spells/`, each file's comment says why; the playtest
-tunes them). A class teaches its spells by level ([10.1](#101-races-and-classes)): four by level 10, chapter 1's cap.
-The M1 specializations' first spells come at level 1 (Arms's Slam, Frost's Frostbolt); the other trees' first spells
-stand in until C5 builds the M1 trees, and the self-buff comes last (Matěj, 2026-10-30).
+tunes them). A class teaches its spells by level ([10.1](#101-races-and-classes)): four active ones by level 10,
+chapter 1's cap. The M1 specializations' first spells come at level 1 (Arms's Slam, Frost's Frostbolt); the other
+trees' first spells stand in for the Warrior until its tree (RLM-543), and the self-buff comes last (Matěj,
+2026-10-30).
 
 | Class | Level 1 | Level 3 | Level 5 | Level 8 |
 | --- | --- | --- | --- | --- |
 | Warrior | Slam | Reckless Strike | Shield Bash | Battle Shout |
-| Mage | Frostbolt | Fireball | Arcane Missiles | Ice Barrier |
+
+**The Frost Mage's "Shatter" tree** (RLM-542; Matěj, 2026-10-30, RLM-333's comment and the "Spell Trees to Level 18"
+document, chosen for M1, version 1 of every spell, balanced by Claude): WotLK-like rows, a new one every 6 levels,
+about one passive for every two actives. Until C5 (RLM-333) spends points in a spell trees window, the Mage's kit
+teaches every spell of the tree at rank 1 at its row's level (`content/classes/mage.yaml`); Fireball and Arcane
+Missiles leave the M1 kit and come back with their trees in M3 (RLM-218).
+
+| Row (level) | Left | Middle | Right |
+| --- | --- | --- | --- |
+| 1 | Improved Frostbolt (passive, 3) | Frostbolt (5) | Cone of Cold (3) |
+| 6 | Ice Lance (5) | Frost Nova (3) | Frostbite (passive, 3) |
+| 12 | Shatter (passive, 3) | Ice Barrier (3) | |
+| 18 | Blizzard (3) | | |
+
+- **The loop:** slow (Frostbolt, Cone of Cold, Blizzard), freeze (Frost Nova; Frostbite on a Slowness), then Ice Lance,
+  × 2 to × 3 against a Frozen target, with Shatter's crit chance against it.
+- **Numbers** (rank 1 to the highest, SP = Spell Power): **Cone of Cold** 5/6/7 + 60/70/80 % SP to every enemy in a
+  5-block, 60° cone ([11.3](#113-spell-entities)), Slowness II 3/4/5 s, 10 s, 30/40/50 mana. **Ice Lance** instant,
+  3 to 5 + 40 to 60 % SP, × 2/2.25/2.5/2.75/3 against Frozen, 4 s, 15/25/35/45/55 mana. **Frost Nova** 3/4/5 +
+  30/35/40 % SP within 4 blocks, Frozen 5/7.5/10 s, 20 s, 30/40/50 mana. **Blizzard** a 6 s channel at a ground spot,
+  twelve waves of 2/2.5/3 + 20/25/30 % SP within 4 blocks, Slowness I (II at rank 3), 13/18/23 mana a second.
+  **Improved Frostbolt** +5/10/15 % Frostbolt damage; rank 3 widens Frostbolt's splash from 1 to 1.5 blocks instead of
+  the document's "its Slowness also hits the enemies its splash damages", which the splash already does (Matěj,
+  2026-10-31). **Frostbite** a 5/10/15 % chance on the Mage's Slowness to Freeze for 3 s (5 s at rank 3), once every 5 s
+  on each target. **Shatter** +10/20/30 % crit chance against Frozen targets. Frostbolt costs 10/15/20/25/30 mana and
+  Ice Barrier 25/35/45; their other numbers are below. Damage ends Frozen at a 50 % chance
+  ([11.4](#114-status-effects)).
+- **Matěj's playtest of 2026-11-01** set Blizzard's 6 s, its 4 blocks and its cost, Frostbite's and Frost Nova's
+  Frozen at their top ranks (5 s and 10 s; the lower ranks scaled by Claude, Frostbite 3 s, Frost Nova × 2.5), every
+  cost per rank and Frozen's break on damage; Astone died too fast with little effort, and a separate ticket of his
+  balances the spells.
+- **The target** (RLM-503): an L18 Mage in good M1 gear kills Astone (about 3,000 health) in about 40 casts, 2.5 to
+  3 minutes; at 60 or more, Astone is nerfed rather than the spells buffed.
+- `FrostTreeGameTests` covers every active's damage at rank 1 and its highest rank, Ice Lance against Frozen,
+  Frostbite's chance and cooldown, Frozen breaking on about half the hits, the cone, the nova, Blizzard's waves, the
+  wider splash and the kit by rows.
 
 - **Slam:** 4 + 1.5 per rank + 120 % of attack damage, 30 rage, 6 s, needs a melee weapon (RLM-499); armor shred
   5 % per rank. **Reckless Strike:** 2 + 1 per rank + 100 % of attack damage, 20 rage, 4 s, a melee weapon; crit
   chance +10 % and 5 % more per rank. **Shield Bash:** 1 + 0.5 per rank + 60 % of attack damage, 15 rage, 6 s, a
   shield; Stunned 0.5 s and 0.25 s more per rank.
-- **Frostbolt:** 9 + 2 per rank, 10 mana; Slowness 3 s and 0.5 s more per rank, II from rank 5. **Fireball:** 8 + 2
-  per rank, 12 mana; Burning (0.75 fire every 0.5 s, many small ticks, RLM-518) 4 s and 0.5 s more per rank, II from
+- **Frostbolt:** 8/9/10/11/12 + 100 to 200 % SP (system C, RLM-534), 10 mana; Slowness 3 s and 0.5 s more per rank,
+  II from rank 5. **Fireball** (out of the M1 kit since RLM-542): 8 + 2 per rank, 12 mana; Burning (0.75 fire every 0.5 s, many small ticks, RLM-518) 4 s and 0.5 s more per rank, II from
   rank 5. **Arcane Missiles:** 3 × (5 + 1 per rank), 12 mana a second.
 - **The self-buffs**, max rank 3 (Matěj, 2026-10-30): the Warrior's **Battle Shout** (10 rage, 1 minute: +10 / 15 /
   20 % attack damage for the Warrior and the allies within 10 blocks for 10 / 15 / 20 s) and the Mage's **Ice

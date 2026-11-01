@@ -29,7 +29,8 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
  * @param armorShredPerLevel added to the armor shred for every spell level above 1
  * @param penetration the spell penetration at spell level 1, a share of the target's resistance
  * @param penetrationPerLevel added to the penetration for every spell level above 1
- * @param againstEffect more damage against a target with a status effect (RLM-540: Ice Lance against Frozen), if any
+ * @param againstEffect more damage against a target with a status effect (RLM-540: Ice Lance against Frozen), growing
+ *                      per rank (RLM-542), if any
  */
 public record DamageEffect(double amount, double perLevel, Coefficient coefficient, double armorShred,
         double armorShredPerLevel, double penetration, double penetrationPerLevel, Optional<AgainstEffect> againstEffect)
@@ -61,20 +62,36 @@ public record DamageEffect(double amount, double perLevel, Coefficient coefficie
     }
 
     /**
-     * More damage against a target that has {@code effect}: × (1 + {@code damage}), Ice Lance's 200 % tripling it against
-     * a Frozen target (RLM-540).
+     * More damage against a target that has {@code effect}: × (1 + the bonus at the rank), {@code damage} at rank 1
+     * and {@code damagePerLevel} more for every rank above it (RLM-540, RLM-542: Ice Lance's 100 % to 200 % against a
+     * Frozen target, × 2 to × 3).
      */
-    public record AgainstEffect(Holder<MobEffect> effect, double damage) {
+    public record AgainstEffect(Holder<MobEffect> effect, double damage, double damagePerLevel) {
         public static final Codec<AgainstEffect> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                         MobEffect.CODEC.fieldOf("effect").forGetter(AgainstEffect::effect),
-                        Codec.doubleRange(0, 100).fieldOf("damage").forGetter(AgainstEffect::damage))
+                        Codec.doubleRange(0, 100).fieldOf("damage").forGetter(AgainstEffect::damage),
+                        Codec.doubleRange(0, 100).optionalFieldOf("damage_per_level", 0.0)
+                                .forGetter(AgainstEffect::damagePerLevel))
                 .apply(instance, AgainstEffect::new));
+
+        /** A bonus that does not grow with the rank. */
+        public AgainstEffect(Holder<MobEffect> effect, double damage) {
+            this(effect, damage, 0);
+        }
+
+        /** What a hit at rank {@code level} is multiplied by against a target with the effect. */
+        public double factorAt(int level) {
+            return 1 + SpellScaling.atLevel(damage, damagePerLevel, level);
+        }
     }
 
-    /** What the hit's base is multiplied by against {@code target}: 1 + the bonus when it has the effect, else 1. */
-    public double againstFactor(LivingEntity target) {
-        return againstEffect.filter(against -> target.hasEffect(against.effect())).map(against -> 1 + against.damage())
-                .orElse(1.0);
+    /**
+     * What the hit's base at rank {@code level} is multiplied by against {@code target}: 1 + the bonus at the rank when
+     * it has the effect, else 1.
+     */
+    public double againstFactor(LivingEntity target, int level) {
+        return againstEffect.filter(against -> target.hasEffect(against.effect()))
+                .map(against -> against.factorAt(level)).orElse(1.0);
     }
 
     /** The hit's damage at spell level {@code level} for a caster with {@code attackDamage} and {@code spellPower}. */
@@ -98,7 +115,8 @@ public record DamageEffect(double amount, double perLevel, Coefficient coefficie
         Spell spell = context.spell().value();
         // A splash's share or extra rage's bonus (the context's scale), and a bonus against the target's effect.
         double damage = baseAt(context.spellLevel(), context.casterStat(Attributes.ATTACK_DAMAGE),
-                context.casterStat(GeneratedStats.SPELL_POWER)) * context.damageScale() * againstFactor(target);
+                context.casterStat(GeneratedStats.SPELL_POWER)) * context.damageScale()
+                * againstFactor(target, context.spellLevel());
         LivingEntity caster = context.caster();
         // The caster's passive spells (RLM-541): more damage for this spell, more crit chance against this target.
         HitBonus bonus = bonusAt(context.spellLevel()).withDamage(context.spell().unwrapKey()

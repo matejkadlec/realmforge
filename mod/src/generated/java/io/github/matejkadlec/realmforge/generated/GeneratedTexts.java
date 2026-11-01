@@ -554,9 +554,6 @@ public final class GeneratedTexts {
     /** {@code spell.tooltip.realmforge.rank} from {@code content/texts/spell.tooltip.yaml}: "Rank %1$s of %2$s" */
     public static final String SPELL_TOOLTIP_RANK = "spell.tooltip.realmforge.rank";
 
-    /** {@code spell.tooltip.realmforge.self} from {@code content/texts/spell.tooltip.yaml}: "On yourself" */
-    public static final String SPELL_TOOLTIP_SELF = "spell.tooltip.realmforge.self";
-
     /** {@code stat.realmforge.dungeons_completed} from {@code content/texts/stat.yaml}: "Dungeons Completed" */
     public static final String STAT_DUNGEONS_COMPLETED = "stat.realmforge.dungeons_completed";
 

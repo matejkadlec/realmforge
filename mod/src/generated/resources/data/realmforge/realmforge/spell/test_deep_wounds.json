@@ -30,6 +30,7 @@
         "cooldown_ticks": 0,
         "cast": "realmforge:test_deep_wound"
       }
-    ]
+    ],
+    "splash_radius": []
   }
 }

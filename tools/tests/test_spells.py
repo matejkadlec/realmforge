@@ -93,6 +93,12 @@ def test_repository_spells_are_the_class_kits_engine_tests_stoneform_and_astones
         "improved_frostbolt",
         "shatter",
         "two_handed_weapon_specialization",
+        # The rest of the Frost Mage's tree (RLM-542).
+        "cone_of_cold",
+        "ice_lance",
+        "frost_nova",
+        "frostbite",
+        "blizzard",
         # Astone's (W5b, RLM-491).
         "astone_boulder",
         "astone_cracked_stone",
@@ -448,7 +454,8 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
     assert 'public static final ResourceKey<Spell> TEST_BOLT = key("test_bolt");' in keys
     assert (
         "ALL = List.of(ARCANE_MISSILES, ASTONE_BOULDER, ASTONE_CRACKED_STONE, ASTONE_QUAKE, ASTONE_ROCKFALL, "
-        "ASTONE_SHOCKWAVE, BATTLE_SHOUT, FIREBALL, FROSTBOLT, ICE_BARRIER, IMPROVED_FROSTBOLT, RECKLESS_STRIKE, "
+        "ASTONE_SHOCKWAVE, BATTLE_SHOUT, BLIZZARD, CONE_OF_COLD, FIREBALL, FROST_NOVA, FROSTBITE, FROSTBOLT, "
+        "ICE_BARRIER, ICE_LANCE, IMPROVED_FROSTBOLT, RECKLESS_STRIKE, "
         "SHATTER, SHIELD_BASH, SLAM, STONEFORM, TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, "
         "TEST_CLEAVE, TEST_DEEP_WOUND, TEST_DEEP_WOUNDS, TEST_DRAIN, TEST_EXECUTE, TEST_FORWARD_MISSILE, "
         "TEST_FROSTBITE, TEST_HOMING_BOLT, TEST_ICE_LANCE, TEST_IGNITE, TEST_LACERATE, TEST_MEND, TEST_MENDING_RING, "
@@ -979,7 +986,7 @@ def test_a_spell_names_itself_and_says_what_it_does() -> None:
         ("Heals for {heal}.", "{heal} needs a realmforge:heal effect"),
         ("Slows for {duration} sec.", "{duration} needs a realmforge:apply_effect effect"),
         ("Burns for {periodic_total}.", "{periodic_total} needs a realmforge:apply_effect effect"),
-        ("A ring of {radius} blocks.", "{radius} needs a realmforge:area effect"),
+        ("A ring of {radius} blocks.", "{radius} needs a realmforge:area or realmforge:cone effect"),
     ],
 )
 def test_placeholders_must_be_known_and_have_their_effect(description: str, expected: str) -> None:

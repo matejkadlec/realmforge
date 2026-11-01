@@ -79,23 +79,16 @@ def slowing(**fields: object) -> dict:
 # The repository's kits
 
 
-def test_the_classes_teach_four_spells_by_level_10_and_one_at_level_1() -> None:
+def test_the_warrior_teaches_four_spells_by_level_10_and_one_at_level_1() -> None:
+    # The Mage's kit is the Frost tree's (RLM-542, tests/test_frost_tree.py).
     content, _ = load_and_validate(RepoPaths())
     kits = {entry.model.id: [(t.spell, t.level) for t in entry.model.spells] for entry in content.classes}
-    assert kits == {
-        "warrior": [
-            ("realmforge:slam", 1),
-            ("realmforge:reckless_strike", 3),
-            ("realmforge:shield_bash", 5),
-            ("realmforge:battle_shout", 8),
-        ],
-        "mage": [
-            ("realmforge:frostbolt", 1),
-            ("realmforge:fireball", 3),
-            ("realmforge:arcane_missiles", 5),
-            ("realmforge:ice_barrier", 8),
-        ],
-    }
+    assert kits["warrior"] == [
+        ("realmforge:slam", 1),
+        ("realmforge:reckless_strike", 3),
+        ("realmforge:shield_bash", 5),
+        ("realmforge:battle_shout", 8),
+    ]
     human = content.races[0].model
     assert human.racial_spell == "realmforge:will_to_survive"
     assert human.racial_passive is not None and human.racial_passive.weapons == SWORD_LIKE_TAG
@@ -441,7 +434,7 @@ def test_class_spells_are_players_spells_that_exist(repo: RepoPaths) -> None:
 def test_a_chapter_allows_four_spells_a_chapter(repo: RepoPaths) -> None:
     warrior = repo.content / "classes" / "warrior.yaml"
     warrior.write_text(warrior.read_text() + "  - {spell: realmforge:will_to_survive, level: 9}\n")
-    assert_problem(repo, "5 spells by level 10, the end of chapter 1, which allows 4")
+    assert_problem(repo, "5 active spells by level 10, the end of chapter 1, which allows 4")
 
 
 @pytest.mark.parametrize(

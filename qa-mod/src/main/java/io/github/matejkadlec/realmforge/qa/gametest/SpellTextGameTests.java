@@ -69,8 +69,11 @@ public final class SpellTextGameTests {
                 "Drains an enemy for Arcane 1 damage at every tick of the channel."),
                 "a channel of 6 ticks of 0.25 s after 50 % Cast Time Reduction (RLM-518), its cost per second "
                         + "(RLM-403)");
-        helper.assertValueEqual(tooltip(helper, player, GeneratedSpells.TEST_MENDING_RING, 1).subList(1, 3),
-                List.of("On yourself", "Instant"), "a spell on the caster has no range");
+        // RLM-542, Matěj's playtest of 2026-11-01: a spell on the caster has no range line, not even "On yourself".
+        helper.assertValueEqual(tooltip(helper, player, GeneratedSpells.TEST_MENDING_RING, 1).subList(1, 2),
+                List.of("Instant"), "a spell on the caster has no range");
+        helper.assertValueEqual(tooltip(helper, player, GeneratedSpells.WILL_TO_SURVIVE, 1).get(1), "Instant",
+                "Will To Survive: no range line before its cast");
         // RLM-399, Matěj's playtest of 2026-10-31: a melee spell reads "Melee range", never "On yourself".
         helper.assertValueEqual(tooltip(helper, player, GeneratedSpells.SLAM, 1).subList(2, 5),
                 List.of("30 Rage", "Melee range", "Instant"), "a swing in front of the caster");

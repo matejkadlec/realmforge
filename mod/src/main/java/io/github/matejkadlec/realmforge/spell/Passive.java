@@ -22,8 +22,9 @@ import net.minecraft.world.item.ItemStack;
  * on the spell bar. While its player knows it, at its rank, and while the main hand holds an item of
  * {@code whileWielding} if it names one, it gives attribute modifiers ({@link Passives#SOURCE}), raises named spells'
  * damage ({@code spellDamage}, the hit's passives layer), adds crit chance against a target with a status effect, and
- * shortens a two-handed block's cooldown from a rank on, and its procs fire ({@link Passives#procs}; RLM-540: Frostbite,
- * Taste for Blood, Deep Wounds). Every number grows per rank like an active spell's.
+ * shortens a two-handed block's cooldown from a rank on, widens named spells' splash from a rank on (RLM-542:
+ * Improved Frostbolt), and its procs fire ({@link Passives#procs}; RLM-540: Frostbite, Taste for Blood, Deep Wounds).
+ * Every number grows per rank like an active spell's.
  *
  * @param whileWielding the item tag the main hand must hold for any of it to apply, if any
  * @param modifiers attribute modifiers, per rank
@@ -31,9 +32,11 @@ import net.minecraft.world.item.ItemStack;
  * @param critChance more crit chance against a target with a status effect, per rank
  * @param blockCooldown a shorter two-handed block cooldown from a rank on
  * @param procs what fires on the player's hits, crits, kills, effects and ticks, per rank
+ * @param splashRadius a wider splash for named spells' bolts from a rank on
  */
 public record Passive(Optional<TagKey<Item>> whileWielding, List<Modifier> modifiers, List<SpellDamage> spellDamage,
-        Optional<CritChance> critChance, Optional<BlockCooldown> blockCooldown, List<Proc> procs) {
+        Optional<CritChance> critChance, Optional<BlockCooldown> blockCooldown, List<Proc> procs,
+        List<SplashRadius> splashRadius) {
     public static final Codec<Passive> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                     TagKey.codec(Registries.ITEM).optionalFieldOf("while_wielding")
                             .forGetter(Passive::whileWielding),
@@ -42,13 +45,22 @@ public record Passive(Optional<TagKey<Item>> whileWielding, List<Modifier> modif
                             .forGetter(Passive::spellDamage),
                     CritChance.CODEC.optionalFieldOf("crit_chance").forGetter(Passive::critChance),
                     BlockCooldown.CODEC.optionalFieldOf("block_cooldown").forGetter(Passive::blockCooldown),
-                    Proc.CODEC.listOf().optionalFieldOf("procs", List.of()).forGetter(Passive::procs))
+                    Proc.CODEC.listOf().optionalFieldOf("procs", List.of()).forGetter(Passive::procs),
+                    SplashRadius.CODEC.listOf().optionalFieldOf("splash_radius", List.of())
+                            .forGetter(Passive::splashRadius))
             .apply(instance, Passive::new));
 
     public Passive {
         modifiers = List.copyOf(modifiers);
         spellDamage = List.copyOf(spellDamage);
         procs = List.copyOf(procs);
+        splashRadius = List.copyOf(splashRadius);
+    }
+
+    /** A passive without a splash bonus, as the passives before RLM-542 were built. */
+    public Passive(Optional<TagKey<Item>> whileWielding, List<Modifier> modifiers, List<SpellDamage> spellDamage,
+            Optional<CritChance> critChance, Optional<BlockCooldown> blockCooldown, List<Proc> procs) {
+        this(whileWielding, modifiers, spellDamage, critChance, blockCooldown, procs, List.of());
     }
 
     /** Whether it applies with {@code mainHand} in the main hand: always, unless it names a weapon tag. */
@@ -66,6 +78,12 @@ public record Passive(Optional<TagKey<Item>> whileWielding, List<Modifier> modif
     public double critChanceAgainst(LivingEntity target, int level) {
         return critChance.filter(bonus -> target.hasEffect(bonus.against())).map(bonus -> bonus.chanceAt(level))
                 .orElse(0.0);
+    }
+
+    /** The blocks it adds to {@code spell}'s splash radius at rank {@code level}, 0 for a spell it does not name. */
+    public double splashRadiusFor(ResourceKey<Spell> spell, int level) {
+        return splashRadius.stream().filter(bonus -> level >= bonus.fromLevel() && bonus.spells().contains(spell))
+                .mapToDouble(SplashRadius::radius).sum();
     }
 
     /** How many ticks shorter a two-handed block's cooldown is at rank {@code level}. */
@@ -184,18 +202,60 @@ public record Passive(Optional<TagKey<Item>> whileWielding, List<Modifier> modif
                 return new io.github.matejkadlec.realmforge.spell.Proc.OpenWindow(openWindow.get());
             }
             ProcEffect given = applyEffect.orElseThrow();
-            return new io.github.matejkadlec.realmforge.spell.Proc.ApplyEffect(given.effect(), given.durationTicks(),
-                    0, false);
+            return new io.github.matejkadlec.realmforge.spell.Proc.ApplyEffect(given.effect(),
+                    given.durationAt(level), 0, false);
         }
     }
 
-    /** The status effect a proc gives: its effect and how long it lasts. */
-    public record ProcEffect(Holder<MobEffect> effect, int durationTicks) {
+    /**
+     * The status effect a proc gives: its effect and how long it lasts, longer from a rank on if {@code fromLevel} says
+     * so (RLM-542: Frostbite's Frozen, 3 s instead of 2 at rank 3).
+     */
+    public record ProcEffect(Holder<MobEffect> effect, int durationTicks, Optional<FromLevel> fromLevel) {
         public static final Codec<ProcEffect> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                         MobEffect.CODEC.fieldOf("effect").forGetter(ProcEffect::effect),
                         Codec.intRange(1, ApplyEffectEffect.MAX_DURATION_TICKS).fieldOf("duration_ticks")
-                                .forGetter(ProcEffect::durationTicks))
+                                .forGetter(ProcEffect::durationTicks),
+                        FromLevel.CODEC.optionalFieldOf("from_level").forGetter(ProcEffect::fromLevel))
                 .apply(instance, ProcEffect::new));
+
+        /** An effect that lasts as long at every rank. */
+        public ProcEffect(Holder<MobEffect> effect, int durationTicks) {
+            this(effect, durationTicks, Optional.empty());
+        }
+
+        /** How long it lasts at rank {@code level}, in ticks. */
+        public int durationAt(int level) {
+            return fromLevel.filter(longer -> level >= longer.level()).map(FromLevel::durationTicks)
+                    .orElse(durationTicks);
+        }
+    }
+
+    /** A proc's effect that lasts {@code durationTicks} from rank {@code level} on. */
+    public record FromLevel(int level, int durationTicks) {
+        public static final Codec<FromLevel> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                        ExtraCodecs.POSITIVE_INT.fieldOf("level").forGetter(FromLevel::level),
+                        Codec.intRange(1, ApplyEffectEffect.MAX_DURATION_TICKS).fieldOf("duration_ticks")
+                                .forGetter(FromLevel::durationTicks))
+                .apply(instance, FromLevel::new));
+    }
+
+    /**
+     * A wider splash for the named spells' bolts (RLM-542: Improved Frostbolt's rank 3 adds half a block to Frostbolt's
+     * splash, Matěj, 2026-10-31): {@code radius} blocks more from rank {@code fromLevel} on.
+     */
+    public record SplashRadius(List<ResourceKey<Spell>> spells, double radius, int fromLevel) {
+        public static final Codec<SplashRadius> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                        ExtraCodecs.nonEmptyList(ResourceKey.codec(SpellRegistries.SPELL).listOf())
+                                .fieldOf("spells").forGetter(SplashRadius::spells),
+                        Codec.doubleRange(0, ProjectileEffect.Splash.MAX_RADIUS).fieldOf("radius")
+                                .forGetter(SplashRadius::radius),
+                        ExtraCodecs.POSITIVE_INT.optionalFieldOf("from_level", 1).forGetter(SplashRadius::fromLevel))
+                .apply(instance, SplashRadius::new));
+
+        public SplashRadius {
+            spells = List.copyOf(spells);
+        }
     }
 
     /** A two-handed block's cooldown, {@code reductionTicks} shorter from rank {@code fromLevel} on. */

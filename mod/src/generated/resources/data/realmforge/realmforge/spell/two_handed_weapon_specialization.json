@@ -34,6 +34,7 @@
     "block_cooldown": {
       "reduction_ticks": 5,
       "from_level": 3
-    }
+    },
+    "splash_radius": []
   }
 }

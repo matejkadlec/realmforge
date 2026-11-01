@@ -43,11 +43,13 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
  *   amount plus its coefficient of the caster's power (system C, RLM-534), raised by the school's power as the hit or
  *   heal is ({@code DamageCalculator#schoolHit}, {@link SpellScaling#heal}), before the target's resistance and
  *   without a crit;</li>
+ *   <li>{@code against_damage}: that damage against a target with the first damage effect's {@code against_effect}
+ *   (RLM-542: Ice Lance against a Frozen target);</li>
  *   <li>{@code duration}: the first {@code apply_effect}'s duration in seconds;</li>
  *   <li>{@code periodic}, {@code periodic_total}, {@code interval}: one tick, every tick and the seconds between two
  *   ticks of that effect's damage or healing over time ({@link Periodic}), with the caster's stats as its ticks
  *   have them ({@link EffectTicks#tickFor});</li>
- *   <li>{@code radius}: the first area's radius in blocks;</li>
+ *   <li>{@code radius}: the first area's radius in blocks, or with no area the first cone's range (RLM-542);</li>
  *   <li>{@code armor_shred}, {@code penetration}: the first damage effect's extra armor shred and spell penetration
  *   at the rank, in percent, for an effect that has them (C4);</li>
  *   <li>{@code crit_chance}: the spell's bonus crit chance at the rank, in percent, for a spell that has one;</li>
@@ -115,16 +117,20 @@ public final class SpellText {
     }
 
     /**
-     * The school whose icon and colour each number of {@code spell} takes: the spell's own for {@code damage}, the
-     * effect's for its damage over time ({@code periodic}, {@code periodic_total}). Healing, seconds and blocks take
+     * The school whose icon and colour each number of {@code spell} takes: the spell's own for {@code damage} and
+     * {@code against_damage}, the effect's for its damage over time ({@code periodic}, {@code periodic_total}). Healing, seconds and blocks take
      * none.
      */
     public static Map<String, ResourceKey<SpellSchool>> placeholderSchools(Spell spell) {
         Map<String, ResourceKey<SpellSchool>> placeholders = new LinkedHashMap<>();
         List<SpellEffect> effects = allEffects(spell.effects());
-        if (first(effects, DamageEffect.class).isPresent()) {
-            spell.school().flatMap(Holder::unwrapKey).ifPresent(key -> placeholders.put("damage", key));
-        }
+        first(effects, DamageEffect.class).ifPresent(damage -> spell.school().flatMap(Holder::unwrapKey)
+                .ifPresent(key -> {
+                    placeholders.put("damage", key);
+                    if (damage.againstEffect().isPresent()) {
+                        placeholders.put("against_damage", key);
+                    }
+                }));
         first(effects, ApplyEffectEffect.class).ifPresent(applied -> {
             if (applied.effect().value() instanceof StatusEffect status && status.periodic().isPresent()
                     && status.periodic().get().kind() == Periodic.Kind.DAMAGE) {
@@ -161,8 +167,10 @@ public final class SpellText {
         double spellPower = stats.applyAsDouble(GeneratedStats.SPELL_POWER);
         double schoolPower = school.flatMap(SpellSchool::power).map(stats::applyAsDouble).orElse(0.0);
         first(effects, DamageEffect.class).ifPresent(damage -> {
-            double base = damage.baseAt(level, attackDamage, spellPower);
-            values.put("damage", DamageNumbers.format(base * Math.max(0, 1 + schoolPower + passiveDamage)));
+            double hit = damage.baseAt(level, attackDamage, spellPower) * Math.max(0, 1 + schoolPower + passiveDamage);
+            values.put("damage", DamageNumbers.format(hit));
+            damage.againstEffect().ifPresent(against -> values.put("against_damage",
+                    DamageNumbers.format(hit * against.factorAt(level))));
         });
         first(effects, HealEffect.class).ifPresent(heal -> {
             double base = SpellScaling.base(heal.amount(), heal.perLevel(), level, heal.coefficient(), attackDamage,
@@ -198,7 +206,9 @@ public final class SpellText {
                     modifier.operation() == AttributeModifier.Operation.ADD_VALUE ? modifier.amount()
                             : modifier.amount() * PERCENT)));
         });
-        first(effects, AreaEffect.class).ifPresent(area -> values.put("radius", decimal(area.radius())));
+        first(effects, AreaEffect.class).map(AreaEffect::radius)
+                .or(() -> first(effects, ConeEffect.class).map(ConeEffect::range))
+                .ifPresent(radius -> values.put("radius", decimal(radius)));
         return values;
     }
 
@@ -206,7 +216,10 @@ public final class SpellText {
      * A passive spell's placeholders at rank {@code level} (RLM-541): {@code bonus}, its first modifier (in percent for
      * a multiplied operation, in the attribute's unit otherwise); {@code spell_damage}, its first spell damage bonus in
      * percent; {@code crit_chance}, its crit chance against its condition in percent; {@code block_cooldown} and
-     * {@code block_cooldown_rank}, a two-handed block's shorter cooldown in seconds and the rank it starts at.
+     * {@code block_cooldown_rank}, a two-handed block's shorter cooldown in seconds and the rank it starts at;
+     * {@code splash_radius} and {@code splash_radius_rank}, its first splash bonus in blocks and the rank it starts at;
+     * {@code proc_chance}, {@code proc_duration} and {@code proc_cooldown}, its first proc's chance in percent, how
+     * long the effect it gives lasts and its internal cooldown on each target, in seconds (RLM-542).
      */
     public static Map<String, String> passiveValues(Passive passive, int level) {
         Map<String, String> values = new LinkedHashMap<>();
@@ -219,6 +232,16 @@ public final class SpellText {
         passive.blockCooldown().ifPresent(cooldown -> {
             values.put("block_cooldown", decimal(cooldown.reductionTicks() / TICKS_PER_SECOND));
             values.put("block_cooldown_rank", Integer.toString(cooldown.fromLevel()));
+        });
+        passive.splashRadius().stream().findFirst().ifPresent(bonus -> {
+            values.put("splash_radius", decimal(bonus.radius()));
+            values.put("splash_radius_rank", Integer.toString(bonus.fromLevel()));
+        });
+        passive.procs().stream().findFirst().ifPresent(proc -> {
+            values.put("proc_chance", decimal(proc.chanceAt(level) * PERCENT));
+            proc.applyEffect().ifPresent(given -> values.put("proc_duration",
+                    decimal(given.durationAt(level) / TICKS_PER_SECOND)));
+            values.put("proc_cooldown", decimal(proc.cooldownTicks() / TICKS_PER_SECOND));
         });
         return values;
     }
@@ -239,8 +262,8 @@ public final class SpellText {
     }
 
     /**
-     * Every effect in order, each projectile's, area's and melee shape's own right after it, as the pipeline counts
-     * them.
+     * Every effect in order, each projectile's, area's, melee shape's and cone's own right after it, as the pipeline
+     * counts them.
      */
     static List<SpellEffect> allEffects(List<SpellEffect> effects) {
         List<SpellEffect> all = new ArrayList<>();
@@ -252,6 +275,8 @@ public final class SpellText {
                 all.addAll(area.effects());
             } else if (effect instanceof MeleeEffect melee) {
                 all.addAll(melee.effects());
+            } else if (effect instanceof ConeEffect cone) {
+                all.addAll(cone.effects());
             }
         }
         return all;

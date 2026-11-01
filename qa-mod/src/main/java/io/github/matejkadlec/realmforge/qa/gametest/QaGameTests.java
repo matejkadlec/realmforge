@@ -77,6 +77,7 @@ public final class QaGameTests {
             DungeonContainerGameTests.class,
             DungeonOpeningGameTests.class,
             EffectGameTests.class,
+            FrostTreeGameTests.class,
             FrozenAndBleedingGameTests.class,
             GearGameTests.class,
             FtbTeamsGameTests.class,

@@ -227,7 +227,8 @@ def test_expectations(repo: RepoPaths) -> None:
         "                    List.of(),\n"
         '                    Optional.of(new PeriodicExpectation("heal", "realmforge:arcane", 2.0, 0.1, 20)),\n'
         "                    Optional.empty(),\n"
-        "                    false)"
+        "                    false,\n"
+        "                    0.0)"
     ) in expectations
     assert (
         'new ModifierExpectation("realmforge:spell_power", "realmforge:effect.test_sapped.realmforge.spell_power", '
@@ -257,6 +258,11 @@ def test_no_effects_still_compile(repo: RepoPaths) -> None:
         "test_ice_lance",
         "test_frostbite",
         "test_taste_for_blood",
+        "cone_of_cold",
+        "frost_nova",
+        "ice_lance",
+        "frostbite",
+        "blizzard",
     ):
         (repo.content / "spells" / f"{name}.yaml").unlink()
     titan = repo.content / "bosses" / "test_titan.yaml"

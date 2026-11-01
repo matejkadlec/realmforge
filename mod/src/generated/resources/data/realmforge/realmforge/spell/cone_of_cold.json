@@ -1,0 +1,53 @@
+{
+  "name": "spell.realmforge.cone_of_cold.name",
+  "description": "spell.realmforge.cone_of_cold.description",
+  "school": "realmforge:frost",
+  "scales_with": "spell_power",
+  "targeting": {
+    "type": "realmforge:self"
+  },
+  "cast": {
+    "type": "instant"
+  },
+  "cost": {
+    "amount": 30.0,
+    "per_level": 10.0,
+    "resource": "realmforge:mana"
+  },
+  "cooldown_ticks": 200,
+  "global_cooldown_ticks": 10,
+  "max_level": 3,
+  "crit": {
+    "can_crit": true,
+    "bonus_chance": 0.0
+  },
+  "npc_only": false,
+  "requires": [],
+  "castable_while_stunned": false,
+  "effects": [
+    {
+      "type": "realmforge:cone",
+      "range": 5.0,
+      "angle_degrees": 60.0,
+      "effects": [
+        {
+          "amount": 5.0,
+          "per_level": 1.0,
+          "spell_power": 0.6,
+          "spell_power_per_level": 0.1,
+          "type": "realmforge:damage"
+        },
+        {
+          "type": "realmforge:apply_effect",
+          "effect": "minecraft:slowness",
+          "duration_ticks": 60,
+          "duration_per_level_ticks": 20,
+          "amplifier": 1,
+          "stronger_at_levels": []
+        }
+      ],
+      "sound": "minecraft:entity.player.hurt_freeze",
+      "particles": "minecraft:packed_ice"
+    }
+  ]
+}

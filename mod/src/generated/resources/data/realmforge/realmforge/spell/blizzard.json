@@ -1,0 +1,61 @@
+{
+  "name": "spell.realmforge.blizzard.name",
+  "description": "spell.realmforge.blizzard.description",
+  "school": "realmforge:frost",
+  "scales_with": "spell_power",
+  "targeting": {
+    "type": "realmforge:ground_point",
+    "range": 30.0
+  },
+  "cast": {
+    "castable_while_moving": false,
+    "lock_on": false,
+    "keep_sight": false,
+    "type": "channel",
+    "duration_ticks": 120,
+    "interval_ticks": 10
+  },
+  "cost": {
+    "amount": 13.0,
+    "per_level": 5.0,
+    "resource": "realmforge:mana"
+  },
+  "cooldown_ticks": 0,
+  "global_cooldown_ticks": 10,
+  "max_level": 3,
+  "crit": {
+    "can_crit": true,
+    "bonus_chance": 0.0
+  },
+  "npc_only": false,
+  "requires": [],
+  "castable_while_stunned": false,
+  "effects": [
+    {
+      "type": "realmforge:area",
+      "radius": 4.0,
+      "duration_ticks": 10,
+      "interval_ticks": 10,
+      "affects": "enemies",
+      "effects": [
+        {
+          "amount": 2.0,
+          "per_level": 0.5,
+          "spell_power": 0.2,
+          "spell_power_per_level": 0.05,
+          "type": "realmforge:damage"
+        },
+        {
+          "type": "realmforge:apply_effect",
+          "effect": "minecraft:slowness",
+          "duration_ticks": 30,
+          "amplifier": 0,
+          "stronger_at_levels": [
+            3
+          ]
+        }
+      ],
+      "ring_color": "#BFEFFF"
+    }
+  ]
+}

@@ -62,16 +62,36 @@
       "level": 1
     },
     {
-      "spell": "realmforge:fireball",
-      "level": 3
+      "spell": "realmforge:improved_frostbolt",
+      "level": 1
     },
     {
-      "spell": "realmforge:arcane_missiles",
-      "level": 5
+      "spell": "realmforge:cone_of_cold",
+      "level": 1
+    },
+    {
+      "spell": "realmforge:ice_lance",
+      "level": 6
+    },
+    {
+      "spell": "realmforge:frost_nova",
+      "level": 6
+    },
+    {
+      "spell": "realmforge:frostbite",
+      "level": 6
+    },
+    {
+      "spell": "realmforge:shatter",
+      "level": 12
     },
     {
       "spell": "realmforge:ice_barrier",
-      "level": 8
+      "level": 12
+    },
+    {
+      "spell": "realmforge:blizzard",
+      "level": 18
     }
   ]
 }
