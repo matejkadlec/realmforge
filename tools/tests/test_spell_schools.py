@@ -224,6 +224,18 @@ def test_every_school_bypasses_the_cooldown_and_magic_bypasses_armor(repo: RepoP
     }
 
 
+def test_physical_schools_join_neoforges_physical_tag_and_magic_ones_stay_out_of_its_magic_tag(
+    repo: RepoPaths,
+) -> None:
+    # RLM-549: Apotheosis's physical damage reduction reads #neoforge:is_physical; no school joins #neoforge:is_magic,
+    # so its magic reduction never stacks with Magic Protection (RLM-537).
+    files = generate(repo)
+    assert json.loads(files[f"{DATA}/neoforge/tags/damage_type/is_physical.json"]) == {
+        "values": ["realmforge:physical"]
+    }
+    assert f"{DATA}/neoforge/tags/damage_type/is_magic.json" not in files
+
+
 def test_no_school_hit_knocks_back(repo: RepoPaths) -> None:
     # RLM-214: a spell pushes only through its knockback effect, so every school is in vanilla's no_knockback tag.
     files = generate(repo)
