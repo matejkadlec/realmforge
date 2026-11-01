@@ -19,6 +19,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.neoforged.neoforge.common.NeoForgeMod;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 /**
  * Creative flight is off in a boss's arena (RLM-559; Matěj, 2026-10-16 and 2026-10-29, RLM-232): Apotheosis's
@@ -31,8 +32,10 @@ import net.neoforged.neoforge.common.NeoForgeMod;
  *   <li><b>The warning:</b> a player who could fly on entering sees a title and a chat line, and gets Slow Falling for
  *   {@value #SLOW_FALLING_TICKS} ticks, so losing flight mid-air never kills.</li>
  *   <li><b>Flight returns</b> on leaving the arena (another dimension, death and logout included), and when the boss
- *   dies, is removed or resets ({@link #releaseAll}). A player still inside after a reset is held again at the next
- *   check.</li>
+ *   dies, is removed (its chunk unloading included) or resets ({@link #releaseAll}). A player still inside after a
+ *   reset is held again at the next check. The boss lets go only while it ticks, and it stops ticking once no player
+ *   is near, so a player who teleports far away or changes dimension would stay held: every {@link #CHECK_INTERVAL}
+ *   ticks the player's own tick lets go of every boss that no longer holds them too ({@link #recheck}).</li>
  * </ul>
  * The bosses that hold a player are counted, so overlapping arenas give flight back only once the player has left
  * them all. Skyhearth, which turns flight off too, does not exist yet; it takes the same modifier.
@@ -66,6 +69,32 @@ public final class ArenaFlight {
                 hold(player, boss.getUUID());
             } else {
                 release(player, boss.getUUID());
+            }
+        }
+    }
+
+    /** The player's side, every {@link #CHECK_INTERVAL} ticks: {@link #recheck}. */
+    static void onPlayerTick(PlayerTickEvent.Post event) {
+        if (event.getEntity() instanceof ServerPlayer player && player.tickCount % CHECK_INTERVAL == 0) {
+            recheck(player);
+        }
+    }
+
+    /**
+     * Lets go of the player for every boss that no longer holds them: one that is not a living boss with a home in the
+     * player's level (gone, unloaded, another dimension), or whose arena the player has left.
+     */
+    public static void recheck(ServerPlayer player) {
+        Set<UUID> bosses = HELD.get(player);
+        if (bosses == null) {
+            return;
+        }
+        for (UUID boss : List.copyOf(bosses)) {
+            boolean holds = player.isAlive() && !player.isSpectator()
+                    && player.level().getEntity(boss) instanceof BossMob mob && mob.isAlive() && mob.home().isPresent()
+                    && mob.inArena(player);
+            if (!holds) {
+                release(player, boss);
             }
         }
     }

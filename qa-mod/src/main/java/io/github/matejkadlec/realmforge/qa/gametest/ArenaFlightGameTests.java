@@ -5,14 +5,17 @@ import io.github.matejkadlec.realmforge.boss.BossMob;
 import io.github.matejkadlec.realmforge.generated.GeneratedMobs;
 import io.github.matejkadlec.realmforge.generated.GeneratedTexts;
 import java.util.List;
+import java.util.Set;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForgeMod;
 
@@ -105,6 +108,43 @@ public final class ArenaFlightGameTests {
                     helper.assertFalse(ArenaFlight.isHeldBy(walker, titan), "the reset lets go of the walker");
                     ApotheosisGameTests.logout(flyer);
                     ApotheosisGameTests.logout(walker);
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * PR review of RLM-559: a held player who leaves for another dimension (a realm portal, Waystones, /tp) gets flight
+     * back from their own tick. The boss's check never runs for them there, and a boss stops ticking once nobody is
+     * near. A boss removed without dying (a discard; its chunk unloading goes the same way) lets go too.
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_17X17, timeoutTicks = 200)
+    public static void flightReturnsInAnotherDimensionAndWhenTheBossIsRemoved(GameTestHelper helper) {
+        BossMob titan = titan(helper);
+        ServerPlayer player = flyer(helper, "qa-arena-away");
+        ServerLevel nether = helper.getLevel().getServer().getLevel(Level.NETHER);
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(titan.home().isPresent(), "the titan took its home"))
+                .thenExecute(() -> QaPlayers.onPlatform(helper, player, INSIDE))
+                .thenExecuteAfter(CHECK, () -> {
+                    helper.assertTrue(ArenaFlight.isHeldBy(player, titan), "the titan's arena holds the player");
+                    helper.assertTrue(nether != null, "the GameTest server has the Nether");
+                    player.teleportTo(nether, 0.5, 200, 0.5, Set.of(), 0.0F, 0.0F, true);
+                    // What the player's tick runs every 5 ticks (PlayerTickEvent.Post), before the titan's next check
+                    // could run. A fake player's tick count only advances in the level's entity loop, so ticking it
+                    // here would never reach that multiple.
+                    ArenaFlight.recheck(player);
+                    helper.assertFalse(ArenaFlight.isHeldBy(player, titan),
+                            "the player's side lets go of a boss in another dimension");
+                    assertFlightFollowsTheHolds(helper, player);
+                    Vec3 back = helper.absoluteVec(INSIDE);
+                    player.teleportTo(helper.getLevel(), back.x, back.y, back.z, Set.of(), 0.0F, 0.0F, true);
+                })
+                .thenExecuteAfter(CHECK, () -> {
+                    helper.assertTrue(ArenaFlight.isHeldBy(player, titan), "held again back in the arena");
+                    titan.discard();
+                    helper.assertFalse(ArenaFlight.isHeldBy(player, titan), "a removed boss lets go of the player");
+                    assertFlightFollowsTheHolds(helper, player);
+                    ApotheosisGameTests.logout(player);
                 })
                 .thenSucceed();
     }

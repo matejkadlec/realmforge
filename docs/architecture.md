@@ -2623,11 +2623,15 @@ phases:
   flight. A player who could fly on entering sees a title and a chat line (`message.realmforge.arena_no_flight*`)
   and gets Slow Falling for 5 s, so losing flight mid-air never kills. Flight returns on leaving the arena (another
   dimension, a death and a logout included: a respawned or relogged player has neither the transient modifier nor an
-  entry) and when the boss dies, is removed or resets; a player still inside after a reset is held again at the next
-  check. The bosses holding a player are counted (weak identity keys per player object), so overlapping arenas give
+  entry) and when the boss dies, is removed (`onRemoval`, which its chunk unloading also goes through) or resets; a
+  player still inside after a reset is held again at the next check. A boss lets go only while it ticks, and it stops
+  ticking once nobody is near, so the player's own tick (`PlayerTickEvent.Post`, every 5 ticks) also lets go of every
+  boss that is no longer a living boss in the player's level with the player in its arena: a teleport far away or to
+  another dimension gives flight back there. The bosses holding a player are counted (weak identity keys per player object), so overlapping arenas give
   flight back only once the player left them all. Skyhearth, which turns flight off too, takes the same modifier once
   it exists. `ArenaFlightGameTests` cover entering flying (landed, Slow Falling, the warning), leaving, coming back,
-  the boss's death and its reset, and a player without flight (held, no warning).
+  the boss's death, its reset and its removal, a player who leaves for the Nether, and a player without flight (held,
+  no warning).
 - **Persistence:** a boss never despawns, however far the players are (`requiresCustomPersistence`), as vanilla's
   bosses do not; the QA mod's test boss neither (RLM-482). It never goes through a portal either (`canUsePortal`, as
   the Wither), since its arena and home belong to the dimension it stands in.

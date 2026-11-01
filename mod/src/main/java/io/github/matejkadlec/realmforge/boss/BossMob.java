@@ -356,10 +356,13 @@ public class BossMob extends MeleeMob implements MobLevels.FixedLevel {
         }
     }
 
-    /** So does its removal, a kill command or an unloaded chunk (RLM-559). */
+    /**
+     * So does its removal (RLM-559): a kill command, a discard, or its chunk unloading, which goes through
+     * {@code Entity#setRemoved} and so through here, never through {@code Entity#remove}.
+     */
     @Override
-    public void remove(RemovalReason reason) {
-        super.remove(reason);
+    public void onRemoval(RemovalReason reason) {
+        super.onRemoval(reason);
         if (level() instanceof ServerLevel) {
             ArenaFlight.releaseAll(this);
         }

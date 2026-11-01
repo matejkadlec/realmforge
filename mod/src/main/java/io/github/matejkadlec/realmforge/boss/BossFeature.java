@@ -4,6 +4,7 @@ import io.github.matejkadlec.realmforge.mob.custom.Archetypes;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.registries.DataPackRegistryEvent;
 import net.neoforged.neoforge.registries.NewRegistryEvent;
 
@@ -23,6 +24,9 @@ public final class BossFeature {
         // A boss's body is a custom mob of archetype boss: GeneratedMobs creates it through mob's Archetypes.
         Archetypes.provide(ARCHETYPE, BossMob::create);
         NeoForge.EVENT_BUS.addListener(MobEffectEvent.Applicable.class, BossFeature::onEffectApplicable);
+        // No creative flight in a boss's arena (RLM-559): the player's side lets go of a boss that no longer
+        // holds them.
+        NeoForge.EVENT_BUS.addListener(PlayerTickEvent.Post.class, ArenaFlight::onPlayerTick);
     }
 
     /** A boss never takes the status effects it is immune to (RLM-539: Frozen, Stunned, boss by boss). */
