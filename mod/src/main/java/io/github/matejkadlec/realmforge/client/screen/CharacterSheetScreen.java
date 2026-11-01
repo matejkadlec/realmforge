@@ -264,8 +264,10 @@ public final class CharacterSheetScreen extends Screen {
     }
 
     /**
-     * The panel for the selected tab: the heading row with the tabs, a rule, and the tab's body in a box as big as the
-     * largest tab's, centred on the screen and drawn smaller when it does not fit.
+     * The panel for the selected tab: the heading row with the tabs, a rule, and the tab's body in a box as tall as the
+     * tallest tab and as wide as the widest tab or the heading row, whichever is wider, so the body's columns share all
+     * of the panel's width (Matěj, 2026-11-01: no empty strip beside them when the heading is the widest). Centred on
+     * the screen and drawn smaller when it does not fit.
      */
     private Layout layout(CharacterSheetView sheet) {
         List<Flex<Paint>> bodies = new ArrayList<>();
@@ -286,8 +288,8 @@ public final class CharacterSheetScreen extends Screen {
         Component title = sheet.title().copy().withStyle(ChatFormatting.BOLD);
         Flex<Paint> heading = Flex.<Paint>row().add(text(title, HEADING, HEADING_ROW),
                 Flex.<Paint>leaf(TAB_GAP, 0, null).grow(1), tabs);
-        Flex<Paint> body = Flex.<Paint>column().align(Align.STRETCH).size(bodyWidth, bodyHeight)
-                .add(bodies.get(selectedTab()));
+        Flex<Paint> body = Flex.<Paint>column().align(Align.STRETCH)
+                .size(Math.max(bodyWidth, heading.preferredWidth()), bodyHeight).add(bodies.get(selectedTab()));
         Flex<Paint> root = Flex.<Paint>column().align(Align.STRETCH).padding(PADDING).gap(4)
                 .payload(new Fill(PANEL, PANEL_BORDER))
                 .add(heading, Flex.leaf(0, 1, new Fill(RULE, 0)), Flex.<Paint>spacer().height(2), body);
