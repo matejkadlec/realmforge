@@ -117,16 +117,20 @@ public final class SpellText {
     }
 
     /**
-     * The school whose icon and colour each number of {@code spell} takes: the spell's own for {@code damage}, the
-     * effect's for its damage over time ({@code periodic}, {@code periodic_total}). Healing, seconds and blocks take
+     * The school whose icon and colour each number of {@code spell} takes: the spell's own for {@code damage} and
+     * {@code against_damage}, the effect's for its damage over time ({@code periodic}, {@code periodic_total}). Healing, seconds and blocks take
      * none.
      */
     public static Map<String, ResourceKey<SpellSchool>> placeholderSchools(Spell spell) {
         Map<String, ResourceKey<SpellSchool>> placeholders = new LinkedHashMap<>();
         List<SpellEffect> effects = allEffects(spell.effects());
-        if (first(effects, DamageEffect.class).isPresent()) {
-            spell.school().flatMap(Holder::unwrapKey).ifPresent(key -> placeholders.put("damage", key));
-        }
+        first(effects, DamageEffect.class).ifPresent(damage -> spell.school().flatMap(Holder::unwrapKey)
+                .ifPresent(key -> {
+                    placeholders.put("damage", key);
+                    if (damage.againstEffect().isPresent()) {
+                        placeholders.put("against_damage", key);
+                    }
+                }));
         first(effects, ApplyEffectEffect.class).ifPresent(applied -> {
             if (applied.effect().value() instanceof StatusEffect status && status.periodic().isPresent()
                     && status.periodic().get().kind() == Periodic.Kind.DAMAGE) {
