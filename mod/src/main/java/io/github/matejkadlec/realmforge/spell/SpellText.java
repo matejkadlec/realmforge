@@ -49,13 +49,24 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
  *   <li>{@code periodic}, {@code periodic_total}, {@code interval}: one tick, every tick and the seconds between two
  *   ticks of that effect's damage or healing over time ({@link Periodic}), with the caster's stats as its ticks
  *   have them ({@link EffectTicks#tickFor});</li>
- *   <li>{@code radius}: the first area's radius in blocks, or with no area the first cone's range (RLM-542);</li>
+ *   <li>{@code radius}: the first area's radius in blocks, or with no area the first cone's range (RLM-542), or the
+ *   first charge's landing radius (RLM-543);</li>
  *   <li>{@code armor_shred}, {@code penetration}: the first damage effect's extra armor shred and spell penetration
  *   at the rank, in percent, for an effect that has them (C4);</li>
  *   <li>{@code crit_chance}: the spell's bonus crit chance at the rank, in percent, for a spell that has one;</li>
  *   <li>{@code bonus}: the one attribute modifier of the first applied status effect at its strength (the pipeline
  *   allows it only for an effect with one), in percent for a multiplied operation and in the attribute's points
- *   otherwise (Ice Barrier's Magic Shield).</li>
+ *   otherwise (Ice Barrier's Magic Shield);</li>
+ *   <li>{@code dot_damage}, {@code dot_duration}: the first damage over time's damage over its whole duration, raised
+ *   by its school's power as its ticks are, and its duration in seconds (RLM-543: Rend's bleed);</li>
+ *   <li>{@code max_health_heal}: the first heal's share of max health, in percent (Victory Rush);</li>
+ *   <li>{@code resource_gain}: the first {@code gain_resource}'s amount (Charge's rage);</li>
+ *   <li>{@code min_range}, {@code range}: the target distance's nearest and farthest blocks at the rank (Charge), or
+ *   for {@code range} without one a targeted spell's range;</li>
+ *   <li>{@code window}: how long its window stays open, in seconds; {@code health_below}: its target health
+ *   condition, in percent;</li>
+ *   <li>{@code extra_cost}, {@code extra_damage}: the most extra resource its cost spends and the damage each point
+ *   adds, in percent; {@code refund}, {@code refund_rank}: what a kill refunds and from which rank (Execute).</li>
  * </ul>
  *
  * Every number is the one at the player's rank: an effect's duration and strength grow with it (C4). Damage and
@@ -208,8 +219,49 @@ public final class SpellText {
         });
         first(effects, AreaEffect.class).map(AreaEffect::radius)
                 .or(() -> first(effects, ConeEffect.class).map(ConeEffect::range))
+                .or(() -> first(effects, ChargeEffect.class).map(ChargeEffect::landingRadius))
                 .ifPresent(radius -> values.put("radius", decimal(radius)));
+        first(effects, DamageOverTimeEffect.class).ifPresent(dot -> {
+            double power = dot.effect().value() instanceof StatusEffect status ? status.stacks()
+                    .flatMap(stacked -> schools.apply(stacked.school())).flatMap(SpellSchool::power)
+                    .map(stats::applyAsDouble).orElse(0.0) : 0;
+            values.put("dot_damage", DamageNumbers.format(dot.totalAt(level, attackDamage, spellPower)
+                    * Math.max(0, 1 + power)));
+            values.put("dot_duration", decimal(dot.durationAt(level) / TICKS_PER_SECOND));
+        });
+        first(effects, HealEffect.class).filter(heal -> heal.maxHealth() > 0 || heal.maxHealthPerLevel() > 0)
+                .ifPresent(heal -> values.put("max_health_heal", decimal(heal.maxHealthAt(level) * PERCENT)));
+        first(effects, GainResourceEffect.class)
+                .ifPresent(gain -> values.put("resource_gain", decimal(gain.amountAt(level))));
+        conditionValues(spell, level, values);
         return values;
+    }
+
+    /** The placeholders of {@code spell}'s conditions and cost at {@code level} (RLM-543), into {@code values}. */
+    private static void conditionValues(Spell spell, int level, Map<String, String> values) {
+        SpellConditions conditions = spell.conditions();
+        conditions.targetDistance().ifPresentOrElse(distance -> {
+            if (distance.min() > 0) {
+                values.put("min_range", decimal(distance.min()));
+            }
+            values.put("range", decimal(distance.maxAt(level)));
+        }, () -> {
+            boolean melee = spell.targeting() instanceof EnemyTargeting enemy && enemy.melee();
+            if (!melee && spell.targeting().reach() > 0) {
+                values.put("range", decimal(spell.targeting().reach()));
+            }
+        });
+        conditions.window().ifPresent(window -> values.put("window",
+                decimal(window.durationTicks() / TICKS_PER_SECOND)));
+        conditions.targetHealthBelow().ifPresent(share -> values.put("health_below", decimal(share * PERCENT)));
+        spell.cost().flatMap(SpellCost::extra).ifPresent(extra -> {
+            values.put("extra_cost", decimal(extra.max()));
+            values.put("extra_damage", decimal(extra.damagePerPoint() * PERCENT));
+        });
+        spell.cost().flatMap(SpellCost::refundOnKill).ifPresent(refund -> {
+            values.put("refund", decimal(refund.amount()));
+            values.put("refund_rank", Integer.toString(refund.fromLevel()));
+        });
     }
 
     /**
@@ -219,7 +271,8 @@ public final class SpellText {
      * {@code block_cooldown_rank}, a two-handed block's shorter cooldown in seconds and the rank it starts at;
      * {@code splash_radius} and {@code splash_radius_rank}, its first splash bonus in blocks and the rank it starts at;
      * {@code proc_chance}, {@code proc_duration} and {@code proc_cooldown}, its first proc's chance in percent, how
-     * long the effect it gives lasts and its internal cooldown on each target, in seconds (RLM-542).
+     * long the effect or damage over time it gives lasts and its internal cooldown on each target, in seconds (RLM-542);
+     * {@code proc_damage}, its damage over time's share of the hit that fires it, in percent (RLM-543).
      */
     public static Map<String, String> passiveValues(Passive passive, int level) {
         Map<String, String> values = new LinkedHashMap<>();
@@ -241,6 +294,10 @@ public final class SpellText {
             values.put("proc_chance", decimal(proc.chanceAt(level) * PERCENT));
             proc.applyEffect().ifPresent(given -> values.put("proc_duration",
                     decimal(given.durationAt(level) / TICKS_PER_SECOND)));
+            proc.damageOverTime().ifPresent(bleed -> {
+                values.put("proc_damage", decimal(bleed.damageAt(level) * PERCENT));
+                values.put("proc_duration", decimal(bleed.durationTicks() / TICKS_PER_SECOND));
+            });
             values.put("proc_cooldown", decimal(proc.cooldownTicks() / TICKS_PER_SECOND));
         });
         return values;
@@ -262,8 +319,8 @@ public final class SpellText {
     }
 
     /**
-     * Every effect in order, each projectile's, area's, melee shape's and cone's own right after it, as the pipeline
-     * counts them.
+     * Every effect in order, each projectile's, area's, melee shape's, cone's and charge's own right after it, as the
+     * pipeline counts them.
      */
     static List<SpellEffect> allEffects(List<SpellEffect> effects) {
         List<SpellEffect> all = new ArrayList<>();
@@ -277,6 +334,8 @@ public final class SpellText {
                 all.addAll(melee.effects());
             } else if (effect instanceof ConeEffect cone) {
                 all.addAll(cone.effects());
+            } else if (effect instanceof ChargeEffect charge) {
+                all.addAll(charge.effects());
             }
         }
         return all;

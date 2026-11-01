@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# The Arms Warrior's tree, row 3 (level 12), left (RLM-543; Matěj, 2026-10-30, "Spell Trees to Level 18", chosen for
+# M1): a passive whose proc (RLM-540) opens Overpower's window on a tick of the Warrior's Rend at a 15/30 % chance, at
+# most once every 6 s on each enemy. In the tree it needs Rend, the row above it on the left; the spell trees window (C5,
+# RLM-333) will check that, and until then the kit teaches Rend at 6, before it.
+id: taste_for_blood
+name: {en_us: Taste for Blood}
+description:
+  en_us: >-
+    Your Rend's ticks have a {proc_chance}% chance to make Overpower usable, at most once every {proc_cooldown} sec on
+    each target.
+school: realmforge:physical
+max_level: 2
+passive:
+  procs:
+    - trigger: tick
+      effect: realmforge:bleeding
+      spell: realmforge:rend
+      chance_percent: 15
+      chance_per_level_percent: 15
+      cooldown_seconds: 6
+      open_window: realmforge:overpower

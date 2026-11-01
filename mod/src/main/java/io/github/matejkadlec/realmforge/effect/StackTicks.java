@@ -6,7 +6,9 @@ import io.github.matejkadlec.realmforge.combat.SpellSchools;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import net.minecraft.core.Holder;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffect;
@@ -52,6 +54,21 @@ public final class StackTicks {
         target.getData(EffectAttachments.STACKS).add(key.get(), new EffectStacks.Stack(source.caster(),
                 source.spell(), source.procOrigin(), perTick, durationTicks));
         return true;
+    }
+
+    /**
+     * The damage {@code caster}'s stack of {@code effect} from {@code spell} on {@code target} has yet to deal, its
+     * ticks still due at its damage a tick; 0 without one (RLM-543: Deep Wounds adds it to the stack that replaces it).
+     */
+    public static double remaining(LivingEntity target, Holder<MobEffect> effect, UUID caster,
+            Optional<Identifier> spell) {
+        Optional<StackedDamage> damage = stacked(effect);
+        if (damage.isEmpty()) {
+            return 0;
+        }
+        return of(target, effect).stream()
+                .filter(stack -> stack.caster().equals(caster) && stack.spell().equals(spell))
+                .mapToDouble(stack -> stack.perTick() * damage.get().ticksLeft(stack.remainingTicks())).sum();
     }
 
     /** The stacks of {@code effect} on {@code entity}; empty without any. */

@@ -39,6 +39,8 @@ import net.minecraft.world.item.ItemStack;
  *   <li>a player's spell usable only in its window has its window closed ({@link Windows}, RLM-540);</li>
  *   <li>its targeting finds no valid target (an entity or a point) in range and in line of sight;</li>
  *   <li>a spell castable only on a target below a share of its health has a target above it (RLM-540: Execute);</li>
+ *   <li>a spell with a target distance has a target nearer than its least or farther than its most at the rank
+ *   (RLM-543: Charge);</li>
  *   <li>a player has less of the spell's resource than it costs.</li>
  * </ol>
  * Otherwise the spell starts the global cooldown, which every spell is on (Matěj, 2026-10-24), and pays its cost at
@@ -169,6 +171,10 @@ public final class SpellCaster {
         Optional<CastFailure> health = value.conditions().targetFailure(hit.entityOrNull());
         if (health.isPresent()) {
             return CastResult.refused(health.get());
+        }
+        Optional<CastFailure> distance = value.conditions().distanceFailure(caster, hit.entityOrNull(), level);
+        if (distance.isPresent()) {
+            return CastResult.refused(distance.get());
         }
         if (!canPay(caster, value, level, state)) {
             return CastResult.refused(CastFailure.NOT_ENOUGH_RESOURCE);

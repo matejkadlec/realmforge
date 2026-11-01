@@ -95,6 +95,7 @@ from realmforge_tools.schema.spell import (
     ALLY,
     APPLY_EFFECT,
     AREA,
+    CHARGE,
     CLEANSE,
     CONE,
     CURRENT_TARGET,
@@ -104,6 +105,7 @@ from realmforge_tools.schema.spell import (
     DIRECTION,
     ENEMY,
     FARTHEST_PLAYER,
+    GAIN_RESOURCE,
     GROUND_POINT,
     HEAL,
     KNOCKBACK,
@@ -913,6 +915,9 @@ _EFFECT_TARGETING: dict[str, tuple[str, ...]] = {
     CONE: (SELF,),
     TELEPORT: (GROUND_POINT, DIRECTION),
     DASH: (ENEMY, GROUND_POINT, DIRECTION, *_NPC),
+    CHARGE: (ENEMY, *_NPC),
+    # It acts on the caster, whatever the spell targets.
+    GAIN_RESOURCE: (SELF, ENEMY, ALLY, GROUND_POINT, DIRECTION, *_NPC),
 }
 # Vanilla's instant status effects (InstantenousMobEffect) apply on every tick of their duration, so
 # realmforge:apply_effect with one would heal, hurt or feed every tick (RLM-260): what a spell uses instead.
@@ -1009,6 +1014,9 @@ def _check_spells(content: Content, universe: IdUniverse) -> list[Problem]:
             path = f"effects.{n}"
             problems += _check_effect(entry.source, path, effect, spell, universe, effects)
             allowed = _EFFECT_TARGETING[effect.type]
+            if effect.type == HEAL and effect.on_caster:
+                # A heal of the caster (RLM-543: Victory Rush) heals it whatever the spell targets.
+                allowed = (spell.targeting.type,)
             if spell.targeting.type not in allowed:
                 problems.append(
                     Problem(
@@ -1123,6 +1131,18 @@ def _check_conditions(source: str, spell: SpellDef, content: Content, universe: 
         problems.append(
             Problem(source, "cost.extra", "extra resource spent raises the spell's damage, and it deals none")
         )
+    if (
+        spell.cost is not None
+        and spell.cost.refund_on_kill is not None
+        and spell.first_effect(DAMAGE) is None
+    ):
+        problems.append(
+            Problem(
+                source,
+                "cost.refund_on_kill",
+                "a kill refunds the cost, and the spell deals no damage to kill",
+            )
+        )
     if getattr(spell.cast, "animation_seconds", None) is not None and spell.npc_only:
         problems.append(
             Problem(
@@ -1188,8 +1208,17 @@ def _check_passive(source: str, spell: SpellDef, content: Content, universe: IdU
                 _unknown(critical.against, MOB_EFFECT_REGISTRY, universe),
             )
         )
+    stacked: dict[str, StacksDef] = {
+        effect_id(entry.model.id): entry.model.stacks
+        for entry in content.effects
+        if entry.model.stacks is not None
+    }
     for n, proc in enumerate(passive.procs):
         problems += _check_proc(source, f"passive.procs.{n}", proc, spell, spells, universe)
+        if proc.damage_over_time is not None:
+            problems += _check_proc_damage_over_time(
+                source, f"passive.procs.{n}.damage_over_time", proc.damage_over_time, stacked
+            )
     first = passive.modifiers[0] if passive.modifiers else None
     stat = stats.get(first.attribute) if first is not None else None
     if (
@@ -1263,6 +1292,33 @@ def _check_proc(
                 Problem(source, f"{path}.open_window", f"{proc.open_window} has no window to open")
             )
     return problems
+
+
+def _check_proc_damage_over_time(
+    source: str, path: str, dot: BaseModel, stacked: dict[str, StacksDef]
+) -> list[Problem]:
+    """A proc's damage over time (RLM-543: Deep Wounds) keeps its damage in one of our effects with stacks, and lasts a
+    whole number of its intervals."""
+    stacks = stacked.get(dot.effect)
+    if stacks is None:
+        return [
+            Problem(
+                source,
+                f"{path}.effect",
+                f"{dot.effect} is no effect of content/effects/ with stacks: a damage over time keeps its damage in one",
+            )
+        ]
+    ticks = dot.duration_seconds / stacks.interval_seconds
+    if abs(ticks - round(ticks)) > 1e-9:
+        return [
+            Problem(
+                source,
+                f"{path}.duration_seconds",
+                f"{dot.effect} ticks every {stacks.interval_seconds:g} s, so it lasts a whole number of its intervals, "
+                f"and {dot.duration_seconds:g} s is not one",
+            )
+        ]
+    return []
 
 
 def _check_hit_bonuses(source: str, spell: SpellDef, school: SpellSchoolDef) -> list[Problem]:
@@ -1631,6 +1687,8 @@ def _check_inner_effects(
         reached, what = ENEMY, "the enemies in a melee shape"
     elif effect.type == CONE:
         reached, what = ENEMY, "the enemies in a cone"
+    elif effect.type == CHARGE:
+        reached, what = ENEMY, "the enemies round a charge's landing"
     else:
         return []
     problems: list[Problem] = []
@@ -1909,6 +1967,17 @@ def _check_class_spells(entry: Entry, spells: dict[str, SpellDef], content: Cont
                     f"{taught.spell} costs {spell.cost.resource}, and the class's resource is {player_class.resource}",
                 )
             )
+        else:
+            gained = spell.first_effect(GAIN_RESOURCE)
+            if gained is not None and gained.resource != player_class.resource:
+                problems.append(
+                    Problem(
+                        entry.source,
+                        f"spells.{n}.spell",
+                        f"{taught.spell} gives {gained.resource}, and the class's resource is "
+                        f"{player_class.resource}",
+                    )
+                )
     for chapter in sorted((entry.model for entry in content.chapters), key=lambda chapter: chapter.order):
         known = sum(
             1

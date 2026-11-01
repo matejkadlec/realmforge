@@ -54,7 +54,7 @@ public final class GeneratedClassExpectations {
                     Optional.of(new Rage(10.0, 50.0, 2.0, 100)),
                     List.of(new KitItem("minecraft:stone_sword", 1), new KitItem("minecraft:shield", 1), new KitItem("minecraft:leather_helmet", 1), new KitItem("minecraft:leather_chestplate", 1), new KitItem("minecraft:leather_leggings", 1), new KitItem("minecraft:leather_boots", 1), new KitItem("minecraft:bread", 32)),
                     List.of(new Bonus("realmforge:class/realmforge/0/warrior", "realmforge:strength", "add_value", 5.0), new Bonus("realmforge:class/realmforge/1/warrior", "realmforge:vitality", "add_value", 4.0), new Bonus("realmforge:class/realmforge/2/warrior", "realmforge:dexterity", "add_value", 2.0)),
-                    List.of(new ClassSpell("realmforge:slam", 1), new ClassSpell("realmforge:reckless_strike", 3), new ClassSpell("realmforge:shield_bash", 5), new ClassSpell("realmforge:battle_shout", 8))));
+                    List.of(new ClassSpell("realmforge:slam", 1), new ClassSpell("realmforge:charge", 1), new ClassSpell("realmforge:deep_wounds", 1), new ClassSpell("realmforge:rend", 6), new ClassSpell("realmforge:battle_shout", 6), new ClassSpell("realmforge:two_handed_weapon_specialization", 6), new ClassSpell("realmforge:taste_for_blood", 12), new ClassSpell("realmforge:overpower", 12), new ClassSpell("realmforge:victory_rush", 12), new ClassSpell("realmforge:execute", 18))));
 
     private GeneratedClassExpectations() {
     }

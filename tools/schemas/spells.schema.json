@@ -444,6 +444,80 @@
       "title": "ChannelCastDef",
       "type": "object"
     },
+    "ChargeEffectDef": {
+      "additionalProperties": false,
+      "description": "Rushes the caster at its enemy target (RLM-543: the Arms Warrior's Charge) until it stands in front of it, the\nserver steering it every tick, then runs ``effects`` on every enemy within ``landing_radius`` of where it lands\n(Charge's stun). A charge that cannot get through (a wall) lands where it stopped.",
+      "properties": {
+        "effects": {
+          "description": "What the landing does to each enemy round it, e.g. a stun.",
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "realmforge:apply_effect": "#/$defs/ApplyEffectEffectDef",
+                "realmforge:cleanse": "#/$defs/CleanseEffectDef",
+                "realmforge:damage": "#/$defs/DamageEffectDef",
+                "realmforge:damage_over_time": "#/$defs/DamageOverTimeEffectDef",
+                "realmforge:heal": "#/$defs/HealEffectDef",
+                "realmforge:knockback": "#/$defs/KnockbackEffectDef",
+                "realmforge:remove_effect": "#/$defs/RemoveEffectEffectDef"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DamageEffectDef"
+              },
+              {
+                "$ref": "#/$defs/HealEffectDef"
+              },
+              {
+                "$ref": "#/$defs/DamageOverTimeEffectDef"
+              },
+              {
+                "$ref": "#/$defs/ApplyEffectEffectDef"
+              },
+              {
+                "$ref": "#/$defs/RemoveEffectEffectDef"
+              },
+              {
+                "$ref": "#/$defs/CleanseEffectDef"
+              },
+              {
+                "$ref": "#/$defs/KnockbackEffectDef"
+              }
+            ]
+          },
+          "title": "Effects",
+          "type": "array"
+        },
+        "landing_radius": {
+          "description": "The blocks round the landing whose enemies the effects reach, at most 16.",
+          "exclusiveMinimum": 0,
+          "maximum": 16.0,
+          "title": "Landing Radius",
+          "type": "number"
+        },
+        "speed": {
+          "description": "How fast the caster rushes, in blocks per second, at most 60.",
+          "exclusiveMinimum": 0,
+          "maximum": 60.0,
+          "title": "Speed",
+          "type": "number"
+        },
+        "type": {
+          "const": "realmforge:charge",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "speed",
+        "landing_radius"
+      ],
+      "title": "ChargeEffectDef",
+      "type": "object"
+    },
     "CleanseEffectDef": {
       "additionalProperties": false,
       "description": "Removes every harmful status effect from each target: debuffs, damage over time and loss of control such as a\nstun (the Human's Will To Survive, C4).",
@@ -594,6 +668,18 @@
           "minimum": 0,
           "title": "Per Level",
           "type": "number"
+        },
+        "refund_on_kill": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/KillRefundDef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Resource that comes back for each enemy the spell's hits kill, from a rank on (RLM-543: Execute's {amount: 10, from_level: 3})."
         },
         "resource": {
           "description": "The resource the cast costs.",
@@ -1141,6 +1227,46 @@
       "title": "FarthestPlayerTargetingDef",
       "type": "object"
     },
+    "GainResourceEffectDef": {
+      "additionalProperties": false,
+      "description": "Gives the caster an amount of a resource, growing per rank (RLM-543: Charge generates 15/20 rage). Players only,\nas only their casts cost anything.",
+      "properties": {
+        "amount": {
+          "description": "The amount at spell level 1.",
+          "minimum": 0,
+          "title": "Amount",
+          "type": "number"
+        },
+        "per_level": {
+          "default": 0,
+          "description": "Added for every spell level above 1.",
+          "minimum": 0,
+          "title": "Per Level",
+          "type": "number"
+        },
+        "resource": {
+          "description": "The resource the caster gains, e.g. realmforge:rage.",
+          "enum": [
+            "realmforge:mana",
+            "realmforge:rage"
+          ],
+          "title": "Resource",
+          "type": "string"
+        },
+        "type": {
+          "const": "realmforge:gain_resource",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "amount",
+        "type",
+        "resource"
+      ],
+      "title": "GainResourceEffectDef",
+      "type": "object"
+    },
     "GroundPointTargetingDef": {
       "additionalProperties": false,
       "description": "Where a ground spell lands, never refused for range (RLM-346): the block the crosshair hits within range, or\nthe farthest point in range along the crosshair's line (clamp cast), on the ground below it; aimed at an entity or\na point in range, its feet or the point (in sight). No entity: effects that act on one run through a projectile or\nan area.",
@@ -1167,7 +1293,7 @@
     },
     "HealEffectDef": {
       "additionalProperties": false,
-      "description": "Healing of each target: its amount plus its coefficient of the caster's power, times (1 + the school's power) for\na spell that scales with spell power. Heals can crit too (Matěj, 2026-10-15).",
+      "description": "Healing of each target: its amount plus its coefficient of the caster's power and its share of the healed\nentity's max health, times (1 + the school's power) for a spell that scales with spell power. Heals can crit too\n(Matěj, 2026-10-15). With ``on_caster`` it heals the caster instead (RLM-543: Victory Rush strikes an enemy and heals\nthe Warrior).",
       "properties": {
         "amount": {
           "description": "The amount at spell level 1.",
@@ -1202,6 +1328,48 @@
           "default": null,
           "description": "Share of the caster's attack damage added to the amount at spell level 1 (100 adds all of it). Required for the damage of spells that scale with attack_damage, refused for spells that scale with spell_power.",
           "title": "Attack Damage Percent"
+        },
+        "max_health_per_level_percent": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Added to max_health_percent for every spell level above 1.",
+          "title": "Max Health Per Level Percent"
+        },
+        "max_health_percent": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Share of the healed entity's max health added at spell level 1, in percent (Victory Rush's 10).",
+          "title": "Max Health Percent"
+        },
+        "on_caster": {
+          "anyOf": [
+            {
+              "const": true,
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "true: heals the caster instead of the spell's target, once, whatever the spell targets. Only among the spell's own effects, not a projectile's, an area's, a melee shape's, a cone's or a charge's.",
+          "title": "On Caster"
         },
         "per_level": {
           "default": 0,
@@ -1294,6 +1462,31 @@
         "type"
       ],
       "title": "InstantCastDef",
+      "type": "object"
+    },
+    "KillRefundDef": {
+      "additionalProperties": false,
+      "description": "Resource a player's cast gets back for each enemy its hits kill, from a rank on (RLM-543: Execute refunds 10\nrage at rank 3).",
+      "properties": {
+        "amount": {
+          "description": "How much comes back, e.g. 10.",
+          "exclusiveMinimum": 0,
+          "title": "Amount",
+          "type": "number"
+        },
+        "from_level": {
+          "default": 1,
+          "description": "The rank from which a kill refunds it.",
+          "maximum": 100,
+          "minimum": 1,
+          "title": "From Level",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "amount"
+      ],
+      "title": "KillRefundDef",
       "type": "object"
     },
     "KnockbackEffectDef": {
@@ -1602,9 +1795,55 @@
       "title": "ProcApplyEffectDef",
       "type": "object"
     },
+    "ProcDamageOverTimeDef": {
+      "additionalProperties": false,
+      "description": "A damage over time a hit or crit proc gives the entity hit: a share of the hit's damage, after its reductions, as\nthe player's own stack of a status effect with stacks (RLM-543: Deep Wounds bleeds for 20/40/60 % of a crit's\ndamage over 6 s). A new proc refreshes the stack and adds what the old one had left, so every hit's share is\ndealt.",
+      "properties": {
+        "damage_per_level_percent": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Added to damage_percent for every rank above 1.",
+          "title": "Damage Per Level Percent"
+        },
+        "damage_percent": {
+          "description": "The share of the hit's damage dealt over the duration at rank 1, in percent.",
+          "exclusiveMinimum": 0,
+          "maximum": 1000,
+          "title": "Damage Percent",
+          "type": "number"
+        },
+        "duration_seconds": {
+          "description": "How long it lasts: a whole number of the effect's intervals, at most 60.",
+          "minimum": 0,
+          "title": "Duration Seconds",
+          "type": "number"
+        },
+        "effect": {
+          "description": "One of our status effects with stacks, e.g. realmforge:bleeding.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Effect",
+          "type": "string"
+        }
+      },
+      "required": [
+        "effect",
+        "damage_percent",
+        "duration_seconds"
+      ],
+      "title": "ProcDamageOverTimeDef",
+      "type": "object"
+    },
     "ProcDef": {
       "additionalProperties": false,
-      "description": "A proc of a passive spell (RLM-540): when its trigger happens, at its chance and outside its internal cooldown\non that target (research SP-15), it does one thing: gives the other entity a status effect, casts a spell at it\nat the passive's rank, or opens a spell's window. Procs never trigger procs.",
+      "description": "A proc of a passive spell (RLM-540): when its trigger happens, at its chance and outside its internal cooldown\non that target (research SP-15), it does one thing: gives the other entity a status effect, casts a spell at it\nat the passive's rank, opens a spell's window, or makes it bleed for a share of the hit (RLM-543). Procs never\ntrigger procs.",
       "properties": {
         "apply_effect": {
           "anyOf": [
@@ -1661,6 +1900,18 @@
           "minimum": 0,
           "title": "Cooldown Seconds",
           "type": "number"
+        },
+        "damage_over_time": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ProcDamageOverTimeDef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A hit or crit proc: makes the entity hit bleed for a share of the hit's damage (RLM-543: Deep Wounds)."
         },
         "effect": {
           "anyOf": [
@@ -2127,6 +2378,38 @@
       "title": "SplashRadiusDef",
       "type": "object"
     },
+    "TargetDistanceDef": {
+      "additionalProperties": false,
+      "description": "How near and how far the spell's enemy may be, the farthest growing per rank (RLM-543: Charge reaches 3 to 10\nblocks, 12 at rank 2), from the caster's eyes to the nearest point of the target's box as a range is. The\ntargeting's range is the farthest any rank reaches, which aim assistance and the client's pick use.",
+      "properties": {
+        "max": {
+          "description": "The farthest at rank 1, in blocks, at most 128.",
+          "exclusiveMinimum": 0,
+          "maximum": 128.0,
+          "title": "Max",
+          "type": "number"
+        },
+        "max_per_level": {
+          "default": 0,
+          "description": "Added to max for every rank above 1.",
+          "minimum": 0,
+          "title": "Max Per Level",
+          "type": "number"
+        },
+        "min": {
+          "default": 0,
+          "description": "The nearest the target may be, in blocks.",
+          "minimum": 0,
+          "title": "Min",
+          "type": "number"
+        }
+      },
+      "required": [
+        "max"
+      ],
+      "title": "TargetDistanceDef",
+      "type": "object"
+    },
     "TeleportEffectDef": {
       "additionalProperties": false,
       "description": "Moves the caster at once to the target: a ground point, or as far along a direction as its range allows. It\nstops short of blocks, and does not move when no free spot is found on the way.",
@@ -2240,11 +2523,13 @@
           "mapping": {
             "realmforge:apply_effect": "#/$defs/ApplyEffectEffectDef",
             "realmforge:area": "#/$defs/AreaEffectDef",
+            "realmforge:charge": "#/$defs/ChargeEffectDef",
             "realmforge:cleanse": "#/$defs/CleanseEffectDef",
             "realmforge:cone": "#/$defs/ConeEffectDef",
             "realmforge:damage": "#/$defs/DamageEffectDef",
             "realmforge:damage_over_time": "#/$defs/DamageOverTimeEffectDef",
             "realmforge:dash": "#/$defs/DashEffectDef",
+            "realmforge:gain_resource": "#/$defs/GainResourceEffectDef",
             "realmforge:heal": "#/$defs/HealEffectDef",
             "realmforge:knockback": "#/$defs/KnockbackEffectDef",
             "realmforge:melee": "#/$defs/MeleeEffectDef",
@@ -2293,6 +2578,12 @@
           },
           {
             "$ref": "#/$defs/DashEffectDef"
+          },
+          {
+            "$ref": "#/$defs/ChargeEffectDef"
+          },
+          {
+            "$ref": "#/$defs/GainResourceEffectDef"
           }
         ]
       },
@@ -2380,6 +2671,18 @@
       "default": null,
       "description": "The spell school whose damage it deals, e.g. realmforge:fire. A spell that neither deals damage nor heals may leave it out: it belongs to no school (Will To Survive, Matěj, 2026-10-30), and the spell bar frames it in black.",
       "title": "School"
+    },
+    "target_distance": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/TargetDistanceDef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Castable only on an enemy this near or far, the farthest growing per rank (RLM-543: Charge's {min: 3, max: 10, max_per_level: 2}); the targeting's range is the farthest at max_level."
     },
     "target_health_below_percent": {
       "anyOf": [

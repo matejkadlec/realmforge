@@ -12,6 +12,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.player.Player;
 
 /**
  * {@code realmforge:damage}: a hit of the spell's school on the target (architecture 9.1, 11). Its amount at the
@@ -20,7 +21,8 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
  * × (1 + the school's power), a crit roll by the spell's crit rule at its rank, the target's resistance. A hit may add
  * armor shred to the caster's own (Slam) or ignore a share of the target's resistance (spell penetration, Arcane
  * Missiles), both growing with the rank (C4). The caster's passive spells (RLM-541) add to the hit's damage (its
- * passives layer, Improved Frostbolt) and to its crit chance against the target (Shatter on a Frozen one).
+ * passives layer, Improved Frostbolt) and to its crit chance against the target (Shatter on a Frozen one). A player's
+ * hit that kills its target gives back what the spell's cost refunds for a kill at the rank (RLM-543: Execute).
  *
  * @param amount the damage at spell level 1
  * @param perLevel added for every spell level above 1
@@ -123,9 +125,16 @@ public record DamageEffect(double amount, double perLevel, Coefficient coefficie
                 .map(key -> Passives.damageBonus(caster, key)).orElse(0.0));
         CritRule crit = spell.crit().atLevel(context.spellLevel())
                 .withBonusChance(Passives.critChanceAgainst(caster, target));
+        boolean alive = !target.isDeadOrDying();
         target.hurtServer(context.level(), SpellSchools.damage(context.level().registryAccess(),
                 // The pipeline makes every spell that deals damage name its school.
                 spell.school().flatMap(Holder::unwrapKey).orElseThrow(), context.direct(), caster, crit, bonus,
                 context.procOrigin()), (float) damage);
+        // A player's kill gives back what the cost refunds at the rank (RLM-543: Execute's 10 rage at rank 3); a
+        // proc's spell cost nothing, so it refunds nothing.
+        if (alive && target.isDeadOrDying() && caster instanceof Player && context.procOrigin().isEmpty()) {
+            spell.cost().filter(cost -> cost.refundAt(context.spellLevel()) > 0).ifPresent(cost -> Resources.add(
+                    caster, cost.resource(), cost.refundAt(context.spellLevel())));
+        }
     }
 }

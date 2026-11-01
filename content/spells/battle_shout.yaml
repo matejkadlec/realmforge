@@ -1,6 +1,7 @@
 # yaml-language-server: $schema=../../tools/schemas/spells.schema.json
-# The Warrior's self-buff (C4): a war cry that raises the attack damage of the Warrior and every ally within 10 blocks
-# by 10 / 15 / 20 % for 10 / 15 / 20 s by rank, on a 1 minute cooldown (Matěj, 2026-10-30). Its effect is a flat share
+# The Warrior's self-buff (C4), the Arms Warrior's tree, row 2 (level 6), middle (RLM-543; Matěj, 2026-10-30, "Spell
+# Trees to Level 18", chosen for M1): a war cry that raises the attack damage of the Warrior and every ally within 10
+# blocks by 10 / 15 / 20 % for 10 / 15 / 20 s by rank, on a 1 minute cooldown (Matěj, 2026-10-30). Its effect is a flat share
 # that nothing raises, spell power included; Cooldown Reduction shortens its cooldown, and a second shout, the
 # Warrior's own or another's, refreshes the effect instead of stacking it.
 id: battle_shout

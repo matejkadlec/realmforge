@@ -65,6 +65,9 @@ public final class GeneratedTexts {
     /** {@code cast.realmforge.target_lost} from {@code content/texts/cast.yaml}: "Target lost" */
     public static final String CAST_TARGET_LOST = "cast.realmforge.target_lost";
 
+    /** {@code cast.realmforge.too_close} from {@code content/texts/cast.yaml}: "Too close" */
+    public static final String CAST_TOO_CLOSE = "cast.realmforge.too_close";
+
     /** {@code cast.realmforge.unknown_spell} from {@code content/texts/cast.yaml}: "That spell no longer exists" */
     public static final String CAST_UNKNOWN_SPELL = "cast.realmforge.unknown_spell";
 

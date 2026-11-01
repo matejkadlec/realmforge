@@ -32,6 +32,7 @@ public final class SpellFeature {
         CharacterStats.addSource(Passives.SOURCE);
         WeaponBlocks.cooldownReductionBy(Passives::blockCooldownReductionTicks);
         Casting.register();
+        Charges.register();
         AimAssist.register();
         TargetHighlight.register();
         NeoForge.EVENT_BUS.addListener(CombatEvent.Hit.class, Rage::onHit);

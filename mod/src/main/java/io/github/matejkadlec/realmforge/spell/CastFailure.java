@@ -27,6 +27,8 @@ public enum CastFailure implements StringRepresentable {
     INVALID_TARGET("invalid_target"),
     /** The target is beyond the spell's range, or in another dimension. */
     OUT_OF_RANGE("out_of_range"),
+    /** The target is nearer than the spell's target distance allows (RLM-543: Charge, 3 blocks or more). */
+    TOO_CLOSE("too_close"),
     /** Blocks stand between the caster and the target. */
     NO_LINE_OF_SIGHT("no_line_of_sight"),
     /** The caster has less of the spell's resource than it costs. */

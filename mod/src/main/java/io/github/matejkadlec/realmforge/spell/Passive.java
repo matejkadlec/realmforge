@@ -151,8 +151,9 @@ public record Passive(Optional<TagKey<Item>> whileWielding, List<Modifier> modif
 
     /**
      * A passive spell's proc (RLM-540): when {@code trigger} happens, at its chance at the rank, outside its internal
-     * cooldown on that target, it gives the other entity a status effect, casts a spell at it at the passive's rank, or
-     * opens a spell's window ({@link io.github.matejkadlec.realmforge.spell.Proc}).
+     * cooldown on that target, it gives the other entity a status effect, casts a spell at it at the passive's rank,
+     * opens a spell's window, or makes it bleed for a share of the hit (RLM-543)
+     * ({@link io.github.matejkadlec.realmforge.spell.Proc}).
      *
      * @param trigger what makes it fire
      * @param effect for applies_effect and tick: the status effect it watches
@@ -163,11 +164,12 @@ public record Passive(Optional<TagKey<Item>> whileWielding, List<Modifier> modif
      * @param applyEffect the status effect it gives, if that is what it does
      * @param cast the spell it casts, if that is what it does
      * @param openWindow the spell whose window it opens, if that is what it does
+     * @param damageOverTime the bleed of a share of the hit it gives, if that is what it does (RLM-543: Deep Wounds)
      */
     public record Proc(io.github.matejkadlec.realmforge.spell.Proc.Trigger trigger, Optional<Holder<MobEffect>> effect,
             Optional<ResourceKey<Spell>> spell, double chance, double chancePerLevel, int cooldownTicks,
             Optional<ProcEffect> applyEffect, Optional<ResourceKey<Spell>> cast,
-            Optional<ResourceKey<Spell>> openWindow) {
+            Optional<ResourceKey<Spell>> openWindow, Optional<ProcDamageOverTime> damageOverTime) {
         public static final Codec<Proc> CODEC = RecordCodecBuilder.<Proc>create(instance -> instance.group(
                         io.github.matejkadlec.realmforge.spell.Proc.Trigger.CODEC.fieldOf("trigger")
                                 .forGetter(Proc::trigger),
@@ -181,25 +183,40 @@ public record Passive(Optional<TagKey<Item>> whileWielding, List<Modifier> modif
                         ProcEffect.CODEC.optionalFieldOf("apply_effect").forGetter(Proc::applyEffect),
                         ResourceKey.codec(SpellRegistries.SPELL).optionalFieldOf("cast").forGetter(Proc::cast),
                         ResourceKey.codec(SpellRegistries.SPELL).optionalFieldOf("open_window")
-                                .forGetter(Proc::openWindow))
+                                .forGetter(Proc::openWindow),
+                        ProcDamageOverTime.CODEC.optionalFieldOf("damage_over_time").forGetter(Proc::damageOverTime))
                 .apply(instance, Proc::new))
                 .validate(proc -> (proc.applyEffect().isPresent() ? 1 : 0) + (proc.cast().isPresent() ? 1 : 0)
-                        + (proc.openWindow().isPresent() ? 1 : 0) == 1
+                        + (proc.openWindow().isPresent() ? 1 : 0) + (proc.damageOverTime().isPresent() ? 1 : 0) == 1
                         ? DataResult.success(proc)
                         : DataResult.error(() -> "A proc does one thing: " + proc));
+
+        /** A proc that gives no damage over time, as the procs before RLM-543 were built. */
+        public Proc(io.github.matejkadlec.realmforge.spell.Proc.Trigger trigger, Optional<Holder<MobEffect>> effect,
+                Optional<ResourceKey<Spell>> spell, double chance, double chancePerLevel, int cooldownTicks,
+                Optional<ProcEffect> applyEffect, Optional<ResourceKey<Spell>> cast,
+                Optional<ResourceKey<Spell>> openWindow) {
+            this(trigger, effect, spell, chance, chancePerLevel, cooldownTicks, applyEffect, cast, openWindow,
+                    Optional.empty());
+        }
 
         /** The chance at rank {@code level}, at most 1. */
         public double chanceAt(int level) {
             return Math.min(1, SpellScaling.atLevel(chance, chancePerLevel, level));
         }
 
-        /** What it does at rank {@code level}, as the proc engine runs it. */
-        public io.github.matejkadlec.realmforge.spell.Proc.Action actionAt(int level) {
+        /** What it does at rank {@code level} of the passive spell {@code passive}, as the proc engine runs it. */
+        public io.github.matejkadlec.realmforge.spell.Proc.Action actionAt(ResourceKey<Spell> passive, int level) {
             if (cast.isPresent()) {
                 return new io.github.matejkadlec.realmforge.spell.Proc.CastSpell(cast.get(), level);
             }
             if (openWindow.isPresent()) {
                 return new io.github.matejkadlec.realmforge.spell.Proc.OpenWindow(openWindow.get());
+            }
+            if (damageOverTime.isPresent()) {
+                ProcDamageOverTime bleed = damageOverTime.get();
+                return new io.github.matejkadlec.realmforge.spell.Proc.DamageOverTime(bleed.effect(),
+                        bleed.damageAt(level), bleed.durationTicks(), Optional.of(passive.identifier()));
             }
             ProcEffect given = applyEffect.orElseThrow();
             return new io.github.matejkadlec.realmforge.spell.Proc.ApplyEffect(given.effect(),
@@ -228,6 +245,27 @@ public record Passive(Optional<TagKey<Item>> whileWielding, List<Modifier> modif
         public int durationAt(int level) {
             return fromLevel.filter(longer -> level >= longer.level()).map(FromLevel::durationTicks)
                     .orElse(durationTicks);
+        }
+    }
+
+    /**
+     * A proc's damage over time (RLM-543: Deep Wounds): its holder's stack of {@code effect}, a share of the hit that
+     * fired it over {@code durationTicks}, {@code damage} at rank 1 and {@code damagePerLevel} more for every rank above.
+     */
+    public record ProcDamageOverTime(Holder<MobEffect> effect, double damage, double damagePerLevel,
+            int durationTicks) {
+        public static final Codec<ProcDamageOverTime> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                        MobEffect.CODEC.fieldOf("effect").forGetter(ProcDamageOverTime::effect),
+                        Codec.doubleRange(0, 10).fieldOf("damage").forGetter(ProcDamageOverTime::damage),
+                        Codec.doubleRange(0, 10).optionalFieldOf("damage_per_level", 0.0)
+                                .forGetter(ProcDamageOverTime::damagePerLevel),
+                        Codec.intRange(1, ApplyEffectEffect.MAX_DURATION_TICKS).fieldOf("duration_ticks")
+                                .forGetter(ProcDamageOverTime::durationTicks))
+                .apply(instance, ProcDamageOverTime::new));
+
+        /** The share of the hit at rank {@code level}. */
+        public double damageAt(int level) {
+            return SpellScaling.atLevel(damage, damagePerLevel, level);
         }
     }
 

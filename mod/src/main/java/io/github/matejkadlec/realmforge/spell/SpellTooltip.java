@@ -64,7 +64,7 @@ public final class SpellTooltip {
                 : GeneratedTexts.SPELL_TOOLTIP_COST;
         spell.cost().ifPresent(cost -> cost.resource().unwrapKey().ifPresent(type -> lines.add(Component.translatable(
                 costKey, DamageNumbers.format(spell.costAt(level)), CastTexts.resourceName(type)))));
-        range(spell).ifPresent(lines::add);
+        range(spell, level).ifPresent(lines::add);
         lines.add(cast(spell.cast(), stats.applyAsDouble(GeneratedStats.CAST_TIME_REDUCTION)));
         int cooldown = SpellScaling.cooldownTicks(spell.cooldownTicks(),
                 stats.applyAsDouble(GeneratedStats.COOLDOWN_REDUCTION));
@@ -104,16 +104,18 @@ public final class SpellTooltip {
 
     /**
      * The range line: "Melee range" for a melee spell (an enemy in the caster's melee swing, or a hit shape in front of
-     * it, RLM-399), "16 block range" for a targeted one, and none for a spell on the caster (Matěj's playtest of
+     * it, RLM-399), "16 block range" for a targeted one, the farthest at rank {@code level} for a spell with a target
+     * distance (RLM-543: Charge's 10 blocks, 12 at rank 2), and none for a spell on the caster (Matěj's playtest of
      * 2026-11-01, RLM-542: no "On yourself", Will To Survive reads "Instant", its cooldown and its text).
      */
-    static Optional<Component> range(Spell spell) {
+    static Optional<Component> range(Spell spell, int level) {
         List<SpellEffect> effects = SpellText.allEffects(spell.effects());
         if (spell.targeting() instanceof EnemyTargeting enemy && enemy.melee()
                 || effects.stream().anyMatch(MeleeEffect.class::isInstance)) {
             return Optional.of(Component.translatable(GeneratedTexts.SPELL_TOOLTIP_MELEE_RANGE));
         }
-        double reach = spell.targeting().reach();
+        double reach = spell.conditions().targetDistance().map(distance -> distance.maxAt(level))
+                .orElse(spell.targeting().reach());
         return reach > 0
                 ? Optional.of(Component.translatable(GeneratedTexts.SPELL_TOOLTIP_RANGE, SpellText.decimal(reach)))
                 : Optional.empty();

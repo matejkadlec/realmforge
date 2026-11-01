@@ -79,16 +79,10 @@ def slowing(**fields: object) -> dict:
 # The repository's kits
 
 
-def test_the_warrior_teaches_four_spells_by_level_10_and_one_at_level_1() -> None:
-    # The Mage's kit is the Frost tree's (RLM-542, tests/test_frost_tree.py).
+def test_the_human_has_its_racials() -> None:
+    # The Warrior's kit is the Arms tree's (RLM-543, tests/test_arms_tree.py), the Mage's the Frost tree's (RLM-542,
+    # tests/test_frost_tree.py).
     content, _ = load_and_validate(RepoPaths())
-    kits = {entry.model.id: [(t.spell, t.level) for t in entry.model.spells] for entry in content.classes}
-    assert kits["warrior"] == [
-        ("realmforge:slam", 1),
-        ("realmforge:reckless_strike", 3),
-        ("realmforge:shield_bash", 5),
-        ("realmforge:battle_shout", 8),
-    ]
     human = content.races[0].model
     assert human.racial_spell == "realmforge:will_to_survive"
     assert human.racial_passive is not None and human.racial_passive.weapons == SWORD_LIKE_TAG

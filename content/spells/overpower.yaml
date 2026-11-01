@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# The Arms Warrior's tree, row 3 (level 12), middle (RLM-543; Matěj, 2026-10-30, "Spell Trees to Level 18", chosen for
+# M1): one of the two spells the tree revolves around, so 5 ranks. A strike of 5/5.5/6/6.5/7 + 100/110/120/130/140 % of
+# Attack Damage with 10/15/20/25/30 % more chance to crit, usable for 5 s after the Warrior blocks a hit with a shield or
+# a raised two-handed weapon (RLM-540), and when Taste for Blood opens its window. 5 rage, a 5 s cooldown. It needs a
+# melee weapon (RLM-499), and its target must be in the Warrior's melee swing (melee: true). Placeholder look until
+# RLM-545.
+id: overpower
+name: {en_us: Overpower}
+description:
+  en_us: >-
+    Usable for {window} sec after you block a hit. Overpowers an enemy for {damage} damage, with {crit_chance}% more
+    chance to crit.
+school: realmforge:physical
+scales_with: attack_damage
+targeting: {type: realmforge:enemy, melee: true}
+cast: {type: instant}
+cost: {resource: realmforge:rage, amount: 5}
+cooldown_seconds: 5
+max_level: 5
+requires: [melee_weapon]
+window: {duration_seconds: 5, opened_by: [block]}
+crit: {bonus_chance_percent: 10, bonus_chance_per_level_percent: 5}
+effects:
+  - {type: realmforge:damage, amount: 5, per_level: 0.5, attack_damage_percent: 100, attack_damage_per_level_percent: 10}

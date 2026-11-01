@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# The Arms Warrior's tree, row 1 (level 1), right (RLM-543; Matěj, 2026-10-30, "Spell Trees to Level 18", chosen for
+# M1): a passive whose proc (RLM-540) makes every enemy the Warrior crits, with a weapon or a spell, bleed for 20/40/60 %
+# of the crit's damage over 6 s (Bleeding, RLM-539, whose ticks ignore armor). A new crit refreshes the bleed and adds
+# what the old one had left, so every crit's share is dealt. Procs never trigger procs, so the bleed's ticks crit
+# nothing into a new bleed.
+id: deep_wounds
+name: {en_us: Deep Wounds}
+description:
+  en_us: "Your critical hits make the enemy bleed for {proc_damage}% of the hit's damage over {proc_duration} sec."
+school: realmforge:physical
+max_level: 3
+passive:
+  procs:
+    - trigger: crit
+      chance_percent: 100
+      damage_over_time:
+        effect: realmforge:bleeding
+        damage_percent: 20
+        damage_per_level_percent: 20
+        duration_seconds: 6

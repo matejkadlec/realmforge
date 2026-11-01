@@ -34,6 +34,11 @@ public record StackedDamage(ResourceKey<SpellSchool> school, int intervalTicks, 
         return Math.max(1, durationTicks / intervalTicks);
     }
 
+    /** How many ticks a stack with {@code remainingTicks} left still deals, as {@link #ticksAt} times them. */
+    public int ticksLeft(int remainingTicks) {
+        return remainingTicks > 0 ? (remainingTicks + intervalTicks - 1) / intervalTicks : 0;
+    }
+
     /**
      * Whether a stack with {@code remainingTicks} left ticks now: at the end of every interval since it was applied,
      * the last time on its last tick, as {@link Periodic#ticksAt} counts an effect's remaining duration.

@@ -1,0 +1,46 @@
+{
+  "name": "spell.realmforge.overpower.name",
+  "description": "spell.realmforge.overpower.description",
+  "school": "realmforge:physical",
+  "scales_with": "attack_damage",
+  "targeting": {
+    "type": "realmforge:enemy",
+    "melee": true
+  },
+  "cast": {
+    "type": "instant"
+  },
+  "cost": {
+    "amount": 5.0,
+    "per_level": 0,
+    "resource": "realmforge:rage"
+  },
+  "cooldown_ticks": 100,
+  "global_cooldown_ticks": 10,
+  "max_level": 5,
+  "crit": {
+    "can_crit": true,
+    "bonus_chance": 0.1,
+    "bonus_chance_per_level": 0.05
+  },
+  "npc_only": false,
+  "requires": [
+    "melee_weapon"
+  ],
+  "castable_while_stunned": false,
+  "window": {
+    "duration_ticks": 100,
+    "opened_by": [
+      "block"
+    ]
+  },
+  "effects": [
+    {
+      "amount": 5.0,
+      "per_level": 0.5,
+      "attack_damage": 1.0,
+      "attack_damage_per_level": 0.1,
+      "type": "realmforge:damage"
+    }
+  ]
+}
