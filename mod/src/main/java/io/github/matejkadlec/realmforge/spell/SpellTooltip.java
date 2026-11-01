@@ -104,8 +104,8 @@ public final class SpellTooltip {
 
     /**
      * The range line: "Melee range" for a melee spell (an enemy in the caster's melee swing, or a hit shape in front of
-     * it, RLM-399), "16 block range" for a targeted one, "On yourself" for one on the caster that deals no damage, and
-     * none for an area round the caster that does (Matěj's playtest of 2026-10-31: "On yourself" reads as a buff).
+     * it, RLM-399), "16 block range" for a targeted one, and none for a spell on the caster (Matěj's playtest of
+     * 2026-11-01, RLM-542: no "On yourself", Will To Survive reads "Instant", its cooldown and its text).
      */
     static Optional<Component> range(Spell spell) {
         List<SpellEffect> effects = SpellText.allEffects(spell.effects());
@@ -114,12 +114,9 @@ public final class SpellTooltip {
             return Optional.of(Component.translatable(GeneratedTexts.SPELL_TOOLTIP_MELEE_RANGE));
         }
         double reach = spell.targeting().reach();
-        if (reach > 0) {
-            return Optional.of(Component.translatable(GeneratedTexts.SPELL_TOOLTIP_RANGE, SpellText.decimal(reach)));
-        }
-        return effects.stream().anyMatch(effect -> effect instanceof DamageEffect
-                        || effect instanceof DamageOverTimeEffect) ? Optional.empty()
-                : Optional.of(Component.translatable(GeneratedTexts.SPELL_TOOLTIP_SELF));
+        return reach > 0
+                ? Optional.of(Component.translatable(GeneratedTexts.SPELL_TOOLTIP_RANGE, SpellText.decimal(reach)))
+                : Optional.empty();
     }
 
     /** The cast line: instant, a cast time or a channel, its time after Cast Time Reduction. */

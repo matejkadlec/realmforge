@@ -19,10 +19,6 @@ texts:
   # the caster's melee reach.
   melee_range:
     en_us: Melee range
-  # A spell on the caster that deals no damage (a buff, a shield); one that does, an area round the caster, has no
-  # range line.
-  self:
-    en_us: On yourself
   instant:
     en_us: Instant
   # %1$s in seconds.
