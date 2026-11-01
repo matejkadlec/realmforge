@@ -93,6 +93,14 @@ def test_repository_spells_are_the_class_kits_engine_tests_stoneform_and_astones
         "improved_frostbolt",
         "shatter",
         "two_handed_weapon_specialization",
+        # The rest of the Arms Warrior's tree (RLM-543).
+        "charge",
+        "deep_wounds",
+        "rend",
+        "taste_for_blood",
+        "overpower",
+        "victory_rush",
+        "execute",
         # The rest of the Frost Mage's tree (RLM-542).
         "cone_of_cold",
         "ice_lance",
@@ -454,15 +462,16 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
     assert 'public static final ResourceKey<Spell> TEST_BOLT = key("test_bolt");' in keys
     assert (
         "ALL = List.of(ARCANE_MISSILES, ASTONE_BOULDER, ASTONE_CRACKED_STONE, ASTONE_QUAKE, ASTONE_ROCKFALL, "
-        "ASTONE_SHOCKWAVE, BATTLE_SHOUT, BLIZZARD, CONE_OF_COLD, FIREBALL, FROST_NOVA, FROSTBITE, FROSTBOLT, "
-        "ICE_BARRIER, ICE_LANCE, IMPROVED_FROSTBOLT, RECKLESS_STRIKE, "
-        "SHATTER, SHIELD_BASH, SLAM, STONEFORM, TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, "
+        "ASTONE_SHOCKWAVE, BATTLE_SHOUT, BLIZZARD, CHARGE, CONE_OF_COLD, DEEP_WOUNDS, EXECUTE, FIREBALL, FROST_NOVA, "
+        "FROSTBITE, FROSTBOLT, ICE_BARRIER, ICE_LANCE, IMPROVED_FROSTBOLT, OVERPOWER, RECKLESS_STRIKE, REND, "
+        "SHATTER, SHIELD_BASH, SLAM, STONEFORM, TASTE_FOR_BLOOD, TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, "
+        "TEST_CLEANSE, "
         "TEST_CLEAVE, TEST_DEEP_WOUND, TEST_DEEP_WOUNDS, TEST_DRAIN, TEST_EXECUTE, TEST_FORWARD_MISSILE, "
         "TEST_FROSTBITE, TEST_HOMING_BOLT, TEST_ICE_LANCE, TEST_IGNITE, TEST_LACERATE, TEST_MEND, TEST_MENDING_RING, "
         "TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_OVERPOWER, "
         "TEST_PROC_SPARK, TEST_REGROW, TEST_REND, TEST_SAP, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, TEST_SLOW_MISSILE, "
         "TEST_STRIKE, TEST_SURE_CRIT, TEST_TASTE_FOR_BLOOD, TEST_TITAN_HARDEN, TEST_VICTORY_RUSH, "
-        "TWO_HANDED_WEAPON_SPECIALIZATION, WILL_TO_SURVIVE);"
+        "TWO_HANDED_WEAPON_SPECIALIZATION, VICTORY_RUSH, WILL_TO_SURVIVE);"
     ) in keys
     expectations = files[EXPECTATIONS].decode()
     assert (
@@ -986,7 +995,10 @@ def test_a_spell_names_itself_and_says_what_it_does() -> None:
         ("Heals for {heal}.", "{heal} needs a realmforge:heal effect"),
         ("Slows for {duration} sec.", "{duration} needs a realmforge:apply_effect effect"),
         ("Burns for {periodic_total}.", "{periodic_total} needs a realmforge:apply_effect effect"),
-        ("A ring of {radius} blocks.", "{radius} needs a realmforge:area or realmforge:cone effect"),
+        (
+            "A ring of {radius} blocks.",
+            "{radius} needs a realmforge:area, realmforge:cone or realmforge:charge effect",
+        ),
     ],
 )
 def test_placeholders_must_be_known_and_have_their_effect(description: str, expected: str) -> None:
@@ -1572,7 +1584,7 @@ def test_a_passives_proc_is_in_game_units(repo: RepoPaths) -> None:
     [
         (
             ("      apply_effect: {effect: realmforge:frozen, duration_seconds: 2}\n", ""),
-            "a proc does one thing: apply_effect, cast or open_window",
+            "a proc does one thing: apply_effect, cast, open_window or damage_over_time",
         ),
         (("      effect: minecraft:slowness\n", ""), "a applies_effect proc names the effect it watches"),
         (("trigger: applies_effect", "trigger: crit"), "only an applies_effect or tick proc names an effect"),

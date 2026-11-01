@@ -46,6 +46,7 @@ public final class QaGameTests {
             ApothicAttributesGameTests.class,
             AreaMiningGameTests.class,
             ArenaFlightGameTests.class,
+            ArmsTreeGameTests.class,
             AstoneGameTests.class,
             AutoShootGameTests.class,
             BossBarGameTests.class,

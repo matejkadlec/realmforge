@@ -129,8 +129,8 @@ public final class SpellText {
 
     /**
      * The school whose icon and colour each number of {@code spell} takes: the spell's own for {@code damage} and
-     * {@code against_damage}, the effect's for its damage over time ({@code periodic}, {@code periodic_total}). Healing, seconds and blocks take
-     * none.
+     * {@code against_damage}, the effect's for its damage over time ({@code periodic}, {@code periodic_total},
+     * {@code dot_damage}). Healing, seconds and blocks take none.
      */
     public static Map<String, ResourceKey<SpellSchool>> placeholderSchools(Spell spell) {
         Map<String, ResourceKey<SpellSchool>> placeholders = new LinkedHashMap<>();
@@ -147,6 +147,11 @@ public final class SpellText {
                     && status.periodic().get().kind() == Periodic.Kind.DAMAGE) {
                 placeholders.put("periodic", status.periodic().get().school());
                 placeholders.put("periodic_total", status.periodic().get().school());
+            }
+        });
+        first(effects, DamageOverTimeEffect.class).ifPresent(dot -> {
+            if (dot.effect().value() instanceof StatusEffect status && status.stacks().isPresent()) {
+                placeholders.put("dot_damage", status.stacks().get().school());
             }
         });
         return placeholders;

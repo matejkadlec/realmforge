@@ -1711,7 +1711,8 @@ class SpellDef(StrictModel):
             field = _FIELD_PLACEHOLDERS.get(name)
             if field is not None and getattr(first, field) is None:
                 raise ValueError(
-                    f"description: {{{name}}} reads the first {needed} effect's {field}, which it lacks"
+                    f"description: {{{name}}} reads the first {needed.removeprefix(f'{MOD_ID}:')} effect's {field}, "
+                    "which it lacks"
                 )
         return self
 

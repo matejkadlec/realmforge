@@ -410,7 +410,12 @@ Rules:
   no area the first cone's range), `{against_damage}` the first damage effect's damage against a target with its
   `against_effect`'s status effect, `{armor_shred}` and `{penetration}` the first damage effect's, `{crit_chance}` the
   crit block's bonus chance and `{bonus}` the one modifier of the first applied effect (in percent for a multiplied
-  operation); each at the player's rank, and in the tooltip at the next rank too, below the player's (RLM-542);
+  operation); RLM-543 adds `{dot_damage}` and `{dot_duration}` (the first `damage_over_time`'s damage and seconds),
+  `{max_health_heal}` (the first heal's share of max health), `{resource_gain}` (the first `gain_resource`'s amount),
+  `{min_range}` and `{range}` (the `target_distance`, or a targeted spell's range), `{window}` (its seconds),
+  `{health_below}`, `{extra_cost}` and `{extra_damage}`, and `{refund}` and `{refund_rank}`, and `{radius}` reads a
+  charge's landing radius too; each at the player's rank, and in the tooltip at the next rank too, below the player's
+  (RLM-542);
   validation checks that each has its effect, [architecture 11.6](../docs/architecture.md#116-client-side); a damage
   number shows its school's icon and colour, so write "for {damage} damage", never the school's name); the
   `school` whose damage they deal (a spell that neither deals damage nor heals may leave it out and belongs to no
@@ -456,11 +461,16 @@ Rules:
   without it is refused; never on an `npc_only` spell); `castable_while_stunned` (Will To Survive); `window`
   (RLM-540: `duration_seconds` the spell stays usable after what opens it, `opened_by` `block` or `kill`; a cast closes
   it, and a passive's proc may open it too); `target_health_below_percent` (castable only on an enemy below that share
-  of its health: Execute's 20); a `cost` may add `extra` (`max` more of the resource spent when the player has it,
-  `damage_per_point_percent` more damage for each); an `instant` cast may play out over `animation_seconds` (RLM-399: a
+  of its health: Execute's 20); `target_distance` (RLM-543: `min` and `max` blocks at rank 1 with `max_per_level`, an
+  enemy that near or far, measured as a range is; the targeting's `range` is the farthest at `max_level`: Charge's 3 to
+  10, 12 at rank 2); a `cost` may add `extra` (`max` more of the resource spent when the player has it,
+  `damage_per_point_percent` more damage for each) and `refund_on_kill` (RLM-543: `amount` back for each enemy the
+  spell's hits kill, from rank `from_level`: Execute's 10 at rank 3); an `instant` cast may play out over `animation_seconds` (RLM-399: a
   Warrior's swing, its effects at `hit_at_percent` of it, 50 by default; a player's only); and the
   `effects`, in order: `realmforge:damage` (a hit of the school on an enemy) and `realmforge:heal`
-  (on the caster or an ally), each with `amount` at level 1 and `per_level`, and its coefficient of the caster's
+  (on the caster or an ally; with `on_caster: true`, among the spell's own effects, on the caster whatever the spell
+  targets, and `max_health_percent` with `max_health_per_level_percent` adds that share of the healed entity's max
+  health: Victory Rush, RLM-543), each with `amount` at level 1 and `per_level`, and its coefficient of the caster's
   power (scaling system C, Matěj, 2026-10-30, RLM-534: damage = (amount + coefficient × power) × (1 + the school's
   power + passives) × crit): `attack_damage_percent` (the share of the caster's attack damage added) on an attack
   damage spell, where its damage effects need one, or `spell_power_percent` (the share of the caster's Spell Power,
@@ -503,8 +513,12 @@ Rules:
   `allies`, its own `effects` on each of them inside as it appears and then at every interval, once per interval
   of its duration, and an optional `ring_color`, the dust ring that shows its edge instead of purple sparks) at the
   caster's feet, an enemy's or a ground point; `realmforge:teleport` (the caster to a ground
-  point, or along a direction as far as its range and blocks allow); and `realmforge:dash` (`strength`, a burst of
-  speed in blocks per tick toward an enemy, a ground point or along a direction). The effects of a projectile or an
+  point, or along a direction as far as its range and blocks allow); `realmforge:dash` (`strength`, a burst of
+  speed in blocks per tick toward an enemy, a ground point or along a direction); `realmforge:charge` (RLM-543, at an
+  enemy: the caster rushes at it at `speed` blocks a second, at most 60, until it stands in front of it, then its own
+  `effects` run on every enemy within `landing_radius` of where it lands: Charge's stun); and
+  `realmforge:gain_resource` (RLM-543: `resource`, `amount` and `per_level` the caster gains, whatever the spell targets;
+  players only; a class's spell gains the class's resource). The effects of a projectile or an
   area must fit whom they reach: no heal on a projectile, no damage in an area for allies
   ([architecture 11.3](../docs/architecture.md#113-spell-entities)). A
   `per_level` needs a `max_level` above 1, on the effects of a projectile or an area too, and so does any other
@@ -528,12 +542,15 @@ Rules:
   time of `effect`, of `spell` when named), a `chance_percent` with `chance_per_level_percent`, an internal
   `cooldown_seconds` on each target, and one action: `apply_effect` (`effect`, `duration_seconds`, and `from_level`,
   `{level, duration_seconds}`, a longer duration from a rank on: Frostbite's 3 s at rank 3), `cast` (a spell cast
-  at the other entity at the passive's rank) or `open_window` (a spell with a `window`)). Its description's placeholders are its own, at the player's rank and, in the
+  at the other entity at the passive's rank), `open_window` (a spell with a `window`) or, for a `hit` or `crit`,
+  `damage_over_time` (RLM-543: `effect`, one of ours with `stacks`, `damage_percent` of the hit's damage with
+  `damage_per_level_percent`, over `duration_seconds`; a new one refreshes the stack and adds what it had left: Deep
+  Wounds)). Its description's placeholders are its own, at the player's rank and, in the
   tooltip, at the next: `{bonus}` (the first modifier), `{spell_damage}`, `{crit_chance}`, `{block_cooldown}` and
   `{block_cooldown_rank}`, `{splash_radius}` and `{splash_radius_rank}`, and the first proc's `{proc_chance}`,
-  `{proc_duration}` and `{proc_cooldown}`. It never goes onto the spell bar and is never cast. Improved Frostbolt,
+  `{proc_duration}`, `{proc_cooldown}` and `{proc_damage}`. It never goes onto the spell bar and is never cast. Improved Frostbolt,
   Frostbite, Shatter and Two-Handed Weapon Specialization are the first, of the M1 trees: the Frost Mage's "Shatter"
-  (RLM-542) and the Arms Warrior's (RLM-543).
+  (RLM-542) and the Arms Warrior's "Bloodletter" (RLM-543, with Deep Wounds and Taste for Blood).
 - `worldgen/` is the one exception to YAML: Minecraft's own worldgen JSON (`dimension/`, `dimension_type/`,
   `biome/`, `noise_settings/`, ...), validated (location, id, JSON, dimension types, no clash with the core mod's
   own `realmforge:instances`) and copied byte for byte; the game decodes it when a world loads.

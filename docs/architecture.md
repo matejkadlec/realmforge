@@ -1416,11 +1416,23 @@ Its name and description are translation keys from C3b, the description's number
   them (the pipeline checks it), and `spell/SpellRequirement` refuses the cast without it. Mobs need nothing.
 - **Conditions** (RLM-540, `spell/SpellConditions`): a spell may be usable only in its **window** (`spell/SpellWindow`,
   Overpower 5 s after a block, Victory Rush 20 s after a kill), and only on a target **below a share of its health**
-  (Execute's 20 %, `CastFailure.TARGET_HEALTH_TOO_HIGH`). A cost may name **extra** resource (`SpellCost.Extra`, Execute's
+  (Execute's 20 %, `CastFailure.TARGET_HEALTH_TOO_HIGH`), or **at a distance** that grows per rank
+  (`SpellConditions.TargetDistance`, RLM-543: Charge's 3 to 10 blocks, 12 at rank 2, measured as a range is; nearer is
+  `CastFailure.TOO_CLOSE`, farther `OUT_OF_RANGE`; the targeting's range is the farthest at the highest rank, which aim
+  assistance and the tooltip's range line by rank use). A cost may name **extra** resource (`SpellCost.Extra`, Execute's
   up to 30 more rage): a player's cast spends as much of it as they have after the cost, and its damage effects are
-  multiplied by 1 + the share a point times the points spent (the `EffectContext`'s damage scale). A damage effect may
-  deal more against a target with a status effect (`against_effect`, growing per rank: Ice Lance's × 2 to × 3 against
-  Frozen, RLM-542).
+  multiplied by 1 + the share a point times the points spent (the `EffectContext`'s damage scale); and a **refund for a
+  kill** from a rank on (`SpellCost.KillRefund`, RLM-543: Execute's 10 rage at rank 3), which `DamageEffect` gives a
+  player whose hit killed its target. A damage effect may deal more against a target with a status effect
+  (`against_effect`, growing per rank: Ice Lance's × 2 to × 3 against Frozen, RLM-542).
+- **The Arms tree's effects** (RLM-543): `realmforge:charge` (`spell/ChargeEffect`) rushes the caster at its enemy at
+  its speed; `spell/Charges` steers it on the server every tick, setting its horizontal velocity toward the target (at
+  most the gap left) and marking it hurt, so a player's client receives it as it receives a knockback, and lands it once
+  the boxes are a quarter block apart, the target is gone, or the time its distance needs plus half a second is up (a
+  wall); the landing runs the charge's effects on every enemy within its landing radius (Charge's stun), and the caster
+  takes no fall damage meanwhile. `realmforge:gain_resource` gives a player caster some of a resource (Charge's rage).
+  A heal may add a share of the healed entity's max health and heal the caster instead of the target (`on_caster`,
+  Victory Rush).
 
 A player knows a spell through their class (by level), race, talents (`grant_spell`) or items (an item component
 lists spells granted while equipped or on use): the vision's "some from the race or class, some from items".
@@ -2130,13 +2142,10 @@ aura spell.
 
 **C4's first balance pass** (RLM-27; the numbers are in `content/spells/`, each file's comment says why; the playtest
 tunes them). A class teaches its spells by level ([10.1](#101-races-and-classes)): four active ones by level 10,
-chapter 1's cap. The M1 specializations' first spells come at level 1 (Arms's Slam, Frost's Frostbolt); the other
-trees' first spells stand in for the Warrior until its tree (RLM-543), and the self-buff comes last (Matěj,
+chapter 1's cap. The M1 specializations' first spells come at level 1 (Arms's Slam, Frost's Frostbolt), and each
+class's kit is its M1 tree (below): the Mage's since RLM-542, the Warrior's since RLM-543. Before its tree, the other
+trees' first spells stood in for the Warrior (Reckless Strike at 3, Shield Bash at 5, Battle Shout at 8; Matěj,
 2026-10-30).
-
-| Class | Level 1 | Level 3 | Level 5 | Level 8 |
-| --- | --- | --- | --- | --- |
-| Warrior | Slam | Reckless Strike | Shield Bash | Battle Shout |
 
 **The Frost Mage's "Shatter" tree** (RLM-542; Matěj, 2026-10-30, RLM-333's comment and the "Spell Trees to Level 18"
 document, chosen for M1, version 1 of every spell, balanced by Claude): WotLK-like rows, a new one every 6 levels,
@@ -2173,6 +2182,39 @@ Missiles leave the M1 kit and come back with their trees in M3 (RLM-218).
 - `FrostTreeGameTests` covers every active's damage at rank 1 and its highest rank, Ice Lance against Frozen,
   Frostbite's chance and cooldown, Frozen breaking on about half the hits, the cone, the nova, Blizzard's waves, the
   wider splash and the kit by rows.
+
+**The Arms Warrior's "Bloodletter" tree** (RLM-543; Matěj, 2026-10-30, RLM-333's comment and the "Spell Trees to Level
+18" document, chosen for M1, version 1 of every spell, balanced by Claude): the same rows, a new one every 6 levels,
+the first two holding four actives (D4). Until C5 (RLM-333), the Warrior's kit teaches every spell of the tree at rank 1
+at its row's level (`content/classes/warrior.yaml`); Reckless Strike and Shield Bash leave the M1 kit and come back
+with their trees in M3. Taste for Blood needs Rend in the tree, which C5 checks; the kit teaches Rend first.
+
+| Row (level) | Left | Middle | Right |
+| --- | --- | --- | --- |
+| 1 | Charge (2) | Slam (5) | Deep Wounds (passive, 3) |
+| 6 | Rend (3) | Battle Shout (3) | Two-Handed Weapon Specialization (passive, 3) |
+| 12 | Taste for Blood (passive, 2) | Overpower (5) | Victory Rush (3) |
+| 18 | Execute (3) | | |
+
+- **The loop:** Charge in for rage, Rend to bleed and Slam on cooldown; blocks and Taste for Blood's procs on Rend's
+  ticks open Overpower, crits bleed through Deep Wounds, kills open Victory Rush, and Execute finishes, refunding rage
+  for a kill at rank 3.
+- **Numbers** (rank 1 to the highest, AD = Attack Damage): **Charge** a rush at an enemy 3 to 10 blocks away (12 at
+  rank 2) at 24 blocks a second that stuns every enemy within 1.5 blocks of the landing for 1 s, 15/20 rage, 15 s.
+  **Rend** 2/3/4 + 30/40/50 % AD, then Bleeding of 4/6/8 + 60/80/100 % AD over 6 s, 10 rage, 6 s. **Overpower**
+  5/5.5/6/6.5/7 + 100 to 140 % AD with +10 to 30 % crit chance, for 5 s after a block, 5 rage, 5 s. **Victory Rush**
+  3/4/5 + 70/80/90 % AD and a heal of 10/15/20 % of max health, for 20 s after a kill that is not gray, free, no
+  cooldown. **Execute** below 20 % health, 8/10/12 + 150/175/200 % AD, 15 rage and up to 30 more for 3 % more damage
+  each, 10 rage back for a kill at rank 3, no cooldown. **Deep Wounds** a crit bleeds for 20/40/60 % of its damage over
+  6 s. **Taste for Blood** a 15/30 % chance on a tick of Rend's Bleeding to open Overpower, once every 6 s on each
+  target. Slam, Battle Shout and Two-Handed Weapon Specialization keep their numbers (below and
+  [11.1](#111-model)).
+- **The target** (RLM-503): about 35 damage a second before armor at level 18, against the Frost Mage's about 40, so
+  both kill Astone (about 3,000 health) in 2.5 to 3 minutes.
+- `ArmsTreeGameTests` covers every active's damage at rank 1 and its highest rank, Rend's bleed, Overpower only after
+  a block, Victory Rush only after a kill that is not gray and its heal, Execute's condition, extra rage and refund,
+  Charge's rush, landing stun and distance by rank, Deep Wounds' share, Taste for Blood's proc, the tooltips' next
+  rank, the kit by rows and the handoff's setup line.
 
 - **Slam:** 4 + 1.5 per rank + 120 % of attack damage, 30 rage, 6 s, needs a melee weapon (RLM-499); armor shred
   5 % per rank. **Reckless Strike:** 2 + 1 per rank + 100 % of attack damage, 20 rage, 4 s, a melee weapon; crit
@@ -2246,6 +2288,13 @@ return; the proc engine at its end exists since C3a.
   status effect it gives, a spell it casts) fires another proc, so the rule holds for synchronous chains too; a
   proc's `ApplyEffect` records its origin in the effect's source. `WindowsAndProcsGameTests` covers Frostbite's per-target
   cooldown, Taste for Blood and Deep Wounds.
+- **In code (RLM-543): a proc's damage over time.** A fourth action, `DamageOverTime` (a passive's `damage_over_time`,
+  Deep Wounds): a hit or crit proc gives the entity hit the holder's stack of a status effect with stacks
+  ([11.4](#114-status-effects)), named after the passive spell, dealing a share of the hit's damage after its
+  reductions (`CombatEvent.Hit#getInflictedDamage`, which `Procs` hands to a hit's and a crit's procs) over its
+  duration. A stack the entity already has from the same passive is replaced, and what it had left
+  (`StackTicks#remaining`) is added to the new one, so every crit's share is dealt. The stack carries the proc's
+  origin, so its ticks fire no proc. `ArmsTreeGameTests` covers Deep Wounds' share and the roll.
 
 ## 13. Items, gear and loot
 

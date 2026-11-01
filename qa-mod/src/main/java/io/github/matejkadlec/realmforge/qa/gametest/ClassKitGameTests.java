@@ -106,8 +106,7 @@ public final class ClassKitGameTests {
         Spellbook book = warrior.getData(SpellAttachments.SPELLBOOK);
         helper.assertValueEqual(book.level(GeneratedSpells.SLAM), Optional.of(1), "a new Warrior knows Slam");
         helper.assertValueEqual(book.slot(0), Optional.of(GeneratedSpells.SLAM), "on the bar's first slot");
-        helper.assertValueEqual(book.level(GeneratedSpells.RECKLESS_STRIKE), Optional.empty(),
-                "Reckless Strike comes at 3");
+        helper.assertValueEqual(book.level(GeneratedSpells.REND), Optional.empty(), "Rend comes at 6");
         helper.assertValueEqual(book.slot(Spellbook.RACIAL_SLOT), Optional.of(GeneratedSpells.WILL_TO_SURVIVE),
                 "a Human's racial spell beside the bar");
         helper.assertValueEqual(book.barSlotOf(GeneratedSpells.WILL_TO_SURVIVE), -1, "and not on the bar itself");
@@ -121,29 +120,33 @@ public final class ClassKitGameTests {
     }
 
     /**
-     * A level teaches its class spells into the bar's next empty slots; one taken off the bar stays off. A login
-     * catches up on spells a character does not know yet (a character from before its class taught them).
+     * A level teaches its class spells into the bar's next empty slots, its passive spells never; one taken off the bar
+     * stays off. A login catches up on spells a character does not know yet (a character from before its class taught
+     * them). The Warrior's kit is the Arms tree's (RLM-543): Slam and Charge on the bar at level 1 with Deep Wounds
+     * known, Rend and Battle Shout at 6 with Two-Handed Weapon Specialization known.
      */
     @QaGameTest
     public static void levelsAndLoginsTeachTheClassSpells(GameTestHelper helper) {
         ServerPlayer player = character(helper, "qa-kit-levels", "warrior");
-        reachLevel(helper, player, 5);
         Spellbook book = player.getData(SpellAttachments.SPELLBOOK);
-        helper.assertValueEqual(List.of(book.slot(0), book.slot(1), book.slot(2), book.slot(3)), List.of(
-                Optional.of(GeneratedSpells.SLAM), Optional.of(GeneratedSpells.RECKLESS_STRIKE),
-                Optional.of(GeneratedSpells.SHIELD_BASH), Optional.empty()), "the spells of levels 1, 3 and 5");
-        helper.assertTrue(Spells.placeOnBar(player, 1, Optional.empty()), "Reckless Strike taken off the bar");
-        reachLevel(helper, player, 8);
+        helper.assertValueEqual(List.of(book.slot(0), book.slot(1), book.slot(2)), List.of(
+                Optional.of(GeneratedSpells.SLAM), Optional.of(GeneratedSpells.CHARGE), Optional.empty()),
+                "level 1's actives; Deep Wounds is passive");
+        helper.assertValueEqual(book.level(GeneratedSpells.DEEP_WOUNDS), Optional.of(1), "Deep Wounds known");
+        helper.assertTrue(Spells.placeOnBar(player, 1, Optional.empty()), "Charge taken off the bar");
+        reachLevel(helper, player, 6);
         book = player.getData(SpellAttachments.SPELLBOOK);
-        helper.assertValueEqual(book.level(GeneratedSpells.BATTLE_SHOUT), Optional.of(1), "level 8's spell");
-        helper.assertValueEqual(book.slot(1), Optional.of(GeneratedSpells.BATTLE_SHOUT),
-                "into the first empty slot; the spell taken off stays off");
+        helper.assertValueEqual(List.of(book.slot(1), book.slot(2), book.slot(3)), List.of(
+                Optional.of(GeneratedSpells.REND), Optional.of(GeneratedSpells.BATTLE_SHOUT), Optional.empty()),
+                "level 6's actives into the first empty slots; the spell taken off stays off");
+        helper.assertValueEqual(book.barSlotOf(GeneratedSpells.CHARGE), -1, "Charge stays off the bar");
 
         player.setData(SpellAttachments.SPELLBOOK, Spellbook.EMPTY);
         NeoForge.EVENT_BUS.post(new PlayerEvent.PlayerLoggedInEvent(player));
         book = player.getData(SpellAttachments.SPELLBOOK);
-        for (ResourceKey<Spell> spell : List.of(GeneratedSpells.SLAM, GeneratedSpells.BATTLE_SHOUT,
-                GeneratedSpells.SHIELD_BASH, GeneratedSpells.RECKLESS_STRIKE, GeneratedSpells.WILL_TO_SURVIVE)) {
+        for (ResourceKey<Spell> spell : List.of(GeneratedSpells.SLAM, GeneratedSpells.CHARGE,
+                GeneratedSpells.DEEP_WOUNDS, GeneratedSpells.REND, GeneratedSpells.BATTLE_SHOUT,
+                GeneratedSpells.TWO_HANDED_WEAPON_SPECIALIZATION, GeneratedSpells.WILL_TO_SURVIVE)) {
             helper.assertValueEqual(book.level(spell), Optional.of(1), "a login teaches " + spell.identifier());
         }
         logout(player);
