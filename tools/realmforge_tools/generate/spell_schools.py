@@ -15,8 +15,10 @@ from realmforge_tools.generate.textures import placeholder_school_icon
 from realmforge_tools.project import JAVA_PACKAGE, MOD_ID, QA_JAVA_PACKAGE, RepoPaths
 from realmforge_tools.schema.common import LocalizedText
 from realmforge_tools.schema.spell_school import (
+    MAGIC_TAG,
     PHYSICAL_DAMAGE_TYPES,
     PHYSICAL_TAG,
+    VANILLA_MAGIC_DAMAGE_TYPES,
     SpellSchoolDef,
     death_message_keys,
 )
@@ -59,6 +61,12 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
         files[data / "neoforge" / "tags" / "damage_type" / "is_physical.json"] = dump_json(
             {"values": sorted(s.damage_type for s in physical)}
         )
+    # Magic hits, which Magic Protection lowers (RLM-537): every magic school and vanilla's magic.
+    magic = sorted(school.damage_type for school in schools if school.kind == "magic")
+    namespace, path = MAGIC_TAG.split(":", 1)
+    files[data / namespace / "tags" / "damage_type" / f"{path}.json"] = dump_json(
+        {"values": [*magic, *VANILLA_MAGIC_DAMAGE_TYPES]}
+    )
     tags = data / "minecraft" / "tags" / "damage_type"
     # Every school's hits land through the hurt cooldown and push nobody: a spell knocks back only through its
     # knockback effect (architecture 9.1, RLM-214). Magic ones skip vanilla's armor too.

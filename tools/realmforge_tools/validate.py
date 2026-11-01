@@ -117,7 +117,7 @@ from realmforge_tools.schema.spell import (
     TELEPORT,
     SpellDef,
 )
-from realmforge_tools.schema.spell_school import PHYSICAL_TAG, SpellSchoolDef
+from realmforge_tools.schema.spell_school import MAGIC_TAG, PHYSICAL_TAG, SpellSchoolDef
 from realmforge_tools.schema.stat import StatDef
 from realmforge_tools.schema.text import text_constant
 from realmforge_tools.schema.worldgen import WORLDGEN_REGISTRIES, data_path
@@ -143,6 +143,7 @@ CUSTOM_STAT_REGISTRY = "minecraft:custom_stat"
 LOOT_TABLE_REGISTRY = "minecraft:loot_table"
 RECIPE_REGISTRY = "minecraft:recipe"
 BIOME_REGISTRY = "minecraft:worldgen/biome"
+ENCHANTMENT_REGISTRY = "minecraft:enchantment"
 # Vanilla Overworld's height (net.minecraft.world.level.dimension.DimensionType, minecraft:overworld): its lowest y and
 # the number of blocks above it, for Overworld's arrival heights.
 OVERWORLD_MIN_Y = -64
@@ -158,6 +159,7 @@ REGISTRY_OF_TYPE: dict[str, str] = {
     "blocks": BLOCK_REGISTRY,
     "stats": ATTRIBUTE_REGISTRY,
     "effects": MOB_EFFECT_REGISTRY,
+    "enchantments": ENCHANTMENT_REGISTRY,
     "mobs": ENTITY_TYPE_REGISTRY,
     "spell_schools": SPELL_SCHOOL_REGISTRY,
     "dungeons": DUNGEON_TYPE_REGISTRY,
@@ -172,6 +174,7 @@ RESERVED_TEXT_GROUPS: dict[str, str] = {
     "block": "content/blocks/",
     "attribute": "content/stats/",
     "effect": "content/effects/",
+    "enchantment": "content/enchantments/",
     "spell_school": "content/spell_schools/",
     "death.attack": "content/spell_schools/",
     "dungeon_type": "content/dungeons/",
@@ -230,8 +233,8 @@ def universe_with_content(vanilla: IdUniverse, content: Content) -> IdUniverse:
             universe.add(ITEM_REGISTRY, f"{MOD_ID}:{entry.model.id}")
     for entry in content.spell_schools:
         universe.add(DAMAGE_TYPE_REGISTRY, entry.model.damage_type)
-    # The damage type tag of physical hits generate/spell_schools.py writes (RLM-233).
-    universe.tags.setdefault(DAMAGE_TYPE_REGISTRY, set()).add(PHYSICAL_TAG)
+    # The damage type tags of physical hits (RLM-233) and magic hits (RLM-537) generate/spell_schools.py writes.
+    universe.tags.setdefault(DAMAGE_TYPE_REGISTRY, set()).update((PHYSICAL_TAG, MAGIC_TAG))
     # The item tags generate/items.py writes with fixed members (melee weapons, sword-like weapons).
     universe.tags.setdefault(ITEM_REGISTRY, set()).update(FIXED_ITEM_TAGS)
     for entry in content.sounds:
@@ -291,6 +294,7 @@ def validate_content(content: Content, universe: IdUniverse) -> list[Problem]:
     problems += _check_quests(content, universe)
     problems += _check_leveling_curves(content)
     problems += _check_kill_xp_multipliers(content, universe)
+    problems += _check_enchantments(content, universe)
     return problems
 
 
@@ -2734,6 +2738,27 @@ def _check_kill_xp_multipliers(content: Content, universe: IdUniverse) -> list[P
                     f"only {' and '.join(SIZED_ENTITY_TYPES)} have a size; {entity} gives by multiplier alone",
                 )
             )
+    return problems
+
+
+def _check_enchantments(content: Content, universe: IdUniverse) -> list[Problem]:
+    """An enchantment's item tag, damage type tag and enchantment tags exist (architecture 13, RLM-537)."""
+    problems: list[Problem] = []
+    for entry in content.enchantments:
+        model = entry.model
+        if not universe.contains_tag(ITEM_REGISTRY, model.supported_items):
+            problems.append(
+                Problem(entry.source, "supported_items", f"unknown item tag #{model.supported_items}")
+            )
+        if not universe.contains_tag(DAMAGE_TYPE_REGISTRY, model.protection.against):
+            problems.append(
+                Problem(
+                    entry.source, "protection.against", f"unknown damage type tag #{model.protection.against}"
+                )
+            )
+        for n, tag in enumerate(model.tags):
+            if not universe.contains_tag(ENCHANTMENT_REGISTRY, tag):
+                problems.append(Problem(entry.source, f"tags.{n}", f"unknown enchantment tag #{tag}"))
     return problems
 
 

@@ -1,0 +1,187 @@
+{
+  "$defs": {
+    "EnchantmentCostDef": {
+      "additionalProperties": false,
+      "description": "Vanilla's level-based cost: ``base`` at level I, ``per_level_above_first`` more for each level after it.",
+      "properties": {
+        "base": {
+          "description": "The cost at level I.",
+          "maximum": 1000,
+          "minimum": 0,
+          "title": "Base",
+          "type": "integer"
+        },
+        "per_level_above_first": {
+          "description": "What each level after I adds.",
+          "maximum": 1000,
+          "minimum": 0,
+          "title": "Per Level Above First",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "base",
+        "per_level_above_first"
+      ],
+      "title": "EnchantmentCostDef",
+      "type": "object"
+    },
+    "EnchantmentProtectionDef": {
+      "additionalProperties": false,
+      "description": "Protection points in vanilla's shared pool against the hits of one damage type tag (its\n``minecraft:damage_protection`` effect, as Projectile Protection's).",
+      "properties": {
+        "against": {
+          "description": "The damage type tag of the hits it lowers, without '#', e.g. realmforge:is_magic (every magic school and vanilla's magic) or minecraft:is_projectile.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Against",
+          "type": "string"
+        },
+        "points_per_level": {
+          "description": "Protection points each level gives, e.g. 0.5; a point lowers a hit by 4 %, and all protection points on the armor together stop at 20 (80 %).",
+          "exclusiveMinimum": 0,
+          "maximum": 20,
+          "title": "Points Per Level",
+          "type": "number"
+        }
+      },
+      "required": [
+        "points_per_level",
+        "against"
+      ],
+      "title": "EnchantmentProtectionDef",
+      "type": "object"
+    },
+    "LocalizedText": {
+      "additionalProperties": false,
+      "description": "A player-facing text, keyed by locale. Realmforge ships English only, so en_us is the one locale.",
+      "properties": {
+        "en_us": {
+          "description": "English (US). Required.",
+          "minLength": 1,
+          "title": "En Us",
+          "type": "string"
+        }
+      },
+      "required": [
+        "en_us"
+      ],
+      "title": "LocalizedText",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "An enchantment: its name and tooltip line, where and how it is enchanted, and what it does.",
+  "properties": {
+    "anvil_cost": {
+      "description": "Its anvil price per level (half from a book).",
+      "maximum": 100,
+      "minimum": 0,
+      "title": "Anvil Cost",
+      "type": "integer"
+    },
+    "description": {
+      "$ref": "#/$defs/LocalizedText",
+      "description": "Its tooltip line under the name (Apothic Enchanting's inline descriptions, Enchantment Descriptions' key): which hits it lowers."
+    },
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "max_cost": {
+      "$ref": "#/$defs/EnchantmentCostDef",
+      "description": "The highest enchanting power that gives each level."
+    },
+    "max_level": {
+      "description": "The highest level with Apothic Enchanting, e.g. 8 (its enchantment_info data map).",
+      "maximum": 255,
+      "minimum": 1,
+      "title": "Max Level",
+      "type": "integer"
+    },
+    "min_cost": {
+      "$ref": "#/$defs/EnchantmentCostDef",
+      "description": "The lowest enchanting power that gives each level."
+    },
+    "name": {
+      "$ref": "#/$defs/LocalizedText",
+      "description": "Its name, as the tooltip and the enchanting table show it."
+    },
+    "protection": {
+      "$ref": "#/$defs/EnchantmentProtectionDef",
+      "description": "The protection it gives."
+    },
+    "slots": {
+      "description": "Where the item must be for it to work, e.g. [armor].",
+      "items": {
+        "enum": [
+          "any",
+          "mainhand",
+          "offhand",
+          "hand",
+          "head",
+          "chest",
+          "legs",
+          "feet",
+          "armor",
+          "body",
+          "saddle"
+        ],
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Slots",
+      "type": "array"
+    },
+    "supported_items": {
+      "description": "The item tag it can go on, without '#', e.g. minecraft:enchantable/armor.",
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+      "title": "Supported Items",
+      "type": "string"
+    },
+    "tags": {
+      "description": "Vanilla's enchantment tags it joins, e.g. minecraft:non_treasure: the enchanting table, random loot, mobs' and traders' gear, as the other protections.",
+      "items": {
+        "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+        "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "vanilla_max_level": {
+      "description": "Vanilla's highest level, which counts where Apothic Enchanting does not (IV).",
+      "maximum": 255,
+      "minimum": 1,
+      "title": "Vanilla Max Level",
+      "type": "integer"
+    },
+    "weight": {
+      "description": "How often the table and loot pick it (Projectile Protection 5).",
+      "maximum": 1024,
+      "minimum": 1,
+      "title": "Weight",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "description",
+    "supported_items",
+    "slots",
+    "weight",
+    "vanilla_max_level",
+    "max_level",
+    "min_cost",
+    "max_cost",
+    "anvil_cost",
+    "protection"
+  ],
+  "title": "EnchantmentDef",
+  "type": "object"
+}

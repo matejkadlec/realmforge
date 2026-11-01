@@ -91,6 +91,7 @@ public final class QaGameTests {
             InstanceGameTests.class,
             InstanceRulesGameTests.class,
             LevelingGameTests.class,
+            MagicProtectionGameTests.class,
             MobLevelGameTests.class,
             NpcCastGameTests.class,
             PassiveSpellGameTests.class,

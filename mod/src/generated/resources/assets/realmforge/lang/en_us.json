@@ -115,6 +115,8 @@
   "effect.realmforge.test_burning": "Test Burning",
   "effect.realmforge.test_regrowth": "Test Regrowth",
   "effect.realmforge.test_sapped": "Test Sapped",
+  "enchantment.realmforge.magic_protection": "Magic Protection",
+  "enchantment.realmforge.magic_protection.desc": "Reduces damage taken from magic, such as spells of the magic schools and Potions of Harming.",
   "entity.realmforge.astone": "Astone, the Unbroken",
   "entity.realmforge.hewn_chanter": "Hewn Chanter",
   "entity.realmforge.hewn_sentinel": "Hewn Sentinel",

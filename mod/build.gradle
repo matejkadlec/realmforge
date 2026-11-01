@@ -134,6 +134,9 @@ dependencies {
     compileOnlyApi packModrinthMod('apotheosis')
     compileOnlyApi packModrinthMod('apothic-attributes')
     compileOnlyApi packModrinthMod('placebo')
+    // Apothic Enchanting's table picks enchantments in its own code, where mixin/ApothicTableSelectionMixin keeps two
+    // protections at most (RLM-537); the QA mod's GameTests roll its table and read its max levels.
+    compileOnlyApi packModrinthMod('apothic-enchanting')
 
     testImplementation platform("org.junit:junit-bom:${junit_version}")
     testImplementation 'org.junit.jupiter:junit-jupiter'

@@ -41,6 +41,7 @@ from realmforge_tools.schema import (
     DimensionRulesDef,
     DungeonTypeDef,
     EffectDef,
+    EnchantmentDef,
     ItemDef,
     KillXpMultiplierDef,
     MobDef,
@@ -201,6 +202,7 @@ class Content:
     quests: tuple[Entry[QuestDef], ...]
     kill_xp_multipliers: tuple[Entry[KillXpMultiplierDef], ...]
     effects: tuple[Entry[EffectDef], ...]
+    enchantments: tuple[Entry[EnchantmentDef], ...]
     spells: tuple[Entry[SpellDef], ...]
     mobs: tuple[Entry[MobDef], ...]
     bosses: tuple[Entry[BossDef], ...]
@@ -303,6 +305,7 @@ def load_content(
         quests=by_id(loaded["quests"]),
         kill_xp_multipliers=by_id(loaded["kill_xp_multipliers"]),
         effects=by_id(loaded["effects"]),
+        enchantments=by_id(loaded["enchantments"]),
         spells=by_id(loaded["spells"]),
         mobs=by_id(loaded["mobs"]),
         bosses=by_id(loaded["bosses"]),
