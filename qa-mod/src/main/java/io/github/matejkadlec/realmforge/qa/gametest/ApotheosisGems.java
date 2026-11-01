@@ -12,6 +12,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -42,9 +43,17 @@ final class ApotheosisGems {
         socket(helper, player, "core/combatant");
         double withGem = dealt(player, physical);
 
-        helper.assertTrue(plain > 0, "the physical hit lands: " + plain);
-        helper.assertTrue(CombatGameTests.close(withGem, plain * (1 - COMBATANT_PERFECT)),
-                "Combatant takes " + COMBATANT_PERFECT + " off the physical hit of " + plain + ", dealt " + withGem);
+        // Apotheosis takes the gem's share off the incoming hit, before armor: the iron chestplate's armor then blocks
+        // a smaller hit, by vanilla's formula, which ours follows (architecture 9.1).
+        double armor = player.getArmorValue();
+        double toughness = player.getAttributeValue(Attributes.ARMOR_TOUGHNESS);
+        double reduced = HIT * (1 - COMBATANT_PERFECT);
+        double plainExpected = HIT * (1 - CombatGameTests.blocked(player, HIT, armor, toughness));
+        helper.assertTrue(CombatGameTests.close(plain, plainExpected),
+                "the plain chestplate's armor alone lowers the hit of " + HIT + ", dealt " + plain);
+        double gemExpected = reduced * (1 - CombatGameTests.blocked(player, reduced, armor, toughness));
+        helper.assertTrue(CombatGameTests.close(withGem, gemExpected),
+                "Combatant takes " + COMBATANT_PERFECT + " off the physical hit before armor, dealt " + withGem);
         ApotheosisGameTests.logout(player);
         helper.succeed();
     }

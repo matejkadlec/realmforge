@@ -205,8 +205,8 @@ final class ApotheosisLoot {
     }
 
     /**
-     * Done when of RLM-546: every armor piece of ours is the robe category of its slot, never Apotheosis's armor, through
-     * the data map; a diamond chestplate stays a chestplate, and the tooltips name the categories by our texts.
+     * Done when of RLM-546: every armor piece of ours is the robe category of its slot, never Apotheosis's armor,
+     * through the data map; a diamond chestplate stays a chestplate, and the tooltips name the categories by our texts.
      */
     static void aRobeIsARobeNotArmor(GameTestHelper helper) {
         LootCategory chest = ApotheosisCompat.ROBE_CHEST.get();
@@ -228,8 +228,8 @@ final class ApotheosisLoot {
             }
         }
         helper.assertValueEqual(pieces, 16, "the four robe sets' pieces");
-        helper.assertTrue(LootCategory.forItem(new ItemStack(Items.DIAMOND_CHESTPLATE)) == Apoth.LootCategories.CHESTPLATE,
-                "a diamond chestplate is still a chestplate");
+        LootCategory diamond = LootCategory.forItem(new ItemStack(Items.DIAMOND_CHESTPLATE));
+        helper.assertTrue(diamond == Apoth.LootCategories.CHESTPLATE, "a diamond chestplate is still a chestplate");
         helper.assertValueEqual(chest.getDescId(), GeneratedTexts.LOOT_CATEGORY_ROBE_CHEST, "its name's key");
         helper.assertValueEqual(chest.getDescIdPlural(), GeneratedTexts.LOOT_CATEGORY_ROBE_CHEST_PLURAL,
                 "its plural's key");
@@ -247,7 +247,8 @@ final class ApotheosisLoot {
         ItemStack chestplate = new ItemStack(Items.NETHERITE_CHESTPLATE);
         SocketHelper.setSockets(chestplate, 1);
         helper.assertFalse(SocketHelper.canSocketGemInItem(robes, guardian), "Guardian does not fit Netherite Robes");
-        helper.assertTrue(SocketHelper.canSocketGemInItem(chestplate, guardian), "Guardian fits a netherite chestplate");
+        helper.assertTrue(SocketHelper.canSocketGemInItem(chestplate, guardian),
+                "Guardian fits a netherite chestplate");
         helper.succeed();
     }
 

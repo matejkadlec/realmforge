@@ -28,8 +28,8 @@ import net.neoforged.neoforge.registries.DeferredRegister;
  * from each piece's gear kind, so their own test passes nothing and the order of the tests never matters.
  * <p>
  * No affix lists our categories yet (the caster affixes, RLM-557 and RLM-562), and their rarity overrides drop every
- * affix slot ({@code content/apotheosis_rarity_overrides/}), so a wand or a robe reforged now gets a rarity, sockets and
- * durability only, and no gem bonus of Apotheosis's names a robe category, so no gem fits a robe until RLM-548.
+ * affix slot ({@code content/apotheosis_rarity_overrides/}), so a wand or a robe reforged now gets a rarity, sockets
+ * and durability only, and no gem bonus of Apotheosis's names a robe category, so no gem fits a robe until RLM-548.
  */
 public final class ApotheosisCompat {
     public static final String MOD_ID = "apotheosis";
