@@ -45,7 +45,7 @@ public final class GeneratedClassExpectations {
                     Optional.empty(),
                     List.of(new KitItem("realmforge:stone_wand", 1), new KitItem("realmforge:apprentice_hat", 1), new KitItem("realmforge:apprentice_robes", 1), new KitItem("realmforge:apprentice_pants", 1), new KitItem("realmforge:apprentice_boots", 1), new KitItem("minecraft:bread", 32)),
                     List.of(new Bonus("realmforge:class/realmforge/0/mage", "realmforge:intellect", "add_value", 5.0), new Bonus("realmforge:class/realmforge/1/mage", "realmforge:vitality", "add_value", 2.0), new Bonus("realmforge:class/realmforge/2/mage", "realmforge:dexterity", "add_value", 1.0), new Bonus("realmforge:class/realmforge/3/mage", "realmforge:max_mana", "add_value", 100.0), new Bonus("realmforge:class/realmforge/4/mage", "realmforge:mana_regeneration", "add_value", 5.0)),
-                    List.of(new ClassSpell("realmforge:frostbolt", 1), new ClassSpell("realmforge:fireball", 3), new ClassSpell("realmforge:arcane_missiles", 5), new ClassSpell("realmforge:ice_barrier", 8))),
+                    List.of(new ClassSpell("realmforge:frostbolt", 1), new ClassSpell("realmforge:improved_frostbolt", 1), new ClassSpell("realmforge:cone_of_cold", 1), new ClassSpell("realmforge:ice_lance", 6), new ClassSpell("realmforge:frost_nova", 6), new ClassSpell("realmforge:frostbite", 6), new ClassSpell("realmforge:shatter", 12), new ClassSpell("realmforge:ice_barrier", 12), new ClassSpell("realmforge:blizzard", 18))),
             new ClassExpectation(
                     "realmforge:warrior",
                     "class.realmforge.warrior.name",

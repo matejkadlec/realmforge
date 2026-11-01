@@ -1,0 +1,57 @@
+{
+  "name": "spell.realmforge.ice_lance.name",
+  "description": "spell.realmforge.ice_lance.description",
+  "school": "realmforge:frost",
+  "scales_with": "spell_power",
+  "targeting": {
+    "type": "realmforge:direction",
+    "range": 40.0
+  },
+  "cast": {
+    "type": "instant"
+  },
+  "cost": {
+    "amount": 15.0,
+    "per_level": 0,
+    "resource": "realmforge:mana"
+  },
+  "cooldown_ticks": 80,
+  "global_cooldown_ticks": 10,
+  "max_level": 5,
+  "crit": {
+    "can_crit": true,
+    "bonus_chance": 0.0
+  },
+  "npc_only": false,
+  "requires": [],
+  "castable_while_stunned": false,
+  "effects": [
+    {
+      "type": "realmforge:projectile",
+      "speed": 45.0,
+      "size": 0.3,
+      "effects": [
+        {
+          "amount": 3.0,
+          "per_level": 0.5,
+          "spell_power": 0.4,
+          "spell_power_per_level": 0.05,
+          "type": "realmforge:damage",
+          "against_effect": {
+            "effect": "realmforge:frozen",
+            "damage": 1.0,
+            "damage_per_level": 0.25
+          }
+        }
+      ],
+      "impact": {
+        "sound": "minecraft:block.glass.break",
+        "particles": "minecraft:ice"
+      },
+      "appearance": {
+        "model": "orb",
+        "color": "#D6F4FF"
+      }
+    }
+  ]
+}

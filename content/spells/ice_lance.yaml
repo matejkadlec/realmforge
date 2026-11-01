@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# The Frost Mage's tree, row 2 (level 6), left (RLM-542; Matěj, 2026-10-30, "Spell Trees to Level 18", chosen for M1,
+# version 1): one of the two spells the tree revolves around, so 5 ranks. An instant shard of ice for 3/3.5/4/4.5/5 +
+# 40/45/50/55/60 % of Spell Power, × 2/2.25/2.5/2.75/3 against a Frozen target (Frost Nova and Frostbite freeze them,
+# and Shatter adds crit chance against them): slow, freeze, then lance. A 4 s cooldown, 15 mana. It flies where the
+# crosshair points, as Frostbolt does, homing on an enemy near it (RLM-345). Placeholder look until RLM-544.
+id: ice_lance
+name: {en_us: Ice Lance}
+description:
+  en_us: "Throws a shard of ice for {damage} damage, {against_damage} damage against a Frozen target."
+school: realmforge:frost
+scales_with: spell_power
+targeting: {type: realmforge:direction, range: 40}
+cast: {type: instant}
+cost: {resource: realmforge:mana, amount: 15}
+cooldown_seconds: 4
+max_level: 5
+effects:
+  - type: realmforge:projectile
+    speed: 45
+    size: 0.3
+    impact: {sound: minecraft:block.glass.break, particles: minecraft:ice}
+    appearance: {model: orb, color: "#D6F4FF"}
+    effects:
+      - type: realmforge:damage
+        amount: 3
+        per_level: 0.5
+        spell_power_percent: 40
+        spell_power_per_level_percent: 5
+        against_effect:
+          effect: realmforge:frozen
+          damage_percent: 100
+          damage_per_level_percent: 25

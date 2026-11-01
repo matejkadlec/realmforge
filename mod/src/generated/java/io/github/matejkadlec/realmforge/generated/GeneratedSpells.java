@@ -32,14 +32,29 @@ public final class GeneratedSpells {
     /** {@code realmforge:battle_shout} from {@code content/spells/battle_shout.yaml}: physical, self, area. */
     public static final ResourceKey<Spell> BATTLE_SHOUT = key("battle_shout");
 
+    /** {@code realmforge:blizzard} from {@code content/spells/blizzard.yaml}: frost, ground_point, area. */
+    public static final ResourceKey<Spell> BLIZZARD = key("blizzard");
+
+    /** {@code realmforge:cone_of_cold} from {@code content/spells/cone_of_cold.yaml}: frost, self, cone. */
+    public static final ResourceKey<Spell> CONE_OF_COLD = key("cone_of_cold");
+
     /** {@code realmforge:fireball} from {@code content/spells/fireball.yaml}: fire, direction, projectile. */
     public static final ResourceKey<Spell> FIREBALL = key("fireball");
+
+    /** {@code realmforge:frost_nova} from {@code content/spells/frost_nova.yaml}: frost, self, area. */
+    public static final ResourceKey<Spell> FROST_NOVA = key("frost_nova");
+
+    /** {@code realmforge:frostbite} from {@code content/spells/frostbite.yaml}: frost, passive. */
+    public static final ResourceKey<Spell> FROSTBITE = key("frostbite");
 
     /** {@code realmforge:frostbolt} from {@code content/spells/frostbolt.yaml}: frost, direction, projectile. */
     public static final ResourceKey<Spell> FROSTBOLT = key("frostbolt");
 
     /** {@code realmforge:ice_barrier} from {@code content/spells/ice_barrier.yaml}: frost, self, apply_effect. */
     public static final ResourceKey<Spell> ICE_BARRIER = key("ice_barrier");
+
+    /** {@code realmforge:ice_lance} from {@code content/spells/ice_lance.yaml}: frost, direction, projectile. */
+    public static final ResourceKey<Spell> ICE_LANCE = key("ice_lance");
 
     /** {@code realmforge:improved_frostbolt} from {@code content/spells/improved_frostbolt.yaml}: frost, passive. */
     public static final ResourceKey<Spell> IMPROVED_FROSTBOLT = key("improved_frostbolt");
@@ -177,7 +192,7 @@ public final class GeneratedSpells {
     public static final ResourceKey<Spell> WILL_TO_SURVIVE = key("will_to_survive");
 
     /** Every key above, in id order. */
-    public static final List<ResourceKey<Spell>> ALL = List.of(ARCANE_MISSILES, ASTONE_BOULDER, ASTONE_CRACKED_STONE, ASTONE_QUAKE, ASTONE_ROCKFALL, ASTONE_SHOCKWAVE, BATTLE_SHOUT, FIREBALL, FROSTBOLT, ICE_BARRIER, IMPROVED_FROSTBOLT, RECKLESS_STRIKE, SHATTER, SHIELD_BASH, SLAM, STONEFORM, TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_CLEAVE, TEST_DEEP_WOUND, TEST_DEEP_WOUNDS, TEST_DRAIN, TEST_EXECUTE, TEST_FORWARD_MISSILE, TEST_FROSTBITE, TEST_HOMING_BOLT, TEST_ICE_LANCE, TEST_IGNITE, TEST_LACERATE, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_OVERPOWER, TEST_PROC_SPARK, TEST_REGROW, TEST_REND, TEST_SAP, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT, TEST_TASTE_FOR_BLOOD, TEST_TITAN_HARDEN, TEST_VICTORY_RUSH, TWO_HANDED_WEAPON_SPECIALIZATION, WILL_TO_SURVIVE);
+    public static final List<ResourceKey<Spell>> ALL = List.of(ARCANE_MISSILES, ASTONE_BOULDER, ASTONE_CRACKED_STONE, ASTONE_QUAKE, ASTONE_ROCKFALL, ASTONE_SHOCKWAVE, BATTLE_SHOUT, BLIZZARD, CONE_OF_COLD, FIREBALL, FROST_NOVA, FROSTBITE, FROSTBOLT, ICE_BARRIER, ICE_LANCE, IMPROVED_FROSTBOLT, RECKLESS_STRIKE, SHATTER, SHIELD_BASH, SLAM, STONEFORM, TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_CLEAVE, TEST_DEEP_WOUND, TEST_DEEP_WOUNDS, TEST_DRAIN, TEST_EXECUTE, TEST_FORWARD_MISSILE, TEST_FROSTBITE, TEST_HOMING_BOLT, TEST_ICE_LANCE, TEST_IGNITE, TEST_LACERATE, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_OVERPOWER, TEST_PROC_SPARK, TEST_REGROW, TEST_REND, TEST_SAP, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT, TEST_TASTE_FOR_BLOOD, TEST_TITAN_HARDEN, TEST_VICTORY_RUSH, TWO_HANDED_WEAPON_SPECIALIZATION, WILL_TO_SURVIVE);
 
     private GeneratedSpells() {
     }

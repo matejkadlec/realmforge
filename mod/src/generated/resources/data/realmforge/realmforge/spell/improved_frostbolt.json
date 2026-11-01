@@ -32,6 +32,14 @@
       }
     ],
     "procs": [],
-    "splash_radius": []
+    "splash_radius": [
+      {
+        "spells": [
+          "realmforge:frostbolt"
+        ],
+        "radius": 0.5,
+        "from_level": 3
+      }
+    ]
   }
 }

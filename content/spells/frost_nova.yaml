@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# The Frost Mage's tree, row 2 (level 6), middle (RLM-542; Matěj, 2026-10-30, "Spell Trees to Level 18", chosen for M1):
+# an instant ring of frost round the Mage that hits every enemy within 4 blocks for 3/4/5 + 30/35/40 % of Spell Power
+# and Freezes them (rooted, RLM-539) for 2/3/4 s, so the Mage can step away or Ice Lance them. Bosses may be immune to
+# Frozen (RLM-539). A 20 s cooldown, 30 mana. Placeholder ring until the Frost visuals (RLM-544).
+id: frost_nova
+name: {en_us: Frost Nova}
+description:
+  en_us: >-
+    Blasts the ground round you with frost, dealing {damage} damage to every enemy within {radius} blocks and freezing
+    them in place for {duration} sec.
+school: realmforge:frost
+scales_with: spell_power
+targeting: {type: realmforge:self}
+cast: {type: instant}
+cost: {resource: realmforge:mana, amount: 30}
+cooldown_seconds: 20
+max_level: 3
+effects:
+  - type: realmforge:area
+    radius: 4
+    duration_seconds: 0.5
+    interval_seconds: 0.5
+    ring_color: "#BFEFFF"
+    effects:
+      - type: realmforge:damage
+        amount: 3
+        per_level: 1
+        spell_power_percent: 30
+        spell_power_per_level_percent: 5
+      - type: realmforge:apply_effect
+        effect: realmforge:frozen
+        duration_seconds: 2
+        duration_per_level_seconds: 1

@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# The Frost Mage's tree, row 2 (level 6), right (RLM-542; Matěj, 2026-10-30, "Spell Trees to Level 18", chosen for M1):
+# a passive whose proc (RLM-540) Freezes an enemy the Mage slows (Frostbolt, Cone of Cold, Blizzard) at a 5/10/15 %
+# chance, for 2 s, 3 s at rank 3 (its max-rank extra), at most once every 5 s on each enemy. Procs never trigger procs,
+# so a Frozen it gives never procs again.
+id: frostbite
+name: {en_us: Frostbite}
+description:
+  en_us: >-
+    Your Slowness has a {proc_chance}% chance to freeze its target in place for {proc_duration} sec, at most once every
+    {proc_cooldown} sec on each target.
+school: realmforge:frost
+max_level: 3
+passive:
+  procs:
+    - trigger: applies_effect
+      effect: minecraft:slowness
+      chance_percent: 5
+      chance_per_level_percent: 5
+      cooldown_seconds: 5
+      apply_effect:
+        effect: realmforge:frozen
+        duration_seconds: 2
+        from_level: {level: 3, duration_seconds: 3}

@@ -1,5 +1,6 @@
 # yaml-language-server: $schema=../../tools/schemas/spells.schema.json
-# The Mage's self-buff (C4): the Mage never heals but survives through shields (Matěj, 2026-10-22). Ice Barrier raises
+# The Mage's self-buff (C4), the Frost Mage's tree, row 3 (level 12), middle (RLM-542; the tree's version 1): the Mage
+# never heals but survives through shields (Matěj, 2026-10-22). Ice Barrier raises
 # the Magic Shield by 10 / 20 / 30 for 10 / 20 / 30 s by rank and fills those points at once, so it shields in the
 # middle of a fight, on a 1 minute cooldown (Matěj, 2026-10-30). Spell power raises nothing of it; Cooldown Reduction
 # shortens its cooldown, and a second cast refreshes the barrier instead of stacking it.

@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../../tools/schemas/spells.schema.json
 # The Mage's first spell (C4; Frost's first spell, RLM-391; decision D4's starting spell "a Frostbolt-like fast
-# single-target cast that slows"): a 1.5 s cast at every rank, no cooldown, so only the cast time limits it. Medium damage
+# single-target cast that slows"), the Frost Mage's tree, row 1 (level 1), middle (RLM-542): a 1.5 s cast at every rank, no cooldown, so only the cast time limits it. Medium damage
 # and Slowness for 3 s, 0.5 s longer per rank, Slowness II from rank 5. The bolt forms in the hands during the cast and
 # flies where the crosshair points (RLM-344), homing on an enemy near it (RLM-345). Scaling system C (Matěj,
 # 2026-10-30, RLM-534): 8/9/10/11/12 + 100/125/150/175/200 % of Spell Power, the highest coefficient per cast (a
