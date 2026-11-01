@@ -44,6 +44,8 @@ public final class QaGameTests {
             ApotheosisGemGameTests.class,
             ApotheosisLootGameTests.class,
             ApothicAttributesGameTests.class,
+            AreaMiningGameTests.class,
+            ArenaFlightGameTests.class,
             AstoneGameTests.class,
             AutoShootGameTests.class,
             BossBarGameTests.class,

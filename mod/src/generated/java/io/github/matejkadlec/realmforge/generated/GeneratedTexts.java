@@ -386,6 +386,15 @@ public final class GeneratedTexts {
     /** {@code loot_category.realmforge.wand.plural} from {@code content/texts/loot_category.yaml}: "Wands" */
     public static final String LOOT_CATEGORY_WAND_PLURAL = "loot_category.realmforge.wand.plural";
 
+    /** {@code message.realmforge.arena_no_flight} from {@code content/texts/message.yaml}: "Flight Disabled" */
+    public static final String MESSAGE_ARENA_NO_FLIGHT = "message.realmforge.arena_no_flight";
+
+    /** {@code message.realmforge.arena_no_flight_chat} from {@code content/texts/message.yaml}: "Flight is disabled in this boss arena. It returns when you leave the arena or the fight ends." */
+    public static final String MESSAGE_ARENA_NO_FLIGHT_CHAT = "message.realmforge.arena_no_flight_chat";
+
+    /** {@code message.realmforge.arena_no_flight_subtitle} from {@code content/texts/message.yaml}: "You entered a boss arena" */
+    public static final String MESSAGE_ARENA_NO_FLIGHT_SUBTITLE = "message.realmforge.arena_no_flight_subtitle";
+
     /** {@code message.realmforge.bed_only_overworld} from {@code content/texts/message.yaml}: "Beds only work in Overworld" */
     public static final String MESSAGE_BED_ONLY_OVERWORLD = "message.realmforge.bed_only_overworld";
 

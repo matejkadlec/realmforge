@@ -18,6 +18,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerRespawnPositionEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.level.ExplosionEvent;
 import net.neoforged.neoforge.event.level.LevelEvent;
+import net.neoforged.neoforge.event.level.block.BreakBlockEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.neoforged.neoforge.registries.DataPackRegistryEvent;
 
@@ -54,6 +55,8 @@ public final class WorldFeature {
         NeoForge.EVENT_BUS.addListener(EntityMobGriefingEvent.class, GriefingProtection::onMobGriefing);
         NeoForge.EVENT_BUS.addListener(LivingDestroyBlockEvent.class, GriefingProtection::onDestroyBlock);
         NeoForge.EVENT_BUS.addListener(BlockEvent.FarmlandTrampleEvent.class, GriefingProtection::onFarmlandTrample);
+        // Every block a player breaks, an area tool's extra ones included, passes spawn protection and the border.
+        NeoForge.EVENT_BUS.addListener(BreakBlockEvent.class, BlockBreakGuard::onBreakBlock);
 
         NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerLoggedInEvent.class, NightVision::onLoggedIn);
         NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerRespawnEvent.class, NightVision::onRespawn);
