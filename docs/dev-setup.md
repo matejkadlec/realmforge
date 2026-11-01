@@ -69,6 +69,11 @@ WSL it is good only for "does it load" checks (3.3).
   account that owns Minecraft, and the game starts. DevLogin keeps the tokens in `~/.devlogin/accounts.json`
   (`%USERPROFILE%\.devlogin\accounts.json` on Windows) and reuses them; when they expire, the console asks again.
   The file holds login tokens: never commit, share or paste it. Deleting it logs you out.
+  Your skin comes from one profile lookup at Mojang's session server when the game starts. When it times out, the
+  log shows `Couldn't look up profile properties ... Read timed out`, and vanilla plays the whole session with a
+  default skin. The dev client therefore tries the lookup up to three times (RLM-570, architecture 19.3), logging
+  `Profile lookup failed; trying again`; a default skin after three failures means the session server is down, and a
+  restart once it answers brings the skin back.
   `./gradlew runClient -PofflineClient` skips DevLogin and starts as the offline player `Dev`, without any prompt:
   agents use it for their screenshot runs (3.3), because nobody answers the login prompt there. Without the
   property the client logs in through DevLogin as before.
