@@ -458,8 +458,6 @@ The outline forces none of these; each is decided elsewhere, and the lore follow
 - **The rest of the story.** The Realmforge Story Outline doc (draft 8) holds the full story: how the council caged
   the founder, Taveth's secret and why he keeps it, chapters 3 to 8 and the finale, with the ending Matěj likes
   (Maren takes the post). It waits for his review; this outline takes in each part as he approves it.
-- **The game's chapter numbers** (RLM-466): the story counts eight chapters, the twins as chapters 3 and 4; the
-  design documents and `content/chapters/` count seven, the twins as one.
 - **The Lodge's hall** is one unique structure per world in M2, which Matěj builds (RLM-393); a Lodge house in a
   village may still come with the M4 village overhaul (RLM-139).
 - **Friendly NPCs in M1.** There are none (Matěj, 2026-10-15), and the M1 versions of chapters 1 and 2 work without
@@ -509,7 +507,7 @@ Matěj's answers of 2026-10-13 and 2026-10-14 (RLM-139), and the decisions since
      underwater realms are dropped;
    - **chapters:** a realm is a chapter and the twins share one, so chapter 1 is Overworld (levels 1–10), chapter 2
      Undervault (6–18), and so on to chapter 7, Unmade Isles (48–60). M1 ships chapters 1 and 2 (the story's eight
-     chapters since 2026-10-22: item 9, RLM-466);
+     chapters since 2026-10-22, item 9, which the game follows since 2026-10-30, item 11, RLM-466);
    - **Ashfire is not the Nether** and is not inspired by it (2026-10-16).
 8. **Two later renames and the article in sentences:**
    - **Olympus became Asgard** (Matěj, 2026-10-17, RLM-245), whose king is **Odin**. It opens from about level 15,
@@ -548,10 +546,15 @@ Matěj's answers of 2026-10-13 and 2026-10-14 (RLM-139), and the decisions since
       to" (2026-10-27); **Torva Flintmark** lives only in Skyhearth (2026-10-26);
     - **the Nether** is part of the lore: its gates were destroyed with it, and netherite comes from Undervault's
       forge-stock (2026-10-27).
+11. **The game's chapters are the story's eight** (Matěj, 2026-10-30, RLM-466, option 1; he was fine with either
+    numbering and left the pick to Claude): the quest book, the guide, the chapter advancements and the story show the
+    same numbers. The twins are chapters 3 (Sunwastes) and 4 (Everwinter) under the shared cap 30, so chapter 3's end
+    raises no cap; Deepholm is chapter 5, Quagmire 6, Ashfire 7 and Unmade Isles 8. The approved texts of chapters 1
+    and 2 keep their "chapter 8" unchanged, and the practices keep "the chapter 8 guard". The design documents still
+    count RLM-188's seven chapters until RLM-568 renumbers them.
 
 ## Open questions
 
-1. **The game's chapter numbers** (RLM-466): do the quest book, the guide and the chapter advancements follow the
-   story's eight chapters, the twins as chapters 3 and 4 (recommended), or the design documents' seven?
+None at the moment: the game's chapter numbers (RLM-466) were decided on 2026-10-30, [Decisions](#decisions) item 11.
 
 The Void realm's own questions are the [realm design's](../design/realms.md#open-questions).

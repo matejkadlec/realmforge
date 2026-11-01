@@ -8,6 +8,12 @@
 > (`ArmorMaterials`, `ArmorType`, `Mob`). Nothing ran in a game: lines marked *verify* need a dev run. Mechanics only:
 > the mod is **GPL-3.0-only**, so none of its code or assets goes into Realmforge (rule 8); the pack would only
 > reference its jar.
+> **Decided by Matěj on 2026-10-30 (RLM-513): Immersive Armors is not taken**
+> ([ADR 0066](../decisions/0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md)). Its effects
+> act in `LivingDamageEvent.Pre`, outside our damage pipeline and caps, and switch off only all together; its fire and
+> magic resistance would be a second magic defense on players, where Spell Resistance is a mob-only stat (RLM-233).
+> With the effects off, the sets are only armor with other textures, and variety in armor comes from our loot-only
+> uniques ([gear design](../design/gear.md#loot-only-gear), RLM-511). The catalogue stays as the research behind it.
 
 **In short.** Immersive Armors adds **10 sets of 4 pieces (40 items)**: Wooden, Bone, Wither, Warrior, Heavy, Robe,
 Slime, Divine, Prismarine and Steampunk. Their armor is vanilla's range: from 7 (leather's) to 20 (diamond's and
@@ -456,12 +462,14 @@ on: they are the reason to take the mod.
    exist.
 5. **GameTests:** Heavy's attributes after the override; Divine's deflection through our pipeline (combat text,
    magic shield untouched); the Slime set's push on a boss; the removed recipes gone.
-6. **Docs:** the [third-party mods](third-party-mods.md) row, architecture 19.4, and, if Matěj moves the mod from M2
-   to M1 with the gear, a short new ADR that amends [ADR 0044](../decisions/0044-third-party-mods-by-milestone.md)'s
-   milestone for it (CLAUDE.md rule 10: an accepted ADR is never rewritten in place; ADR 0049 amended 0044 the same
-   way for Iron's RPG Tweaks).
+6. **Docs:** the [third-party mods](third-party-mods.md) row and architecture 19.4. The milestone is already M1:
+   [ADR 0058](../decisions/0058-player-systems-before-world-content.md) moved the gear mods, this one included, from
+   M2 to M1 on 2026-10-29, so no ADR is needed for that move (RLM-552).
 
 ## Questions for Matěj
+
+Answered on 2026-10-30 (RLM-513): question 1, not at all; the others fall away with it. The questions as they were
+asked:
 
 1. **Take Immersive Armors with the keep-list above?** Proposed: yes, nine sets, Robe off. Or another pick, or not at
    all.
@@ -485,5 +493,5 @@ on: they are the reason to take the mod.
    Engineering profession (M5). The double jump trusts the client in multiplayer; proposed: accept it.
 10. **Apotheosis:** proposed: let reforging roll affixes on these pieces (it treats them as armor anyway), but keep
     them out of Apotheosis's random drops (no affix loot entries), so their sources stay ours.
-11. **Milestone:** ADR 0044 lists the mod for M2; the gear moved to M1 on 2026-10-29. Proposed: add the mod with M1's
-    gear, so chapter 1's rewards can name its pieces. Or keep it in M2.
+11. **Milestone:** ADR 0044 lists the mod for M2, and ADR 0058 moved it to M1 with the gear on 2026-10-29. Proposed:
+    add the mod with M1's gear, so chapter 1's rewards can name its pieces.

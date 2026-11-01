@@ -2,7 +2,8 @@
 
 Date: 2026-10-30
 
-Status: Accepted (amends [0062](0062-backpack-keys-and-alt-k-amend-the-pack-defaults.md))
+Status: Accepted (amends [0062](0062-backpack-keys-and-alt-k-amend-the-pack-defaults.md)); decision 1's file note
+corrected 2026-10-31 (RLM-558)
 
 ## Context
 
@@ -33,6 +34,12 @@ Read in the jars (Inventory Sorting 3.0.1, Sophisticated Backpacks 3.26.11, Soph
    `client/compat/inventorysorter/BackpacksStayInPlace`). It lives in memory only: the player's
    `config/inventorysorter.json` and their own rules stay as they are, and the rule comes back on the next join if they
    remove it. The pack ships no `inventorysorter.json`, which would overwrite every player's own settings.
+   - 2026-10-31 (RLM-558): "in memory only" was wrong about the file. The rule joins the loaded config on every join,
+     and Inventory Sorting writes its whole loaded config, our rule included, into the player's
+     `config/inventorysorter.json` the next time it saves it: its config screen, its sort button's toggle, settings
+     synced back from an `/invsort` command, and its missing-server warning (`NewConfigOptions#save`, read in its
+     3.0.1 jar). The player's own rules stay; the file then also holds ours, even without Realmforge, which is
+     harmless (`BackpackSortRule.isMissing` never adds it twice).
 2. **A sort leaves an identical stack alone.** A mixin on Inventory Sorting's `ContainerStacks#set`
    (`mixin/InventorySortingStacksMixin`, `@Pseudo`, so the core mod loads without Inventory Sorting) skips a slot whose
    sorted stack equals the one already there (`ItemStack#matches`: item, count, components), so an ignored backpack

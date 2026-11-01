@@ -9,7 +9,9 @@ player hits through the hurt cooldown, RLM-311), 2026-10-23; amended by
 [0053](0053-target-dummies-in-the-pack-worldedit-for-building-and-no-ftb-teams-parties.md) (MmmMmmMmmMmm joins the pack;
 WorldEdit stays out for players and serves Matěj's building in the dev client and his Prism instance), 2026-10-25;
 amended by [0058](0058-player-systems-before-world-content.md) (M1 is the character to level 18 with the gear mods,
-M2 the world of chapters 1 and 2 with Lootr), 2026-10-29
+M2 the world of chapters 1 and 2 with Lootr), 2026-10-29; amended by
+[0066](0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md) (the hold on Artifacts ends,
+Immersive Armors is rejected), 2026-10-31
 
 ## Context
 
