@@ -576,10 +576,10 @@ public final class ArmsTreeGameTests {
                 Items.NETHERITE_BOOTS)) {
             ItemStack stack = held(player, piece);
             helper.assertTrue(!stack.isEmpty(), "holds " + piece);
-            helper.assertValueEqual(stack.getEnchantments().getLevel(protection), 5, piece + "'s Protection");
+            helper.assertValueEqual(stack.getTagEnchantments().getLevel(protection), 5, piece + "'s Protection");
         }
         ItemStack sword = held(player, Items.NETHERITE_SWORD);
-        helper.assertValueEqual(sword.getEnchantments().getLevel(enchantment(helper, Enchantments.SHARPNESS)), 5,
+        helper.assertValueEqual(sword.getTagEnchantments().getLevel(enchantment(helper, Enchantments.SHARPNESS)), 5,
                 "the netherite sword's Sharpness");
         helper.assertTrue(player.getOffhandItem().is(Items.SHIELD) || !held(player, Items.SHIELD).isEmpty(),
                 "the kit's shield");
