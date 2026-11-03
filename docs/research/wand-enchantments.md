@@ -27,10 +27,10 @@
 - **Numbers:** Potency copies Sharpness's own curve in Spell Power points (+3 at V, +5 at IX), which adds about 12 %
   (V) to 20 % (IX) to a level-18 Frostbolt, where Sharpness V to IX adds about 20 % to 33 % to a Warrior's melee
   hit but nothing to his spells. The percent enchantments stop at V and stay at or below a Flawed gem's value.
-  Intellect is the Mage's own Cast Time Reduction: a level-18 Mage with Astone's expected gear already stands at the
-  0.5 s global cooldown's wall, so Quick Casting gives nothing there and a lot on a wand without such rolls, which is
-  why it is only an option. Cooldown Reduction reaches its cap late without Swift Recovery, so that one matters early
-  and mid game.
+  Quick Casting is only an option: a level-18 Mage has 47 % Cast Time Reduction from Intellect and the wand (61 % with
+  all 17 points in Intellect), and one Cast Time Reduction affix and gem on the wand reach the 0.5 s global
+  cooldown's wall, where Quick Casting gives nothing; on a wand without them it gives the most of all of them.
+  Cooldown Reduction reaches its cap late without Swift Recovery, so that one matters early and mid game.
 - **Gems:** every wand gem bonus adds to the same stat as an enchantment, so nothing multiplies. The Earth gem, which
   RLM-536 left without a wand bonus "until wand enchantments", gets one: +1 to +4 levels of Potency, as it adds
   Sharpness levels to a sword.
@@ -171,10 +171,12 @@ players expect. Names are working names for Matěj.
   (Intellect, Dexterity and their 25-point milestones), the Netherite set's 20 % Cooldown Reduction, the wand, and
   Legendary affixes and Perfect gems. Potency and the Focuses extend like Sharpness and Smite, because a flat Spell
   Power bonus shrinks as Spell Power grows with level.
-- **Quick Casting is an option, not a recommendation:** Intellect, the caster's main stat, already gives 2 % Cast Time
-  Reduction a point, so the wall at 66.7 % comes early ([numbers](#numbers-against-a-level-18-frostbolt)), and below
-  it Quick Casting is the strongest of these enchantments (+23 % casts a second at level 18 on a wand without Cast
-  Time Reduction rolls). Either way it adds little to Intellect's own path.
+- **Quick Casting is an option, not a recommendation:** Intellect, the caster's main stat, gives 2 % Cast Time
+  Reduction a point: 47 % with the wand at level 18 in the model, 61 % with all 17 points in Intellect
+  ([numbers](#numbers-against-a-level-18-frostbolt)). Intellect alone stays below the wall at 66.7 %, but a Cast Time
+  Reduction affix (Hastened) and gem (Brawler's) on the wand reach it, and Quick Casting then gives nothing. On a wand
+  without them it is the strongest of these enchantments (+23 % casts a second at level 18), which would put the
+  Mage well ahead of the Warrior.
 - **Thrift** is the one that needs code: there is no mana cost stat, so a `realmforge:mana_cost_reduction` stat (in
   `content/stats/`, applied where `SpellCaster` pays the cost, including a channel's each second) comes first. Mana
   regeneration is not proposed: the Flowing affix and Slipstream's wand gem already give it.
@@ -294,8 +296,9 @@ RLM-606.
    (recommended), plus Knowledge of the Ages (option, as on swords)? Unbreaking, Mending, Life Mending and Vanishing
    already apply.
 2. **The new enchantments:** Potency, the three Focuses, Spell Breach and Swift Recovery (recommended); Quick
-   Casting (option: nothing at the wall, which Intellect reaches by level 18, and the Mage well ahead of the Warrior
-   below it); Thrift with its mana cost stat (option, more code)? Names are working names.
+   Casting (option: Intellect gives a level-18 Mage 47–61 % with the wand, a Cast Time Reduction affix and gem then
+   reach the wall at 66.7 %, where it gives nothing, and below the wall it puts the Mage well ahead of the Warrior);
+   Thrift with its mana cost stat (option, more code)? Names are working names.
 3. **Exclusivity:** Potency and the Focuses exclude each other, vanilla's Sharpness-or-Smite rule (recommended), or
    they combine, as Apothic Enchanting lets Sharpness combine with Smite?
 4. **Numbers:** Potency on Sharpness's curve (+3 at V, +5 at IX) (recommended), or +1 a level (+5 at V, +9 at IX,
