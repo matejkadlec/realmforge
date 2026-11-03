@@ -510,12 +510,16 @@ start of the village, villager and trade overhaul, with trades paid in our own c
 
 ## M5: Professions and enchanting
 
-Outline: professions that can be combined and leveled (for example mining, alchemy, smithing, jewelcrafting for
-curios, tailoring, cooking); cooking and alchemy bring the stronger foods and potions, with medium to very strong
-effects (M2 has the simple ones); enchanting with less RNG (Apothic Enchanting,
-[ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md)); the final role of
-vanilla XP (follows D3). Aquaculture 2 and Better Archeology seed the fishing and archaeology professions
-(RLM-328, [ADR 0044](decisions/0044-third-party-mods-by-milestone.md)).
+Outline: the starter set of professions (Matěj, 2026-11-03, RLM-578, [professions design](design/professions.md)):
+reforging (cheaper repairs and affix rerolls, more salvage), alchemy (stronger and cheaper potions; everyone can buy
+the base potions, RLM-574), enchanting (better and cheaper Apothic Enchanting, with less RNG,
+[ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md)) and jewelcrafting (better
+and cheaper gems, curios once they are in the game). All can be leveled at once, each by doing its activity, every
+recipe giving profession XP against a steep curve, to one maximum level for all; the curve, the maximum and the
+recipes are researched when M5 starts. Repairs stay on vanilla XP levels; the rest of vanilla XP's final role
+follows D3. Cooking is postponed (no cooking mod for 26.1.2), and blacksmithing, tailoring, leatherworking and the
+gathering professions are later ideas. Aquaculture 2 and Better Archeology seed the fishing and archaeology
+professions (RLM-328, [ADR 0044](decisions/0044-third-party-mods-by-milestone.md)).
 
 ## M6: Companions and mounts
 
