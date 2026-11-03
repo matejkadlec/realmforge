@@ -1515,7 +1515,7 @@ BOSS_SPELL_TARGETING = (SELF, ENEMY, CURRENT_TARGET, RANDOM_PLAYER, FARTHEST_PLA
 
 def _check_bosses(content: Content, universe: IdUniverse) -> list[Problem]:
     """A boss runs on a mob of archetype boss, one boss per such mob and every such mob a boss's, and its phases cast
-    spells that exist and that a boss can aim (architecture 14.3)."""
+    spells that exist, that are active and that a boss can aim (architecture 14.3)."""
     problems: list[Problem] = []
     spells = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.spells}
     mobs = {mob_id(entry.model.id): entry.model for entry in content.mobs}
@@ -1559,6 +1559,14 @@ def _check_bosses(content: Content, universe: IdUniverse) -> list[Problem]:
                 spell = spells.get(spell_id)
                 if spell is None:
                     problems.append(Problem(entry.source, path, _unknown(spell_id, SPELL_REGISTRY, universe)))
+                elif spell.is_passive:
+                    problems.append(
+                        Problem(
+                            entry.source,
+                            path,
+                            f"{spell_id} is passive: a boss casts it, and a passive is never cast",
+                        )
+                    )
                 elif spell.targeting.type not in BOSS_SPELL_TARGETING:
                     problems.append(
                         Problem(
@@ -1813,8 +1821,8 @@ def _check_adds_percents(source: str, path: str, operation: str) -> list[Problem
 def _check_racials(
     entry: Entry, spells: dict[str, SpellDef], stats: dict[str, StatDef], universe: IdUniverse
 ) -> list[Problem]:
-    """A race's racial spell is one of our player spells, free; its racial passive names an item tag that exists and
-    attributes that exist, and its {bonus} reads as a number."""
+    """A race's racial spell is one of our player spells, free and never passive; its racial passive names an item tag
+    that exists and attributes that exist, and its {bonus} reads as a number."""
     problems: list[Problem] = []
     race = entry.model
     if race.racial_spell is not None:
@@ -1826,6 +1834,14 @@ def _check_racials(
         elif spell.npc_only:
             problems.append(
                 Problem(entry.source, "racial_spell", f"{race.racial_spell} is a mob's spell (npc_only)")
+            )
+        elif spell.is_passive:
+            problems.append(
+                Problem(
+                    entry.source,
+                    "racial_spell",
+                    f"{race.racial_spell} is passive: the racial slot casts its spell, and a passive is never cast",
+                )
             )
         elif spell.cost is not None:
             problems.append(
@@ -2474,6 +2490,7 @@ def _check_quests(content: Content, universe: IdUniverse) -> list[Problem]:
     realms = {entry.model.id: entry.model for entry in content.realms}
     quests = {entry.model.id: entry for entry in content.quests}
     npc_spells = {f"{MOD_ID}:{entry.model.id}" for entry in content.spells if entry.model.npc_only}
+    passive_spells = {f"{MOD_ID}:{entry.model.id}" for entry in content.spells if entry.model.is_passive}
     for entry in content.quests:
         quest = entry.model
         if quest.chapter not in chapters:
@@ -2499,6 +2516,14 @@ def _check_quests(content: Content, universe: IdUniverse) -> list[Problem]:
             if isinstance(task, SpellTaskDef) and task.spell is not None and task.spell in npc_spells:
                 problems.append(
                     Problem(entry.source, f"tasks.{i}.spell", f"{task.spell} is npc_only: no player casts it")
+                )
+            elif isinstance(task, SpellTaskDef) and task.spell is not None and task.spell in passive_spells:
+                problems.append(
+                    Problem(
+                        entry.source,
+                        f"tasks.{i}.spell",
+                        f"{task.spell} is passive: nobody casts it, so the task never ends",
+                    )
                 )
         for i, reward in enumerate(quest.rewards):
             problems += _quest_reward_problems(entry.source, f"rewards.{i}", reward, universe)

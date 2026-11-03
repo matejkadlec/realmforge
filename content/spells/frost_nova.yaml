@@ -23,7 +23,9 @@ effects:
     radius: 4
     duration_seconds: 0.5
     interval_seconds: 0.5
-    ring_color: "#BFEFFF"
+    # Lowercase on purpose: either case validates, and every generated file gets it in uppercase, which the content
+    # GameTests compare with the colour the game loads (RLM-507).
+    ring_color: "#bfefff"
     effects:
       - type: realmforge:damage
         amount: 3

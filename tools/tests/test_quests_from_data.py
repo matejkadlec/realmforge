@@ -245,6 +245,10 @@ def test_every_text_our_titles_use_exists(repo: RepoPaths) -> None:
         (lambda q: q.replace("realmforge:test_bolt", "realmforge:test_boltt"), "tasks.2.spell: unknown id"),
         (lambda q: q.replace("realmforge:test_bolt", "realmforge:test_npc_bolt"), "is npc_only"),
         (
+            lambda q: q.replace("realmforge:test_bolt", "realmforge:test_frostbite"),
+            "tasks.2.spell: realmforge:test_frostbite is passive",
+        ),
+        (
             lambda q: q.replace("realmforge:dungeons_completed", "realmforge:dungeons_won"),
             "minecraft:custom_stat",
         ),

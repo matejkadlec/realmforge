@@ -11,9 +11,11 @@ from pydantic import Field, StringConstraints, model_validator
 from realmforge_tools.project import MOD_ID
 from realmforge_tools.schema.common import ContentId, LocalizedText, ResourceId, StrictModel
 
+# Either case validates, and the model holds it in uppercase (RLM-507): the content GameTests compare a loaded colour
+# formatted as "#%06X", so a lowercase colour that the game loads must reach every generated file uppercased.
 HexColor = Annotated[
     str,
-    StringConstraints(pattern=r"^#[0-9A-Fa-f]{6}$"),
+    StringConstraints(pattern=r"^#[0-9A-Fa-f]{6}$", to_upper=True),
     Field(description='An RGB colour, "#RRGGBB".'),
 ]
 

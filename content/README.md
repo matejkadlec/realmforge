@@ -43,6 +43,8 @@ Rules:
   `id_universe.NEOFORGE_ATTRIBUTES`, [ADR 0064](../docs/decisions/0064-neoforges-attributes-join-the-id-universe.md))
   plus our own content. Lists of ids must not repeat
   an entry (e.g. the same creative tab twice crashes the game).
+- Colours are `"#RRGGBB"` in either case. Validation holds them in uppercase, so every generated file gets them that
+  way, which the content GameTests rely on: they compare a loaded colour formatted as `#%06X` (RLM-507).
 - Player-facing texts are `LocalizedText` with one locale, `en_us`, which is required: Realmforge is English
   only (Matěj, 2026-10-13), so any other locale key (`cs_cz`, ...) is an error. In lore and texts the in-game
   world is always called **Realmforge**, and every text follows the [lore style guide](../docs/lore/style.md).
@@ -191,10 +193,10 @@ Rules:
   (`after_seconds` of fight in the phase before: a boss nobody has pulled stays in its first phase); `on_enter` names
   spells it casts at once when the phase begins (not for the first phase), and `abilities` the spells it casts while the
   phase lasts (`spell`, and its own `cooldown_seconds` on top of the spell's), at its target, or at a player or itself
-  when the spell picks so (no `ally` spells). An ability on the boss itself whose first effect is an area (a quake) is
-  cast only while its target stands inside it, and while any area spell is cast a ring marks where it lands. `astone`
-  is Undervault's guardian (W5b); the `test_titan` boss is test content (like `items/test_item`) for the boss
-  GameTests.
+  when the spell picks so (no `ally` spells, and no passive spells, which are never cast). An ability on the boss itself
+  whose first effect is an area (a quake) is cast only while its target stands inside it, and while any area spell is
+  cast a ring marks where it lands. `astone` is Undervault's guardian (W5b); the `test_titan` boss is test content
+  (like `items/test_item`) for the boss GameTests.
 - `sounds/` holds our sound events ([ADR 0007](../docs/decisions/0007-asset-pipeline.md), A3): one file per subject
   (a mob, a spell, a block), its `category` (`entity`, `block`, `item`, `spell`, `ambient`, `ui`) and its `events`,
   each `realmforge:<category>.<subject>.<name>` with a `subtitle` (vanilla's style: "Hewn Sentinel cracks") and the
@@ -292,8 +294,9 @@ Rules:
 - `races/` and `classes/` define who a player can be ([architecture 10.1](../docs/architecture.md#101-races-and-classes)).
   A race lists the classes it may take (each must exist, and every class must be open to some race) and gives
   `modifiers`, its `racial_spell` (a spell taught at creation into the racial slot beside the bar, X; free, so it has
-  no `cost`, as a race spans classes of different resources) and its `racial_passive` (C4: a `name`, a `description`
-  whose `{bonus}` reads its one modifier, `weapons`, an item tag the main hand's item must be in, and `modifiers`
+  no `cost`, as a race spans classes of different resources; never a passive spell, which the slot could not cast) and
+  its `racial_passive` (C4: a `name`, a `description` whose `{bonus}` reads its one modifier, `weapons`, an item tag
+  the main hand's item must be in, and `modifiers`
   that apply while it is, adding their percents to the base as every stat bonus does; the weapon's tooltip shows the
   name and the description); a class names its `role` (`melee`, `caster` or `ranged`, assassins too: which role-bound
   stat rule bonuses its players get) and its `resource` (`realmforge:mana` or `realmforge:rage`), and a rage class, and only a
@@ -305,7 +308,8 @@ Rules:
   gives `modifiers` and a `starting_kit` (items with a `count` of 1 to 64, given once, when the player's first character is created; every class's kit
   holds Bread ×32, Matěj, 2026-10-14, which validation checks), and its `spells` by level (C4: `{spell, level}`, each
   spell once, taught at rank 1 when the character reaches the level; the class's resource must pay for them; one at
-  level 1, decision D4, and at most 4 × N by the end of chapter N's level cap). A modifier is the stat rules' shape (`attribute`,
+  level 1, decision D4, and at most 4 × N active spells by the end of chapter N's level cap: passive spells never go on
+  the bar, so they do not count, Matěj, 2026-10-30, RLM-333). A modifier is the stat rules' shape (`attribute`,
   `operation`, `amount` or `amount_percent`, in the same units) and gives the same at every level: levels give stat
   points to spend instead (Matěj, 2026-10-15, RLM-196), so `per_level` is refused. A race's or class's `name` is a
   label (Title Case); its `description` is one or two sentences in the lore style guide's voice, which never assume
@@ -337,9 +341,9 @@ Rules:
   counts only after the quest opens, so prefer an advancement or a statistic where one exists), `dimension`,
   `checkmark`, and our own (Q1-2): `level` (reach `level` or more), `dungeon` (complete a run of the `dungeon` type, or
   of any dungeon without one) and `spell` (cast the `spell`, or any spell: an instant one when cast, a cast time or
-  channel when it completes; never an `npc_only` spell). FTB Quests has no task type of ours, so each of these becomes
-  an advancement without a display, `realmforge:quest/<quest>/<key with : as />`, that one of our triggers completes and
-  FTB Quests' advancement task reads; it is titled from data ("Reach level 5", "Complete Prisoner's Kingdom", "Cast a
+  channel when it completes; never an `npc_only` or a passive spell). FTB Quests has no task type of ours, so each of
+  these becomes an advancement without a display, `realmforge:quest/<quest>/<key with : as />`, that one of our
+  triggers completes and FTB Quests' advancement task reads; it is titled from data ("Reach level 5", "Complete Prisoner's Kingdom", "Cast a
   spell"). Any task may give a `title` instead of FTB Quests' own or ours. Every quest says where, how and with what
   (Q1-3): its `realm` (of `realms/`, `overworld` for the Overworld) and, optionally, its `place` (a `structure` of
   `minecraft:worldgen/structure` with the `name` the text calls it, as a structure has no name in the game, a `biome`,
