@@ -77,7 +77,7 @@ public final class ContentStatGameTests {
             helper.assertValueEqual(instance.getBaseValue(), expected.defaultValue(), expected.id() + " on a player");
 
             Optional<ExhaustionReduction> exhaustion = GeneratedStats.LOWER_EXHAUSTION.stream()
-                    .filter(reduction -> reduction.stat().is(holder))
+                    .filter(reduction -> reduction.stat().equals(holder))
                     .findFirst();
             helper.assertValueEqual(exhaustion.map(ExhaustionReduction::perPoint).orElse(0.0),
                     expected.exhaustionPerPoint(), expected.id() + " lowers exhaustion per point by");
@@ -86,7 +86,7 @@ public final class ContentStatGameTests {
 
             // The damage type tag it resists (RLM-233), and the tag exists in the loaded data.
             Optional<DamageTypeResistance> resistance = GeneratedStats.DAMAGE_RESISTANCES.stream()
-                    .filter(entry -> entry.stat().is(holder))
+                    .filter(entry -> entry.stat().equals(holder))
                     .findFirst();
             String resists = resistance.map(entry -> entry.damage().location().toString()).orElse(null);
             helper.assertTrue(Objects.equals(resists, expected.resists()),

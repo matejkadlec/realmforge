@@ -159,6 +159,21 @@ client: HUD, screens, input, renderers (client/ only)
 
 The QA mod may call the core mod's public APIs; the core mod never depends on the QA mod (CLAUDE.md rule 7).
 
+Both, and Better Key Binds, compile with `-Xlint:deprecation -Xlint:removal` (RLM-583), so the build prints every
+deprecated Minecraft or NeoForge call with its file and line, as a warning that never fails the build. The code
+uses none (RLM-581, RLM-582):
+
+- **Holders compare with `equals`** (NeoForge's `Holder.Reference` and `DeferredHolder` compare by key, as vanilla's
+  `MobEffectInstance#is` does), or `List#contains`, never the deprecated `Holder#is(Holder)`. A tag check on an item
+  or an entity type goes through its registry holder: `BuiltInRegistries.ENTITY_TYPE.wrapAsHolder(type).is(tag)`.
+- **NeoForge's overloads replace vanilla's deprecated ones:** a structure processor overrides `process(...)` (the
+  one with the template), not `processBlock`; a stack's stored enchantments are `getTagEnchantments()` and its
+  level for gameplay `getEnchantmentLevel(holder)`; light emission and explosion resistance take the level and the
+  position.
+- **A deprecated call stays only where vanilla makes the same one and offers nothing else:**
+  `StructureMode.LEGACY_CODEC` for a structure block's `"mode"` and `ValueInput#read(MapCodec)` for a player's
+  saved position, each under `@SuppressWarnings("deprecation")` on one local variable with a one-line reason.
+
 ### 4.2 Packages of the core mod
 
 ```text

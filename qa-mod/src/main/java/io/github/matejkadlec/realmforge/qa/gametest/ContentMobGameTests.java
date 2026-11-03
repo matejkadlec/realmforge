@@ -98,7 +98,8 @@ public final class ContentMobGameTests {
             spec.deathParticles().ifPresent(block -> helper.assertTrue(BuiltInRegistries.BLOCK.containsKey(block),
                     id + " bursts into the particles of " + block + ", which is no block"));
             for (String tag : expected.tags()) {
-                helper.assertTrue(type.builtInRegistryHolder().is(TagKey.create(Registries.ENTITY_TYPE, Identifier.parse(tag))),
+                helper.assertTrue(BuiltInRegistries.ENTITY_TYPE.wrapAsHolder(type)
+                                .is(TagKey.create(Registries.ENTITY_TYPE, Identifier.parse(tag))),
                         id + " is not in #" + tag);
             }
             helper.assertValueEqual(spec.variants().stream().map(CustomMobSpec.Variant::id).toList(),

@@ -43,9 +43,12 @@ public record Boss(EntityType<?> entity, int level, Arena arena, BossEvent.BossB
         phases = List.copyOf(phases);
     }
 
-    /** Whether it never takes {@code effect}. */
+    /**
+     * Whether it never takes {@code effect}. Holders compare by their key (NeoForge's {@code equals}), as vanilla's
+     * {@code MobEffectInstance#is} does.
+     */
     public boolean isImmuneTo(Holder<MobEffect> effect) {
-        return immuneTo.stream().anyMatch(effect::is);
+        return immuneTo.contains(effect);
     }
 
     /**

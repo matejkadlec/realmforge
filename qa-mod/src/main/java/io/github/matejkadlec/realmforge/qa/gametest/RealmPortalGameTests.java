@@ -876,7 +876,7 @@ public final class RealmPortalGameTests {
             String message) {
         BlockState state = level.getBlockState(sealstone);
         helper.assertValueEqual(state.getValue(SealstoneBlock.GLOW), glow, message);
-        helper.assertValueEqual(state.getLightEmission(), glow, message + " (its block light)");
+        helper.assertValueEqual(state.getLightEmission(level, sealstone), glow, message + " (its block light)");
     }
 
     private static boolean lit(ServerLevel level, PortalFrame.Frame frame) {

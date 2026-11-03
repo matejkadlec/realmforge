@@ -132,7 +132,7 @@ public final class DummyCommands {
      * {@code /effect} range, and {@value #MAX_RESISTANCE_STRENGTH} for Resistance.
      */
     static int maxStrength(Holder<MobEffect> effect) {
-        return effect.is(MobEffects.RESISTANCE) ? MAX_RESISTANCE_STRENGTH : MAX_STRENGTH;
+        return effect.equals(MobEffects.RESISTANCE) ? MAX_RESISTANCE_STRENGTH : MAX_STRENGTH;
     }
 
     /**

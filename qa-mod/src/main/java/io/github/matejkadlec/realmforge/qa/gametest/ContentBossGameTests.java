@@ -67,7 +67,8 @@ public final class ContentBossGameTests {
             }
 
             EntityType<?> type = boss.entity();
-            helper.assertTrue(type.builtInRegistryHolder().is(Tags.EntityTypes.BOSSES), id + "'s body is not in c:bosses");
+            helper.assertTrue(BuiltInRegistries.ENTITY_TYPE.wrapAsHolder(type).is(Tags.EntityTypes.BOSSES),
+                    id + "'s body is not in c:bosses");
             Entity body = type.create(helper.getLevel(), EntitySpawnReason.COMMAND);
             helper.assertTrue(body instanceof BossMob, id + "'s body is no BossMob: " + body);
             BossMob mob = (BossMob) body;

@@ -72,6 +72,8 @@ public final class QaPlayers {
         try (ProblemReporter.ScopedCollector problems = new ProblemReporter.ScopedCollector(LOGGER)) {
             Optional<ValueInput> saved = server.getPlayerList().loadPlayerData(new NameAndId(profile))
                     .map(tag -> TagValueInput.create(problems, server.registryAccess(), tag));
+            // Deprecated, but vanilla's PrepareSpawnTask reads the saved position with this same call.
+            @SuppressWarnings("deprecation")
             ServerPlayer.SavedPosition position = saved
                     .flatMap(input -> input.read(ServerPlayer.SavedPosition.MAP_CODEC))
                     .orElse(ServerPlayer.SavedPosition.EMPTY);
