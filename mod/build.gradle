@@ -180,6 +180,9 @@ tasks.named('jar', Jar) {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+    // List every deprecated call with its file and line (RLM-583); warnings, not errors, so a NeoForge update
+    // that deprecates more shows in the build without stopping it.
+    options.compilerArgs += ['-Xlint:deprecation', '-Xlint:removal']
 }
 
 // NeoForge's own classes (events, attachments, registries) are not part of the game sources since 26.1; they ship as

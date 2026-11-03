@@ -89,6 +89,9 @@ tasks.named('jar', Jar) {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+    // List every deprecated call with its file and line (RLM-583); warnings, not errors, so a NeoForge update
+    // that deprecates more shows in the build without stopping it.
+    options.compilerArgs += ['-Xlint:deprecation', '-Xlint:removal']
 }
 
 // Copies the jar into a Prism Launcher instance for playtesting, next to the core mod's (mod/'s installToPrism).
