@@ -117,12 +117,15 @@ public final class GeneratedMobs {
     /** Gives every mob above its attributes ({@code EntityAttributeCreationEvent} on the mod bus). */
     public static void createAttributes(EntityAttributeCreationEvent event) {
         event.put(ASTONE.get(), Monster.createMonsterAttributes()
-                .add(Attributes.MAX_HEALTH, 250.0)
-                .add(Attributes.ATTACK_DAMAGE, 7.0)
+                .add(Attributes.MAX_HEALTH, 468.75)
+                .add(Attributes.ATTACK_DAMAGE, 21.0)
                 .add(Attributes.ARMOR, 8.0)
                 .add(Attributes.MOVEMENT_SPEED, 0.24)
                 .add(Attributes.FOLLOW_RANGE, 32.0)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 1.0)
+                .add(GeneratedStats.ARMOR_SHRED, 0.15)
+                .add(GeneratedStats.MAGIC_SHIELD_DAMAGE, 0.15)
+                .add(GeneratedStats.ARMOR_WEAR_REDUCTION, 0.5)
                 .build());
         event.put(HEWN_CHANTER.get(), Monster.createMonsterAttributes()
                 .add(Attributes.MAX_HEALTH, 18.0)

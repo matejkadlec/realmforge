@@ -4,7 +4,8 @@
 # damage and a short slow for every enemy inside, as long as it stays, like a real earthquake (Matěj's playtest,
 # 2026-10-29: one hit felt like the boulder). A ring of dark grey dust marks its reach round her the whole time
 # (BossMob) and grey dust each slam's edge, so stepping out of it stops the damage. She begins it only while her target
-# stands inside it. Proposals for Matěj's playtest.
+# stands inside it. Three times its first damage, and 15 % more armor shred and magic shield damage on her own 15 %
+# (RLM-580; Matěj, 2026-11-03).
 id: astone_quake
 name: {en_us: Quake}
 description: {en_us: "Slams the ground again and again, dealing {damage} damage to every enemy within {radius} blocks with each slam."}
@@ -26,5 +27,5 @@ effects:
     interval_seconds: 0.5
     ring_color: "#8C8C8C"
     effects:
-      - {type: realmforge:damage, amount: 1, attack_damage_percent: 30}
+      - {type: realmforge:damage, amount: 3, attack_damage_percent: 30, armor_shred_percent: 15, magic_shield_damage_percent: 15}
       - {type: realmforge:apply_effect, effect: minecraft:slowness, duration_seconds: 1.5}

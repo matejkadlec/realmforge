@@ -295,9 +295,9 @@ def test_no_magic_school_writes_no_armor_tag(repo: RepoPaths) -> None:
     for file in (repo.content / "spells").glob("astone_*.yaml"):
         file.unlink()
     (repo.content / "kill_xp_multipliers" / "astone.yaml").unlink()
-    # The Warrior's Battle Shout and Shield Bash apply effects of no school, which went, and the class kits name the
-    # spells that went.
-    for name in ("battle_shout", "shield_bash"):
+    # The Warrior's Battle Shout, Shield Bash and Charge apply effects of no school, which went, and the class kits name
+    # the spells that went.
+    for name in ("battle_shout", "shield_bash", "charge"):
         (repo.content / "spells" / f"{name}.yaml").unlink()
     drop_class_kits(repo.content)
     files = generate(repo)

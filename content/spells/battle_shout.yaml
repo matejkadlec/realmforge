@@ -1,18 +1,23 @@
 # yaml-language-server: $schema=../../tools/schemas/spells.schema.json
-# The Warrior's self-buff (C4): a war cry that raises the attack damage of the Warrior and every ally within 10 blocks
-# by 10 / 15 / 20 % for 10 / 15 / 20 s by rank, on a 1 minute cooldown (Matěj, 2026-10-30). Its effect is a flat share
-# that nothing raises, spell power included; Cooldown Reduction shortens its cooldown, and a second shout, the
-# Warrior's own or another's, refreshes the effect instead of stacking it.
+# The Warrior's self-buff (C4), the Arms Warrior's tree, row 2 (level 6), middle (RLM-543; Matěj, 2026-10-30, "Spell
+# Trees to Level 18", chosen for M1): a war cry that raises the attack damage and attack speed of the Warrior and every
+# ally within 10 blocks by +5 % and +10 % for 10 minutes, twice that at rank 2, its highest; 15/30 rage, a 1 minute
+# cooldown (Matěj, 2026-11-03, RLM-543's Confluence comments: rank 2 at most, the attack speed, 600 s, the rage). Its
+# effect is a flat share that nothing raises, spell power included; Cooldown Reduction shortens its cooldown, and a
+# second shout, the Warrior's own or another's, refreshes the effect instead of stacking it.
 id: battle_shout
 name: {en_us: Battle Shout}
-description: {en_us: "Lets out a war cry that raises your attack damage and your allies' within {radius} blocks by {bonus}% for {duration} sec."}
+description:
+  en_us: >-
+    Lets out a war cry that raises your attack damage by {bonus_attack_damage}% and your attack speed by
+    {bonus_attack_speed}%, and your allies' within {radius} blocks, for {duration} sec.
 school: realmforge:physical
 scales_with: attack_damage
 targeting: {type: realmforge:self}
 cast: {type: instant}
-cost: {resource: realmforge:rage, amount: 10}
+cost: {resource: realmforge:rage, amount: 15, per_level: 15}
 cooldown_seconds: 60
-max_level: 3
+max_level: 2
 effects:
   - type: realmforge:area
     radius: 10
@@ -23,6 +28,5 @@ effects:
     effects:
       - type: realmforge:apply_effect
         effect: realmforge:battle_shout
-        duration_seconds: 10
-        duration_per_level_seconds: 5
-        stronger_at_levels: [2, 3]
+        duration_seconds: 600
+        stronger_at_levels: [2]

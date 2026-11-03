@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../tools/schemas/stats.schema.json
+# How much more of a magic shield a hit drains, in percent of the hit (RLM-580; Matěj, 2026-11-03: Astone's regular
+# attacks drain 15 % more, her special attacks 30 %): the shield loses the hit × (1 + this), and only what is left of
+# the hit reaches health (combat/MagicShields). A mob-only stat, as the schools' resistances are: the character sheet
+# never shows it, and a spell's damage effect adds its own share on top (magic_shield_damage_percent).
+id: magic_shield_damage
+name: {en_us: Magic Shield Damage}
+kind: secondary
+max_percent: 1000

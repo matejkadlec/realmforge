@@ -226,6 +226,12 @@ public final class CombatState {
         return uuid.equals(currentTarget) && now - currentTargetTime <= window;
     }
 
+    /** The current target, if one became it no more than {@code window} ticks before {@code now}. */
+    public Optional<UUID> currentTarget(long now, int window) {
+        return currentTarget != null && now - currentTargetTime <= window ? Optional.of(currentTarget)
+                : Optional.empty();
+    }
+
     @Override
     public boolean equals(Object other) {
         return other instanceof CombatState state

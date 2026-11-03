@@ -2,18 +2,21 @@ package io.github.matejkadlec.realmforge.combat;
 
 /**
  * What one school hit adds to its attacker's own stats (C4; architecture 9.1): a spell's per-rank extra armor shred
- * (Slam) and spell penetration (Arcane Missiles), and the damage its caster's passive spells add to it (RLM-541:
- * Improved Frostbolt's 15 %). {@link SchoolDamageSource} carries it to the damage pipeline, which adds the armor shred to
- * the attacker's own, lowers the defender's resistance by the penetration and adds the damage to the hit's
- * (1 + School Power + passives) layer.
+ * (Slam) and spell penetration (Arcane Missiles), the damage its caster's passive spells add to it (RLM-541:
+ * Improved Frostbolt's 15 %), and how much more of a magic shield it drains (RLM-580: Astone's spells).
+ * {@link SchoolDamageSource} carries it to the damage pipeline, which adds the armor shred to the attacker's own, lowers
+ * the defender's resistance by the penetration, adds the damage to the hit's (1 + School Power + passives) layer and the
+ * magic shield share to the attacker's own ({@link MagicShields}).
  *
  * @param armorShred armor shred added to the attacker's, a share of the armor its armor pierce leaves
  * @param penetration the share of the defender's resistance to the school the hit ignores
  * @param damage the share the hit's damage grows by, added to the school's power, 0 or more
+ * @param magicShieldDamage the share more of a magic shield the hit drains, added to the attacker's
+ *                          {@code realmforge:magic_shield_damage}, 0 or more
  */
-public record HitBonus(double armorShred, double penetration, double damage) {
+public record HitBonus(double armorShred, double penetration, double damage, double magicShieldDamage) {
     /** Nothing added: every hit but a spell's with a bonus. */
-    public static final HitBonus NONE = new HitBonus(0, 0, 0);
+    public static final HitBonus NONE = new HitBonus(0, 0, 0, 0);
 
     public HitBonus {
         if (!(armorShred >= 0 && armorShred <= 1) || !(penetration >= 0 && penetration <= 1)) {
@@ -23,15 +26,23 @@ public record HitBonus(double armorShred, double penetration, double damage) {
         if (!(damage >= 0) || !Double.isFinite(damage)) {
             throw new IllegalArgumentException("A damage bonus is a share of 0 or more: " + damage);
         }
+        if (!(magicShieldDamage >= 0) || !Double.isFinite(magicShieldDamage)) {
+            throw new IllegalArgumentException("A magic shield bonus is a share of 0 or more: " + magicShieldDamage);
+        }
+    }
+
+    /** A bonus of armor shred, spell penetration and damage, without a magic shield bonus. */
+    public HitBonus(double armorShred, double penetration, double damage) {
+        this(armorShred, penetration, damage, 0);
     }
 
     /** A bonus of armor shred and spell penetration only. */
     public HitBonus(double armorShred, double penetration) {
-        this(armorShred, penetration, 0);
+        this(armorShred, penetration, 0, 0);
     }
 
     /** This bonus with {@code more} damage added. */
     public HitBonus withDamage(double more) {
-        return more == 0 ? this : new HitBonus(armorShred, penetration, damage + more);
+        return more == 0 ? this : new HitBonus(armorShred, penetration, damage + more, magicShieldDamage);
     }
 }

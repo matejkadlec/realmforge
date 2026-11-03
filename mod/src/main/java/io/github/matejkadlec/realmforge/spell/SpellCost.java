@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import java.util.Optional;
 import net.minecraft.core.Holder;
+import net.minecraft.util.ExtraCodecs;
 
 /**
  * What a cast costs (architecture 11.1): an amount of a resource, growing per spell level like the effects
@@ -13,19 +14,51 @@ import net.minecraft.core.Holder;
  * @param amount the amount at spell level 1
  * @param perLevel added for every spell level above 1
  * @param extra more of the resource a player's cast spends when they have it, for more damage (RLM-540: Execute)
+ * @param refundOnKill resource a player's cast gets back for each enemy its hits kill, from a rank on (RLM-543:
+ *                     Execute), if any
  */
-public record SpellCost(Holder<ResourceType> resource, double amount, double perLevel, Optional<Extra> extra) {
+public record SpellCost(Holder<ResourceType> resource, double amount, double perLevel, Optional<Extra> extra,
+        Optional<KillRefund> refundOnKill) {
     public static final Codec<SpellCost> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                     ResourceType.CODEC.fieldOf("resource").forGetter(SpellCost::resource),
                     Codec.doubleRange(0, Double.MAX_VALUE).fieldOf("amount").forGetter(SpellCost::amount),
                     Codec.doubleRange(0, Double.MAX_VALUE).optionalFieldOf("per_level", 0.0)
                             .forGetter(SpellCost::perLevel),
-                    Extra.CODEC.optionalFieldOf("extra").forGetter(SpellCost::extra))
+                    Extra.CODEC.optionalFieldOf("extra").forGetter(SpellCost::extra),
+                    KillRefund.CODEC.optionalFieldOf("refund_on_kill").forGetter(SpellCost::refundOnKill))
             .apply(instance, SpellCost::new));
 
     /** A cost without extra spending. */
     public SpellCost(Holder<ResourceType> resource, double amount, double perLevel) {
-        this(resource, amount, perLevel, Optional.empty());
+        this(resource, amount, perLevel, Optional.empty(), Optional.empty());
+    }
+
+    /** A cost that may spend extra, without a refund. */
+    public SpellCost(Holder<ResourceType> resource, double amount, double perLevel, Optional<Extra> extra) {
+        this(resource, amount, perLevel, extra, Optional.empty());
+    }
+
+    /**
+     * The resource back for each kill: {@code amount} at rank 1 and {@code perLevel} more for every rank above it, from
+     * rank {@code fromLevel} on (Execute: 5/10/15 rage, Matěj, 2026-11-03).
+     */
+    public record KillRefund(double amount, double perLevel, int fromLevel) {
+        public static final Codec<KillRefund> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                        Codec.doubleRange(0, Double.MAX_VALUE).fieldOf("amount").forGetter(KillRefund::amount),
+                        Codec.doubleRange(0, Double.MAX_VALUE).optionalFieldOf("per_level", 0.0)
+                                .forGetter(KillRefund::perLevel),
+                        ExtraCodecs.POSITIVE_INT.optionalFieldOf("from_level", 1).forGetter(KillRefund::fromLevel))
+                .apply(instance, KillRefund::new));
+
+        /** What a kill refunds at rank {@code level}: nothing below {@link #fromLevel}. */
+        public double amountAt(int level) {
+            return level >= fromLevel ? SpellScaling.atLevel(amount, perLevel, level) : 0;
+        }
+    }
+
+    /** What a kill at rank {@code level} gives back: its refund at the rank, 0 before its rank or without one. */
+    public double refundAt(int level) {
+        return refundOnKill.map(refund -> refund.amountAt(level)).orElse(0.0);
     }
 
     /**

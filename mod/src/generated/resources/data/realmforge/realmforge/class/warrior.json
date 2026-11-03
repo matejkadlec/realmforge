@@ -62,16 +62,40 @@
       "level": 1
     },
     {
-      "spell": "realmforge:reckless_strike",
-      "level": 3
+      "spell": "realmforge:charge",
+      "level": 1
     },
     {
-      "spell": "realmforge:shield_bash",
-      "level": 5
+      "spell": "realmforge:deep_wounds",
+      "level": 1
+    },
+    {
+      "spell": "realmforge:rend",
+      "level": 6
     },
     {
       "spell": "realmforge:battle_shout",
-      "level": 8
+      "level": 6
+    },
+    {
+      "spell": "realmforge:two_handed_weapon_specialization",
+      "level": 6
+    },
+    {
+      "spell": "realmforge:bloodthirst",
+      "level": 12
+    },
+    {
+      "spell": "realmforge:overpower",
+      "level": 12
+    },
+    {
+      "spell": "realmforge:victory_rush",
+      "level": 12
+    },
+    {
+      "spell": "realmforge:execute",
+      "level": 18
     }
   ]
 }

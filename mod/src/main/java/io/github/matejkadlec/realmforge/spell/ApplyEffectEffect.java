@@ -27,15 +27,17 @@ import net.minecraft.world.entity.LivingEntity;
  */
 public record ApplyEffectEffect(Holder<MobEffect> effect, int durationTicks, int durationPerLevelTicks, int amplifier,
         List<Integer> strongerAtLevels) implements EntityEffect {
-    /** The longest a spell's status effect lasts: a minute. */
+    /** The longest a spell's damage over time or a proc's status effect lasts: a minute (research SP-8). */
     public static final int MAX_DURATION_TICKS = 1200;
+    /** The longest a status effect a spell applies lasts: 10 minutes, a long buff (Matěj, 2026-11-03: Battle Shout). */
+    public static final int MAX_APPLIED_TICKS = 12000;
     public static final int MAX_AMPLIFIER = 9;
 
     public static final MapCodec<ApplyEffectEffect> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                     MobEffect.CODEC.fieldOf("effect").forGetter(ApplyEffectEffect::effect),
-                    Codec.intRange(1, MAX_DURATION_TICKS).fieldOf("duration_ticks")
+                    Codec.intRange(1, MAX_APPLIED_TICKS).fieldOf("duration_ticks")
                             .forGetter(ApplyEffectEffect::durationTicks),
-                    Codec.intRange(0, MAX_DURATION_TICKS).optionalFieldOf("duration_per_level_ticks", 0)
+                    Codec.intRange(0, MAX_APPLIED_TICKS).optionalFieldOf("duration_per_level_ticks", 0)
                             .forGetter(ApplyEffectEffect::durationPerLevelTicks),
                     Codec.intRange(0, MAX_AMPLIFIER).optionalFieldOf("amplifier", 0)
                             .forGetter(ApplyEffectEffect::amplifier),
@@ -57,9 +59,9 @@ public record ApplyEffectEffect(Holder<MobEffect> effect, int durationTicks, int
         return MAP_CODEC;
     }
 
-    /** How long it lasts at spell level {@code level}, in ticks, at most a minute. */
+    /** How long it lasts at spell level {@code level}, in ticks, at most 10 minutes. */
     public int durationAt(int level) {
-        return Math.min(MAX_DURATION_TICKS, durationTicks + durationPerLevelTicks * (level - 1));
+        return Math.min(MAX_APPLIED_TICKS, durationTicks + durationPerLevelTicks * (level - 1));
     }
 
     /** Its amplifier at spell level {@code level}: one higher from each level of {@link #strongerAtLevels}. */

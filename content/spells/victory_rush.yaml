@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# The Arms Warrior's tree, row 3 (level 12), right (RLM-543; Matěj, 2026-10-30, "Spell Trees to Level 18", chosen for
+# M1): a strike of 5/6/7 + 80/90/100 % of Attack Damage (Matěj, 2026-11-03, RLM-543's Confluence comments) that heals
+# the Warrior for 10/15/20 % of their max health, usable
+# for 20 s after they kill an enemy that is not gray (at least their level - 3, RLM-540). Free and without a cooldown, as
+# in WoW: the kill paces it, and a cast closes the window. It needs a melee weapon (RLM-499), and its target must be in
+# the Warrior's melee swing (melee: true). Placeholder look until RLM-545.
+id: victory_rush
+name: {en_us: Victory Rush}
+description:
+  en_us: >-
+    Usable for {window} sec after you kill an enemy that is not gray. Strikes an enemy for {damage} damage and heals you
+    for {max_health_heal}% of your max health.
+school: realmforge:physical
+scales_with: attack_damage
+targeting: {type: realmforge:enemy, melee: true}
+cast: {type: instant}
+max_level: 3
+requires: [melee_weapon]
+window: {duration_seconds: 20, opened_by: [kill]}
+effects:
+  - {type: realmforge:damage, amount: 5, per_level: 1, attack_damage_percent: 80, attack_damage_per_level_percent: 10}
+  - {type: realmforge:heal, amount: 0, max_health_percent: 10, max_health_per_level_percent: 5, on_caster: true}

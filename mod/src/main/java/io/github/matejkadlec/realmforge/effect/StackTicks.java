@@ -6,7 +6,10 @@ import io.github.matejkadlec.realmforge.combat.SpellSchools;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
+import javax.annotation.Nullable;
 import net.minecraft.core.Holder;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffect;
@@ -40,18 +43,53 @@ public final class StackTicks {
     public static boolean apply(LivingEntity target, Holder<MobEffect> effect, LivingEntity caster, EffectSource source,
             double total, int durationTicks) {
         Optional<StackedDamage> damage = stacked(effect);
-        Optional<ResourceKey<MobEffect>> key = effect.unwrapKey();
-        if (damage.isEmpty() || key.isEmpty() || durationTicks < 1) {
+        if (damage.isEmpty() || durationTicks < 1) {
             return false;
         }
-        Effects.apply(target, new MobEffectInstance(effect, durationTicks), caster, source);
+        return applyPerTick(target, effect, caster, source, Math.max(0, total) / damage.get().tickCount(durationTicks),
+                durationTicks);
+    }
+
+    /** {@link #applyPerTick(LivingEntity, Holder, LivingEntity, EffectSource, double, int, int)} at the first level. */
+    public static boolean applyPerTick(LivingEntity target, Holder<MobEffect> effect, @Nullable LivingEntity caster,
+            EffectSource source, double perTick, int durationTicks) {
+        return applyPerTick(target, effect, caster, source, perTick, durationTicks, 0);
+    }
+
+    /**
+     * Gives {@code target} {@code caster}'s stack of {@code effect}, dealing {@code perTick} at each of its ticks for
+     * {@code durationTicks} (RLM-579: Apothic Attributes' Bleeding keeps its damage a tick); {@code caster} may be null
+     * when no entity is known, and {@code source} names it then. {@code amplifier} only names the effect's level on the
+     * target (Bleeding IV), the highest of its sources': the damage is {@code perTick}. Returns whether it took hold.
+     */
+    public static boolean applyPerTick(LivingEntity target, Holder<MobEffect> effect, @Nullable LivingEntity caster,
+            EffectSource source, double perTick, int durationTicks, int amplifier) {
+        Optional<ResourceKey<MobEffect>> key = effect.unwrapKey();
+        if (stacked(effect).isEmpty() || key.isEmpty() || durationTicks < 1) {
+            return false;
+        }
+        Effects.apply(target, new MobEffectInstance(effect, durationTicks, amplifier), caster, source);
         if (!target.hasEffect(effect)) {
             return false;
         }
-        double perTick = Math.max(0, total) / damage.get().tickCount(durationTicks);
         target.getData(EffectAttachments.STACKS).add(key.get(), new EffectStacks.Stack(source.caster(),
-                source.spell(), source.procOrigin(), perTick, durationTicks));
+                source.spell(), source.procOrigin(), Math.max(0, perTick), durationTicks));
         return true;
+    }
+
+    /**
+     * The damage {@code caster}'s stack of {@code effect} from {@code spell} on {@code target} has yet to deal, its
+     * ticks still due at its damage a tick; 0 without one (RLM-543: Deep Wounds adds it to the stack that replaces it).
+     */
+    public static double remaining(LivingEntity target, Holder<MobEffect> effect, UUID caster,
+            Optional<Identifier> spell) {
+        Optional<StackedDamage> damage = stacked(effect);
+        if (damage.isEmpty()) {
+            return 0;
+        }
+        return of(target, effect).stream()
+                .filter(stack -> stack.caster().equals(caster) && stack.spell().equals(spell))
+                .mapToDouble(stack -> stack.perTick() * damage.get().ticksLeft(stack.remainingTicks())).sum();
     }
 
     /** The stacks of {@code effect} on {@code entity}; empty without any. */

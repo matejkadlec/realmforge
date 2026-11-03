@@ -35,10 +35,12 @@
       "affects": "enemies",
       "effects": [
         {
-          "amount": 1.0,
+          "amount": 3.0,
           "per_level": 0,
           "attack_damage": 0.3,
-          "type": "realmforge:damage"
+          "type": "realmforge:damage",
+          "armor_shred": 0.15,
+          "magic_shield_damage": 0.15
         },
         {
           "type": "realmforge:apply_effect",

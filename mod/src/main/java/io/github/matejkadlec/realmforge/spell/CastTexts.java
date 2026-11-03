@@ -28,6 +28,7 @@ public final class CastTexts {
             case NO_TARGET -> GeneratedTexts.CAST_NO_TARGET;
             case INVALID_TARGET -> GeneratedTexts.CAST_INVALID_TARGET;
             case OUT_OF_RANGE -> GeneratedTexts.CAST_OUT_OF_RANGE;
+            case TOO_CLOSE -> GeneratedTexts.CAST_TOO_CLOSE;
             case NO_LINE_OF_SIGHT -> GeneratedTexts.CAST_NO_LINE_OF_SIGHT;
             case NOT_ENOUGH_RESOURCE -> GeneratedTexts.CAST_NOT_ENOUGH_RESOURCE;
             case STUNNED -> GeneratedTexts.CAST_STUNNED;

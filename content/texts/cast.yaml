@@ -26,6 +26,9 @@ texts:
     en_us: Invalid target
   out_of_range:
     en_us: Out of range
+  # A spell that needs its target at a distance (RLM-543: Charge, 3 blocks or more), and the target is nearer.
+  too_close:
+    en_us: Too close
   no_line_of_sight:
     en_us: Target not in line of sight
   # %1$s is the resource's name (Mana, Rage).

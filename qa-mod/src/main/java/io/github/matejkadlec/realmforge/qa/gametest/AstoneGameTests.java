@@ -1,33 +1,53 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
 import io.github.matejkadlec.realmforge.boss.BossMob;
+import io.github.matejkadlec.realmforge.combat.CombatAttachments;
+import io.github.matejkadlec.realmforge.combat.HitBonus;
+import io.github.matejkadlec.realmforge.combat.MagicShield;
+import io.github.matejkadlec.realmforge.combat.MagicShields;
 import io.github.matejkadlec.realmforge.generated.GeneratedEffects;
 import io.github.matejkadlec.realmforge.generated.GeneratedItems;
 import io.github.matejkadlec.realmforge.generated.GeneratedMobs;
 import io.github.matejkadlec.realmforge.generated.GeneratedSpells;
+import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.mob.MobLevels;
 import io.github.matejkadlec.realmforge.mob.custom.CustomMobSpec;
+import io.github.matejkadlec.realmforge.qa.command.StatsCommands;
+import io.github.matejkadlec.realmforge.spell.AreaEffect;
+import io.github.matejkadlec.realmforge.spell.DamageEffect;
+import io.github.matejkadlec.realmforge.spell.EffectContext;
+import io.github.matejkadlec.realmforge.spell.MeleeEffect;
+import io.github.matejkadlec.realmforge.spell.ProjectileEffect;
 import io.github.matejkadlec.realmforge.spell.Spell;
 import io.github.matejkadlec.realmforge.spell.SpellCast;
+import io.github.matejkadlec.realmforge.spell.SpellEffect;
+import io.github.matejkadlec.realmforge.spell.SpellTarget;
 import io.github.matejkadlec.realmforge.spell.SpellVisuals;
 import io.github.matejkadlec.realmforge.spell.Spells;
 import io.github.matejkadlec.realmforge.stats.EntityLevel;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.PermissionSet;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.zombie.Husk;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
@@ -36,7 +56,7 @@ import net.minecraft.world.phys.Vec3;
  * the boss framework: her three phases (The Weighing; Quaking Stone below 60 % health, which casts
  * {@code astone_shockwave} on entering; Breaking Point below 25 %, which casts {@code astone_cracked_stone}), her
  * abilities through the spell engine (Hurled Boulder, Quake, Rockfall, Cracked Stone), the ring that marks where an
- * area lands, and her three drops on every kill.
+ * area lands, her three drops on every kill, and her buff of RLM-580 (health, damage, armor shred, magic shield drain).
  *
  * <p>Astone stands in the middle of a 17x17 platform. Her target goals are gone, so a player of another test never
  * draws her into a fight; the tests give her a target, a husk that keeps its physics but has no AI of its own and
@@ -46,8 +66,8 @@ import net.minecraft.world.phys.Vec3;
 public final class AstoneGameTests {
     private static final Vec3 MIDDLE = new Vec3(8.5, 1, 8.5);
     private static final String NAME = "Astone, the Unbroken";
-    /** A husk's health: her hits at level 18 never kill it within a test. */
-    private static final double HUSK_HEALTH = 500;
+    /** A husk's health: her hits at level 18, tripled by RLM-580, never kill it within a test. */
+    private static final double HUSK_HEALTH = 1500;
     /** Her phase change lasts the default 3 s, with a tick of slack. */
     private static final int PHASE_CHANGE_TICKS = 61;
 
@@ -297,6 +317,126 @@ public final class AstoneGameTests {
             helper.assertItemEntityCountIs(drop, middle, 6, 1);
         }
         helper.succeed();
+    }
+
+    /**
+     * Her buff for the M1 class checks (RLM-580; Matěj, 2026-11-03): 1,500 health at her level 18, three times her
+     * damage (attack damage 21; her spells' amounts 6, 3 and 15), and her fists ignore 15 % of a player's armor and
+     * drain 15 % more of a magic shield, her spells 30 % (15 % of their own on hers): a full shield loses 1.15 times
+     * what her fist takes from a player without one, and 1.3 times what her boulder takes; against 20 armor her fist
+     * deals what it deals against 17 without her shred, and her boulder what one without any shred deals against 14;
+     * her hits wear each piece of armor half as much (Matěj's playtest of 2026-11-03: she should ignore armor, not
+     * destroy it), and what they deal stays the same.
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_17X17)
+    public static void astoneHitsHarderThroughArmorAndMagicShields(GameTestHelper helper) {
+        BossMob astone = astone(helper);
+        helper.assertValueEqual(MobLevels.level(astone), OptionalInt.of(18), "Astone's fixed level");
+        helper.assertTrue(CombatGameTests.close(astone.getMaxHealth(), 1500)
+                && CombatGameTests.close(astone.getHealth(), 1500), "1,500 health: " + astone.getHealth());
+        helper.assertValueEqual(astone.getAttributeBaseValue(Attributes.ATTACK_DAMAGE), 21.0, "attack damage 21");
+        helper.assertTrue(CombatGameTests.close(astone.getAttributeValue(GeneratedStats.ARMOR_SHRED), 0.15),
+                "her own armor shred, 15 %");
+        helper.assertTrue(CombatGameTests.close(astone.getAttributeValue(GeneratedStats.MAGIC_SHIELD_DAMAGE), 0.15),
+                "her own magic shield damage, 15 %");
+        Map<ResourceKey<Spell>, Double> amounts = Map.of(GeneratedSpells.ASTONE_BOULDER, 6.0,
+                GeneratedSpells.ASTONE_QUAKE, 3.0, GeneratedSpells.ASTONE_ROCKFALL, 15.0);
+        amounts.forEach((key, amount) -> {
+            DamageEffect damage = firstDamage(spell(helper, key).value().effects()).orElseThrow();
+            HitBonus bonus = damage.bonusAt(1);
+            helper.assertTrue(damage.amount() == amount && CombatGameTests.close(bonus.armorShred(), 0.15)
+                    && CombatGameTests.close(bonus.magicShieldDamage(), 0.15), key.identifier() + " deals " + amount
+                            + " and adds 15 % armor shred and magic shield damage: " + damage);
+        });
+
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-astone-buff", new Vec3(1.5, 1, 1.5));
+        player.setGameMode(GameType.SURVIVAL);
+        player.connection.markClientLoaded();
+        StatsCommands.setBase(player, GeneratedStats.DODGE_CHANCE, 0);
+        StatsCommands.setBase(player, Attributes.MAX_HEALTH, 1000);
+        ServerLevel level = helper.getLevel();
+        Runnable fist = () -> astone.doHurtTarget(level, player);
+        Holder.Reference<Spell> boulder = spell(helper, GeneratedSpells.ASTONE_BOULDER);
+        DamageEffect boulderDamage = firstDamage(boulder.value().effects()).orElseThrow();
+        Runnable hurled = () -> boulderDamage.applyTo(EffectContext.of(level, astone, boulder, 1, Optional.empty()),
+                player, SpellTarget.of(astone, player));
+        double fistHit = loss(player, 0, fist);
+        helper.assertTrue(Math.abs(fistHit - 21 * 2.06) < 1e-3,
+                "her fist deals 21 × the level curve's 2.06 to a player without armor, three times its 14.4: " + fistHit);
+        for (Object[] hit : new Object[][] {{"her fist", fist, 1.15}, {"her boulder", hurled, 1.3}}) {
+            double health = loss(player, 0, (Runnable) hit[1]);
+            double shield = loss(player, 900, (Runnable) hit[1]);
+            helper.assertTrue(health > 0 && Math.abs(shield - health * (double) hit[2]) < 1e-3, hit[0]
+                    + " drains " + hit[2] + " times its hit of a magic shield: " + health + " from health, " + shield
+                    + " from the shield");
+        }
+
+        StatsCommands.setBase(player, Attributes.ARMOR, 20);
+        double fistThrough = loss(player, 0, fist);
+        double boulderThrough = loss(player, 0, hurled);
+        helper.assertTrue(fistThrough < fistHit, "armor still lowers her fist: " + fistThrough);
+        CombatGameTests.setBase(astone, GeneratedStats.ARMOR_SHRED, 0);
+        StatsCommands.setBase(player, Attributes.ARMOR, 17);
+        double fistPlain = loss(player, 0, fist);
+        helper.assertTrue(Math.abs(fistThrough - fistPlain) < 1e-3, "her fist ignores 15 % of 20 armor: " + fistThrough
+                + " against " + fistPlain + " through 17 armor without her shred");
+        StatsCommands.setBase(player, Attributes.ARMOR, 14);
+        DamageEffect plain = new DamageEffect(boulderDamage.amount(), boulderDamage.perLevel(),
+                boulderDamage.coefficient());
+        double boulderPlain = loss(player, 0, () -> plain.applyTo(EffectContext.of(level, astone, boulder, 1,
+                Optional.empty()), player, SpellTarget.of(astone, player)));
+        helper.assertTrue(Math.abs(boulderThrough - boulderPlain) < 1e-3, "her boulder ignores 30 % of 20 armor: "
+                + boulderThrough + " against " + boulderPlain + " through 14 armor without any shred");
+
+        helper.assertValueEqual(astone.getAttributeValue(GeneratedStats.ARMOR_WEAR_REDUCTION), 0.5,
+                "half of the wear");
+        StatsCommands.setBase(player, Attributes.ARMOR, 0);
+        CombatGameTests.setBase(astone, GeneratedStats.ARMOR_SHRED, 0.15);
+        ItemStack chestplate = new ItemStack(Items.NETHERITE_CHESTPLATE);
+        player.setItemSlot(EquipmentSlot.CHEST, chestplate);
+        loss(player, 0, fist);
+        int worn = chestplate.getDamageValue();
+        CombatGameTests.setBase(astone, GeneratedStats.ARMOR_WEAR_REDUCTION, 0);
+        loss(player, 0, fist);
+        int unreduced = chestplate.getDamageValue() - worn;
+        helper.assertTrue(unreduced >= 8 && worn == unreduced / 2, "her fist wears the chestplate by half of what "
+                + "it would: " + worn + " instead of " + unreduced);
+        player.level().getServer().getPlayerList().remove(player);
+        helper.succeed();
+    }
+
+    /**
+     * What {@code hit} takes from {@code player} at full health with a full magic shield of {@code shield} points: the
+     * shield's loss, or the health's without a shield (the shield is large enough that no hit reaches health).
+     */
+    private static double loss(ServerPlayer player, double shield, Runnable hit) {
+        StatsCommands.setBase(player, GeneratedStats.MAGIC_SHIELD, shield);
+        player.setData(CombatAttachments.MAGIC_SHIELD, new MagicShield((float) shield, player.tickCount + 1000));
+        player.setHealth(player.getMaxHealth());
+        CombatGameTests.settle(player);
+        hit.run();
+        return shield > 0 ? shield - MagicShields.points(player) : player.getMaxHealth() - player.getHealth();
+    }
+
+    private static Holder.Reference<Spell> spell(GameTestHelper helper, ResourceKey<Spell> key) {
+        return Spells.get(helper.getLevel().registryAccess(), key).orElseThrow();
+    }
+
+    /** The first damage effect of {@code effects}, inside a projectile, an area or a melee swing too. */
+    private static Optional<DamageEffect> firstDamage(List<SpellEffect> effects) {
+        for (SpellEffect effect : effects) {
+            Optional<DamageEffect> found = switch (effect) {
+                case DamageEffect damage -> Optional.of(damage);
+                case ProjectileEffect projectile -> firstDamage(projectile.effects());
+                case AreaEffect area -> firstDamage(area.effects());
+                case MeleeEffect melee -> firstDamage(melee.effects());
+                default -> Optional.empty();
+            };
+            if (found.isPresent()) {
+                return found;
+            }
+        }
+        return Optional.empty();
     }
 
     private static void run(ServerLevel level, CommandSourceStack source, String command) {

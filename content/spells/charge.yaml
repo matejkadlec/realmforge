@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# The Arms Warrior's tree, row 1 (level 1), left (RLM-543; Matěj, 2026-10-30, "Spell Trees to Level 18", chosen for M1):
+# a rush at an enemy 3 to 10 blocks away (12 at rank 2) at 24 blocks a second, about WoW's, that stops against the side
+# of its hitbox the charge came from, a player's run by their own client; there, every enemy within 1.5 blocks is
+# stunned for 3 s at both ranks (bosses immune to stuns shrug it off), and the Warrior hops a block back (Matěj's
+# playtests of 2026-11-03). It generates 10/20 rage, so a fight opens with Rend at hand. A 10 s cooldown (Matěj,
+# 2026-11-03, RLM-543's Confluence comments: rage and cooldown). No weapon needed: it deals no damage. Placeholder look
+# until RLM-545.
+id: charge
+name: {en_us: Charge}
+description:
+  en_us: >-
+    Charges an enemy {min_range} to {range} blocks away and stuns every enemy within {radius} blocks of where you land
+    for {duration} sec. Generates {resource_gain} rage.
+school: realmforge:physical
+scales_with: attack_damage
+targeting: {type: realmforge:enemy, range: 12}
+target_distance: {min: 3, max: 10, max_per_level: 2}
+cast: {type: instant}
+cooldown_seconds: 10
+max_level: 2
+effects:
+  - type: realmforge:charge
+    speed: 24
+    landing_radius: 1.5
+    effects:
+      - {type: realmforge:apply_effect, effect: realmforge:stunned, duration_seconds: 3}
+  - {type: realmforge:gain_resource, resource: realmforge:rage, amount: 10, per_level: 10}

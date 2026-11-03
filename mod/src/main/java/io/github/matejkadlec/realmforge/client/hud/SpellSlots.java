@@ -16,7 +16,8 @@ import net.minecraft.util.ARGB;
  * icons (C6, A1; the frame stays then, Matěj 2026-10-21), a blue tint while the player lacks its resource, the cooldown
  * sweep ({@link CooldownSweep}) with the seconds left of a long cooldown, a gold frame while it is being cast, and the
  * slot's key in the corner. A spell usable only in its window (RLM-540: Overpower, Victory Rush) is greyed out while the
- * window is closed, and glows with the seconds left in its lower corner while it is open.
+ * window is closed, and glows with the seconds left in its lower corner while it is open; a spell with a target health
+ * condition (Execute, RLM-543) the same while the player's current target meets it, without seconds.
  */
 public final class SpellSlots {
     private static final int BACKGROUND = 0xA0101010;
@@ -78,9 +79,12 @@ public final class SpellSlots {
         graphics.outline(x, y, size, size, slot.casting() ? CASTING_FRAME : frame);
         if (slot.windowTicks() > 0) {
             graphics.outline(x + 1, y + 1, size - 2, size - 2, WINDOW_GLOW);
-            String seconds = Integer.toString((slot.windowTicks() + 19) / 20);
-            graphics.text(font, seconds, x + size - 2 - font.width(seconds), y + size - 2 - font.lineHeight + 1,
-                    WINDOW_TEXT);
+            // A target health condition (Execute) glows while the target meets it: no seconds to count down.
+            if (spell.flatMap(value -> value.conditions().window()).isPresent()) {
+                String seconds = Integer.toString((slot.windowTicks() + 19) / 20);
+                graphics.text(font, seconds, x + size - 2 - font.width(seconds), y + size - 2 - font.lineHeight + 1,
+                        WINDOW_TEXT);
+            }
         }
         key.ifPresent(label -> {
             // Two thirds of the font, so the key fits above the initials; smaller still if it would leave the slot.

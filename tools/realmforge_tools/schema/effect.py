@@ -30,8 +30,7 @@ MAX_INTERVAL_SECONDS = 10.0
 class EffectModifierDef(CharacterModifierDef):
     """An attribute modifier the effect gives while it lasts. The amount is the first level's: vanilla multiplies it
     by the amplifier + 1, so Slowness II (amplifier 1) slows twice as much as Slowness I, unless ``per_amplifier`` (or
-    ``per_amplifier_percent``) gives what each level above the first adds instead (Battle Shout's 10, 15 and 20 %,
-    Matěj, 2026-10-30). Units follow the stat rules: multiplied operations take ``amount_percent``; ``add_value`` on
+    ``per_amplifier_percent``) gives what each level above the first adds instead (NeoForge's attribute curve). Units follow the stat rules: multiplied operations take ``amount_percent``; ``add_value`` on
     one of our stats takes its unit."""
 
     per_amplifier: FiniteNumber | None = Field(

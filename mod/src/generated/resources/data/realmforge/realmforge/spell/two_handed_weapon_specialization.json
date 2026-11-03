@@ -1,6 +1,7 @@
 {
   "name": "spell.realmforge.two_handed_weapon_specialization.name",
   "description": "spell.realmforge.two_handed_weapon_specialization.description",
+  "school": "realmforge:physical",
   "scales_with": "spell_power",
   "targeting": {
     "type": "realmforge:self"

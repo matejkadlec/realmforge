@@ -1,0 +1,50 @@
+{
+  "name": "spell.realmforge.charge.name",
+  "description": "spell.realmforge.charge.description",
+  "school": "realmforge:physical",
+  "scales_with": "attack_damage",
+  "targeting": {
+    "type": "realmforge:enemy",
+    "range": 12.0
+  },
+  "cast": {
+    "type": "instant"
+  },
+  "cooldown_ticks": 200,
+  "global_cooldown_ticks": 10,
+  "max_level": 2,
+  "crit": {
+    "can_crit": true,
+    "bonus_chance": 0.0
+  },
+  "npc_only": false,
+  "requires": [],
+  "castable_while_stunned": false,
+  "target_distance": {
+    "min": 3.0,
+    "max": 10.0,
+    "max_per_level": 2.0
+  },
+  "effects": [
+    {
+      "type": "realmforge:charge",
+      "speed": 24.0,
+      "landing_radius": 1.5,
+      "effects": [
+        {
+          "type": "realmforge:apply_effect",
+          "effect": "realmforge:stunned",
+          "duration_ticks": 60,
+          "amplifier": 0,
+          "stronger_at_levels": []
+        }
+      ]
+    },
+    {
+      "amount": 10.0,
+      "per_level": 10.0,
+      "type": "realmforge:gain_resource",
+      "resource": "realmforge:rage"
+    }
+  ]
+}

@@ -263,6 +263,20 @@ public final class DamageCalculator {
         return Math.max(0, Math.min(damageLeft, shield));
     }
 
+    /**
+     * What a magic shield takes of a hit that drains {@code bonus} more of it (RLM-580: Astone's 15 % and 30 %): the
+     * shield loses the damage left × (1 + bonus), up to its points ({@link #shieldDrained}), and takes that loss
+     * ÷ (1 + bonus) of the hit; the rest goes to health. Never negative.
+     */
+    public static double shieldAbsorbs(double damageLeft, double shield, double bonus) {
+        return shieldDrained(damageLeft, shield, bonus) / (1 + Math.max(0, bonus));
+    }
+
+    /** The points a magic shield loses to a hit that drains {@code bonus} more of it: at most its {@code shield}. */
+    public static double shieldDrained(double damageLeft, double shield, double bonus) {
+        return Math.max(0, Math.min(damageLeft * (1 + Math.max(0, bonus)), shield));
+    }
+
     /** A roll that succeeds with the given chance; a chance of 0 or less never rolls, 1 or more always succeeds. */
     private static boolean rolls(double chance, RandomSource random) {
         return chance > 0 && random.nextDouble() < chance;

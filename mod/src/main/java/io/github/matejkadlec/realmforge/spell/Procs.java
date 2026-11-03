@@ -4,6 +4,7 @@ import io.github.matejkadlec.realmforge.combat.CombatEvent;
 import io.github.matejkadlec.realmforge.combat.SchoolDamageSource;
 import io.github.matejkadlec.realmforge.effect.EffectSource;
 import io.github.matejkadlec.realmforge.effect.Effects;
+import io.github.matejkadlec.realmforge.effect.StackTicks;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -88,12 +89,13 @@ public final class Procs {
                 || !(source.getEntity() instanceof LivingEntity attacker) || attacker == defender) {
             return;
         }
-        fire(attacker, Proc.Trigger.HIT, defender);
+        double damage = event.getInflictedDamage();
+        fire(attacker, Proc.Trigger.HIT, defender, Optional.empty(), Optional.empty(), damage);
         if (event.isCrit()) {
-            fire(attacker, Proc.Trigger.CRIT, defender);
+            fire(attacker, Proc.Trigger.CRIT, defender, Optional.empty(), Optional.empty(), damage);
         }
         SchoolDamageSource.tickOf(source).ifPresent(tick -> fire(attacker, Proc.Trigger.TICK, defender,
-                Optional.of(tick.effect()), tick.spell()));
+                Optional.of(tick.effect()), tick.spell(), 0));
         fire(defender, Proc.Trigger.HIT_TAKEN, attacker);
     }
 
@@ -106,7 +108,8 @@ public final class Procs {
         if (target.level() instanceof ServerLevel && event.getEffectSource() instanceof LivingEntity giver
                 && giver != target) {
             fire(giver, Proc.Trigger.APPLIES_EFFECT, target,
-                    event.getEffectInstance().getEffect().unwrapKey().map(ResourceKey::identifier), Optional.empty());
+                    event.getEffectInstance().getEffect().unwrapKey().map(ResourceKey::identifier), Optional.empty(),
+                    0);
         }
     }
 
@@ -125,11 +128,12 @@ public final class Procs {
     }
 
     private static void fire(LivingEntity holder, Proc.Trigger trigger, LivingEntity other) {
-        fire(holder, trigger, other, Optional.empty(), Optional.empty());
+        fire(holder, trigger, other, Optional.empty(), Optional.empty(), 0);
     }
 
+    /** {@code damage} is the hit's, after its reductions, for a hit or a crit; 0 for every other trigger. */
     private static void fire(LivingEntity holder, Proc.Trigger trigger, LivingEntity other,
-            Optional<Identifier> effect, Optional<Identifier> spell) {
+            Optional<Identifier> effect, Optional<Identifier> spell, double damage) {
         if (!holder.isAlive() || running > 0) {
             return;
         }
@@ -137,24 +141,27 @@ public final class Procs {
             for (Proc proc : source.procs(holder)) {
                 CooldownKey key = new CooldownKey(proc.id(), proc.perTarget() ? other.getUUID() : null);
                 if (proc.trigger() == trigger && proc.watches(effect, spell) && !isOnCooldown(holder, key)
-                        && holder.getRandom().nextDouble() < proc.chance() && run(proc, holder, other)) {
+                        && holder.getRandom().nextDouble() < proc.chance() && run(proc, holder, other, damage)) {
                     startCooldown(holder, proc, key);
                 }
             }
         }
     }
 
-    /** Runs the proc's action; whether its spell was cast, its effect took hold or its window opened. */
-    private static boolean run(Proc proc, LivingEntity holder, LivingEntity other) {
+    /**
+     * Runs the proc's action; whether its spell was cast, its effect or damage over time took hold or its window
+     * opened. {@code damage} is the hit that fired it, for a share of it.
+     */
+    private static boolean run(Proc proc, LivingEntity holder, LivingEntity other, double damage) {
         running++;
         try {
-            return act(proc, holder, other);
+            return act(proc, holder, other, damage);
         } finally {
             running--;
         }
     }
 
-    private static boolean act(Proc proc, LivingEntity holder, LivingEntity other) {
+    private static boolean act(Proc proc, LivingEntity holder, LivingEntity other, double damage) {
         boolean kill = proc.trigger() == Proc.Trigger.KILL;
         return switch (proc.action()) {
             case Proc.CastSpell cast -> {
@@ -173,6 +180,16 @@ public final class Procs {
                         new EffectSource(holder.getUUID(), Optional.empty(), Optional.of(proc.id())));
             }
             case Proc.OpenWindow open -> holder instanceof Player player && Windows.open(player, open.spell());
+            case Proc.DamageOverTime dot -> {
+                LivingEntity target = alive(other);
+                if (target == null || damage <= 0) {
+                    yield false;
+                }
+                double left = StackTicks.remaining(target, dot.effect(), holder.getUUID(), dot.spell());
+                yield StackTicks.apply(target, dot.effect(), holder,
+                        new EffectSource(holder.getUUID(), dot.spell(), Optional.of(proc.id())),
+                        dot.share() * damage + left, dot.durationTicks());
+            }
         };
     }
 

@@ -8,6 +8,7 @@ import io.github.matejkadlec.realmforge.qa.generated.GeneratedSpellExpectations.
 import io.github.matejkadlec.realmforge.spell.AllyTargeting;
 import io.github.matejkadlec.realmforge.spell.ApplyEffectEffect;
 import io.github.matejkadlec.realmforge.spell.AreaEffect;
+import io.github.matejkadlec.realmforge.spell.ChargeEffect;
 import io.github.matejkadlec.realmforge.spell.Coefficient;
 import io.github.matejkadlec.realmforge.spell.ConeEffect;
 import io.github.matejkadlec.realmforge.spell.CurrentTargetTargeting;
@@ -17,6 +18,7 @@ import io.github.matejkadlec.realmforge.spell.DashEffect;
 import io.github.matejkadlec.realmforge.spell.DirectionTargeting;
 import io.github.matejkadlec.realmforge.spell.EnemyTargeting;
 import io.github.matejkadlec.realmforge.spell.FarthestPlayerTargeting;
+import io.github.matejkadlec.realmforge.spell.GainResourceEffect;
 import io.github.matejkadlec.realmforge.spell.GroundPointTargeting;
 import io.github.matejkadlec.realmforge.spell.HealEffect;
 import io.github.matejkadlec.realmforge.spell.KnockbackEffect;
@@ -164,14 +166,18 @@ public final class ContentSpellGameTests {
         String type = SpellRegistries.EFFECT_TYPES.getKey(effect.codec()).toString();
         return switch (effect) {
             case DamageEffect damage -> numbers(type, damageNumbers(damage));
-            case HealEffect heal -> numbers(type, withCoefficient(Map.of("amount", heal.amount(), "per_level",
-                    heal.perLevel()), heal.coefficient()));
+            case HealEffect heal -> numbers(type, healNumbers(heal));
             case ApplyEffectEffect apply -> new EffectExpectation(type, applyNumbers(apply), applyNames(apply),
                     List.of());
             case RemoveEffectEffect remove -> new EffectExpectation(type, Map.of(),
                     Map.of("effect", remove.effect().getRegisteredName()), List.of());
             case KnockbackEffect knockback -> numbers(type, Map.of("strength", knockback.strength()));
             case DashEffect dash -> numbers(type, Map.of("strength", dash.strength()));
+            case ChargeEffect charge -> new EffectExpectation(type, Map.of("speed", charge.speed(), "landing_radius",
+                    charge.landingRadius()), Map.of(),
+                    charge.effects().stream().map(ContentSpellGameTests::effect).toList());
+            case GainResourceEffect gain -> new EffectExpectation(type, Map.of("amount", gain.amount(), "per_level",
+                    gain.perLevel()), Map.of("resource", gain.resource().getRegisteredName()), List.of());
             case ProjectileEffect projectile -> new EffectExpectation(type, projectileNumbers(projectile),
                     projectile.spares().map(tag -> Map.of("spares", tag.location().toString())).orElse(Map.of()),
                     projectile.effects().stream().map(ContentSpellGameTests::effect).toList());
@@ -209,6 +215,16 @@ public final class ContentSpellGameTests {
         putIfSet(numbers, "armor_shred_per_level", damage.armorShredPerLevel());
         putIfSet(numbers, "penetration", damage.penetration());
         putIfSet(numbers, "penetration_per_level", damage.penetrationPerLevel());
+        putIfSet(numbers, "magic_shield_damage", damage.magicShieldDamage());
+        return Map.copyOf(numbers);
+    }
+
+    /** A heal's numbers; its share of max health (RLM-543) only when it has one, as the data names it only then. */
+    private static Map<String, Double> healNumbers(HealEffect heal) {
+        Map<String, Double> numbers = new HashMap<>(withCoefficient(Map.of("amount", heal.amount(), "per_level",
+                heal.perLevel()), heal.coefficient()));
+        putIfSet(numbers, "max_health", heal.maxHealth());
+        putIfSet(numbers, "max_health_per_level", heal.maxHealthPerLevel());
         return Map.copyOf(numbers);
     }
 

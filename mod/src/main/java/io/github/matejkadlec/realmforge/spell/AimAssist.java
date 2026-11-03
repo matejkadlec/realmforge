@@ -2,6 +2,7 @@ package io.github.matejkadlec.realmforge.spell;
 
 import io.github.matejkadlec.realmforge.combat.CombatConfig;
 import io.github.matejkadlec.realmforge.combat.CombatEvent;
+import io.github.matejkadlec.realmforge.combat.SchoolDamageSource;
 import io.github.matejkadlec.realmforge.stats.EntityLevel;
 import io.github.matejkadlec.realmforge.stats.StatsAttachments;
 import java.util.ArrayList;
@@ -243,11 +244,14 @@ public final class AimAssist {
         return choose(candidates);
     }
 
-    /** A player's hit makes its victim their current target (rule 4), a melee swing, a bolt or a spell's alike. */
+    /**
+     * A player's hit makes its victim their current target (rule 4), a melee swing, a bolt or a spell's alike. A tick of
+     * damage over time does not: a bleed on another mob would take the target from the one they are fighting.
+     */
     private static void onHit(CombatEvent.Hit event) {
         LivingEntity victim = event.getEntity();
         if (victim.level() instanceof ServerLevel level && event.getSource().getEntity() instanceof Player player
-                && player != victim) {
+                && player != victim && SchoolDamageSource.tickOf(event.getSource()).isEmpty()) {
             player.getData(SpellAttachments.COMBAT).setCurrentTarget(victim.getUUID(), level.getGameTime());
         }
     }

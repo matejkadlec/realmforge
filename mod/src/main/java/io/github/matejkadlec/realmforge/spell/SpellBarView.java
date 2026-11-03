@@ -26,7 +26,8 @@ public record SpellBarView(List<Slot> slots) {
      * @param cooldownTicks the ticks left of the spell's own cooldown, 0 when it is off it
      * @param affordable whether the player has enough of its resource now
      * @param casting whether it is the spell being cast
-     * @param windowTicks a spell with a window (RLM-540): the ticks it is still open, 0 while it is closed;
+     * @param windowTicks a spell with a window (RLM-540), or with a target health condition while the current target
+     *                    meets it (Execute, RLM-543): the ticks it is still open, 0 while it is closed;
      *                    {@link #NO_WINDOW} for a spell without one
      */
     public record Slot(Optional<ResourceKey<Spell>> key, Optional<Spell> spell, int level, float cooldown,
@@ -75,7 +76,8 @@ public record SpellBarView(List<Slot> slots) {
                 cooldown = own >= global ? share(own, ownTotal) : share(global, globalCooldownTicks);
                 affordable = value.cost().flatMap(cost -> cost.resource().unwrapKey())
                         .map(type -> combat.resource(type) + 1e-4 >= value.costAt(Math.max(1, level))).orElse(true);
-                if (value.conditions().window().isPresent()) {
+                // A target health condition lights up like a window while the current target meets it (Windows).
+                if (value.conditions().window().isPresent() || value.conditions().targetHealthBelow().isPresent()) {
                     window = (int) Math.max(0, combat.windows().getOrDefault(key.get(), 0L) - now);
                 }
             }

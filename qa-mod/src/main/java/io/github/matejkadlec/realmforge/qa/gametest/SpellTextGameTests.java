@@ -35,17 +35,18 @@ public final class SpellTextGameTests {
         ServerPlayer player = player(helper, "qa-spell-text");
         StatsCommands.setBase(player, GeneratedStats.SPELL_POWER, 5);
         StatsCommands.setBase(player, GeneratedStats.FIRE_POWER, 0.2);
-        helper.assertValueEqual(values(helper, player, GeneratedSpells.TEST_BOLT, 3), Map.of("damage", "18"),
-                "level 3 deals (10 + 100 % of 5 Spell Power) × (1 + 20 %) (RLM-534)");
-        helper.assertValueEqual(values(helper, player, GeneratedSpells.TEST_MEND, 2), Map.of("heal", "10"),
-                "level 2 heals 5 + 100 % of 5 Spell Power, arcane having no power yet");
+        helper.assertValueEqual(values(helper, player, GeneratedSpells.TEST_BOLT, 3), Map.of("damage", "18",
+                "range", "16"), "level 3 deals (10 + 100 % of 5 Spell Power) × (1 + 20 %) (RLM-534), within its range "
+                + "(RLM-543)");
+        helper.assertValueEqual(values(helper, player, GeneratedSpells.TEST_MEND, 2), Map.of("heal", "10",
+                "range", "16"), "level 2 heals 5 + 100 % of 5 Spell Power, arcane having no power yet");
         helper.assertValueEqual(values(helper, player, GeneratedSpells.TEST_IGNITE, 1), Map.of("duration", "4",
-                "periodic", "3", "periodic_total", "12", "interval", "1"),
+                "periodic", "3", "periodic_total", "12", "interval", "1", "range", "16"),
                 "4 ticks of (2 + 10 % of 5 Spell Power) × 1.2, with one decimal as everywhere (Matěj, 2026-10-30)");
         helper.assertValueEqual(values(helper, player, GeneratedSpells.TEST_MENDING_RING, 1),
                 Map.of("heal", "2", "radius", "3"), "the area's own heal, no share of Spell Power, and its radius");
         helper.assertValueEqual(values(helper, player, GeneratedSpells.TEST_MISSILE, 1),
-                Map.of("damage", "6", "duration", "3", "bonus", "-15"),
+                Map.of("damage", "6", "duration", "3", "bonus", "-15", "bonus_movement_speed", "-15", "range", "16"),
                 "the projectile's damage, raised by fire power only, and slow, its one modifier taking 15 % of the "
                         + "speed");
         logout(player);

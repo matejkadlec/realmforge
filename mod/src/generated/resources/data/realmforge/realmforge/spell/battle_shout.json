@@ -10,13 +10,13 @@
     "type": "instant"
   },
   "cost": {
-    "amount": 10.0,
-    "per_level": 0,
+    "amount": 15.0,
+    "per_level": 15.0,
     "resource": "realmforge:rage"
   },
   "cooldown_ticks": 1200,
   "global_cooldown_ticks": 10,
-  "max_level": 3,
+  "max_level": 2,
   "crit": {
     "can_crit": true,
     "bonus_chance": 0.0
@@ -35,12 +35,10 @@
         {
           "type": "realmforge:apply_effect",
           "effect": "realmforge:battle_shout",
-          "duration_ticks": 200,
-          "duration_per_level_ticks": 100,
+          "duration_ticks": 12000,
           "amplifier": 0,
           "stronger_at_levels": [
-            2,
-            3
+            2
           ]
         }
       ],

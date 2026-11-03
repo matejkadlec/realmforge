@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../tools/schemas/stats.schema.json
+# How much less a hit wears its target's armor, in percent (RLM-580; Matěj's playtest of 2026-11-03: Astone's tripled
+# hits took about 300 durability from each netherite piece with Unbreaking V in one fight; "she is supposed to IGNORE
+# armor, not to DESTROY armor"). Vanilla wears each piece by a quarter of the hit; this lowers that, and nothing else of
+# the hit (combat/ArmorWear). A mob-only stat, as Magic Shield Damage is: the character sheet never shows it.
+id: armor_wear_reduction
+name: {en_us: Armor Wear Reduction}
+kind: secondary
+max_percent: 100

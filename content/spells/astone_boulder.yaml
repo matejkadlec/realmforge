@@ -3,7 +3,8 @@
 # she casts, with grinding stone as its tell, then flies at her target and can be dodged. Like Stoneform, she must
 # keep her target in sight the whole cast and in range for its first half. It flies 32 blocks, spares the stone
 # creatures of Undervault and throws back what it hits. Physical, so armor blocks it; her level raises its damage
-# (architecture 14.1). Proposals for Matěj's playtest.
+# (architecture 14.1). Three times its first damage, and 15 % more armor shred and magic shield damage on her own 15 %
+# (RLM-580; Matěj, 2026-11-03).
 id: astone_boulder
 name: {en_us: Hurled Boulder}
 description: {en_us: "Forms a boulder and hurls it at an enemy for {damage} damage."}
@@ -28,5 +29,5 @@ effects:
     impact: {sound: realmforge:spell.astone_boulder.impact, particles: realmforge:vaultstone}
     appearance: {model: orb, color: "#8B8579"}
     effects:
-      - {type: realmforge:damage, amount: 2, attack_damage_percent: 100}
+      - {type: realmforge:damage, amount: 6, attack_damage_percent: 100, armor_shred_percent: 15, magic_shield_damage_percent: 15}
       - {type: realmforge:knockback, strength: 0.8}

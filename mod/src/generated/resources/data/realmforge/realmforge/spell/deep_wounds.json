@@ -1,6 +1,6 @@
 {
-  "name": "spell.realmforge.test_taste_for_blood.name",
-  "description": "spell.realmforge.test_taste_for_blood.description",
+  "name": "spell.realmforge.deep_wounds.name",
+  "description": "spell.realmforge.deep_wounds.description",
   "school": "realmforge:physical",
   "scales_with": "spell_power",
   "targeting": {
@@ -11,7 +11,7 @@
   },
   "cooldown_ticks": 0,
   "global_cooldown_ticks": 10,
-  "max_level": 1,
+  "max_level": 3,
   "crit": {
     "can_crit": true,
     "bonus_chance": 0.0
@@ -25,12 +25,15 @@
     "spell_damage": [],
     "procs": [
       {
-        "trigger": "tick",
-        "effect": "realmforge:bleeding",
-        "spell": "realmforge:test_rend",
+        "trigger": "crit",
         "chance": 1.0,
-        "cooldown_ticks": 120,
-        "open_window": "realmforge:test_overpower"
+        "cooldown_ticks": 0,
+        "damage_over_time": {
+          "effect": "realmforge:bleeding",
+          "damage": 0.2,
+          "damage_per_level": 0.2,
+          "duration_ticks": 120
+        }
       }
     ],
     "splash_radius": []

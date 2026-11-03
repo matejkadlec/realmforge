@@ -79,16 +79,10 @@ def slowing(**fields: object) -> dict:
 # The repository's kits
 
 
-def test_the_warrior_teaches_four_spells_by_level_10_and_one_at_level_1() -> None:
-    # The Mage's kit is the Frost tree's (RLM-542, tests/test_frost_tree.py).
+def test_the_human_has_its_racials() -> None:
+    # The Warrior's kit is the Arms tree's (RLM-543, tests/test_arms_tree.py), the Mage's the Frost tree's (RLM-542,
+    # tests/test_frost_tree.py).
     content, _ = load_and_validate(RepoPaths())
-    kits = {entry.model.id: [(t.spell, t.level) for t in entry.model.spells] for entry in content.classes}
-    assert kits["warrior"] == [
-        ("realmforge:slam", 1),
-        ("realmforge:reckless_strike", 3),
-        ("realmforge:shield_bash", 5),
-        ("realmforge:battle_shout", 8),
-    ]
     human = content.races[0].model
     assert human.racial_spell == "realmforge:will_to_survive"
     assert human.racial_passive is not None and human.racial_passive.weapons == SWORD_LIKE_TAG
@@ -200,7 +194,7 @@ def test_status_effects_last_longer_and_grow_stronger_by_rank() -> None:
         ({"effects": [slowing(stronger_at_levels=[5, 3])]}, "ascending order"),
         ({"effects": [slowing(stronger_at_levels=[1])]}, "from 2 up"),
         ({"effects": [slowing(stronger_at_levels=[7])]}, "a level above max_level 5 is never reached"),
-        ({"effects": [slowing(duration_seconds=50, duration_per_level_seconds=5)]}, "more than 60"),
+        ({"effects": [slowing(duration_seconds=590, duration_per_level_seconds=5)]}, "more than 600"),
         ({"effects": [slowing(duration_per_level_seconds=0)]}, "duration_per_level_seconds is more than 0"),
         (
             {"crit": {"bonus_chance_percent": 50, "bonus_chance_per_level_percent": 20}},
@@ -529,22 +523,27 @@ def test_the_fixed_tags_name_vanilla_ids_that_exist() -> None:
 # The playtest revision (Matěj, 2026-10-30)
 
 
-def test_the_self_buffs_have_three_ranks_and_a_minute_cooldown() -> None:
+def test_the_self_buffs_have_a_minute_cooldown() -> None:
     content, _ = load_and_validate(RepoPaths())
     spells = {entry.model.id: entry.model for entry in content.spells}
     effects = {entry.model.id: entry.model for entry in content.effects}
     shout, barrier = spells["battle_shout"], spells["ice_barrier"]
     assert (shout.max_level, shout.cooldown_seconds, barrier.max_level, barrier.cooldown_seconds) == (
-        3,
+        2,
         60,
         3,
         60,
     )
+    # Battle Shout (Matěj, 2026-11-03, RLM-543): +5 % attack damage and +10 % attack speed for 10 minutes, twice that
+    # at rank 2, for 15/30 rage.
     shout_effect = shout.effects[0].effects[0]
-    assert [shout_effect.duration_at(rank) for rank in (1, 2, 3)] == [10, 15, 20]
-    assert [shout_effect.amplifier_at(rank) for rank in (1, 2, 3)] == [0, 1, 2]
-    bonus = effects["battle_shout"].modifiers[0]
-    assert [round(bonus.game_amount_at(level), 6) for level in (0, 1, 2)] == [0.1, 0.15, 0.2]
+    assert [shout_effect.duration_at(rank) for rank in (1, 2)] == [600, 600]
+    assert [shout_effect.amplifier_at(rank) for rank in (1, 2)] == [0, 1]
+    assert [shout.cost.amount_at(rank) for rank in (1, 2)] == [15, 30]
+    damage, speed = effects["battle_shout"].modifiers
+    assert (damage.attribute, speed.attribute) == ("minecraft:attack_damage", "minecraft:attack_speed")
+    assert [round(damage.game_amount_at(level), 6) for level in (0, 1)] == [0.05, 0.1]
+    assert [round(speed.game_amount_at(level), 6) for level in (0, 1)] == [0.1, 0.2]
     barrier_effect = barrier.effects[0]
     assert [barrier_effect.duration_at(rank) for rank in (1, 2, 3)] == [10, 20, 30]
     shield = effects["ice_barrier"].modifiers[0]
@@ -585,13 +584,20 @@ def test_per_amplifier_growth_takes_the_amounts_units(modifier: dict, expected: 
         EffectDef.model_validate(data)
 
 
-def test_per_amplifier_growth_reaches_the_registration_and_expectations() -> None:
-    files = generate(RepoPaths())
+def test_per_amplifier_growth_reaches_the_registration_and_expectations(repo: RepoPaths) -> None:
+    # No effect of ours grows by a step since Battle Shout's became vanilla's multiple (RLM-543), so a test effect.
+    write(
+        repo.content / "effects" / "test_rally.yaml",
+        'id: test_rally\nname: {en_us: Rally}\ncategory: beneficial\ncolor: "#F5241B"\nmodifiers:\n'
+        "  - {attribute: minecraft:attack_damage, operation: add_multiplied_total, amount_percent: 10, "
+        "per_amplifier_percent: 5}\n",
+    )
+    files = generate(repo)
     effects = files[
         "mod/src/generated/java/io/github/matejkadlec/realmforge/generated/GeneratedEffects.java"
     ].decode()
-    shout = effects[effects.index("BATTLE_SHOUT =") :]
-    assert "AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL, 0.05)" in shout[: shout.index(";")]
+    rally = effects[effects.index("TEST_RALLY =") :]
+    assert "AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL, 0.05)" in rally[: rally.index(";")]
     expectations = files[f"{QA}/GeneratedEffectExpectations.java"].decode()
     # 0.1 + 0.05 in doubles, as the game's curve computes it.
     assert f'"add_multiplied_total", {0.1 + 0.05!r})' in expectations

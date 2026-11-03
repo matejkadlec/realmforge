@@ -264,7 +264,17 @@ public final class SpellbookScreen extends Screen {
                 name = name.copy().append(Component.literal(" ")).append(Component.translatable(
                         GeneratedTexts.SPELL_TOOLTIP_PASSIVE).withStyle(ChatFormatting.GRAY));
             }
-            graphics.text(font, name, x + PADDING + LIST_SLOT + 6, rowY + 5, HEADING);
+            // A name too long for the row (Two-Handed Specialization with its rank and "Passive") breaks onto a second
+            // line (Matěj's playtest of 2026-11-03); the row's 20 px hold two lines of text.
+            int nameX = x + PADDING + LIST_SLOT + 6;
+            List<FormattedCharSequence> lines = font.split(name, listRight() - nameX);
+            if (lines.size() <= 1) {
+                graphics.text(font, name, nameX, rowY + 5, HEADING);
+            } else {
+                for (int line = 0; line < Math.min(2, lines.size()); line++) {
+                    graphics.text(font, lines.get(line), nameX, rowY + line * font.lineHeight, HEADING);
+                }
+            }
         }
 
         tooltip(graphics, player, mouseX, mouseY, bar);

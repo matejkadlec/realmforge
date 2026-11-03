@@ -106,8 +106,7 @@ public final class ClassKitGameTests {
         Spellbook book = warrior.getData(SpellAttachments.SPELLBOOK);
         helper.assertValueEqual(book.level(GeneratedSpells.SLAM), Optional.of(1), "a new Warrior knows Slam");
         helper.assertValueEqual(book.slot(0), Optional.of(GeneratedSpells.SLAM), "on the bar's first slot");
-        helper.assertValueEqual(book.level(GeneratedSpells.RECKLESS_STRIKE), Optional.empty(),
-                "Reckless Strike comes at 3");
+        helper.assertValueEqual(book.level(GeneratedSpells.REND), Optional.empty(), "Rend comes at 6");
         helper.assertValueEqual(book.slot(Spellbook.RACIAL_SLOT), Optional.of(GeneratedSpells.WILL_TO_SURVIVE),
                 "a Human's racial spell beside the bar");
         helper.assertValueEqual(book.barSlotOf(GeneratedSpells.WILL_TO_SURVIVE), -1, "and not on the bar itself");
@@ -121,29 +120,33 @@ public final class ClassKitGameTests {
     }
 
     /**
-     * A level teaches its class spells into the bar's next empty slots; one taken off the bar stays off. A login
-     * catches up on spells a character does not know yet (a character from before its class taught them).
+     * A level teaches its class spells into the bar's next empty slots, its passive spells never; one taken off the bar
+     * stays off. A login catches up on spells a character does not know yet (a character from before its class taught
+     * them). The Warrior's kit is the Arms tree's (RLM-543): Slam and Charge on the bar at level 1 with Deep Wounds
+     * known, Rend and Battle Shout at 6 with Two-Handed Specialization known.
      */
     @QaGameTest
     public static void levelsAndLoginsTeachTheClassSpells(GameTestHelper helper) {
         ServerPlayer player = character(helper, "qa-kit-levels", "warrior");
-        reachLevel(helper, player, 5);
         Spellbook book = player.getData(SpellAttachments.SPELLBOOK);
-        helper.assertValueEqual(List.of(book.slot(0), book.slot(1), book.slot(2), book.slot(3)), List.of(
-                Optional.of(GeneratedSpells.SLAM), Optional.of(GeneratedSpells.RECKLESS_STRIKE),
-                Optional.of(GeneratedSpells.SHIELD_BASH), Optional.empty()), "the spells of levels 1, 3 and 5");
-        helper.assertTrue(Spells.placeOnBar(player, 1, Optional.empty()), "Reckless Strike taken off the bar");
-        reachLevel(helper, player, 8);
+        helper.assertValueEqual(List.of(book.slot(0), book.slot(1), book.slot(2)), List.of(
+                Optional.of(GeneratedSpells.SLAM), Optional.of(GeneratedSpells.CHARGE), Optional.empty()),
+                "level 1's actives; Deep Wounds is passive");
+        helper.assertValueEqual(book.level(GeneratedSpells.DEEP_WOUNDS), Optional.of(1), "Deep Wounds known");
+        helper.assertTrue(Spells.placeOnBar(player, 1, Optional.empty()), "Charge taken off the bar");
+        reachLevel(helper, player, 6);
         book = player.getData(SpellAttachments.SPELLBOOK);
-        helper.assertValueEqual(book.level(GeneratedSpells.BATTLE_SHOUT), Optional.of(1), "level 8's spell");
-        helper.assertValueEqual(book.slot(1), Optional.of(GeneratedSpells.BATTLE_SHOUT),
-                "into the first empty slot; the spell taken off stays off");
+        helper.assertValueEqual(List.of(book.slot(1), book.slot(2), book.slot(3)), List.of(
+                Optional.of(GeneratedSpells.REND), Optional.of(GeneratedSpells.BATTLE_SHOUT), Optional.empty()),
+                "level 6's actives into the first empty slots; the spell taken off stays off");
+        helper.assertValueEqual(book.barSlotOf(GeneratedSpells.CHARGE), -1, "Charge stays off the bar");
 
         player.setData(SpellAttachments.SPELLBOOK, Spellbook.EMPTY);
         NeoForge.EVENT_BUS.post(new PlayerEvent.PlayerLoggedInEvent(player));
         book = player.getData(SpellAttachments.SPELLBOOK);
-        for (ResourceKey<Spell> spell : List.of(GeneratedSpells.SLAM, GeneratedSpells.BATTLE_SHOUT,
-                GeneratedSpells.SHIELD_BASH, GeneratedSpells.RECKLESS_STRIKE, GeneratedSpells.WILL_TO_SURVIVE)) {
+        for (ResourceKey<Spell> spell : List.of(GeneratedSpells.SLAM, GeneratedSpells.CHARGE,
+                GeneratedSpells.DEEP_WOUNDS, GeneratedSpells.REND, GeneratedSpells.BATTLE_SHOUT,
+                GeneratedSpells.TWO_HANDED_WEAPON_SPECIALIZATION, GeneratedSpells.WILL_TO_SURVIVE)) {
             helper.assertValueEqual(book.level(spell), Optional.of(1), "a login teaches " + spell.identifier());
         }
         logout(player);
@@ -317,7 +320,7 @@ public final class ClassKitGameTests {
             Resources.set(player, ResourceTypes.RAGE, 100);
             float before = husk.getHealth();
             swing(helper, player, GeneratedSpells.SLAM);
-            double raw = 4 + 1.5 * (rank - 1) + (1.2 + 0.2 * (rank - 1)) * attackDamage;
+            double raw = 5 + 1.5 * (rank - 1) + (1.5 + 0.25 * (rank - 1)) * attackDamage;
             double shred = 0.05 * rank;
             double expected = raw * (1 - DamageCalculator.armorReduction(raw, 15, 0, 0, shred));
             helper.assertTrue(close(before - husk.getHealth(), expected), "rank " + rank + ": " + expected
@@ -330,7 +333,7 @@ public final class ClassKitGameTests {
     /**
      * Scaling system C (Matěj, 2026-10-30, RLM-534), the ticket's checks: with 5.5 Spell Power Frostbolt rank 1 deals
      * 8 + 100 % of it, 13.5, and with 19 rank 5 deals 12 + 200 %, 50; Slam rank 5 with 15 Attack Damage deals
-     * 10 + 200 %, 40, before armor (the husk has none). No crit, no school power, a player without a character.
+     * 11 + 250 %, 48.5, before armor (the husk has none). No crit, no school power, a player without a character.
      */
     @QaGameTest
     public static void spellsAddTheirCoefficientOfTheCastersPower(GameTestHelper helper) {
@@ -361,7 +364,7 @@ public final class ClassKitGameTests {
         learn(helper, player, GeneratedSpells.SLAM, 5);
         float before = husk.getHealth();
         swing(helper, player, GeneratedSpells.SLAM);
-        helper.assertTrue(close(before - husk.getHealth(), 40), "Slam rank 5 with 15 Attack Damage: 40 expected, "
+        helper.assertTrue(close(before - husk.getHealth(), 48.5), "Slam rank 5 with 15 Attack Damage: 48.5 expected, "
                 + "dealt " + (before - husk.getHealth()));
         logout(player);
         helper.succeed();
@@ -432,32 +435,37 @@ public final class ClassKitGameTests {
     }
 
     /**
-     * Battle Shout raises the attack damage of its caster and of the allies within 10 blocks by 10 % for 10 s at rank
-     * 1 and by 20 % for 20 s at rank 3, on a minute's cooldown; a second shout refreshes the effect instead of stacking
-     * it.
+     * Battle Shout raises the attack damage and attack speed of its caster and of the allies within 10 blocks by 5 % and
+     * 10 % at rank 1 and by 10 % and 20 % at rank 2, its highest, for 10 minutes, for 15/30 rage on a minute's
+     * cooldown; a second shout refreshes the effect instead of stacking it.
      */
     @QaGameTest
     public static void battleShoutRaisesAlliesAttackDamage(GameTestHelper helper) {
         ServerPlayer player = character(helper, "qa-kit-shout", "warrior");
         ServerPlayer ally = QaPlayers.loginOnPlatform(helper, "qa-kit-shout-ally", new Vec3(4.5, 1, 4.5));
         double before = ally.getAttributeValue(Attributes.ATTACK_DAMAGE);
-        for (int rank : new int[] {1, 3, 3}) {
+        double speedBefore = ally.getAttributeValue(Attributes.ATTACK_SPEED);
+        for (int rank : new int[] {1, 2, 2}) {
             learn(helper, player, GeneratedSpells.BATTLE_SHOUT, rank);
             Spells.resetCooldowns(player);
             Resources.set(player, ResourceTypes.RAGE, 100);
             shout(helper, player);
-            helper.assertTrue(close(Resources.amount(player, ResourceTypes.RAGE), 90), "for 10 rage");
+            helper.assertTrue(close(Resources.amount(player, ResourceTypes.RAGE), 100 - 15 * rank),
+                    "for " + 15 * rank + " rage");
             helper.assertValueEqual(player.getData(SpellAttachments.COMBAT).cooldowns()
                     .get(GeneratedSpells.BATTLE_SHOUT), helper.getLevel().getGameTime() + 1200, "a minute's cooldown");
             for (ServerPlayer shouted : List.of(player, ally)) {
                 MobEffectInstance effect = shouted.getEffect(GeneratedEffects.BATTLE_SHOUT);
-                helper.assertTrue(effect != null && effect.getDuration() == (rank == 1 ? 200 : 400)
-                        && effect.getAmplifier() == rank - 1, shouted.getPlainTextName() + " has Battle Shout at rank "
-                                + rank + ": " + effect);
+                helper.assertTrue(effect != null && effect.getDuration() == 12000 && effect.getAmplifier() == rank - 1,
+                        shouted.getPlainTextName() + " has Battle Shout at rank " + rank + " for 10 minutes: "
+                                + effect);
             }
-            helper.assertTrue(close(ally.getAttributeValue(Attributes.ATTACK_DAMAGE),
-                    before * (rank == 1 ? 1.1 : 1.2)), "rank " + rank + " raised the ally's attack damage: "
+            helper.assertTrue(close(ally.getAttributeValue(Attributes.ATTACK_DAMAGE), before * (1 + 0.05 * rank)),
+                    "rank " + rank + " raised the ally's attack damage: "
                             + ally.getAttributeValue(Attributes.ATTACK_DAMAGE));
+            helper.assertTrue(close(ally.getAttributeValue(Attributes.ATTACK_SPEED), speedBefore * (1 + 0.1 * rank)),
+                    "rank " + rank + " raised the ally's attack speed: "
+                            + ally.getAttributeValue(Attributes.ATTACK_SPEED));
         }
         logout(player);
         logout(ally);
@@ -535,10 +543,11 @@ public final class ClassKitGameTests {
         assertText(helper, player, GeneratedSpells.ICE_BARRIER, 1, "bonus", "10");
         assertText(helper, player, GeneratedSpells.ICE_BARRIER, 3, "bonus", "30");
         assertText(helper, player, GeneratedSpells.ICE_BARRIER, 3, "duration", "30");
-        assertText(helper, player, GeneratedSpells.BATTLE_SHOUT, 1, "bonus", "10");
-        assertText(helper, player, GeneratedSpells.BATTLE_SHOUT, 2, "bonus", "15");
-        assertText(helper, player, GeneratedSpells.BATTLE_SHOUT, 3, "bonus", "20");
-        assertText(helper, player, GeneratedSpells.BATTLE_SHOUT, 3, "duration", "20");
+        assertText(helper, player, GeneratedSpells.BATTLE_SHOUT, 1, "bonus_attack_damage", "5");
+        assertText(helper, player, GeneratedSpells.BATTLE_SHOUT, 1, "bonus_attack_speed", "10");
+        assertText(helper, player, GeneratedSpells.BATTLE_SHOUT, 2, "bonus_attack_damage", "10");
+        assertText(helper, player, GeneratedSpells.BATTLE_SHOUT, 2, "bonus_attack_speed", "20");
+        assertText(helper, player, GeneratedSpells.BATTLE_SHOUT, 2, "duration", "600");
         assertText(helper, player, GeneratedSpells.SHIELD_BASH, 5, "duration", "1.5");
         assertText(helper, player, GeneratedSpells.FIREBALL, 5, "periodic", "1");
         assertText(helper, player, GeneratedSpells.FIREBALL, 5, "periodic_total", "12");

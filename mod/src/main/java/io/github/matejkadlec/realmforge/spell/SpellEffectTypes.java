@@ -9,7 +9,8 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 /**
  * The spell effect types (architecture 5.3), the first set: {@code damage} and {@code heal} (C3a-1), the status
  * effects, the spell entities, the movements and {@code knockback} (C3a-3), {@code cleanse} (C4), the melee shapes
- * (RLM-399) and the {@code cone} (RLM-542). The pipeline knows the same ids
+ * (RLM-399), the {@code cone} (RLM-542), and {@code charge} and {@code gain_resource} (RLM-543). The pipeline knows the
+ * same ids
  * ({@code tools/realmforge_tools/schema/spell.py}).
  */
 public final class SpellEffectTypes {
@@ -63,6 +64,14 @@ public final class SpellEffectTypes {
     /** {@code realmforge:dash}: throws the caster toward the target ({@link DashEffect}). */
     public static final DeferredHolder<MapCodec<? extends SpellEffect>, MapCodec<DashEffect>> DASH =
             TYPES.register("dash", () -> DashEffect.MAP_CODEC);
+
+    /** {@code realmforge:charge}: rushes the caster at its enemy and acts round the landing ({@link ChargeEffect}). */
+    public static final DeferredHolder<MapCodec<? extends SpellEffect>, MapCodec<ChargeEffect>> CHARGE =
+            TYPES.register("charge", () -> ChargeEffect.MAP_CODEC);
+
+    /** {@code realmforge:gain_resource}: gives the caster some of a resource ({@link GainResourceEffect}). */
+    public static final DeferredHolder<MapCodec<? extends SpellEffect>, MapCodec<GainResourceEffect>> GAIN_RESOURCE =
+            TYPES.register("gain_resource", () -> GainResourceEffect.MAP_CODEC);
 
     /** {@code realmforge:knockback}: pushes the target away ({@link KnockbackEffect}). */
     public static final DeferredHolder<MapCodec<? extends SpellEffect>, MapCodec<KnockbackEffect>> KNOCKBACK =

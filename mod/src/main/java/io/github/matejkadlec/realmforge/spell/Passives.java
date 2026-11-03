@@ -110,7 +110,7 @@ public final class Passives {
             for (int n = 0; n < own.size(); n++) {
                 Passive.Proc proc = own.get(n);
                 procs.add(new Proc(procId(known.spell().key().identifier(), n), proc.trigger(),
-                        proc.chanceAt(known.level()), proc.cooldownTicks(), proc.actionAt(known.level()),
+                        proc.chanceAt(known.level()), proc.cooldownTicks(), proc.actionAt(known.spell().key(), known.level()),
                         proc.effect().flatMap(Holder::unwrapKey).map(ResourceKey::identifier),
                         proc.spell().map(ResourceKey::identifier), true));
             }

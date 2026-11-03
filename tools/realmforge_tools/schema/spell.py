@@ -10,12 +10,15 @@ placeholders (architecture 6.3); our own status effects (C3c, RLM-26) add damage
 aiming (RLM-344, RLM-346) lets a projectile fly without a lifetime and a ground point clamp to its range. The class
 kits (C4, RLM-27) add what a cast needs in hand (``requires``, RLM-499), the per-rank armor shred, spell penetration
 and crit chance of a hit, status effects that last longer and grow stronger with the rank, ``cleanse``, spells cast
-while stunned, and the rule that a player's channel ticks every 0.5 s (RLM-518).
+while stunned, and the rule that a player's channel ticks every 0.5 s (RLM-518). The Arms Warrior's tree (RLM-543) adds
+``charge``, ``gain_resource``, a heal of a share of max health on the caster, a refund on a kill, a target distance
+that grows per rank, and a proc's damage over time from the hit that fired it.
 """
 
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, model_validator
@@ -44,6 +47,8 @@ SCALING_OF_KIND: dict[str, str] = {"magic": "spell_power", "physical": "attack_d
 
 # Combat effects keep their own short time scale (research SP-8: most last 4-10 s, none beyond 30 s in CTE2).
 MAX_EFFECT_SECONDS = 60.0
+# A status effect a spell applies may be a long buff (Matěj, 2026-11-03: Battle Shout's 600 s): at most 10 minutes.
+MAX_APPLY_EFFECT_SECONDS = 600.0
 MAX_AMPLIFIER = 9
 MAX_PROJECTILE_SPEED = 100.0
 MAX_PROJECTILE_SIZE = 4.0
@@ -60,6 +65,8 @@ MAX_SPLASH_RADIUS = 4.0
 MAX_CONE_RANGE = 16.0
 # What a window or an internal cooldown lasts at most: a minute.
 MAX_WINDOW_SECONDS = 60.0
+# A charge's speed (RLM-543: Charge's 24 blocks a second, about WoW's): at most 3 blocks a tick.
+MAX_CHARGE_SPEED = 60.0
 
 # What a player's cast needs in hand (RLM-499); mobs and bosses cast without it. melee_weapon: an item of
 # realmforge:melee_weapons in the main hand; shield: a shield (c:tools/shield) in either hand.
@@ -78,6 +85,8 @@ AREA = f"{MOD_ID}:area"
 TELEPORT = f"{MOD_ID}:teleport"
 DASH = f"{MOD_ID}:dash"
 CONE = f"{MOD_ID}:cone"
+CHARGE = f"{MOD_ID}:charge"
+GAIN_RESOURCE = f"{MOD_ID}:gain_resource"
 SELF = f"{MOD_ID}:self"
 ENEMY = f"{MOD_ID}:enemy"
 ALLY = f"{MOD_ID}:ally"
@@ -98,11 +107,21 @@ NPC_TARGETING: tuple[str, ...] = (CURRENT_TARGET, RANDOM_PLAYER, FARTHEST_PLAYER
 #   healing over time (one of ours with periodic), raised by the caster's stats as its ticks are;
 # - against_damage: the first damage effect's damage against a target with its against_effect's status effect
 #   (RLM-542: Ice Lance against a Frozen target), as damage reads;
-# - radius: the first area's radius in blocks, or with no area the first cone's range;
+# - radius: the first area's radius in blocks, or with no area the first cone's range, or the first charge's landing
+#   radius;
 # - armor_shred, penetration: the first damage effect's extra armor shred and spell penetration, in percent;
 # - crit_chance: the spell's bonus crit chance, in percent;
 # - bonus: the one attribute modifier of the first apply_effect's status effect at its strength, in percent for a
-#   multiplied operation and in the attribute's points otherwise.
+#   multiplied operation and in the attribute's points otherwise; bonus_<attribute>, e.g. {bonus_attack_speed}, its
+#   modifier on that attribute (by the id's path) when it has several (RLM-543: Battle Shout's two);
+# - dot_damage, dot_duration: the first damage_over_time's damage over its whole duration, raised by the school's
+#   power as its ticks are, and its duration in seconds (RLM-543: Rend's bleed);
+# - max_health_heal: the first heal's share of max health, in percent (RLM-543: Victory Rush);
+# - resource_gain: the first gain_resource's amount (RLM-543: Charge's rage);
+# - min_range, range: the target_distance's nearest and farthest blocks, range a targeted spell's range without one;
+# - window: how long the spell's window stays open, in seconds; health_below: its target health condition, in percent;
+# - extra_cost, extra_damage: the most extra resource the cost spends and the damage each point adds, in percent;
+# - refund, refund_rank: what a kill refunds and from which rank (RLM-543: Execute).
 # Every number is the one at the player's spell level (rank).
 PLACEHOLDERS: tuple[str, ...] = (
     "damage",
@@ -117,8 +136,22 @@ PLACEHOLDERS: tuple[str, ...] = (
     "penetration",
     "crit_chance",
     "bonus",
+    "dot_damage",
+    "dot_duration",
+    "max_health_heal",
+    "resource_gain",
+    "min_range",
+    "range",
+    "window",
+    "health_below",
+    "extra_cost",
+    "extra_damage",
+    "refund",
+    "refund_rank",
 )
 PERIODIC_PLACEHOLDERS: frozenset[str] = frozenset({"periodic", "periodic_total", "interval"})
+# {bonus_<attribute>}: the first applied status effect's modifier on the attribute with that path (RLM-543).
+ATTRIBUTE_BONUS = re.compile(r"bonus_([a-z_]+)")
 # The placeholders a passive spell's description may name (RLM-541), each at the player's rank; the next rank's tooltip
 # line reads them at that rank:
 # - bonus: the passive's first modifier, in percent for a multiplied operation, in the attribute's unit otherwise;
@@ -128,8 +161,10 @@ PERIODIC_PLACEHOLDERS: frozenset[str] = frozenset({"periodic", "periodic_total",
 #   rank;
 # - splash_radius, splash_radius_rank: how many blocks its first splash bonus adds to a bolt's splash, and from which
 #   rank (RLM-542: Improved Frostbolt);
-# - proc_chance, proc_duration, proc_cooldown: its first proc's chance in percent, how long the effect it gives lasts
-#   and its internal cooldown on each target, in seconds (RLM-542: Frostbite).
+# - proc_chance, proc_duration, proc_cooldown: its first proc's chance in percent, how long the effect or the damage
+#   over time it gives lasts and its internal cooldown on each target, in seconds (RLM-542: Frostbite);
+# - proc_damage: its first proc's damage over time, as a share of the hit that fired it, in percent (RLM-543: Deep
+#   Wounds).
 PASSIVE_PLACEHOLDERS: tuple[str, ...] = (
     "bonus",
     "spell_damage",
@@ -141,6 +176,7 @@ PASSIVE_PLACEHOLDERS: tuple[str, ...] = (
     "proc_chance",
     "proc_duration",
     "proc_cooldown",
+    "proc_damage",
 )
 _PLACEHOLDER = re.compile(r"\{([^{}]*)\}")
 
@@ -242,6 +278,11 @@ class DamageEffectDef(_ScaledAmount):
         description="More damage against a target with a status effect (RLM-540), e.g. "
         "{effect: realmforge:frozen, damage_percent: 200} triples it against a Frozen target.",
     )
+    magic_shield_damage_percent: Annotated[float, Field(gt=0, le=1000, allow_inf_nan=False)] | None = Field(
+        default=None,
+        description="How much more of a magic shield the hit drains, in percent, added to the caster's own "
+        "(realmforge:magic_shield_damage; RLM-580: Astone's spells, 15 on her own 15).",
+    )
 
     @model_validator(mode="after")
     def _per_level_needs_base(self) -> DamageEffectDef:
@@ -267,10 +308,34 @@ def _leveled_percent(base: float | None, per_level: float | None, level: int) ->
 
 
 class HealEffectDef(_ScaledAmount):
-    """Healing of each target: its amount plus its coefficient of the caster's power, times (1 + the school's power) for
-    a spell that scales with spell power. Heals can crit too (Matěj, 2026-10-15)."""
+    """Healing of each target: its amount plus its coefficient of the caster's power and its share of the healed
+    entity's max health, times (1 + the school's power) for a spell that scales with spell power. Heals can crit too
+    (Matěj, 2026-10-15). With ``on_caster`` it heals the caster instead (RLM-543: Victory Rush strikes an enemy and heals
+    the Warrior)."""
 
     type: Literal["realmforge:heal"]
+    max_health_percent: NonNegative | None = Field(
+        default=None,
+        description="Share of the healed entity's max health added at spell level 1, in percent (Victory Rush's 10).",
+    )
+    max_health_per_level_percent: NonNegative | None = Field(
+        default=None, description="Added to max_health_percent for every spell level above 1."
+    )
+    on_caster: Literal[True] | None = Field(
+        default=None,
+        description="true: heals the caster instead of the spell's target, once, whatever the spell targets. Only "
+        "among the spell's own effects, not a projectile's, an area's, a melee shape's, a cone's or a charge's.",
+    )
+
+    @model_validator(mode="after")
+    def _max_health_growth_needs_base(self) -> HealEffectDef:
+        if self.max_health_per_level_percent is not None and self.max_health_percent is None:
+            raise ValueError("max_health_per_level_percent grows max_health_percent: set it too")
+        return self
+
+    def max_health_at(self, level: int) -> float:
+        """The share of max health healed at ``level``, in percent; 0 without any."""
+        return _leveled_percent(self.max_health_percent, self.max_health_per_level_percent, level)
 
 
 class DamageOverTimeEffectDef(_ScaledAmount):
@@ -304,13 +369,14 @@ class DamageOverTimeEffectDef(_ScaledAmount):
 
 
 class ApplyEffectEffectDef(StrictModel):
-    """Gives each target a status effect: a vanilla one (``minecraft:slowness``) until our own come with C3c
-    (RLM-26). Combat effects keep their own short time scale (research SP-8), so at most 60 seconds."""
+    """Gives each target a status effect: a vanilla one (``minecraft:slowness``) or our own (C3c). Combat effects keep
+    their own short time scale (research SP-8), but a buff may last long (Matěj, 2026-11-03: Battle Shout's 10
+    minutes), so at most 600 seconds."""
 
     type: Literal["realmforge:apply_effect"]
     effect: ResourceId = Field(description="The status effect, e.g. minecraft:slowness.")
     duration_seconds: Seconds = Field(
-        description="How long it lasts at spell level 1; more than 0, at most 60."
+        description="How long it lasts at spell level 1; more than 0, at most 600."
     )
     duration_per_level_seconds: Seconds | None = Field(
         default=None,
@@ -330,10 +396,8 @@ class ApplyEffectEffectDef(StrictModel):
 
     @model_validator(mode="after")
     def _duration(self) -> ApplyEffectEffectDef:
-        if not 0 < self.duration_seconds <= MAX_EFFECT_SECONDS:
-            raise ValueError(
-                f"duration_seconds is more than 0 and at most {MAX_EFFECT_SECONDS:g} (research SP-8)"
-            )
+        if not 0 < self.duration_seconds <= MAX_APPLY_EFFECT_SECONDS:
+            raise ValueError(f"duration_seconds is more than 0 and at most {MAX_APPLY_EFFECT_SECONDS:g}")
         if self.stronger_at_levels != sorted(set(self.stronger_at_levels)) or any(
             level < 2 for level in self.stronger_at_levels
         ):
@@ -584,6 +648,43 @@ class DashEffectDef(StrictModel):
     )
 
 
+class ChargeEffectDef(StrictModel):
+    """Rushes the caster at its enemy target (RLM-543: the Arms Warrior's Charge) until it stands in front of it, the
+    server steering it every tick, then runs ``effects`` on every enemy within ``landing_radius`` of where it lands
+    (Charge's stun). A charge that cannot get through (a wall) lands where it stopped."""
+
+    type: Literal["realmforge:charge"]
+    speed: float = Field(
+        gt=0,
+        le=MAX_CHARGE_SPEED,
+        allow_inf_nan=False,
+        description=f"How fast the caster rushes, in blocks per second, at most {MAX_CHARGE_SPEED:g}.",
+    )
+    landing_radius: float = Field(
+        gt=0,
+        le=MAX_AREA_RADIUS,
+        allow_inf_nan=False,
+        description="The blocks round the landing whose enemies the effects reach, at most 16.",
+    )
+    effects: list[EntityEffectDef] = Field(
+        default_factory=list, description="What the landing does to each enemy round it, e.g. a stun."
+    )
+
+
+class GainResourceEffectDef(_LeveledAmount):
+    """Gives the caster an amount of a resource, growing per rank (RLM-543: Charge generates 15/20 rage). Players only,
+    as only their casts cost anything."""
+
+    type: Literal["realmforge:gain_resource"]
+    resource: ResourceType = Field(description="The resource the caster gains, e.g. realmforge:rage.")
+
+    @model_validator(mode="after")
+    def _positive(self) -> GainResourceEffectDef:
+        if self.amount == 0 and self.per_level == 0:
+            raise ValueError("a gain of 0 gives nothing: leave the effect out")
+        return self
+
+
 SpellEffectDef = Annotated[
     DamageEffectDef
     | HealEffectDef
@@ -597,7 +698,9 @@ SpellEffectDef = Annotated[
     | MeleeEffectDef
     | ConeEffectDef
     | TeleportEffectDef
-    | DashEffectDef,
+    | DashEffectDef
+    | ChargeEffectDef
+    | GainResourceEffectDef,
     Field(discriminator="type"),
 ]
 
@@ -827,6 +930,25 @@ class ExtraCostDef(StrictModel):
     )
 
 
+class KillRefundDef(StrictModel):
+    """Resource a player's cast gets back for each enemy its hits kill, growing per rank, from a rank on (RLM-543:
+    Execute refunds 5/10/15 rage, Matěj, 2026-11-03)."""
+
+    amount: Annotated[float, Field(gt=0, allow_inf_nan=False)] = Field(
+        description="How much comes back at rank 1, e.g. 5."
+    )
+    per_level: NonNegative | None = Field(
+        default=None, description="Added for every rank above 1, if it grows."
+    )
+    from_level: int = Field(
+        default=1, ge=1, le=MAX_SPELL_LEVEL, description="The rank from which a kill refunds it."
+    )
+
+    def amount_at(self, level: int) -> float:
+        """What a kill refunds at rank ``level``: nothing below from_level."""
+        return self.amount + (self.per_level or 0) * (level - 1) if level >= self.from_level else 0
+
+
 class CostDef(_LeveledAmount):
     """What a cast costs: an amount of a resource (mana or rage), growing per spell level like the effects."""
 
@@ -834,6 +956,11 @@ class CostDef(_LeveledAmount):
     extra: ExtraCostDef | None = Field(
         default=None,
         description="More of the resource the cast spends when the caster has it, for more damage (RLM-540).",
+    )
+    refund_on_kill: KillRefundDef | None = Field(
+        default=None,
+        description="Resource that comes back for each enemy the spell's hits kill, from a rank on (RLM-543: "
+        "Execute's {amount: 5, per_level: 5}).",
     )
 
     @model_validator(mode="after")
@@ -972,7 +1099,7 @@ class CritChanceDef(StrictModel):
 
 class BlockCooldownDef(StrictModel):
     """A raised two-handed weapon's cooldown after a block or after lowering it (architecture 9.3), shorter from a rank
-    on (RLM-541: Two-Handed Weapon Specialization's 0.25 s at rank 3)."""
+    on (RLM-541: Two-Handed Specialization's 0.25 s at rank 3)."""
 
     reduction_seconds: Seconds = Field(description="How much shorter, in seconds; more than 0, at most 10.")
     from_level: int = Field(
@@ -1022,10 +1149,39 @@ class ProcApplyEffectDef(StrictModel):
         return self.duration_seconds
 
 
+class ProcDamageOverTimeDef(StrictModel):
+    """A damage over time a hit or crit proc gives the entity hit: a share of the hit's damage, after its reductions, as
+    the player's own stack of a status effect with stacks (RLM-543: Deep Wounds bleeds for 20/40/60 % of a crit's
+    damage over 6 s). A new proc refreshes the stack and adds what the old one had left, so every hit's share is
+    dealt."""
+
+    effect: ResourceId = Field(description="One of our status effects with stacks, e.g. realmforge:bleeding.")
+    damage_percent: Annotated[float, Field(gt=0, le=1000, allow_inf_nan=False)] = Field(
+        description="The share of the hit's damage dealt over the duration at rank 1, in percent."
+    )
+    damage_per_level_percent: NonNegative | None = Field(
+        default=None, description="Added to damage_percent for every rank above 1."
+    )
+    duration_seconds: Seconds = Field(
+        description="How long it lasts: a whole number of the effect's intervals, at most 60."
+    )
+
+    @model_validator(mode="after")
+    def _duration(self) -> ProcDamageOverTimeDef:
+        if not 0 < self.duration_seconds <= MAX_EFFECT_SECONDS:
+            raise ValueError(f"duration_seconds is more than 0 and at most {MAX_EFFECT_SECONDS:g}")
+        return self
+
+    def damage_at(self, level: int) -> float:
+        """The share at rank ``level``, in percent."""
+        return _leveled_percent(self.damage_percent, self.damage_per_level_percent, level)
+
+
 class ProcDef(StrictModel):
     """A proc of a passive spell (RLM-540): when its trigger happens, at its chance and outside its internal cooldown
     on that target (research SP-15), it does one thing: gives the other entity a status effect, casts a spell at it
-    at the passive's rank, or opens a spell's window. Procs never trigger procs."""
+    at the passive's rank, opens a spell's window, or makes it bleed for a share of the hit (RLM-543). Procs never
+    trigger procs."""
 
     trigger: Literal["hit", "crit", "kill", "hit_taken", "applies_effect", "tick"] = Field(
         description="hit, crit, kill, hit_taken: the player's hit, crit or kill, or a hit on the player; "
@@ -1056,14 +1212,23 @@ class ProcDef(StrictModel):
     open_window: ResourceId | None = Field(
         default=None, description="Opens this spell's window for the player, e.g. realmforge:overpower."
     )
+    damage_over_time: ProcDamageOverTimeDef | None = Field(
+        default=None,
+        description="A hit or crit proc: makes the entity hit bleed for a share of the hit's damage (RLM-543: Deep "
+        "Wounds).",
+    )
 
     @model_validator(mode="after")
     def _consistent(self) -> ProcDef:
         actions = [
-            name for name in ("apply_effect", "cast", "open_window") if getattr(self, name) is not None
+            name
+            for name in ("apply_effect", "cast", "open_window", "damage_over_time")
+            if getattr(self, name) is not None
         ]
         if len(actions) != 1:
-            raise ValueError("a proc does one thing: apply_effect, cast or open_window")
+            raise ValueError("a proc does one thing: apply_effect, cast, open_window or damage_over_time")
+        if self.damage_over_time is not None and self.trigger not in ("hit", "crit"):
+            raise ValueError("a damage_over_time proc takes a share of a hit: its trigger is hit or crit")
         if self.trigger in ("applies_effect", "tick") and self.effect is None:
             raise ValueError(f"a {self.trigger} proc names the effect it watches")
         if self.trigger not in ("applies_effect", "tick") and self.effect is not None:
@@ -1082,7 +1247,7 @@ class ProcDef(StrictModel):
 class PassiveDef(StrictModel):
     """What a passive spell does (RLM-541): it is never cast and never on the spell bar; while the player knows it, at
     its rank, it gives modifiers, raises named spells' damage, adds crit chance against a condition or shortens a
-    two-handed block's cooldown, and its procs fire (RLM-540: Frostbite, Taste for Blood, Deep Wounds)."""
+    two-handed block's cooldown, and its procs fire (RLM-540: Frostbite, Bloodthirst, Deep Wounds)."""
 
     while_wielding: ResourceId | None = Field(
         default=None,
@@ -1101,8 +1266,8 @@ class PassiveDef(StrictModel):
     )
     procs: list[ProcDef] = Field(
         default_factory=list,
-        description="What fires on the player's hits, crits, kills, effects and ticks (RLM-540): Frostbite, Taste for "
-        "Blood, Deep Wounds.",
+        description="What fires on the player's hits, crits, kills, effects and ticks (RLM-540): Frostbite, "
+        "Bloodthirst, Deep Wounds.",
     )
     block_cooldown: BlockCooldownDef | None = Field(
         default=None, description="A two-handed block's cooldown, shorter from a rank on."
@@ -1138,6 +1303,11 @@ class PassiveDef(StrictModel):
                 proc.apply_effect is not None and proc.apply_effect.from_level is not None
                 for proc in self.procs
             )
+            or any(
+                proc.damage_over_time is not None
+                and proc.damage_over_time.damage_per_level_percent is not None
+                for proc in self.procs
+            )
             or any(bonus.from_level > 1 for bonus in self.splash_radius)
         )
 
@@ -1156,6 +1326,7 @@ ACTIVE_FIELDS: tuple[str, ...] = (
     "castable_while_stunned",
     "window",
     "target_health_below_percent",
+    "target_distance",
     "effects",
 )
 REQUIRED_ACTIVE_FIELDS: tuple[str, ...] = ("scales_with", "targeting", "cast", "effects")
@@ -1174,12 +1345,45 @@ _PLACEHOLDER_EFFECT: dict[str, str] = {
     "armor_shred": DAMAGE,
     "penetration": DAMAGE,
     "bonus": APPLY_EFFECT,
+    "dot_damage": DAMAGE_OVER_TIME,
+    "dot_duration": DAMAGE_OVER_TIME,
+    "max_health_heal": HEAL,
+    "resource_gain": GAIN_RESOURCE,
 }
-# Placeholders that read a field of the first damage effect, which it must set.
-_DAMAGE_FIELD_PLACEHOLDERS: dict[str, str] = {
+# Placeholders that read a field of the first effect they need, which it must set.
+_FIELD_PLACEHOLDERS: dict[str, str] = {
     "against_damage": "against_effect",
     "armor_shred": "armor_shred_percent",
     "penetration": "penetration_percent",
+    "max_health_heal": "max_health_percent",
+}
+# Placeholders that read a part of the spell rather than an effect (RLM-543): what they read, and whether it is there.
+_SPELL_PLACEHOLDERS: dict[str, tuple[str, Callable[[SpellDef], bool]]] = {
+    "min_range": (
+        "target_distance's min",
+        lambda spell: spell.target_distance is not None and spell.target_distance.min > 0,
+    ),
+    "range": (
+        "a range: target_distance's max, or the targeting's range",
+        lambda spell: (
+            spell.target_distance is not None or getattr(spell.targeting, "range", None) is not None
+        ),
+    ),
+    "window": ("the spell's window", lambda spell: spell.window is not None),
+    "health_below": (
+        "target_health_below_percent",
+        lambda spell: spell.target_health_below_percent is not None,
+    ),
+    "extra_cost": ("cost.extra", lambda spell: spell.cost is not None and spell.cost.extra is not None),
+    "extra_damage": ("cost.extra", lambda spell: spell.cost is not None and spell.cost.extra is not None),
+    "refund": (
+        "cost.refund_on_kill",
+        lambda spell: spell.cost is not None and spell.cost.refund_on_kill is not None,
+    ),
+    "refund_rank": (
+        "cost.refund_on_kill",
+        lambda spell: spell.cost is not None and spell.cost.refund_on_kill is not None,
+    ),
 }
 
 
@@ -1201,6 +1405,22 @@ class WindowDef(StrictModel):
         if len(set(self.opened_by)) != len(self.opened_by):
             raise ValueError("opened_by names each trigger once")
         return self
+
+
+class TargetDistanceDef(StrictModel):
+    """How near and how far the spell's enemy may be, the farthest growing per rank (RLM-543: Charge reaches 3 to 10
+    blocks, 12 at rank 2), from the caster's eyes to the nearest point of the target's box as a range is. The
+    targeting's range is the farthest any rank reaches, which aim assistance and the client's pick use."""
+
+    min: NonNegative = Field(default=0, description="The nearest the target may be, in blocks.")
+    max: float = Field(
+        gt=0, le=MAX_RANGE, allow_inf_nan=False, description="The farthest at rank 1, in blocks, at most 128."
+    )
+    max_per_level: NonNegative = Field(default=0, description="Added to max for every rank above 1.")
+
+    def max_at(self, level: int) -> float:
+        """The farthest at rank ``level``, in blocks."""
+        return self.max + self.max_per_level * (level - 1)
 
 
 class SpellDef(StrictModel):
@@ -1275,6 +1495,11 @@ class SpellDef(StrictModel):
         default=None,
         description="Castable only on a target below this share of its health, in percent (RLM-540: Execute's 20).",
     )
+    target_distance: TargetDistanceDef | None = Field(
+        default=None,
+        description="Castable only on an enemy this near or far, the farthest growing per rank (RLM-543: Charge's "
+        "{min: 3, max: 10, max_per_level: 2}); the targeting's range is the farthest at max_level.",
+    )
     effects: list[SpellEffectDef] = Field(
         default_factory=list,
         description="What the spell does, in order. Required for an active spell; a passive one leaves it out.",
@@ -1314,8 +1539,13 @@ class SpellDef(StrictModel):
                 leveled.append("passive")
             if self.cost is not None and self.cost.per_level != 0:
                 leveled.append("cost")
+            refund = self.cost.refund_on_kill if self.cost is not None else None
+            if refund is not None and (refund.from_level > 1 or refund.per_level):
+                leveled.append("cost.refund_on_kill")
             if self.crit.bonus_chance_per_level_percent is not None:
                 leveled.append("crit")
+            if self.target_distance is not None and self.target_distance.max_per_level != 0:
+                leveled.append("target_distance")
             if leveled:
                 raise ValueError(
                     f"nothing grows with the level at max_level 1 ({', '.join(leveled)}): raise max_level or drop "
@@ -1349,10 +1579,10 @@ class SpellDef(StrictModel):
                     f"{path}.against_effect: stays at most 1000 % more damage at max_level {top}"
                 )
             if effect.type == APPLY_EFFECT:
-                if effect.duration_at(top) > MAX_EFFECT_SECONDS:
+                if effect.duration_at(top) > MAX_APPLY_EFFECT_SECONDS:
                     raise ValueError(
                         f"{path}: lasts {effect.duration_at(top):g} s at max_level {top}, more than "
-                        f"{MAX_EFFECT_SECONDS:g} (research SP-8)"
+                        f"{MAX_APPLY_EFFECT_SECONDS:g}"
                     )
                 if any(level > top for level in effect.stronger_at_levels):
                     raise ValueError(
@@ -1360,6 +1590,9 @@ class SpellDef(StrictModel):
                     )
         if self.crit.bonus_chance_at(top) > 100:
             raise ValueError(f"crit: the bonus chance stays at most 100 % at max_level {top}")
+        refund = self.cost.refund_on_kill if self.cost is not None else None
+        if refund is not None and refund.from_level > top:
+            raise ValueError(f"cost.refund_on_kill.from_level: a rank above max_level {top} is never reached")
         if self.passive is not None:
             if self.passive.crit_chance is not None and self.passive.crit_chance.chance_at(top) > 100:
                 raise ValueError(f"passive.crit_chance stays at most 100 % at max_level {top}")
@@ -1428,6 +1661,36 @@ class SpellDef(StrictModel):
         return self
 
     @model_validator(mode="after")
+    def _target_distance(self) -> SpellDef:
+        distance = self.target_distance
+        if distance is None:
+            return self
+        reach = getattr(self.targeting, "range", None)
+        if self.targeting.type != ENEMY or reach is None:
+            raise ValueError(
+                "target_distance is how far an enemy target is: the targeting is an enemy with a range"
+            )
+        if distance.min >= distance.max:
+            raise ValueError(f"target_distance: min {distance.min:g} is nearer than max {distance.max:g}")
+        farthest = distance.max_at(self.max_level)
+        if abs(reach - farthest) > 1e-9:
+            raise ValueError(
+                f"targeting.range is the farthest any rank reaches, target_distance's {farthest:g} blocks at "
+                f"max_level {self.max_level}, not {reach:g}"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _heal_on_caster(self) -> SpellDef:
+        for path, effect in self.all_effects():
+            if effect.type == HEAL and effect.on_caster and path.count(".") > 1:
+                raise ValueError(
+                    f"{path}.on_caster: a heal of the caster is one of the spell's own effects, run once; inside "
+                    "a projectile, an area, a melee shape, a cone or a charge it would run for every entity reached"
+                )
+        return self
+
+    @model_validator(mode="after")
     def _placeholders(self) -> SpellDef:
         text = self.description.en_us
         if _PLACEHOLDER.sub("", text).count("{") or _PLACEHOLDER.sub("", text).count("}"):
@@ -1436,9 +1699,16 @@ class SpellDef(StrictModel):
             self._passive_placeholders()
             return self
         for name in self.placeholders():
+            if ATTRIBUTE_BONUS.fullmatch(name):
+                if self.first_effect(APPLY_EFFECT) is None:
+                    raise ValueError(
+                        f"description: {{{name}}} needs a {APPLY_EFFECT} effect, and the spell has none"
+                    )
+                continue
             if name not in PLACEHOLDERS:
                 raise ValueError(
-                    f"description: unknown placeholder {{{name}}}; known: {', '.join(PLACEHOLDERS)}"
+                    f"description: unknown placeholder {{{name}}}; known: {', '.join(PLACEHOLDERS)} and "
+                    "bonus_<attribute>"
                 )
             if name == "crit_chance":
                 if self.crit.bonus_chance_at(self.max_level) == 0:
@@ -1446,16 +1716,23 @@ class SpellDef(StrictModel):
                         "description: {crit_chance} reads the crit's bonus chance, and the spell has none"
                     )
                 continue
+            if name in _SPELL_PLACEHOLDERS:
+                reads, present = _SPELL_PLACEHOLDERS[name]
+                if not present(self):
+                    raise ValueError(f"description: {{{name}}} reads {reads}, and the spell has none")
+                continue
             needed = _PLACEHOLDER_EFFECT[name]
             first = self.first_effect(needed)
             if name == "radius" and first is None:
-                needed, first = f"{AREA} or {CONE}", self.first_effect(CONE)
+                needed = f"{AREA}, {CONE} or {CHARGE}"
+                first = self.first_effect(CONE) or self.first_effect(CHARGE)
             if first is None:
                 raise ValueError(f"description: {{{name}}} needs a {needed} effect, and the spell has none")
-            field = _DAMAGE_FIELD_PLACEHOLDERS.get(name)
+            field = _FIELD_PLACEHOLDERS.get(name)
             if field is not None and getattr(first, field) is None:
                 raise ValueError(
-                    f"description: {{{name}}} reads the first damage effect's {field}, which it lacks"
+                    f"description: {{{name}}} reads the first {needed.removeprefix(f'{MOD_ID}:')} effect's {field}, "
+                    "which it lacks"
                 )
         return self
 
@@ -1471,8 +1748,10 @@ class SpellDef(StrictModel):
             "splash_radius": bool(passive.splash_radius),
             "splash_radius_rank": bool(passive.splash_radius),
             "proc_chance": bool(passive.procs),
-            "proc_duration": bool(passive.procs) and passive.procs[0].apply_effect is not None,
+            "proc_duration": bool(passive.procs)
+            and (passive.procs[0].apply_effect is not None or passive.procs[0].damage_over_time is not None),
             "proc_cooldown": bool(passive.procs) and passive.procs[0].cooldown_seconds > 0,
+            "proc_damage": bool(passive.procs) and passive.procs[0].damage_over_time is not None,
         }
         for name in self.placeholders():
             if name not in PASSIVE_PLACEHOLDERS:
@@ -1507,6 +1786,7 @@ def _grows_with_level(effect: BaseModel) -> bool:
         getattr(effect, "per_level", 0) != 0
         or getattr(effect, "attack_damage_per_level_percent", None) is not None
         or getattr(effect, "spell_power_per_level_percent", None) is not None
+        or getattr(effect, "max_health_per_level_percent", None) is not None
         or getattr(effect, "armor_shred_per_level_percent", None) is not None
         or getattr(effect, "penetration_per_level_percent", None) is not None
         or getattr(getattr(effect, "against_effect", None), "damage_per_level_percent", None) is not None

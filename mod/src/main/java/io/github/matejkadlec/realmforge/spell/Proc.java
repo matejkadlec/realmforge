@@ -11,9 +11,10 @@ import net.minecraft.world.effect.MobEffect;
 
 /**
  * A proc (architecture 12): when its holder hits, crits, kills, is hit, gives an enemy a status effect or deals a tick of
- * damage over time, it may cast a spell, apply a status effect or open a spell's window, then waits out its internal
+ * damage over time, it may cast a spell, apply a status effect, open a spell's window or make the entity hit bleed for
+ * a share of the hit (RLM-543), then waits out its internal
  * cooldown (research SP-15), on its holder or on each target. Items, talents (postponed, RLM-28) and passive spells
- * (RLM-540: Frostbite, Taste for Blood, Deep Wounds) give procs through a {@link Procs.Source}; {@link Procs} runs them.
+ * (RLM-540: Frostbite, Bloodthirst, Deep Wounds) give procs through a {@link Procs.Source}; {@link Procs} runs them.
  *
  * @param id names the proc: its internal cooldown and the proc origin its spell's hits carry
  * @param trigger what makes it fire
@@ -62,7 +63,7 @@ public record Proc(Identifier id, Trigger trigger, double chance, int cooldownTi
         HIT_TAKEN("hit_taken"),
         /** The holder gave another entity a status effect (Frostbite: the player's Slowness, RLM-540). */
         APPLIES_EFFECT("applies_effect"),
-        /** A tick of the holder's damage over time landed on another entity (Taste for Blood: Rend's, RLM-540). */
+        /** A tick of the holder's damage over time landed on another entity (Bloodthirst: Rend's, RLM-540). */
         TICK("tick");
 
         public static final Codec<Trigger> CODEC = StringRepresentable.fromEnum(Trigger::values);
@@ -80,11 +81,35 @@ public record Proc(Identifier id, Trigger trigger, double chance, int cooldownTi
     }
 
     /** What a proc does when it fires. */
-    public sealed interface Action permits CastSpell, ApplyEffect, OpenWindow {
+    public sealed interface Action permits CastSpell, ApplyEffect, OpenWindow, DamageOverTime {
     }
 
     /**
-     * Opens a spell's window for the holder, a player who knows it (Taste for Blood opens Overpower's, RLM-540).
+     * Makes the entity hit bleed for a share of the hit that fired the proc (RLM-543: Deep Wounds): the holder's own
+     * stack of a status effect with stacks, from {@code spell}, dealing {@code share} of the hit's damage over
+     * {@code durationTicks}. A stack the entity already has from the holder's same spell is replaced, and what it had
+     * left is added to the new one, so every hit's share is dealt. Only a hit or a crit fires it.
+     *
+     * @param effect the status effect with stacks
+     * @param share the share of the hit's damage, after its reductions, dealt over the duration
+     * @param durationTicks how long it lasts
+     * @param spell the passive spell whose stack it is, if any
+     */
+    public record DamageOverTime(Holder<MobEffect> effect, double share, int durationTicks,
+            Optional<Identifier> spell) implements Action {
+        public DamageOverTime {
+            Objects.requireNonNull(effect, "effect");
+            Objects.requireNonNull(spell, "spell");
+            if (!(share >= 0) || durationTicks < 1) {
+                throw new IllegalArgumentException(
+                        "A damage over time deals a share of 0 or more over a tick or more: " + share + ", "
+                                + durationTicks);
+            }
+        }
+    }
+
+    /**
+     * Opens a spell's window for the holder, a player who knows it (Bloodthirst opens Overpower's, RLM-540).
      *
      * @param spell the spell whose window opens
      */

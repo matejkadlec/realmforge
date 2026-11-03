@@ -1,6 +1,7 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
 import io.github.matejkadlec.realmforge.combat.MobCombatStats;
+import io.github.matejkadlec.realmforge.generated.GeneratedMobs;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
@@ -106,7 +107,10 @@ public final class ApotheosisGameTests {
         helper.succeed();
     }
 
-    /** Matěj, 2026-10-29 (RLM-272): every mob has our armor pierce, armor shred and lifesteal, at 0. */
+    /**
+     * Matěj, 2026-10-29 (RLM-272): every mob has our armor pierce, armor shred and lifesteal, at 0 but where its data
+     * sets one (RLM-580: Astone's armor shred of 15 %).
+     */
     @QaGameTest
     @SuppressWarnings("unchecked")
     public static void everyMobHasOurCombatStats(GameTestHelper helper) {
@@ -118,7 +122,9 @@ public final class ApotheosisGameTests {
             AttributeSupplier supplier = DefaultAttributes.getSupplier((EntityType<? extends LivingEntity>) type);
             for (Holder<Attribute> stat : MobCombatStats.STATS) {
                 helper.assertTrue(supplier.hasAttribute(stat), type + " has " + stat.getRegisteredName());
-                helper.assertValueEqual(supplier.getBaseValue(stat), 0.0, type + "'s base " + stat.getRegisteredName());
+                double base = type == GeneratedMobs.ASTONE.get() && stat.equals(GeneratedStats.ARMOR_SHRED) ? 0.15 : 0;
+                helper.assertValueEqual(supplier.getBaseValue(stat), base,
+                        type + "'s base " + stat.getRegisteredName());
             }
             types++;
         }

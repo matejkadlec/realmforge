@@ -35,10 +35,12 @@
       "lifetime_ticks": 40,
       "effects": [
         {
-          "amount": 2.0,
+          "amount": 6.0,
           "per_level": 0,
           "attack_damage": 1.0,
-          "type": "realmforge:damage"
+          "type": "realmforge:damage",
+          "armor_shred": 0.15,
+          "magic_shield_damage": 0.15
         },
         {
           "type": "realmforge:knockback",
