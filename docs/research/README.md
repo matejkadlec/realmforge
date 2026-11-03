@@ -90,6 +90,15 @@ consumable decisions of 11–12 October 2026.
   RLM-513): not taken**
   ([ADR 0066](../decisions/0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md)).
 
+## Wand enchantments (2026-11-03, RLM-538)
+
+- **[wand-enchantments.md](wand-enchantments.md)**: what vanilla 26.1.2 and Apothic Enchanting 2.1.0 offer a wand
+  (read in their data and, for Apothic Enchanting's level rule, its classes), why Looting, Scavenger and Knowledge of
+  the Ages already count for spell kills once a wand may carry them, and new wand enchantments as vanilla data with
+  our stats: Potency (Spell Power, Sharpness's twin), Frost, Fire and Arcane Focus, Spell Breach and Swift Recovery,
+  with Quick Casting and Thrift as options. Sized against a level-18 Frostbolt under scaling system C and against the
+  wand gems (RLM-547) and affixes (RLM-562), with five questions for Matěj. **Proposed, not decided.**
+
 ## Coins, merchant trades and trade display (2026-10-19, RLM-222)
 
 - **[coins-and-trades.md](coins-and-trades.md)**: coin, trade-editing and villager mods on NeoForge 26.1.2 (Modrinth
