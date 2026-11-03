@@ -8,8 +8,10 @@ issueTrackerURL = "https://github.com/matejkadlec/realmforge/issues"
 modId = "realmforge_qa"
 version = "${mod_version}"
 displayName = "Realmforge QA"
-authors = "Matěj Kadlec"
+authors = "Matěj Kadlec (https://github.com/matejkadlec)"
 displayURL = "https://github.com/matejkadlec/realmforge"
+logoFile = "realmforge-qa-logo.png"
+logoBlur = true
 description = '''
 Development-only QA tools and GameTests for Realmforge. Not for players.
 '''

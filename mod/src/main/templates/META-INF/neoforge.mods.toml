@@ -1,7 +1,7 @@
 # Mod metadata. Dollar-brace placeholders are expanded from gradle.properties by the generateModMetadata Gradle task.
 modLoader = "javafml"
 loaderVersion = "${loader_version_range}"
-# Code: MPL-2.0, assets: CC BY 4.0 (see LICENSE and LICENSE-ASSETS in the repository root)
+# All Rights Reserved (see LICENSE in the repository root, ADR 0067)
 license = "${mod_license}"
 issueTrackerURL = "https://github.com/matejkadlec/realmforge/issues"
 
@@ -9,10 +9,14 @@ issueTrackerURL = "https://github.com/matejkadlec/realmforge/issues"
 modId = "realmforge"
 version = "${mod_version}"
 displayName = "Realmforge"
-authors = "Matěj Kadlec"
+authors = "Matěj Kadlec (https://github.com/matejkadlec)"
 displayURL = "https://github.com/matejkadlec/realmforge"
+# Both Mods screens read it: NeoForge's details panel and Better ModList's list entry. Linear filtering, as the
+# screens draw this 256 px logo far smaller.
+logoFile = "realmforge-logo.png"
+logoBlur = true
 description = '''
-An RPG overhaul inspired by World of Warcraft: Wrath of the Lich King.
+A content-heavy fantasy RPG overhaul with an immersive story, level-based themed dimensions, instanced dungeons, an in-game guide, and custom races, classes and spells. All rights reserved.
 '''
 
 # The release phase (Alpha, Beta, or empty from v1.0.0) that the welcome message shows after the version
