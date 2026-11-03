@@ -21,7 +21,8 @@ depend on it, and servers don't need it ([ADR 0048](../docs/decisions/0048-bette
   key, D only strafes right. The secondary key acts where no primary key bind takes the key, so with L as Advancements'
   key and JEI's Show Recipe's secondary key, L opens the advancements in game and shows recipes in the inventory.
   Vanilla's debug keys take no key: they act only with F3 held, so Open Chat's secondary key B opens the chat, and
-  F3 + B still only shows hitboxes. Screens check keys their own way (`KeyMapping#matches`, NeoForge's
+  F3 + B still only shows hitboxes. F3 itself wins like any primary key, as Debug Overlay and Debug Modifier act on it
+  alone: a secondary key on F3 does nothing on an F3 press. Screens check keys their own way (`KeyMapping#matches`, NeoForge's
   `isActiveAndMatches`), so there the secondary key always works: with I as Open/Close Inventory's secondary key, I
   closes the inventory too, and Drop, Pick Block, Swap Offhand and the hotbar keys work on a hovered slot with their
   secondary keys.
@@ -92,7 +93,7 @@ From the repository root ([CLAUDE.md](../CLAUDE.md#commands) has the setup):
 ```
 
 The JUnit tests cover the file format, the key capture, the merge of both keys (NeoForge's key check of the container
-screens included), the primary key winning a shared key (debug keys aside), a secondary key taking its own primary's
+screens included), the primary key winning a shared key (debug keys on plain keys aside), a secondary key taking its own primary's
 key, and the conflicts with secondary keys.
 
 ## Releases

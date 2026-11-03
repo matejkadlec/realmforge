@@ -196,6 +196,23 @@ class SecondaryKeysTest {
     }
 
     @Test
+    void theDebugKeysActingOnF3AloneTakeF3FromASecondaryKey() {
+        KeyMapping perspective = keyMapping(GLFW.GLFW_KEY_F5);
+        SecondaryKeys.bind(perspective, KeyModifier.NONE, key(GLFW.GLFW_KEY_F3));
+        SecondaryKeyMapping perspectiveSecondary = SecondaryKeys.of(perspective);
+
+        for (String name : List.of("key.debug.overlay", "key.debug.modifier")) {
+            KeyMapping debugKey = new KeyMapping(name, InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F3,
+                    KeyMapping.Category.DEBUG);
+
+            assertEquals(List.of(debugKey),
+                    SecondaryKeys.primaryKeysWin(List.of(debugKey, perspectiveSecondary), false), name);
+            assertTrue(SecondaryKeys.primaryKeyTakes(perspectiveSecondary, new KeyMapping[] {perspective, debugKey}),
+                    name);
+        }
+    }
+
+    @Test
     void unbindingClearsKeyAndModifier() {
         KeyMapping drop = keyMapping(GLFW.GLFW_KEY_Q);
         SecondaryKeys.bind(drop, KeyModifier.CONTROL, key(GLFW.GLFW_KEY_D));
