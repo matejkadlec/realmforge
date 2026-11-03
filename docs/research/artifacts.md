@@ -10,7 +10,9 @@
 > mixins named below). Apotheosis's `charm` category was checked in the pack's Apotheosis 9.1.0 jar. The jar is not
 > in the repository, and nothing of Artifacts' code or assets goes into Realmforge: mechanics only.
 > **Decided by Matěj on 2026-10-30 (RLM-512): option C,** neither of the catalogue's options: the curio rule ends,
-> Artifacts joins the pack, and each item gets its own place
+> Artifacts joins the pack, and each item gets its own place. Matěj's C is not the [options table](#options)'s column C
+> ("Artifacts as it ships", every world source on): the table's columns are the catalogue's own, and his C is a third
+> way past A and B
 > ([ADR 0066](../decisions/0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md),
 > [Matěj's decision and where each item goes](#matějs-decision-and-where-each-item-goes)). The catalogue below is the
 > research the placement reads.
@@ -32,7 +34,9 @@ effects as our own curios later ([Proposal](#proposal-for-matěj)).
 
 ## Matěj's decision and where each item goes
 
-**Matěj, 2026-10-30 (RLM-512): option C.** The curio rule (RLM-7, 2026-10-12) is cancelled: Artifacts was picked
+**Matěj, 2026-10-30 (RLM-512): option C,** his own third way, not the [options table](#options)'s column C
+("Artifacts as it ships", with every world source on), which stays not recommended. The curio rule (RLM-7, 2026-10-12)
+is cancelled: Artifacts was picked
 precisely because it is a curios mod. Artifacts is in. Instead of a keep-list, every item gets a place: which realm,
 dungeon or boss gives it, at what level, as loot, a quest reward or a boss drop. The more items find a place, the
 better; an item that clashes with our systems (stats, the damage pipeline, a later realm's progression) gets a place
@@ -47,7 +51,8 @@ player has Night Vision by default), and the Onion Ring, as far as he knows, doe
   our two rings and our bracelet. The necklace is one slot (Curios' `necklace`, which both use): an Artifacts necklace
   and one of our stat necklaces compete for it, as WoW's trinket slots make a player choose. A hand item is worn in
   Artifacts' hands slots, never in our ring or bracelet.
-- **Sources are ours:** a quest reward (**quest**), a boss's drop at 100 % (**boss**, as every boss drop designed so
+- **Sources are ours** (the placement's proposal, which Matěj's playtest of RLM-314 confirms or changes; his decision
+  named loot as one possible source): a quest reward (**quest**), a boss's drop at 100 % (**boss**, as every boss drop designed so
   far, [gear design](../design/gear.md#second-sources)), or one item per player from a dungeon's treasure through Lootr
   (**treasure**). Artifacts' own sources are off (`artifactRarity` 10000, `archaeologyChance` 0,
   `entityEquipmentChance` 0, `campsiteCount` 0, `generateAsLoot` false for every item, the beef's `dropRate` 0), so no
@@ -113,7 +118,7 @@ player has Night Vision by default), and the Onion Ring, as far as he knows, doe
 | Strider Shoes | feet | Ashfire, a lava lake quest | 43 | quest | standing on lava is Ashfire's, at Ashfire |
 | Aqua-Dashers | feet | Unmade Isles, an entry quest | 50 | quest | sprinting on fluids, lava included, comes after Ashfire's lava lakes and Deepholm's water |
 | Steadfast Spikes | feet | Unmade Isles, the Void Cathedral's treasure | 56 | treasure | full knockback immunity lowered to +0.5 knockback resistance, so our knockback spells and bosses' pushes still move a player |
-| Umbrella | off hand | Overworld, a rainy-day quest | 5 | quest | added to `#c:tools/shield` by our data, so the two-handed wands' shield lock (RLM-461) covers it; its slow fall is a small glider long before elytra; Better Combat has no preset, so it stays vanilla in the hand |
+| Umbrella | off hand | Overworld, a rainy-day quest | 5 | quest | added to our own lock tag `#realmforge:two_handed_lock` (`#c:tools/shield` plus the Umbrella), which the two-handed wands' shield lock (RLM-461, `item/TwoHandedGear`) reads instead of `#c:tools/shield`; `#c:tools/shield` stays as it is, because Shield Bash's requirement (`spell/SpellRequirement`, `SHIELD`) and RLM-378's shield tiers read it, and the Umbrella in it would let a Warrior Shield Bash with it; its slow fall is a small glider long before elytra; Better Combat has no preset, so it stays vanilla in the hand |
 | Eternal Steak | any | Unmade Isles, the finale's last quest | 58 | quest | food that is never used up, at the end of the game, when every food buff (M2) and cooking (M5) has had its time |
 | Everlasting Beef | | | | off | the raw form of the Eternal Steak, and its source (cows) is off; the steak is the reward |
 | Whoopee Cushion | | | | off | a fart joke against the lore's tone, and it sits in the spawn bonus chest |
@@ -135,7 +140,9 @@ ours (an override of `artifacts:artifact`) and its spawns in our rooms.
 - `items.toml`: `generateAsLoot` false everywhere; the tweaks of the table (Villager Hat, Cowboy Hat, Shock Pendant,
   Feral Claws, Running Shoes, Steadfast Spikes); `enabled` false for the off items where they have the switch,
   their bonuses at 0 otherwise.
-- Data: the Umbrella in `#c:tools/shield`; every item to `none` in `apotheosis:loot_category_overrides`; the off items
+- Data: the Umbrella in `#realmforge:two_handed_lock`, our lock tag that holds `#c:tools/shield` and the Umbrella, with
+  `item/TwoHandedGear` reading it instead of `#c:tools/shield` (never the Umbrella in `#c:tools/shield`: Shield Bash's
+  requirement reads that tag, so the Umbrella would unlock Shield Bash); every item to `none` in `apotheosis:loot_category_overrides`; the off items
   hidden from JEI and the creative tab; the rename of the Novelty Drinking Hat.
 - Sources: each item's quest, boss drop or treasure as its content lands (most are M2 and later); the ids need the
   full-pack registry dump.
@@ -467,7 +474,7 @@ and the Strider Shoes (Ashfire). Each would need a slot of ours or a reason to t
 
 ### What the ADR would say (for B, not taken)
 
-Matěj chose option C instead; [ADR 0066](../decisions/0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md)
+Matěj chose his own option C instead (not the options table's column C); [ADR 0066](../decisions/0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md)
 records it. The draft for B stays as written:
 
 "Amends [0025](../decisions/0025-remove-the-nether-and-end.md)'s curio rule (RLM-7) and lifts
@@ -485,7 +492,7 @@ Tweaks). Its milestone needs no ADR in either case: ADR 0058 already moved Artif
 
 ## Questions for Matěj
 
-Answered on 2026-10-30 (RLM-512): option C, [above](#matějs-decision-and-where-each-item-goes); questions 2–9 fall away
+Answered on 2026-10-30 (RLM-512): Matěj's option C (not the options table's column C), [above](#matějs-decision-and-where-each-item-goes); questions 2–9 fall away
 with it. The questions as they were asked:
 
 1. **Artifacts in or out?** Proposed: in, narrowly (option B), with an ADR that amends the curio rule for the kept
