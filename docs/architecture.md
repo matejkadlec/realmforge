@@ -1563,7 +1563,7 @@ the caster's eyes. A ground point lands where spell aiming (below) puts it; a di
 else where the caster looks, and its position is its range along it or the first block in the way. Only an entity
 target is checked again before a cast time's effects and a channel's ticks, and seen afresh then (`SpellTarget#now`),
 so a projectile flies at where the target stands at the end of the cast (`SpellAimingGameTests`, a husk that steps aside
-during `test_targeted_missile`'s cast, RLM-484); a direction from the caster's look follows the
+during a mob's `test_targeted_missile` cast, RLM-484); a direction from the caster's look follows the
 look then (spell aiming, below); a point, or a direction aimed at something, stays as it began. **Moving slows, it
 never interrupts** (RLM-261,
 [ADR 0039](decisions/0039-a-cast-slows-its-caster-instead-of-moving-interrupting-it.md)): a cast-time or channelled
