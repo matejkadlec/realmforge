@@ -36,7 +36,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0022](0022-playtest-before-the-pull-request.md) | Playtest before the pull request: qa1 and qa2 | Accepted (amends 0016 and 0021), amended by [0024](0024-no-github-labels.md) |
 | [0023](0023-texture-generator.md) | Texture generator: Retro Diffusion Fast, cleaned to the project palette | Accepted (refines 0007) |
 | [0024](0024-no-github-labels.md) | No GitHub labels: playtests run on qa1 and qa2 alone | Accepted (amends 0015 and 0022) |
-| [0025](0025-remove-the-nether-and-end.md) | Remove the Nether and End; the Overworld is the starting area | Accepted (resolves the open question of 0012), amended by [0032](0032-v1-realm-layout-amends-the-nether-and-end-removal.md), [0034](0034-ancient-merchants-and-the-wither-amend-the-nether-and-end-removal.md) and [0037](0037-elytra-from-chapter-3s-final-boss-amends-the-nether-and-end-removal.md) (elytra source); amended by [0044](0044-third-party-mods-by-milestone.md) (strongholds off from M1, so the End is unreachable from M1) and [0066](0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md) (the curio rule ends) |
+| [0025](0025-remove-the-nether-and-end.md) | Remove the Nether and End; the Overworld is the starting area | Accepted (resolves the open question of 0012), amended by [0032](0032-v1-realm-layout-amends-the-nether-and-end-removal.md), [0034](0034-ancient-merchants-and-the-wither-amend-the-nether-and-end-removal.md) and [0037](0037-elytra-from-chapter-3s-final-boss-amends-the-nether-and-end-removal.md) (elytra source, superseded by [0068](0068-elytra-are-bought-in-skyhearth.md)); amended by [0044](0044-third-party-mods-by-milestone.md) (strongholds off from M1, so the End is unreachable from M1) and [0066](0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md) (the curio rule ends) and [0068](0068-elytra-are-bought-in-skyhearth.md) (elytra, End Stone, the Dragon Head and the Dragon Egg bought in Skyhearth) |
 | [0026](0026-platform-minecraft-26-1-2-neoforge.md) | Platform: Minecraft 26.1.2 on NeoForge | Accepted (supersedes 0003) |
 | [0027](0027-client-bound-payload-handlers-through-the-client-event.md) | Client-bound payload handlers through NeoForge's client event | Accepted (amends 0014) |
 | [0028](0028-dungeon-rooms-generated-or-imported.md) | Dungeon rooms are generated or imported, not built by hand | Accepted (amends 0007, 0009, 0012 and 0014), room licensing superseded by [0067](0067-the-mod-is-all-rights-reserved-imported-rooms-included.md) |
@@ -48,7 +48,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0034](0034-ancient-merchants-and-the-wither-amend-the-nether-and-end-removal.md) | Ancient merchants and the Wither amend the Nether and End removal | Accepted (amends 0025) |
 | [0035](0035-room-galleries-show-every-marker-with-its-label.md) | Room galleries show every marker with its label | Accepted |
 | [0036](0036-room-lights-and-decorations-form-patterns.md) | Room lights and decorations form patterns | Accepted |
-| [0037](0037-elytra-from-chapter-3s-final-boss-amends-the-nether-and-end-removal.md) | Elytra from chapter 3's final boss amend the Nether and End removal | Accepted (amends 0025) |
+| [0037](0037-elytra-from-chapter-3s-final-boss-amends-the-nether-and-end-removal.md) | Elytra from chapter 3's final boss amend the Nether and End removal | Superseded by [0068](0068-elytra-are-bought-in-skyhearth.md) |
 | [0038](0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md) | Apotheosis carries gear rarity, affixes, gems and enchanting | Accepted (amends 0004 and 0013), amended by [0058](0058-player-systems-before-world-content.md) (Apotheosis in M1) |
 | [0039](0039-a-cast-slows-its-caster-instead-of-moving-interrupting-it.md) | A cast slows its caster instead of moving interrupting it | Accepted (amends 0020), the slow raised to 50 % by [0047](0047-the-cast-slow-halves-the-casters-speed.md) |
 | [0040](0040-coins-and-data-driven-merchant-trades.md) | Coins and data-driven merchant trades | Accepted (amends 0013) |
@@ -79,6 +79,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0065](0065-inventory-sorting-leaves-backpacks-in-their-slots.md) | Inventory Sorting leaves backpacks in their slots | Accepted (amends 0062); decision 1's file note corrected (RLM-558) |
 | [0066](0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md) | The curio rule ends, Artifacts joins the pack, and Immersive Armors stays out | Accepted (amends 0025, 0044 and 0058) |
 | [0067](0067-the-mod-is-all-rights-reserved-imported-rooms-included.md) | The mod is All Rights Reserved, imported rooms included | Accepted (supersedes the mod's licenses in 0009 and the room licensing of 0028, amends 0008) |
+| [0068](0068-elytra-are-bought-in-skyhearth.md) | Elytra are bought in Skyhearth | Accepted (supersedes 0037, amends 0025) |
 
 ## Open questions (not decided)
 

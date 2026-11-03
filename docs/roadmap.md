@@ -482,7 +482,7 @@ stays (RLM-323; [ADR 0044](decisions/0044-third-party-mods-by-milestone.md)). Gl
 
 ## M4: The world grows
 
-Outline: dimensions 2 and 3, Sunwastes and Everwinter, the twin realms of chapter 3 (levels 16-30,
+Outline: dimensions 2 and 3, Sunwastes and Everwinter, the twin realms of chapters 3 and 4 (levels 16-30,
 [realm design](design/realms.md)); the gated ores (RLM-194, [realm design](design/realms.md#tool-tiers-and-gated-ores));
 the Nether and End removed and their items given new sources (D10,
 [ADR 0025](decisions/0025-remove-the-nether-and-end.md)); the twin realms' world structures, each only in its realm
@@ -490,14 +490,16 @@ the Nether and End removed and their items given new sources (D10,
 come in M2, [ADR 0044](decisions/0044-third-party-mods-by-milestone.md)); more dungeon endings (puzzle temple, wave
 arena, escape, mounted run, ruin exploration) and open-air instanced dungeons under the sky, in a second instance
 dimension (RLM-327); visual and info mods (RLM-326: LambDynamicLights, Effectual, Falling Leaves, Fresh Animations,
-Fusion, Just Enough Resources); more mobs (friendly ones too) and bosses with lore and locator items; chapter 3; the
+Fusion, Just Enough Resources); more mobs (friendly ones too) and bosses with lore and locator items; chapters 3 and
+4; the
 start of the village, villager and trade overhaul, with trades paid in our own coins, not emeralds
 ([ADR 0040](decisions/0040-coins-and-data-driven-merchant-trades.md)). Also:
 
-- **Elytra from chapter 3's final boss** (RLM-138): its drop, or an item frame in its room (like the End ship),
-  so elytra arrive at the step into chapter 4 and ship with the removal of the End. The "every item is
-  obtainable" check lists elytra as a known exception only until that boss exists
-  ([realm design, open question 8](design/realms.md#open-questions)).
+- **Elytra are bought, not dropped** (Matěj, 2026-11-03, RLM-568,
+  [ADR 0068](decisions/0068-elytra-are-bought-in-skyhearth.md), superseding RLM-138's boss source): an NPC in
+  Skyhearth sells them, with End Stone, the Dragon Head and the Dragon Egg, so they ship with Skyhearth, not with the
+  removal of the End. The "every item is obtainable" check lists the four as known exceptions until that NPC exists
+  ([realm design, open questions 8 and 22](design/realms.md#open-questions)).
 - **Mounts, first part** (RLM-115, [Chococraft research](research/chococraft.md#decision-rlm-115)): our own
   mounts, not Chococraft. The `realmforge:mount` registry and its content type (`content/mounts/`), the player's
   mount collection, summon and dismiss (a mount is summoned when used and cannot be lost), ground riding with
@@ -526,8 +528,8 @@ professions (RLM-328, [ADR 0044](decisions/0044-third-party-mods-by-milestone.md
 Outline: the pet system (one pet, class exceptions, spells, skills that level up, talents, dialogues, a bond
 progression, resurrection); mount tiers 4 to 6 and their extras (tier 5's rider ignores fire and lava damage, tier
 6's resists its chapter's debuff once the debuff and tenacity system exists), and an optional mount journal
-(RLM-115; the mount system and tiers 1 to 3 come in M4, and tier 4 moves with chapter 4 if that is planned
-earlier). Ground mounts beat a Speed II potion; elytra fly faster than any mount, while mounts win on overall
+(RLM-115; the mount system and tiers 1 to 3 come in M4, and tier 4 moves with chapter 5, Deepholm, if that is
+planned earlier). Ground mounts beat a Speed II potion; elytra fly faster than any mount, while mounts win on overall
 speed, utility and combat (RLM-115).
 
 ## M7: Contracts
@@ -587,7 +589,7 @@ decided, which wins over the proposal here.
 | # | Ticket | Decision | Needed by | Proposal |
 | --- | --- | --- | --- | --- |
 | D1 | RLM-51 | The two M1 classes | C1 | **Decided 2026-10-11 (RLM-51): Warrior (melee, rage) and Mage (caster, mana)**, as proposed: the most different pair, which tests both Better Combat melee and casting. Hunter was the alternative to Mage; it would leave the spell system untested and needs a pet (M6), so it is a candidate for a later class |
-| D2 | RLM-52 | Level cap numbers | C2 | each chapter's cap is its last level, raised by its main questline (Matěj, 2026-10-15, v1 layout RLM-188): 10, 18, 30, 40, 44, 52, 60, so chapter 1 raises 10 to 18 |
+| D2 | RLM-52 | Level cap numbers | C2 | each chapter's cap is its last level, raised by its main questline (Matěj, 2026-10-15, v1 layout RLM-188): 10, 18, 30, 40, 44, 52, 60, so chapter 1 raises 10 to 18; by the story's eight chapters (RLM-466) the twins, chapters 3 and 4, share cap 30, so chapter 3 raises none |
 | D3 | RLM-53 | Character XP and vanilla XP | C2 | separate: character XP is never spent; vanilla XP stays the currency for enchanting and anvils until M5 decides its role |
 | D4 | RLM-54 | Spell key scheme | C3b | a separate spell bar with its own keys, leaving the item hotbar alone; spike 4 informs it |
 | D5 | RLM-55 | Primary stats | F4 | **Decided 2026-10-11 (RLM-55): strength, dexterity, vitality and intellect.** Vitality is the health stat, not called stamina so it is never confused with a stamina resource. Dexterity gives bonuses every class uses: critical strike chance (spells too), attack speed and movement speed (small, capped). Dodge is no Dexterity bonus: it is kept for future classes such as the Rogue and the Hunter. Luck and defense stay out. F4 (RLM-20) set the first numbers in `content/stat_rules/` |

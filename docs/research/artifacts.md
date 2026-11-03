@@ -96,7 +96,7 @@ player has Night Vision by default), and the Onion Ring, as far as he knows, doe
 | Obsidian Skull | belt | Ashfire, an entry quest | 41 | quest | Fire Resistance after fire damage: Ashfire's hazard, at Ashfire |
 | Crystal Heart | belt | Deepholm, the underwater city's boss | 36 | boss | +10 max health: after RLM-565 keeps gear's max health through a login, and late, where +10 is a few VIT points instead of a doubled pool |
 | Cloud in a Bottle | belt | Skyhearth, the heavens' questline | 30 | quest | the double jump comes after Undervault's and the twins' jumping puzzles; later realms' puzzles and arenas are built knowing it |
-| Helium Flamingo | belt | Deepholm, after elytra | 32 | quest | swimming in the air for 8 s comes after elytra (the twins' final boss, [ADR 0037](../decisions/0037-elytra-from-chapter-3s-final-boss-amends-the-nether-and-end-removal.md)), when flight is no longer new |
+| Helium Flamingo | belt | Deepholm, after elytra | 32 | quest | swimming in the air for 8 s comes after elytra (bought in Skyhearth, [ADR 0068](../decisions/0068-elytra-are-bought-in-skyhearth.md); the placement assumed the twins' final boss, ADR 0037), when flight is no longer new |
 | Warp Drive | belt | Unmade Isles, the void's questline | 52 | quest | free ender pearls skip rooms: late, with ender pearls refused in instances (a rule RLM-314 checks for, or a follow-up) |
 | Chorus Totem | | | | off | a random teleport on a fatal hit leaves a boss arena (which resets the boss) or an instance, beside vanilla's totem |
 | Onion Ring | hands | Undervault, a Cairnfolk mining quest | 8 | quest | it does work, against Matěj's note: Haste II for 6 s per food point eaten (a steak gives 48 s); faster mining in the mining realm |
@@ -293,7 +293,7 @@ and 2). **Pick**: *keep* (the proposed keep-list), *later* (worth deciding when 
 | Obsidian Skull `obsidian_skull` | Fire Resistance for 30 s after fire damage, cooldown 60 | Ashfire's fire and lava hazards | Ashfire 40 | no | later |
 | Antidote Vessel `antidote_vessel` | caps nine vanilla negative effects (Blindness, Nausea, Mining Fatigue, Hunger, Levitation, Slowness, Poison, Weakness, Wither) at 5 s | boss debuffs and the planned tenacity; our own `realmforge:` effects are not in its tag | Quagmire 36 | no | off |
 | Crystal Heart `crystal_heart` | +10 max health (`minecraft:max_health`, add) | our rule that gear never adds max health directly (the login clamp, [architecture 8.2](../architecture.md#82-where-modifiers-come-from)); VIT | none | no | off |
-| Helium Flamingo `helium_flamingo` | "swims" in the air for 8 s, recharging in 15 s, cooldown 3, on a key | flight: mounts fly from chapter 2 (M4), elytra come from chapter 3's final boss ([ADR 0037](../decisions/0037-elytra-from-chapter-3s-final-boss-amends-the-nether-and-end-removal.md)) | none | no | off |
+| Helium Flamingo `helium_flamingo` | "swims" in the air for 8 s, recharging in 15 s, cooldown 3, on a key | flight: mounts fly from chapter 2 (M4), elytra are bought in Skyhearth ([ADR 0068](../decisions/0068-elytra-are-bought-in-skyhearth.md), superseding ADR 0037's chapter 3 boss) | none | no | off |
 | Chorus Totem `chorus_totem` | on a fatal hit: used up, clears every effect, teleports at random (diameter 32), heals 9 | boss arenas (a teleport out resets the boss), dungeon instances, a second totem beside vanilla's | none | no | off |
 | Warp Drive `warp_drive` | ender pearls are not used up and cost 2 hunger instead, deal no damage, cooldown 0 | travel design next to waystones; skipping rooms in dungeons | none | no | off |
 
@@ -475,8 +475,9 @@ and the Strider Shoes (Ashfire). Each would need a slot of ours or a reason to t
 
 ### What the ADR would say (for B, not taken)
 
-Matěj chose his own option C instead (not the options table's column C);
-[ADR 0066](../decisions/0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md) records it. The draft for B stays as written:
+Matěj chose his own option C instead (not the options table's column C); [ADR
+0066](../decisions/0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md) records it. The draft for
+B stays as written:
 
 "Amends [0025](../decisions/0025-remove-the-nether-and-end.md)'s curio rule (RLM-7) and lifts
 [0044](../decisions/0044-third-party-mods-by-milestone.md)'s hold on Artifacts. Artifacts joins the pack. The items on

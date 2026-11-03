@@ -48,7 +48,7 @@ The report builds on the [vision](vision.md) and the private artifact [Design No
 | Boss level in the quest differs from the config | Quest texts generated from the same data as the game |
 | Unfinished chapters in a release | Feature flags, release only finished content |
 | "Find X" quests with no location or recipe | Quest template: where, how, with what, recipe |
-| Reward repairable only with netherite locked to chapter 3 | Validation: a reward is usable and repairable in its phase |
+| Reward repairable only with netherite locked to a later chapter | Validation: a reward is usable and repairable in its phase |
 | Hidden caps (damage cap, enchant limits) | Caps shown in tooltips and the quest book |
 | Currency with manual conversion | One currency or automatic conversion |
 | Kill tasks are not retroactive | Prefer advancement and stat tasks |

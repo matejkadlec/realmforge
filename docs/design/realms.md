@@ -34,13 +34,13 @@ optional dungeon.
 | --- | --- | --- | --- | --- | --- | --- |
 | [Overworld](#overworld) | Overworld | 1–10 | 1 | M2 | home | the first story realm; realm portals built anywhere |
 | [Stone realm](#the-stone-realm) | Undervault | 6–18 | 2 | M2 | earth and stone | one giant cave, the mine of the whole game, Cairnfolk houses and the Hewn's Mine, catacombs, a boss arena, ancient debris |
-| [Desert realm](#the-desert-realm) | Sunwastes | 16–24 | 3 (twin) | M4 | sun and sand | dunes and big oases, pyramid and sphinx dungeons |
-| [Tundra realm](#the-tundra-realm) | Everwinter | 20–30 | 3 (twin) | M4 | frost | frozen lakes with something beneath, a nordic fortress, an ice castle |
+| [Desert realm](#the-desert-realm) | Sunwastes | 16–24 | 3 (twin of 4) | M4 | sun and sand | dunes and big oases, pyramid and sphinx dungeons |
+| [Tundra realm](#the-tundra-realm) | Everwinter | 20–30 | 4 (twin of 3) | M4 | frost | frozen lakes with something beneath, a nordic fortress, an ice castle |
 | [Hub realm](#the-hub-realm) | Skyhearth | from about 15 | none | later | the heavens | a celestial city and palace full of NPCs, the centre of the game: quests into Sunwastes, Everwinter and every later realm, trading |
-| [Water realm](#the-water-realm) | Deepholm | 26–40 | 4 | later | water | under water up to about y 128: sand hills, coral reefs, kelp and shipwrecks on the seabed, an underwater city, the Ocean Monument |
-| [Swamp realm](#the-swamp-realm) | Quagmire | 36–44 | 5 | later | slime | slime-block biomes, several kinds of slime, a slime dungeon |
-| [Fire realm](#the-fire-realm) | Ashfire | 40–52 | 6 | later | fire | black and red plains, burnt trees, lava lakes, volcanoes, grounded dragons |
-| [Void realm](#the-void-realm) | Unmade Isles | 48–60 | 7, the last of v1 | later | void | islands joined by bridges and chains, guard towers, the Void Cathedral and the finale, malachite gear |
+| [Water realm](#the-water-realm) | Deepholm | 26–40 | 5 | later | water | under water up to about y 128: sand hills, coral reefs, kelp and shipwrecks on the seabed, an underwater city, the Ocean Monument |
+| [Swamp realm](#the-swamp-realm) | Quagmire | 36–44 | 6 | later | slime | slime-block biomes, several kinds of slime, a slime dungeon |
+| [Fire realm](#the-fire-realm) | Ashfire | 40–52 | 7 | later | fire | black and red plains, burnt trees, lava lakes, volcanoes, grounded dragons |
+| [Void realm](#the-void-realm) | Unmade Isles | 48–60 | 8, the last of v1 | later | void | islands joined by bridges and chains, guard towers, the Void Cathedral and the finale, malachite gear |
 
 **Names** (Matěj, RLM-139 and RLM-188): the names players read, from the [lore outline](../lore/outline.md#the-realms).
 **A realm's name has no article** (Matěj, 2026-10-15 and 2026-10-16): Overworld, Undervault, Sunwastes,
@@ -65,10 +65,10 @@ to drop borrowed mythology (RLM-357,
   tundra with frozen lakes. Each realm splits into sub-regions of rising level, like a Hytale zone with its three
   regions (RE-3). The level ranges this document gives them are the old area model: since RLM-240, mob levels
   follow the player, floored at the realm's entry level.
-- **v1 has the realms of [At a glance](#at-a-glance); more may follow.** Not every realm has to be on the main
-  path: some exist only for gear or a specific item, and progress may run through two realms at once (FTB
-  Architect's Exodus is the reference; the twins of chapter 3 do). An optional side realm takes its level from the
-  realms a player must visit to reach it (PR-15).
+- **v1 has the realms of [At a glance](#at-a-glance); more may follow.** Not every realm has to be on the main path:
+  some exist only for gear or a specific item, and progress may run through two realms at once (FTB Architect's Exodus
+  is the reference; the twins of chapters 3 and 4 do). An optional side realm takes its level from the realms a player
+  must visit to reach it (PR-15).
 - **The Void realm is always the last realm on the main path** (Matěj, RLM-95). A new main-path realm joins the
   chain before it, never after it, so its chapter is always the last one and its level band the game's highest.
   Its place is data, not code: adding a realm before it moves its level band (its realm entry's `levels` and its
@@ -90,13 +90,15 @@ to drop borrowed mythology (RLM-357,
 
 ### Chapters and levels
 
-- **A realm is a chapter, and the twins share one** (Matěj, RLM-188): chapter 1 is Overworld, chapter 2
-  Undervault, chapter 3 Sunwastes and Everwinter together, then Deepholm, Quagmire, Ashfire and Unmade Isles as
-  chapters 4 to 7. Skyhearth is no chapter. The twins each have dungeons across their own band, and the player
+- **A realm is a chapter, the story's eight** (Matěj, RLM-188; the twins as two chapters since 2026-10-30, RLM-466):
+  chapter 1 is Overworld, chapter 2 Undervault, chapter 3 Sunwastes, chapter 4 Everwinter, then Deepholm, Quagmire,
+  Ashfire and Unmade Isles as chapters 5 to 8, the numbers the quest book, the guide and the story share. Skyhearth is
+  no chapter. The twins share one level cap and run side by side: each has dungeons across its own band, and the player
   alternates between them (waystones make that easy). The old rule "10 levels per chapter" is gone; Matěj expects to
   change the numbers at least once after playing.
-- **A chapter's level cap is its last level:** 10, 18, 30, 40, 44, 52 and 60, raised by the chapter's main
-  questline (Matěj, 2026-10-15; C2 implements it, [architecture 10.2](../architecture.md#102-leveling)). XP stops at
+- **A chapter's level cap is its last level:** 10, 18, 30, 30, 40, 44, 52 and 60, raised by the chapter's main
+  questline (Matěj, 2026-10-15; C2 implements it, [architecture 10.2](../architecture.md#102-leveling)). The twins
+  share cap 30, so chapter 3's end raises no cap and chapter 4's raises it to 40 (RLM-367). XP stops at
   the cap, so a finished chapter brings no level by itself ([leveling.md](leveling.md#chapters-and-caps)).
 - **What is mandatory:** every realm's main questline and its signet, for both twins too (the twin seal needs both
   shards). Not every dungeon or boss is. Levels can also come from repeatable instanced dungeons.
@@ -284,11 +286,11 @@ Puzzles are welcome under these rules (Matěj, 2026-10-12, replacing the earlier
 The layout of every realm assumes cheap travel; nobody walks 1,000–10,000 blocks to get somewhere.
 
 - Waystones are easy to get, sit at the hub and in settlements (TR-1, TR-7), and generate near main sites.
-- Early flight: a flying mount from chapter 2 (our own mounts, tiers 1 to 3 in M4, RLM-115), or a long-range
-  teleport spell. Elytra come from chapter 3's final boss, the step into chapter 4 (RLM-138,
-  [ADR 0025](../decisions/0025-remove-the-nether-and-end.md)): faster in the air than any mount, while a mount wins
-  on overall speed, utility and combat (RLM-115). The v1 layout moved both chapters under these rules
-  ([open question 15](#open-questions)).
+- Early flight: a flying mount from chapter 2 (our own mounts, tiers 1 to 3 in M4, RLM-115), or a long-range teleport
+  spell. Elytra are no drop: an NPC in Skyhearth sells them, with End Stone, the Dragon Head and the Dragon Egg (Matěj,
+  2026-11-03, RLM-568, [ADR 0068](../decisions/0068-elytra-are-bought-in-skyhearth.md), which supersedes RLM-138's boss
+  source); faster in the air than any mount, while a mount wins on overall speed, utility and combat (RLM-115). The v1
+  layout moved both chapters under these rules ([open question 15](#open-questions)).
 - Dungeon portals and hubs are marked on the map once found (TR-11), and every quest target has a locator or a
   vendor fallback (PR-17).
 
@@ -418,8 +420,8 @@ it offers most of what the Nether offered ([ADR 0025](../decisions/0025-remove-t
 
 ### The desert realm
 
-Name: **Sunwastes**. Chapter 3 (levels 16–24), M4, the twin of Everwinter; both are needed for further progress.
-Identity: sun and sand.
+Name: **Sunwastes**. Chapter 3 (levels 16–24), M4, the twin of Everwinter (chapter 4); both are needed for further
+progress. Identity: sun and sand.
 
 - **Landscape:** dunes, sand mountains, big oases (sunken basins with water and fauna found nowhere else, RE-12),
   abandoned towns that are empty or hold friendly NPCs; a savanna biome too, badlands maybe later (Matěj,
@@ -434,7 +436,7 @@ Identity: sun and sand.
 
 ### The tundra realm
 
-Name: **Everwinter**. Chapter 3 (levels 20–30), M4, the twin of Sunwastes. Identity: frost (no temperature
+Name: **Everwinter**. Chapter 4 (levels 20–30), M4, the twin of Sunwastes (chapter 3). Identity: frost (no temperature
 mechanic: the vision rules it out).
 
 - **Landscape:** big frozen lakes with something beneath them (under-ice content), ice spikes, frozen shipwrecks;
@@ -496,7 +498,7 @@ level 15, no chapter. Identity: the heavens. Matěj's rules (2026-10-15, RLM-188
 
 ### The water realm
 
-Name: **Deepholm** (Matěj, 2026-10-22, RLM-357; Atlantis from 2026-10-19). Chapter 4 (levels 26–40), later. Identity:
+Name: **Deepholm** (Matěj, 2026-10-22, RLM-357; Atlantis from 2026-10-19). Chapter 5 (levels 26–40), later. Identity:
 water. It replaced Prestoria, the prehistoric realm of dinosaurs, on 2026-10-19 (Matěj, RLM-265): Prestoria was the
 one realm whose theme he was unsure of, a water realm is truly unique, and this band is short, so players need not
 stay long if they don't want to. The level band and the world tier stay. Themes he weighed for the slot: prehistoric,
@@ -539,7 +541,7 @@ instanced dungeon instead" ([Candidate realms](#candidate-realms)). "The rest wi
 
 ### The swamp realm
 
-Name: **Quagmire**. Chapter 5 (levels 36–44), later. Identity: slime (Matěj, RLM-188).
+Name: **Quagmire**. Chapter 6 (levels 36–44), later. Identity: slime (Matěj, RLM-188).
 
 - **Landscape:** swamp, with biomes of slime blocks.
 - **Mobs:** several kinds of slime.
@@ -547,7 +549,7 @@ Name: **Quagmire**. Chapter 5 (levels 36–44), later. Identity: slime (Matěj, 
 
 ### The fire realm
 
-Name: **Ashfire**. Chapter 6 (levels 40–52), later. It comes deliberately late: it has dragons, and weak dragons make
+Name: **Ashfire**. Chapter 7 (levels 40–52), later. It comes deliberately late: it has dragons, and weak dragons make
 no sense. **It does not replace the Nether and is not inspired by it** (Matěj, 2026-10-16): a fire realm much further
 into the game than the vanilla Nether, with no Nether structures and no Nether look; it may share some of its mobs
 ([ADR 0032](../decisions/0032-v1-realm-layout-amends-the-nether-and-end-removal.md)).
@@ -561,7 +563,7 @@ into the game than the vanilla Nether, with no Nether structures and no Nether l
 ### The Void realm
 
 Name: **Unmade Isles** (renamed from the Brink on 2026-10-15, RLM-188), shown as "Unmade Isles — Void Realm" where a
-player first meets it. Chapter 7 (levels 48–60), the last chapter of v1, on the main path: the story's finale is here
+player first meets it. Chapter 8 (levels 48–60), the last chapter of v1, on the main path: the story's finale is here
 (Matěj, RLM-139). Identity: the Void. This section is RLM-95's design from Matěj's points of 2026-10-12, and its
 gameplay proposals wait for his approval in RLM-164 ([open questions 9–12](#open-questions)). The mood images he
 shared (a purple void world behind a portal arch, and two images of a void zone from WoW) are inspiration only: no
@@ -632,7 +634,7 @@ art or assets of other games.
   - Mobs and items that fall are gone, as in vanilla.
   - It is the realm's environmental rule ([open question 3](#open-questions)), and it needs no counter item because
     it costs nothing (RE-19).
-- **Flight** works here as anywhere (flying mounts from chapter 2, elytra from the end of chapter 3). The bridges
+- **Flight** works here as anywhere (flying mounts from chapter 2, elytra bought in Skyhearth). The bridges
   keep the realm walkable for a player on foot, and the fall rule covers missteps and knockback.
 - **Dungeons:**
 
@@ -700,7 +702,7 @@ RLM-188):
   boss.
 - **M2:** Overworld's dungeons, questline and final boss, and the first world structures in Overworld and Undervault
   (RLM-264, [ADR 0044](../decisions/0044-third-party-mods-by-milestone.md)).
-- **M4:** Sunwastes and Everwinter (dimensions 2 and 3, chapter 3), with their world structures, the gated ores
+- **M4:** Sunwastes and Everwinter (dimensions 2 and 3, chapters 3 and 4), with their world structures, the gated ores
   (RLM-194), and the removal of the Nether and End.
 - **Later:** Skyhearth, Deepholm, Quagmire, Ashfire, and the Void realm as the
   last one. The Void realm may be built earlier than other realms, and still stays last on the main path
@@ -725,9 +727,11 @@ For Matěj; each has a proposal so the design can go on.
    completes when its treasury opens** (DU-6); that moment calls W4d's completion entry point (RLM-181).
 5. **The realm for chapter 3.** **Decided 2026-10-15 (Matěj, RLM-188):** chapter 3 is the twin chapter, Sunwastes
    and Everwinter (levels 16–30); the forest and underwater realms are dropped (the underwater realm came back as
-   Atlantis on 2026-10-19, RLM-265, now Deepholm).
-6. **The fire realm's chapter.** **Decided 2026-10-15 (Matěj, RLM-188):** chapter 6 (levels 40–52), after the
-   elytra, so its dragons can be strong.
+   Atlantis on 2026-10-19, RLM-265, now Deepholm). Since 2026-10-30 (RLM-466) the twins are two chapters, 3 and 4,
+   under one cap.
+6. **The fire realm's chapter.** **Decided 2026-10-15 (Matěj, RLM-188):** chapter 6 of the seven, chapter 7 of the
+   story's eight since RLM-466 (levels 40–52), late, so its dragons can be strong (then after the elytra's boss source,
+   which [ADR 0068](../decisions/0068-elytra-are-bought-in-skyhearth.md) replaced with a vendor).
 7. **Elytra or flying mounts first?** Asked once, in the mount decision RLM-115, question 4
    ([Chococraft research](../research/chococraft.md#questions-the-decision-answers)), which ADR 0025's consequence
    "Elytra and flying mounts" also waited for. **Decided 2026-10-13 (Matěj, RLM-115): elytra are faster in the air,
@@ -735,12 +739,16 @@ For Matěj; each has a proposal so the design can go on.
    nothing, gives buffs and lets its rider fight from it, which is a new requirement for the mounts. The vision,
    ADR 0025 and the M6 outline say the same
    ([Chococraft research, decision](../research/chococraft.md#decision-rlm-115)).
-8. **Elytra between the M4 removal and chapter 4.** ADR 0025 ships the removal of the End and the new sources
-   together in M4, but the elytra's source was chapter 4, which no milestone names yet. **Decided 2026-10-13 (Matěj,
-   RLM-138): elytra stay unobtainable until the end of chapter 3, and chapter 3's final boss gives them**, as its
-   drop or in an item frame in its room (like the End ship). Chapter 3 arrives in M4, so the source ships with the
-   removal (the M4 outline in the [roadmap](../roadmap.md#m4-the-world-grows)), and the "every item is obtainable"
-   check lists elytra as a known exception only until that boss exists.
+8. **Elytra between the M4 removal and chapter 4** (the chapter numbers of 2026-10-13, before RLM-188 and RLM-466). ADR
+   0025 ships the removal of the End and the new sources together in M4, but the elytra's source was chapter 4, which no
+   milestone names yet. **Decided 2026-10-13 (Matěj, RLM-138): elytra stay unobtainable until the end of chapter 3, and
+   chapter 3's final boss gives them**, as its drop or in an item frame in its room (like the End ship). Chapter 3
+   arrives in M4, so the source ships with the removal (the M4 outline in the
+   [roadmap](../roadmap.md#m4-the-world-grows)), and the "every item is obtainable" check lists elytra as a known
+   exception only until that boss exists. **Replaced 2026-11-03 (Matěj, RLM-568):** elytra are no drop; an NPC in
+   Skyhearth sells them, with End Stone, the Dragon Head and the Dragon Egg
+   ([ADR 0068](../decisions/0068-elytra-are-bought-in-skyhearth.md), superseding ADR 0037). The price and from when
+   the NPC sells them are open ([open question 22](#open-questions)).
 9. **The Void realm** (RLM-95). Approve [its section](#the-void-realm): islands on a grid joined by bridges and
    chains, three sub-regions, the Chainkeepers and the Unforged, the guard towers, the broken gates and the Void
    Cathedral, and how your "always last" rule works when a realm is added before it. Proposal: as written.
@@ -762,10 +770,10 @@ For Matěj; each has a proposal so the design can go on.
 14. **The reduced efficiency** of an earlier realm's tool. **Dropped 2026-10-26 (Matěj, RLM-194, RLM-450): no tool
     speed rule at all**; Undervault's own blocks are harder than vanilla's instead.
 15. **Knock-on of the v1 layout** (to check with Matěj, not changed here): mount tiers unlock by chapter quests
-    (RLM-115), so tier 2's flight now comes from Undervault's chapter while mounts are planned for M4; elytra come
-    from chapter 3's final boss (RLM-138), and chapter 3 is now the twin chapter with two guardians; spell and talent
-    unlocks per chapter (research PR-8) follow the new chapters. Proposal: elytra from the second of the twins'
-    guardians a player beats, so either order works.
+    (RLM-115), so tier 2's flight now comes from Undervault's chapter while mounts are planned for M4; spell and talent
+    unlocks per chapter (research PR-8) follow the new chapters. The elytra part is settled: no boss gives them, a
+    Skyhearth NPC sells them (Matěj, 2026-11-03, RLM-568,
+    [ADR 0068](../decisions/0068-elytra-are-bought-in-skyhearth.md)).
 16. **Sunwastes' material** now that ancient debris and netherite scrap moved to Undervault (Matěj,
     2026-10-15). Proposal: a desert gem or metal of its own for its gear (it adds no tool tier, RLM-194), and the
     brushing loot keeps its gems and books.
@@ -775,7 +783,7 @@ For Matěj; each has a proposal so the design can go on.
     (RLM-357), with the hub's own portal of Holy Stone bricks (RLM-302); chapter 2's text has a platform the player
     rises from instead, which RLM-302 settles.
     Proposal: the medallion takes RLM-245's recipe unchanged. Open on RLM-302: how Holy Stone, "findable in
-    Everwinter" (chapter 3, levels 20–30), fits a portal a player builds at about level 15.
+    Everwinter" (chapter 4, levels 20–30), fits a portal a player builds at about level 15.
 18. **Arriving in Deepholm.** The realm portal links to the seabed, so a player arrives under water. Proposal: an air
     dome around the arrival, as AoA 1.21 does for L'Borean
     ([research notes](../research/notes/aoa-dimensions-h-to-z.md)); alternative: a platform.
@@ -784,3 +792,15 @@ For Matěj; each has a proposal so the design can go on.
 20. **Deepholm's mobs.** Proposal: drowned and guardians at first, our own sea mobs later.
 21. **Vanilla shipwrecks in Deepholm.** The seabed has shipwrecks (Matěj); whether they are vanilla's, generating
     here too (and still in Overworld), is open. Proposal: yes, in both.
+22. **The Skyhearth vendor of elytra** (Matěj, 2026-11-03, RLM-568,
+    [ADR 0068](../decisions/0068-elytra-are-bought-in-skyhearth.md)): an NPC there sells the elytra, End Stone, the
+    Dragon Head and the Dragon Egg. Open: who the NPC is, the prices (in coins, RLM-222), and from when the elytra are
+    on sale. Skyhearth opens at about level 15, so elytra could come long before the twins. Proposal: the elytra are
+    on sale once a player has finished chapter 4 (both twins), so flight from elytra keeps the place the boss source
+    gave it, after the first flying mounts; End Stone and the two dragon items are on sale from the start.
+23. **Spell limits by the eight chapters.** Validation's D4 rule allows 4 × N active spells by the end of chapter N
+    (`_check_class_spells`, RLM-333). With the twins as chapters 3 and 4, both ending at level 30, the limit at level 30
+    stays 12 (chapter 3's), but every later chapter allows 4 more than under the seven: 20 by level 40 instead of 16,
+    up to 32 by level 60 instead of 28. Only chapters 1 and 2 exist, so nothing validates differently yet. Proposal:
+    the rule counts the twins as one chapter, so the limits by level stay those of the seven (12 by 30, 16 by 40, 20
+    by 44, 24 by 52, 28 by 60); the batch that adds chapter 3 changes the check.

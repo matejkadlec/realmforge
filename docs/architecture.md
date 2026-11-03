@@ -1251,10 +1251,14 @@ the playtest covers it.
 - **Level cap:** the highest cap among completed chapters (a base cap before any), cached in the `character`
   attachment and recomputed when a chapter's advancement is granted or revoked and on login
   ([16](#16-progression-and-quests)). A chapter's cap is its last level, and its main questline raises it (Matěj,
-  2026-10-15, superseding D2's 10 then 20; v1 realm layout RLM-188): chapter 1 (Overworld, levels 1-10) 10 → 18,
-  chapter 2 (Undervault, levels 6-18) 18 → 30, chapter 3 30 → 40, chapter 4 40 → 44, chapter 5 44 → 52,
-  chapter 6 52 → 60, and chapter 7 60, the highest level. `content/chapters/` holds chapters 1 and 2 so far; the
-  last chapter raises no cap, so its entry will need `completed_level_cap` to be optional.
+  2026-10-15, superseding D2's 10 then 20; v1 realm layout RLM-188; the story's eight chapters, RLM-466): chapter 1
+  (Overworld, levels 1-10) 10 → 18, chapter 2 (Undervault, levels 6-18) 18 → 30, chapter 3 (Sunwastes) none, since
+  the twins share cap 30 (RLM-367), chapter 4 (Everwinter) 30 → 40, chapter 5 (Deepholm) 40 → 44, chapter 6
+  (Quagmire) 44 → 52, chapter 7 (Ashfire) 52 → 60, and chapter 8 (Unmade Isles) 60, the highest level.
+  `content/chapters/` holds chapters 1 and 2 so far. Chapter 3 and the last chapter raise no cap, but `ChapterDef`
+  wants `completed_level_cap` above `level_cap`, so the batch that adds chapter 3 makes it optional (the pytest
+  fixture `CHAPTER_3` in `tools/tests/test_leveling.py`, 30 → 40, is a synthetic third chapter that exercises the
+  rules, not the layout).
 - **The XP model** (Matěj, 2026-10-15; [design/leveling.md](design/leveling.md), RLM-192) counts in kill-equivalents
   (KE): one kill of a normal mob of the player's level, `45 + 5 × level` XP (50 at level 1, 345 at 60). A level
   takes `KE(L) × (45 + 5L)` XP, with `KE(1) = 30` (about 5 minutes of farming at 6 kills a minute) and each level
