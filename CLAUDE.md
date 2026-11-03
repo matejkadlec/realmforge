@@ -268,14 +268,15 @@ bash tests/test_gradle_queue.sh           # the Gradle queue's cloud warm-up sui
 8. **No third-party jars in the repo.** The pack is packwiz metadata and config overrides (`config/`). Never copy
    third-party code unless its license allows it (Spell Engine is GPL-3.0-only, Explorer's Compass CC BY-NC-SA: no
    reuse). Third-party rooms are copied only under MIT, CC0 or LGPL-3.0, each source in its own folder with its
-   license and notice; never Stardust Labs content
-   ([ADR 0028](docs/decisions/0028-dungeon-rooms-generated-or-imported.md)). No vanilla texture files or recolors
+   license and notice (Dungeon Now Loading and Mo' Structures carry none,
+   [ADR 0067](docs/decisions/0067-the-mod-is-all-rights-reserved-imported-rooms-included.md)); never Stardust Labs
+   content ([ADR 0028](docs/decisions/0028-dungeon-rooms-generated-or-imported.md)). No vanilla texture files or recolors
    of them in our assets, and none as input for generating our textures. Vanilla blocks in our structures, and
    renders or screenshots of them, are fine.
-9. **Licenses:** the mod (`mod/`, `qa-mod/`, `tools/`, everything in the jar) is MPL-2.0 for code and CC BY 4.0
-   for assets, except imported third-party rooms, which keep their own licenses; the modpack (`pack/`) is All
-   Rights Reserved ([ADR 0009](docs/decisions/0009-licensing.md),
-   [ADR 0028](docs/decisions/0028-dungeon-rooms-generated-or-imported.md)).
+9. **Licenses:** the mod (`mod/`, `qa-mod/`, `tools/`, everything in the jar, imported rooms included) and the modpack
+   (`pack/`) are All Rights Reserved; the MIT notices of Stonevaults, DungeonZ, Desert Dungeon and Apotheosis stay
+   with their material, and Better Key Binds is MPL-2.0 ([ADR 0009](docs/decisions/0009-licensing.md),
+   [ADR 0067](docs/decisions/0067-the-mod-is-all-rights-reserved-imported-rooms-included.md)).
 10. **Decisions get an ADR** in `docs/decisions/` (next free number, add it to the index). Accepted ADRs are
     never rewritten in place: a changed decision gets a new ADR that supersedes or amends the old one.
     **ADRs bind agents, not Matěj** ([ADR 0030](docs/decisions/0030-adrs-bind-agents-not-the-owner.md)). Agents

@@ -1319,6 +1319,20 @@ def test_sidecar_is_validated(repo: RepoPaths) -> None:
     assert any("content/rooms/old.yaml: source.data_version:" in p for p in found)
 
 
+def test_the_sources_credited_elsewhere_carry_no_license_files(repo: RepoPaths) -> None:
+    add_room(repo, "third_party/mo_structures/hall")
+    content, _ = load_and_validate(repo)
+    assert not [
+        path
+        for path in generate_all(content, repo)
+        if "META-INF/third_party/mo_structures" in path.as_posix()
+    ]
+    write(repo.content / "rooms" / "third_party" / "mo_structures" / "NOTICE", "x\n")
+    assert problems(repo) == [
+        "content/rooms/third_party/mo_structures/: this source carries no license files (ADR 0067)"
+    ]
+
+
 def test_third_party_rooms_need_license_and_notice(repo: RepoPaths) -> None:
     add_room(repo, "third_party/sample/hall")
     found = problems(repo)

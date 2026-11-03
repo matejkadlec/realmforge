@@ -5,7 +5,8 @@ Source:    DungeonZ 1.3.0+1.21.1 by Globox_Z and Zura
            https://github.com/Globox1997/DungeonZ
 Copyright: Copyright (c) 2023 Globox_Z
 License:   MIT, the text in LICENSE (the jar's LICENSE_dungeonz; the repository and fabric.mod.json also say
-           MIT). These rooms stay under it.
+           MIT). Realmforge keeps this notice with the
+           rooms, which as Realmforge changed them fall under its own LICENSE (ADR 0067).
 
 The structure templates in this folder are copied from data/dungeonz/structure/ in that jar: the rooms
 of its dark dungeon and temple dungeon. Each room's YAML sidecar names its source file.

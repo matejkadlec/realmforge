@@ -598,9 +598,10 @@ Rules:
   (required, no newer than the game's), every block, block entity and entity id and every container's loot table
   against the ID universe, that jigsaws sit on the room's boundary, facing out, and that every jigsaw's pool is a
   vanilla template pool (`minecraft:empty` when it names none) or a room pool some sidecar lists. Imported rooms
-  live in `rooms/third_party/<source>/` next to the source's `LICENSE` and `NOTICE` (and, for an LGPL-3.0 source,
+  live in `rooms/third_party/<source>/` next to the source's `LICENSE` and `NOTICE` (and, for a new LGPL-3.0 source,
   `COPYING`, the GPL-3.0 text), which validation requires and `rf gen` copies to the jar's
-  `META-INF/third_party/<source>/`; an imported room elsewhere must be one we built ourselves, marked
+  `META-INF/third_party/<source>/`, except Dungeon Now Loading and Mo' Structures, which carry none
+  ([ADR 0067](../docs/decisions/0067-the-mod-is-all-rights-reserved-imported-rooms-included.md)); an imported room elsewhere must be one we built ourselves, marked
   `source.ours: true` (`rf rooms import --ours`). The import rules of each source are in
   [art/rooms/](../art/rooms/README.md). A `review.yaml` in any folder records the room gallery's keep and reject
   decisions for the rooms below it: a kept room must exist, a rejected one may be dropped (the import then skips

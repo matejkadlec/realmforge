@@ -3,7 +3,7 @@ name = "realmforge-tools"
 version = "0.0.1"
 description = "Realmforge content pipeline: validates content/ and generates assets, data and Java registrations."
 readme = "tools/README.md"
-license = "MPL-2.0"
+license = "LicenseRef-All-Rights-Reserved"
 requires-python = ">=3.12"
 dependencies = [
     # Reads .schem and .litematic rooms and renders the room gallery (rf rooms). Pinned exactly: its API moves

@@ -90,7 +90,8 @@ Dungeon rooms are structure templates in `content/rooms/` with a YAML sidecar ea
 ([architecture 15.4](../docs/architecture.md#154-rooms), [ADR 0028](../docs/decisions/0028-dungeon-rooms-generated-or-imported.md),
 [content/README.md](../content/README.md)). `rf validate` checks them and `rf gen` copies each one, normalized, to
 `data/realmforge/structure/rooms/<id>.nbt` in the jar, and the `LICENSE` and `NOTICE` (and, for an LGPL-3.0 source,
-`COPYING`, the GPL-3.0 text) of each third-party source with a room to `META-INF/third_party/<source>/`. It also lists
+`COPYING`, the GPL-3.0 text) of each third-party source with a room to `META-INF/third_party/<source>/`; Dungeon Now
+Loading and Mo' Structures carry none (`SOURCES_WITHOUT_LICENSE_FILES`, ADR 0067). It also lists
 every room with its size, jigsaws and air blocks in the QA mod's `GeneratedRoomExpectations`, which
 `ContentRoomGameTests` compares with the rooms the game loads.
 

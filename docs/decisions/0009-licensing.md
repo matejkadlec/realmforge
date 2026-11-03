@@ -3,7 +3,9 @@
 Date: 2026-10-11
 
 Status: Accepted; config overrides noted 2026-10-13 (RLM-151); imported room licenses noted 2026-10-14 (RLM-120);
-Apotheosis's data notice noted 2026-10-31 (RLM-524)
+Apotheosis's data notice noted 2026-10-31 (RLM-524); **the mod's licenses and `neoforge.mods.toml`'s `license` below
+are superseded by [0067](0067-the-mod-is-all-rights-reserved-imported-rooms-included.md)** (the mod is All Rights
+Reserved, imported rooms included), 2026-11-03
 
 ## Context
 
