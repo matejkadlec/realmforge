@@ -77,7 +77,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0063](0063-apotheosis-data-is-fitted-from-a-pinned-snapshot.md) | Apotheosis's data is fitted from a pinned snapshot | Accepted |
 | [0064](0064-neoforges-attributes-join-the-id-universe.md) | NeoForge's attributes join the ID universe | Accepted (amends 0005) |
 | [0065](0065-inventory-sorting-leaves-backpacks-in-their-slots.md) | Inventory Sorting leaves backpacks in their slots | Accepted (amends 0062); decision 1's file note corrected (RLM-558) |
-| [0066](0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md) | The curio rule ends, Artifacts joins the pack, and Immersive Armors stays out | Accepted (amends 0025, 0044 and 0058) |
+| [0066](0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md) | The curio rule ends, Artifacts joins the pack, and Immersive Armors stays out | Accepted (amends 0025, 0044 and 0058); "option C" and the world-sources consequence clarified 2026-11-03 (RLM-569) |
 | [0067](0067-the-mod-is-all-rights-reserved-imported-rooms-included.md) | The mod is All Rights Reserved, imported rooms included | Accepted (supersedes the mod's licenses in 0009 and the room licensing of 0028, amends 0008) |
 | [0068](0068-elytra-are-bought-in-skyhearth.md) | Elytra are bought in Skyhearth | Accepted (supersedes 0037, amends 0025) |
 
