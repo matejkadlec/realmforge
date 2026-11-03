@@ -3243,10 +3243,11 @@ Rooms are generated or imported; nobody has to build one by hand
   them, a source's own loot tables are dropped (the dungeon fills its chests, W4), only decorative entities stay,
   and the sidecar gets draft slot tags from its connectors and its name
   ([content/README](../content/README.md)). Each source has its own folder, `content/rooms/third_party/<source>/`,
-  with its `LICENSE`, a `NOTICE` and, for LGPL-3.0, `COPYING` (the GPL-3.0 text). The folder is a license
-  boundary, not a pool, so the sidecars name the pools. The jar keeps the folder (LGPL-3.0 rooms stay apart from our
-  assets) and carries the notices under `META-INF/third_party/<source>/`: `rf gen` copies them for every source
-  with a room there, and `mod_license` names the added licenses. Vanilla templates are referenced by id, never
+  with its `LICENSE` and a `NOTICE`, except Dungeon Now Loading and Mo' Structures, which carry none
+  ([ADR 0067](decisions/0067-the-mod-is-all-rights-reserved-imported-rooms-included.md): the rooms are All Rights
+  Reserved like the rest of the mod, and the root `LICENSE` credits every source). The folder is not a pool, so the
+  sidecars name the pools. The jar keeps the folder and carries the notices under `META-INF/third_party/<source>/`:
+  `rf gen` copies them for every source with a room there. Vanilla templates are referenced by id, never
   copied.
 - **Hand-built rooms** stay possible: built with structure blocks and saved as NBT with a sidecar like any other,
   or exported as a schematic and taken in by `rf rooms import --ours`, which marks the sidecar's `source` as ours.
@@ -3299,7 +3300,7 @@ Rooms are generated or imported; nobody has to build one by hand
 - **Validation:** size limits (48 blocks per axis, a structure block's maximum), connectors on the room's boundary
   facing out, known markers, only blocks the themes can swap and only ids inside the ID universe (an imported
   room's own blocks are remapped, and a container's loot table must exist), and `LICENSE` and `NOTICE` next to
-  third-party rooms (`COPYING` next to LGPL-3.0 ones). `rooms/check.py` checks the size, the data version, the
+  third-party rooms, except the two sources that carry none (`COPYING` next to a new LGPL-3.0 source's). `rooms/check.py` checks the size, the data version, the
   ids, the loot tables, the connectors, each jigsaw's pool, which must be a vanilla template pool or a room
   pool some sidecar lists (it becomes a template pool for world structures, M2), and the data markers: every
   structure block is one, in data mode, naming a marker of [15.3](#153-generation-pure-first-then-minecraft), with one

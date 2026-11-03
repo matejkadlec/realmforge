@@ -19,8 +19,8 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0005](0005-content-pipeline-yaml-single-source-of-truth.md) | Content pipeline: YAML as the single source of truth | Accepted, amended by [0014](0014-core-mod-architecture.md) and [0050](0050-set-pieces-hand-built-nbt-placed-at-dungeon-generation.md) (set pieces) |
 | [0006](0006-quests-ftb-quests-generated-from-data.md) | Quests: FTB Quests generated from data | Accepted |
 | [0007](0007-asset-pipeline.md) | Asset pipeline | Accepted, refined by [0023](0023-texture-generator.md), vanilla texture rule narrowed to texture files by [0028](0028-dungeon-rooms-generated-or-imported.md) |
-| [0008](0008-distribution-github-and-curseforge.md) | Distribution: GitHub Releases now, CurseForge later | Accepted |
-| [0009](0009-licensing.md) | Licensing | Accepted, third-party rooms added by [0028](0028-dungeon-rooms-generated-or-imported.md) |
+| [0008](0008-distribution-github-and-curseforge.md) | Distribution: GitHub Releases now, CurseForge later | Accepted, the jar's license amended by [0067](0067-the-mod-is-all-rights-reserved-imported-rooms-included.md) |
+| [0009](0009-licensing.md) | Licensing | Accepted, third-party rooms added by [0028](0028-dungeon-rooms-generated-or-imported.md), the mod's licenses superseded by [0067](0067-the-mod-is-all-rights-reserved-imported-rooms-included.md) |
 | [0010](0010-testing-strategy.md) | Testing strategy | Accepted, amended by [0018](0018-pack-boot-tests.md) |
 | [0011](0011-repository-layout-and-workflow.md) | Repository layout and workflow | Accepted |
 | [0012](0012-procedural-dungeons-and-dimensions.md) | Procedural dungeons and dimensions | Accepted, refined by [0019](0019-dungeon-instances-in-plots.md), its Nether and End question resolved by [0025](0025-remove-the-nether-and-end.md), hand-built rooms replaced by [0028](0028-dungeon-rooms-generated-or-imported.md) |
@@ -39,7 +39,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0025](0025-remove-the-nether-and-end.md) | Remove the Nether and End; the Overworld is the starting area | Accepted (resolves the open question of 0012), amended by [0032](0032-v1-realm-layout-amends-the-nether-and-end-removal.md), [0034](0034-ancient-merchants-and-the-wither-amend-the-nether-and-end-removal.md) and [0037](0037-elytra-from-chapter-3s-final-boss-amends-the-nether-and-end-removal.md) (elytra source); amended by [0044](0044-third-party-mods-by-milestone.md) (strongholds off from M1, so the End is unreachable from M1) and [0066](0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md) (the curio rule ends) |
 | [0026](0026-platform-minecraft-26-1-2-neoforge.md) | Platform: Minecraft 26.1.2 on NeoForge | Accepted (supersedes 0003) |
 | [0027](0027-client-bound-payload-handlers-through-the-client-event.md) | Client-bound payload handlers through NeoForge's client event | Accepted (amends 0014) |
-| [0028](0028-dungeon-rooms-generated-or-imported.md) | Dungeon rooms are generated or imported, not built by hand | Accepted (amends 0007, 0009, 0012 and 0014) |
+| [0028](0028-dungeon-rooms-generated-or-imported.md) | Dungeon rooms are generated or imported, not built by hand | Accepted (amends 0007, 0009, 0012 and 0014), room licensing superseded by [0067](0067-the-mod-is-all-rights-reserved-imported-rooms-included.md) |
 | [0029](0029-independent-claude-review-before-every-merge.md) | Independent Claude review before every merge | Accepted (supersedes 0015) |
 | [0030](0030-adrs-bind-agents-not-the-owner.md) | ADRs bind agents, not the owner | Accepted (amends 0001), amended by [0060](0060-what-counts-as-the-owners-confirmation-of-an-adr-conflicting-change.md) (what counts as his confirmation) |
 | [0031](0031-instance-builder-background-chunks-and-shared-budget.md) | Instance builder: background chunk loads, a shared budget, clear-only cleanup | Accepted (amends 0019) |
@@ -78,6 +78,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0064](0064-neoforges-attributes-join-the-id-universe.md) | NeoForge's attributes join the ID universe | Accepted (amends 0005) |
 | [0065](0065-inventory-sorting-leaves-backpacks-in-their-slots.md) | Inventory Sorting leaves backpacks in their slots | Accepted (amends 0062); decision 1's file note corrected (RLM-558) |
 | [0066](0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md) | The curio rule ends, Artifacts joins the pack, and Immersive Armors stays out | Accepted (amends 0025, 0044 and 0058) |
+| [0067](0067-the-mod-is-all-rights-reserved-imported-rooms-included.md) | The mod is All Rights Reserved, imported rooms included | Accepted (supersedes the mod's licenses in 0009 and the room licensing of 0028, amends 0008) |
 
 ## Open questions (not decided)
 

@@ -173,9 +173,6 @@ tasks.named('jar', Jar) {
     from(rootProject.file('LICENSE')) {
         rename { 'LICENSE_realmforge' }
     }
-    from(rootProject.file('LICENSE-ASSETS')) {
-        rename { 'LICENSE-ASSETS_realmforge' }
-    }
 }
 
 tasks.withType(JavaCompile).configureEach {

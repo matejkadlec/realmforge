@@ -146,17 +146,15 @@ Releases will be published on GitHub Releases, CurseForge later. Not on Modrinth
 
 ## License
 
-The repository contains two products with different licenses:
+- **The Realmforge mod and Realmforge QA** (`mod/`, `qa-mod/`, `tools/` and everything shipped in their jars, dungeon
+  rooms included): **All Rights Reserved**, and use in a modpack is prohibited, except in the official Realmforge
+  modpack. See [LICENSE](LICENSE) and
+  [ADR 0067](docs/decisions/0067-the-mod-is-all-rights-reserved-imported-rooms-included.md). Copies published before
+  this change stay under the licenses they came with (MPL-2.0 for code, CC BY 4.0 for assets).
 
-- **The Realmforge mod** (`mod/`, `qa-mod/`, `tools/` and everything shipped in the `realmforge` jar): source code
-  under the [Mozilla Public License 2.0](LICENSE), assets (textures, models, sounds, texts) under
-  [Creative Commons Attribution 4.0 International](LICENSE-ASSETS). Dungeon rooms imported from other projects
-  keep their own licenses, each source in its own folder under `content/rooms/third_party/` with its license and
-  notice, which the jar carries in `META-INF/third_party/<source>/`
-  ([ADR 0028](docs/decisions/0028-dungeon-rooms-generated-or-imported.md)):
-  - MIT: Stonevaults (TheGrimsey), DungeonZ (Globox_Z, Zura), Desert Dungeon (D1scoball, Globox_Z);
-  - CC0 1.0: Dungeon Now Loading (Hexnowloading);
-  - LGPL-3.0: Mo' Structures (Frqnny).
+  Credits: some dungeon rooms started from rooms of Stonevaults (TheGrimsey), DungeonZ (Globox_Z, Zura), Desert Dungeon
+  (D1scoball, Globox_Z), Dungeon Now Loading (Hexnowloading) and Mo' Structures (Frqnny). The MIT notices of the first
+  three stay in `content/rooms/third_party/<source>/` and the jar's `META-INF/third_party/<source>/`.
 
   The jar also carries Apotheosis's data, fitted to our stats (`data/apotheosis/`, from
   [Apotheosis](https://github.com/Shadows-of-Fire/Apotheosis) by Shadows_of_Fire, MIT, Copyright (c) 2018-2025
@@ -164,8 +162,9 @@ The repository contains two products with different licenses:
   ([ADR 0063](docs/decisions/0063-apotheosis-data-is-fitted-from-a-pinned-snapshot.md)).
 - **The Realmforge modpack** (`pack/`: pack definition, configuration, quests): **All Rights Reserved**, no
   redistribution. See [pack/LICENSE](pack/LICENSE).
+- **Better Key Binds** (`better-key-binds/`): MPL-2.0. See [its LICENSE](better-key-binds/LICENSE).
 
 Third-party mods are not part of this repository; the pack only references them, and each keeps its own license.
-Details and reasoning: [ADR 0009](docs/decisions/0009-licensing.md).
+Details and reasoning: [ADR 0009](docs/decisions/0009-licensing.md) and ADR 0067.
 
 Minecraft is a trademark of Mojang Studios. Realmforge is not affiliated with Mojang or Microsoft.

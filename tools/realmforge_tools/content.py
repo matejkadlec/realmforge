@@ -67,6 +67,7 @@ from realmforge_tools.schema.room import (
     REVIEW_FILE,
     ROOM_SEGMENT,
     ROOMS_DIR,
+    SOURCES_WITHOUT_LICENSE_FILES,
     ReviewFile,
     RoomDef,
 )
@@ -450,6 +451,8 @@ def _load_rooms(
             rooms.append(RoomEntry(room_id, entry.source, paths.rel(template), entry.model, key, load, cache))
     sources = sorted({room_id.split("/")[1] for room_id in templates if room_id.startswith("third_party/")})
     for source in sources:
+        if source in SOURCES_WITHOUT_LICENSE_FILES:
+            continue
         for name in LICENSE_FILES:
             if (source, name) not in license_files:
                 problems.append(
@@ -460,6 +463,14 @@ def _load_rooms(
                     )
                 )
     for source in sorted({source for source, _ in license_files}):
+        if source in SOURCES_WITHOUT_LICENSE_FILES:
+            problems.append(
+                Problem(
+                    f"content/{ROOMS_DIR}/third_party/{source}/",
+                    "",
+                    "this source carries no license files (ADR 0067)",
+                )
+            )
         problems += _gpl_problems(source, license_files, paths)
     notices = tuple(
         RoomNotice(source, name, file.read_bytes()) for (source, name), file in sorted(license_files.items())

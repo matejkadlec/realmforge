@@ -5,7 +5,8 @@ Source:    Stonevaults 2.0.0+26.1-neoforge by TheGrimsey
            https://github.com/TheGrimsey/Stonevaults (tag v2.0.0)
 Copyright: Copyright (c) 2021 TheGrimsey
 License:   MIT, the text in LICENSE (the repository's LICENSE at v2.0.0; the jar's neoforge.mods.toml also
-           says MIT). These rooms stay under it.
+           says MIT). Realmforge keeps this notice with the
+           rooms, which as Realmforge changed them fall under its own LICENSE (ADR 0067).
 
 The structure templates in this folder are copied from data/stonevaults/structure/ in that jar: the
 pieces of its dungeon and pillager dungeon (entrances, lobbies, rooms, stairways, treasure rooms). Each

@@ -20,6 +20,9 @@ ROOMS_DIR = "rooms"
 REVIEW_FILE = "review.yaml"
 # Files a third-party source's folder carries besides its rooms (ADR 0028).
 LICENSE_FILES = ("LICENSE", "NOTICE")
+# Sources whose folders carry none of those: credited in the root LICENSE and the README instead (ADR 0067). Every other
+# source keeps both.
+SOURCES_WITHOUT_LICENSE_FILES = ("dungeon_now_loading", "mo_structures")
 # The GPL-3.0 text an LGPL-3.0 source carries next to its LICENSE, as LGPL-3.0 requires (ADR 0028, point 4).
 GPL_FILE = "COPYING"
 # A LICENSE that starts the LGPL-3.0 text, and a COPYING that starts the GPL-3.0 text.

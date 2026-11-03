@@ -4,7 +4,9 @@ Date: 2026-10-13
 
 Status: Accepted (amends the hand-built rooms of [0012](0012-procedural-dungeons-and-dimensions.md) and decision 8 of
 [0014](0014-core-mod-architecture.md), adds third-party rooms to [0009](0009-licensing.md), and narrows the vanilla
-texture rule of [0007](0007-asset-pipeline.md) to texture files)
+texture rule of [0007](0007-asset-pipeline.md) to texture files). **The room licensing is superseded by
+[0067](0067-the-mod-is-all-rights-reserved-imported-rooms-included.md):** points 4 and 8, and the license parts of
+points 3 and 5, for the five sources imported so far (2026-11-03)
 
 ## Context
 

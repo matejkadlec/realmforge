@@ -28,6 +28,4 @@ licenses.
 The Realmforge mod
 ------------------
 The Realmforge mod itself (mod/, qa-mod/, tools/ and everything shipped in the
-realmforge jar) is licensed separately: source code under the Mozilla Public
-License 2.0 (see /LICENSE) and assets under Creative Commons Attribution 4.0
-International (see /LICENSE-ASSETS).
+realmforge jar) is covered separately, also All Rights Reserved: see /LICENSE.
