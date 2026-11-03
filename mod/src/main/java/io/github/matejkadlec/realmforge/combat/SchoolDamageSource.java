@@ -72,7 +72,7 @@ public class SchoolDamageSource extends DamageSource {
 
     /**
      * The damage over time any hit is a tick of, if it is one of ours with a tick (RLM-539, RLM-540): such a hit is never
-     * dodged or blocked, and a passive's proc can watch it (Taste for Blood).
+     * dodged or blocked, and a passive's proc can watch it (Bloodthirst).
      */
     public static Optional<Tick> tickOf(DamageSource source) {
         return source instanceof SchoolDamageSource school ? school.tick() : Optional.empty();

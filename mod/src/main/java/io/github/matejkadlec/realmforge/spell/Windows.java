@@ -16,7 +16,7 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 /**
  * The windows of spells usable only for a while after something happens (RLM-540; architecture 11.2): Overpower after
  * the player blocks a hit, Victory Rush after they kill an enemy that is not gray, and whatever a passive's proc opens
- * (Taste for Blood). A window opens for the player's known spells that name its opener, for the spell's
+ * (Bloodthirst). A window opens for the player's known spells that name its opener, for the spell's
  * {@link SpellWindow#durationTicks}; {@link SpellCaster} refuses a closed window's spell and closes the window it
  * uses. Windows live in the {@code combat} attachment, synced to the player for the spell bar's glow, and are transient.
  *

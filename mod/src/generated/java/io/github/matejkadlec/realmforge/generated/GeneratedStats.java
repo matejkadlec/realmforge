@@ -45,6 +45,11 @@ public final class GeneratedStats {
             ATTRIBUTES.register("armor_shred",
                     () -> new PercentageAttribute("attribute.realmforge.armor_shred", 0.0, 0.0, 1.0).setSyncable(true));
 
+    /** {@code realmforge:armor_wear_reduction} from {@code content/stats/armor_wear_reduction.yaml}: secondary, "Armor Wear Reduction". */
+    public static final DeferredHolder<Attribute, Attribute> ARMOR_WEAR_REDUCTION =
+            ATTRIBUTES.register("armor_wear_reduction",
+                    () -> new PercentageAttribute("attribute.realmforge.armor_wear_reduction", 0.0, 0.0, 1.0).setSyncable(true));
+
     /** {@code realmforge:cast_time_reduction} from {@code content/stats/cast_time_reduction.yaml}: secondary, "Cast Time Reduction". */
     public static final DeferredHolder<Attribute, Attribute> CAST_TIME_REDUCTION =
             ATTRIBUTES.register("cast_time_reduction",
@@ -189,7 +194,7 @@ public final class GeneratedStats {
     public static final List<DeferredHolder<Attribute, Attribute>> PRIMARY = List.of(DEXTERITY, INTELLECT, STRENGTH, VITALITY);
 
     /** Every stat above, in id order. */
-    public static final List<DeferredHolder<Attribute, Attribute>> ALL = List.of(ARCANE_POWER, ARCANE_RESISTANCE, ARMOR_PIERCE, ARMOR_SHRED, CAST_TIME_REDUCTION, COOLDOWN_REDUCTION, CRIT_CHANCE, CRIT_DAMAGE, DEXTERITY, DODGE_CHANCE, EXPLOSION_RESISTANCE, FALL_RESISTANCE, FIRE_POWER, FIRE_RESISTANCE, FROST_POWER, FROST_RESISTANCE, HEALTH_REGENERATION, INTELLECT, LIFESTEAL, MAGIC_SHIELD, MAGIC_SHIELD_DAMAGE, MANA_REGENERATION, MAX_MANA, OVERHEAL, PHYSICAL_RESISTANCE, PROJECTILE_RESISTANCE, SPELL_POWER, SPELL_RESISTANCE, STAMINA, STRENGTH, VITALITY, XP_MULTIPLIER);
+    public static final List<DeferredHolder<Attribute, Attribute>> ALL = List.of(ARCANE_POWER, ARCANE_RESISTANCE, ARMOR_PIERCE, ARMOR_SHRED, ARMOR_WEAR_REDUCTION, CAST_TIME_REDUCTION, COOLDOWN_REDUCTION, CRIT_CHANCE, CRIT_DAMAGE, DEXTERITY, DODGE_CHANCE, EXPLOSION_RESISTANCE, FALL_RESISTANCE, FIRE_POWER, FIRE_RESISTANCE, FROST_POWER, FROST_RESISTANCE, HEALTH_REGENERATION, INTELLECT, LIFESTEAL, MAGIC_SHIELD, MAGIC_SHIELD_DAMAGE, MANA_REGENERATION, MAX_MANA, OVERHEAL, PHYSICAL_RESISTANCE, PROJECTILE_RESISTANCE, SPELL_POWER, SPELL_RESISTANCE, STAMINA, STRENGTH, VITALITY, XP_MULTIPLIER);
 
     /** The stats that lower the food exhaustion players gain ({@code lowers_exhaustion}), in id order. */
     public static final List<ExhaustionReduction> LOWER_EXHAUSTION = List.of(new ExhaustionReduction(STAMINA, 0.01, 0.5));

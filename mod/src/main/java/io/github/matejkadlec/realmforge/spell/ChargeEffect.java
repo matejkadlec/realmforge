@@ -8,9 +8,9 @@ import net.minecraft.world.entity.LivingEntity;
 
 /**
  * {@code realmforge:charge} (RLM-543, the Arms Warrior's Charge): rushes the caster at its enemy target at {@code speed}
- * blocks a second until it stands in front of it, then runs {@code effects} on every enemy within {@code landingRadius}
- * blocks of where it lands (Charge's stun). {@link Charges} steers the rush on the server every tick, a player's
- * through the velocity its client receives, as a knockback reaches it.
+ * blocks a second until it stands against the side of it the charge came from, runs {@code effects} on every enemy
+ * within {@code landingRadius} blocks of that point (Charge's stun), and hops one block back ({@link ChargeMotion}).
+ * {@link Charges} runs it: a mob's on the server, a player's on their client.
  *
  * @param speed how fast the caster rushes, in blocks per second
  * @param landingRadius the blocks round the landing whose enemies the effects reach

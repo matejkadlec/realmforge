@@ -108,6 +108,14 @@ class MobAttributesDef(StrictModel):
         description="How much more of a magic shield its hits drain (realmforge:magic_shield_damage), in percent; its "
         "spells add their own (RLM-580: Astone's 15).",
     )
+    armor_wear_reduction_percent: float = Field(
+        default=0,
+        ge=0,
+        le=100,
+        allow_inf_nan=False,
+        description="How much less its hits wear a target's armor (realmforge:armor_wear_reduction), 0 to 100 "
+        "(RLM-580: Astone's 75).",
+    )
 
 
 class KitingDef(StrictModel):

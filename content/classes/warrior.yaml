@@ -4,7 +4,7 @@
 # (2026-10-15, RLM-196). Its kit is the Arms Warrior's "Bloodletter" tree (RLM-543; Matěj, 2026-10-30, RLM-333): until
 # the spell trees window (C5) spends points, the kit teaches every spell of the tree at rank 1 at its row's level, a row
 # every 6 levels: Slam (decision D4's starting spell), Charge and Deep Wounds at 1; Rend, Battle Shout and Two-Handed
-# Weapon Specialization at 6; Taste for Blood, Overpower and Victory Rush at 12; Execute at 18. Four active spells by
+# Weapon Specialization at 6; Bloodthirst, Overpower and Victory Rush at 12; Execute at 18. Four active spells by
 # the end of chapter 1 (D4: 4 x N, passives aside). Reckless Strike and Shield Bash leave the kit and return with their
 # trees in M3.
 id: warrior
@@ -42,7 +42,7 @@ spells:
   - {spell: realmforge:rend, level: 6}
   - {spell: realmforge:battle_shout, level: 6}
   - {spell: realmforge:two_handed_weapon_specialization, level: 6}
-  - {spell: realmforge:taste_for_blood, level: 12}
+  - {spell: realmforge:bloodthirst, level: 12}
   - {spell: realmforge:overpower, level: 12}
   - {spell: realmforge:victory_rush, level: 12}
   - {spell: realmforge:execute, level: 18}

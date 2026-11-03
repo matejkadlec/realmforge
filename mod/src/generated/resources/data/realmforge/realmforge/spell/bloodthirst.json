@@ -1,6 +1,6 @@
 {
-  "name": "spell.realmforge.test_taste_for_blood.name",
-  "description": "spell.realmforge.test_taste_for_blood.description",
+  "name": "spell.realmforge.bloodthirst.name",
+  "description": "spell.realmforge.bloodthirst.description",
   "school": "realmforge:physical",
   "scales_with": "spell_power",
   "targeting": {
@@ -11,7 +11,7 @@
   },
   "cooldown_ticks": 0,
   "global_cooldown_ticks": 10,
-  "max_level": 1,
+  "max_level": 2,
   "crit": {
     "can_crit": true,
     "bonus_chance": 0.0
@@ -27,10 +27,11 @@
       {
         "trigger": "tick",
         "effect": "realmforge:bleeding",
-        "spell": "realmforge:test_rend",
-        "chance": 1.0,
+        "spell": "realmforge:rend",
+        "chance": 0.15,
+        "chance_per_level": 0.15,
         "cooldown_ticks": 120,
-        "open_window": "realmforge:test_overpower"
+        "open_window": "realmforge:overpower"
       }
     ],
     "splash_radius": []

@@ -1,35 +1,32 @@
 package io.github.matejkadlec.realmforge.spell;
 
+import io.github.matejkadlec.realmforge.spell.net.ChargePayload;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.SharedConstants;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
- * The charges in progress ({@link ChargeEffect}, RLM-543). A charge aims at its landing point: the near side of the
- * target's box on the side the charge came from, a quarter block short of it (Matěj's playtest of 2026-11-03: charged
- * from behind, the Warrior stops at the target's back, never passing through it). Every server tick it sets its
- * caster's horizontal velocity toward that point, at most its speed and never past the distance left, and marks it hurt
- * so a player's client receives it as it receives a knockback; the caster keeps its vertical velocity and takes no fall
- * damage meanwhile. It lands at the point, when it has passed it along the charge's direction (a player's client moves
- * ahead of what the server sees), when the target dies or leaves, or when the time its distance needs at its speed, plus
- * half a second for a slope or a player's late client, is up (a wall it cannot get through). Landing stops the caster,
- * puts it on the landing point when it reached or passed it and the point is free, and runs the charge's effects on
- * every enemy within its landing radius of the caster, measured to each enemy's box. A caster that dies, is removed or
- * changes dimension drops its charge without landing; a new charge replaces the one in progress. Server thread only.
+ * The charges in progress ({@link ChargeEffect}, RLM-543). {@link ChargeMotion} moves the caster: this runs a mob's on
+ * the server, and a player's client runs its own from a {@link ChargePayload} (Matěj's playtest of 2026-11-03: a velocity
+ * the server sent let the player slide about 3 blocks past the target), while the server reads where the player reports
+ * they are. The charge lands when the caster reaches its closest point, a player within one tick of travel of it, as
+ * their position reaches the server a tick late; when the target dies or leaves; or when the time its distance needs at
+ * its speed, plus half a second for a slope or a late client, is up (a wall it cannot get through). Landing runs the
+ * charge's effects on every enemy within its landing radius of the closest point (or of the caster, if it stopped short),
+ * measured to each enemy's box. The caster takes no fall damage meanwhile. A caster that dies, is removed or changes
+ * dimension drops its charge without landing; a new charge replaces the one in progress. Server thread only.
  */
 public final class Charges {
-    /** The gap a charge leaves between the caster's box and the target's, in blocks. */
-    static final double GAP = 0.25;
-    /** How near the landing point a charge has arrived, in blocks. */
-    static final double ARRIVED = 0.1;
     /** Ticks a charge may take beyond what its distance needs at its speed. */
     static final int SLACK_TICKS = 10;
     /** The longest a charge lasts: two seconds. */
@@ -46,32 +43,25 @@ public final class Charges {
         NeoForge.EVENT_BUS.addListener(ServerStoppedEvent.class, event -> RUNNING.clear());
     }
 
-    /** Starts {@code context}'s caster's charge at {@code target}, steering it at once. */
+    /** Starts {@code context}'s caster's charge at {@code target}, a mob's moving at once. */
     static void start(EffectContext context, LivingEntity target, ChargeEffect charge) {
         LivingEntity caster = context.caster();
         if (caster == target) {
             return;
         }
-        Vec3 toward = new Vec3(target.getX() - caster.getX(), 0, target.getZ() - caster.getZ());
-        Vec3 approach = toward.lengthSqr() < 1e-8 ? Vec3.directionFromRotation(0, caster.getYRot()) : toward.normalize();
         double perTick = charge.speed() / SharedConstants.TICKS_PER_SECOND;
         int ticks = Math.min(MAX_TICKS, (int) Math.ceil(gap(caster, target) / perTick) + SLACK_TICKS);
-        Running running = new Running(context, target, charge, approach, perTick,
-                context.level().getGameTime() + ticks);
-        RUNNING.put(caster, running);
-        steer(running);
+        ChargeMotion motion = new ChargeMotion(caster, target, perTick, ticks);
+        RUNNING.put(caster, new Running(context, target, charge, motion, perTick,
+                context.level().getGameTime() + ticks));
+        if (caster instanceof ServerPlayer player) {
+            PacketDistributor.sendToPlayer(player, new ChargePayload(target.getId(), perTick, ticks));
+        } else {
+            motion.tick(caster);
+        }
     }
 
-    /**
-     * Where {@code caster} lands charging at {@code target} along {@code approach}: in front of the near side of the
-     * target's box, the side the charge came from, {@link #GAP} short of it, at the caster's own height.
-     */
-    static Vec3 landingPoint(LivingEntity caster, LivingEntity target, Vec3 approach) {
-        double back = (caster.getBbWidth() + target.getBbWidth()) / 2 + GAP;
-        return new Vec3(target.getX() - approach.x * back, caster.getY(), target.getZ() - approach.z * back);
-    }
-
-    /** Whether {@code caster} is charging now. */
+    /** Whether {@code caster} is charging now: a mob until its hop is over, a player until the charge lands. */
     public static boolean isCharging(LivingEntity caster) {
         return RUNNING.containsKey(caster);
     }
@@ -104,58 +94,48 @@ public final class Charges {
             RUNNING.remove(caster);
             return;
         }
+        caster.resetFallDistance();
+        if (caster instanceof ServerPlayer) {
+            tickPlayer(running);
+        } else {
+            tickMob(running);
+        }
+    }
+
+    /** A player's client moves them: this only watches for the landing. */
+    private static void tickPlayer(Running running) {
+        LivingEntity caster = running.caster();
         LivingEntity target = running.target();
         boolean lost = !target.isAlive() || target.isRemoved() || target.level() != caster.level();
-        if (lost) {
+        if (lost || caster.level().getGameTime() >= running.endTime()) {
+            RUNNING.remove(caster);
             land(running, false);
-        } else if (left(running) <= ARRIVED) {
+        } else if (running.motion().distanceLeft(caster) <= running.perTick()) {
+            RUNNING.remove(caster);
             land(running, true);
-        } else if (caster.level().getGameTime() >= running.endTime()) {
-            land(running, false);
-        } else {
-            steer(running);
         }
     }
 
-    /**
-     * How far the caster still is from its landing point along the charge's direction: negative once it has passed it.
-     */
-    private static double left(Running running) {
-        Vec3 point = landingPoint(running.caster(), running.target(), running.approach());
-        Vec3 rest = point.subtract(running.caster().position());
-        return rest.x * running.approach().x + rest.z * running.approach().z;
-    }
-
-    private static void steer(Running running) {
+    private static void tickMob(Running running) {
         LivingEntity caster = running.caster();
-        Vec3 point = landingPoint(caster, running.target(), running.approach());
-        Vec3 toward = new Vec3(point.x - caster.getX(), 0, point.z - caster.getZ());
-        if (toward.lengthSqr() < 1e-8) {
-            return;
-        }
-        Vec3 step = toward.normalize().scale(Math.min(running.perTick(), toward.length()));
-        caster.setDeltaMovement(step.x, caster.getDeltaMovement().y, step.z);
-        caster.hurtMarked = true;
-        caster.resetFallDistance();
-    }
-
-    /** Ends the charge; {@code arrived}: it reached or passed its landing point, where it then stands. */
-    private static void land(Running running, boolean arrived) {
-        LivingEntity caster = running.caster();
-        RUNNING.remove(caster);
-        caster.setDeltaMovement(0, Math.min(0, caster.getDeltaMovement().y), 0);
-        caster.hurtMarked = true;
-        caster.resetFallDistance();
-        if (arrived) {
-            Vec3 point = landingPoint(caster, running.target(), running.approach());
-            Vec3 move = point.subtract(caster.position());
-            if (move.lengthSqr() > 1e-4 && caster.level().noBlockCollision(caster, caster.getBoundingBox().move(move))) {
-                caster.teleportTo(point.x, point.y, point.z);
+        switch (running.motion().tick(caster)) {
+            case ARRIVED -> land(running, true);
+            case STOPPED -> {
+                RUNNING.remove(caster);
+                land(running, false);
+            }
+            case DONE -> RUNNING.remove(caster);
+            case RUSHING, RECOILING -> {
             }
         }
+    }
+
+    /** Runs the charge's effects round where it landed; {@code arrived}: it reached its closest point. */
+    private static void land(Running running, boolean arrived) {
+        LivingEntity caster = running.caster();
         ServerLevel level = running.context().level();
         double radius = running.charge().landingRadius();
-        Vec3 landing = caster.position();
+        Vec3 landing = arrived ? running.motion().closestPoint(caster) : caster.position();
         AABB around = new AABB(landing.x - radius, landing.y - SpellArea.BELOW, landing.z - radius,
                 landing.x + radius, landing.y + SpellArea.ABOVE, landing.z + radius);
         List<LivingEntity> reached = level.getEntitiesOfClass(LivingEntity.class, around, entity -> entity != caster
@@ -179,10 +159,10 @@ public final class Charges {
     }
 
     /**
-     * A charge in progress: its cast, its target, its data, the horizontal direction it set out in, its speed in blocks
-     * per tick and the game time it lands at the latest.
+     * A charge in progress: its cast, its target, its data, what moves its caster, its speed in blocks per tick and the
+     * game time it lands at the latest.
      */
-    private record Running(EffectContext context, LivingEntity target, ChargeEffect charge, Vec3 approach,
+    private record Running(EffectContext context, LivingEntity target, ChargeEffect charge, ChargeMotion motion,
             double perTick, long endTime) {
         LivingEntity caster() {
             return context.caster();

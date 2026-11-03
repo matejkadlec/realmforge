@@ -3,6 +3,7 @@ package io.github.matejkadlec.realmforge.qa.client;
 import io.github.matejkadlec.realmforge.qa.RealmforgeQa;
 import io.github.matejkadlec.realmforge.qa.client.boss.QaBossRenderers;
 import io.github.matejkadlec.realmforge.qa.client.castanim.QaCastAnimationClient;
+import io.github.matejkadlec.realmforge.qa.client.charge.QaChargeTrace;
 import io.github.matejkadlec.realmforge.qa.client.combat.TrainingDummyRenderer;
 import io.github.matejkadlec.realmforge.qa.client.keybinds.QaKeyBindShots;
 import io.github.matejkadlec.realmforge.qa.client.keybinds.QaKeyCategories;
@@ -19,6 +20,7 @@ public final class RealmforgeQaClient {
         TrainingDummyRenderer.register(modEventBus);
         QaKeyCategories.register();
         QaKeyBindShots.registerIfRequested();
+        QaChargeTrace.registerIfRequested();
         FtbLibraryGreetingFilter.register();
     }
 }

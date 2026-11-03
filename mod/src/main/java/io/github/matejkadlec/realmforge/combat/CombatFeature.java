@@ -5,6 +5,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
+import net.neoforged.neoforge.event.entity.living.ArmorHurtEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -36,6 +37,7 @@ public final class CombatFeature {
                 DamageOverTime::onEffectRemoved);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, MobEffectEvent.Expired.class,
                 DamageOverTime::onEffectExpired);
+        NeoForge.EVENT_BUS.addListener(ArmorHurtEvent.class, ArmorWear::onArmorHurt);
         NeoForge.EVENT_BUS.addListener(PlayerTickEvent.Post.class, HealthRegeneration::onPlayerTick);
         NeoForge.EVENT_BUS.addListener(PlayerTickEvent.Post.class, MagicShields::onPlayerTick);
         NeoForge.EVENT_BUS.addListener(PlayerTickEvent.Post.class, EnchantmentProtection::onPlayerTick);

@@ -257,7 +257,7 @@ def test_no_effects_still_compile(repo: RepoPaths) -> None:
         "test_deep_wounds",
         "test_ice_lance",
         "test_frostbite",
-        "test_taste_for_blood",
+        "test_bloodthirst",
         "cone_of_cold",
         "frost_nova",
         "ice_lance",
@@ -266,7 +266,7 @@ def test_no_effects_still_compile(repo: RepoPaths) -> None:
         "charge",
         "rend",
         "deep_wounds",
-        "taste_for_blood",
+        "bloodthirst",
     ):
         (repo.content / "spells" / f"{name}.yaml").unlink()
     titan = repo.content / "bosses" / "test_titan.yaml"

@@ -1400,7 +1400,7 @@ Its name and description are translation keys from C3b, the description's number
   its tooltip shows the rank's description and the next rank's (`SpellTooltip#passiveLines`; an active spell's tooltip
   shows its next rank's numbers below its own too, RLM-542), and an active spell's
   damage number counts the player's passives. Mobs know no spells, so passives give them nothing. A passive's `procs`
-  (RLM-540: Frostbite, Taste for Blood, Deep Wounds) reach the proc engine through `Passives#procs`, at the rank, each with
+  (RLM-540: Frostbite, Bloodthirst, Deep Wounds) reach the proc engine through `Passives#procs`, at the rank, each with
   its internal cooldown per target ([12](#12-talents)). The first are
   Improved Frostbolt, Frostbite, Shatter and Two-Handed Specialization (Attack Damage +4/8/12 % with
   `#realmforge:two_handed_weapons` in hand, as the Human's Sword Specialization gives its +10 %), which the M1 spell
@@ -1430,14 +1430,20 @@ Its name and description are translation keys from C3b, the description's number
   2026-11-03), which `DamageEffect` gives a player whose hit killed its target. A damage effect may deal more against a target with a status effect
   (`against_effect`, growing per rank: Ice Lance's × 2 to × 3 against Frozen, RLM-542).
 - **The Arms tree's effects** (RLM-543): `realmforge:charge` (`spell/ChargeEffect`) rushes the caster at its enemy at
-  its speed toward its landing point, the near side of the target's box on the line the charge came on, a quarter block
-  short of touching (`Charges#landingPoint`; Matěj's playtest of 2026-11-03: from behind, it stops at the target's back,
-  never through it). `spell/Charges` steers it on the server every tick, setting its horizontal velocity toward that
-  point (at most the distance left) and marking it hurt, so a player's client receives it as it receives a knockback,
-  and lands it once it is within 0.1 block of the point or past it, the target is gone, or the time its distance needs
-  plus half a second is up (a wall); a player's client runs ahead of the server, so an arrived landing also puts the
-  caster on the point when its box fits there, and stops it. The landing runs the charge's effects on every enemy within its landing radius (Charge's stun), and the caster
-  takes no fall damage meanwhile. `realmforge:gain_resource` gives a player caster some of a resource (Charge's rage).
+  its speed to the closest point: the near side of the target's box on the line the charge came on, a gap of 0.4 blocks
+  short of it, so two 0.6-wide middles are 1 block apart (from behind, it stops at the target's back, never through it).
+  There it lands, and a hop of a third of a block's height takes the caster a block back in 6 ticks, 2 blocks from such
+  a target (Matěj's playtests of 2026-11-03). `spell/ChargeMotion` is that movement: it sets the caster's velocity before
+  each of its ticks, capped by the distance left, and needs the caster's real position, so it runs where the caster is
+  simulated: for a mob on the server (`spell/Charges`), for a player on their own client (`client/spell/ClientCharges`,
+  from `spell/net/ChargePayload`, with an empty `ClientInput` until the hop is over, so the movement keys push nothing).
+  A velocity sent from the server cannot do this: it reaches the client late and a real client slid about 3 blocks past
+  the target whatever the server did then; `ServerPlayer#teleportTo` keeps the client's velocity too. For a player
+  `Charges` only watches the position they report and lands within one tick of travel of the closest point. A charge
+  also lands when the target is gone or when the time its distance needs plus half a second is up (a wall), without the
+  hop. The landing runs the charge's effects on every enemy within its landing radius of the closest point (Charge's
+  stun), and the caster takes no fall damage meanwhile. GameTests' fake players have no client, so the QA mod's charge
+  trace measures a real one ([dev setup, 3.3](dev-setup.md#33-in-wsl-quick-checks)). `realmforge:gain_resource` gives a player caster some of a resource (Charge's rage).
   A heal may add a share of the healed entity's max health and heal the caster instead of the target (`on_caster`,
   Victory Rush).
 
@@ -1483,7 +1489,7 @@ lists spells granted while equipped or on use): the vision's "some from the race
 **In code (RLM-540): windows.** `spell/Windows` opens a spell's window for a player who knows it: a hit they block with
 a shield or a raised two-handed weapon (`CombatEvent.Block`, which `WeaponBlocks` and the shield's
 `LivingShieldBlockEvent` post) opens the windows opened by `block`, a kill of an enemy at most 3 levels below them (not
-gray) those opened by `kill`, and a passive's proc any spell's (`Proc.OpenWindow`, Taste for Blood). A window is the game
+gray) those opened by `kill`, and a passive's proc any spell's (`Proc.OpenWindow`, Bloodthirst). A window is the game
 time it closes, in the `combat` attachment (transient, synced to the owner); `SpellCaster` refuses a player's spell
 whose window is closed (`CastFailure.NO_WINDOW`) and a cast closes it. The spell bar greys out a closed window's slot
 and draws an open one with a glow and its seconds left (`SpellBarView.Slot#windowTicks`, `client/hud/SpellSlots`).
@@ -2203,36 +2209,36 @@ Missiles leave the M1 kit and come back with their trees in M3 (RLM-218).
 18" document, chosen for M1, version 1 of every spell, balanced by Claude): the same rows, a new one every 6 levels,
 the first two holding four actives (D4). Until C5 (RLM-333), the Warrior's kit teaches every spell of the tree at rank 1
 at its row's level (`content/classes/warrior.yaml`); Reckless Strike and Shield Bash leave the M1 kit and come back
-with their trees in M3. Taste for Blood needs Rend in the tree, which C5 checks; the kit teaches Rend first.
+with their trees in M3. Bloodthirst needs Rend in the tree, which C5 checks; the kit teaches Rend first.
 
 | Row (level) | Left | Middle | Right |
 | --- | --- | --- | --- |
 | 1 | Charge (2) | Slam (5) | Deep Wounds (passive, 3) |
 | 6 | Rend (3) | Battle Shout (2) | Two-Handed Specialization (passive, 3) |
-| 12 | Taste for Blood (passive, 2) | Overpower (5) | Victory Rush (3) |
+| 12 | Bloodthirst (passive, 2) | Overpower (5) | Victory Rush (3) |
 | 18 | Execute (3) | | |
 
-- **The loop:** Charge in for rage, Rend to bleed and Slam on cooldown; blocks and Taste for Blood's procs on Rend's
+- **The loop:** Charge in for rage, Rend to bleed and Slam on cooldown; blocks and Bloodthirst's procs on Rend's
   ticks open Overpower, crits bleed through Deep Wounds, kills open Victory Rush, and Execute finishes, refunding rage
   for a kill.
 - **Numbers** (rank 1 to the highest, AD = Attack Damage; the costs, cooldowns and Victory Rush from Matěj's comments of
   2026-11-03 on the Warrior design page): **Charge** a rush at an enemy 3 to 10 blocks away (12 at rank 2) at 24 blocks
-  a second that stuns every enemy within 1.5 blocks of the landing for 1/2 s, 10/20 rage, 10 s. **Rend** 2/3/4 +
+  a second that stuns every enemy within 1.5 blocks of the landing for 3 s, 10/20 rage, 10 s. **Rend** 2/3/4 +
   30/40/50 % AD, then Bleeding of 4/6/8 + 60/80/100 % AD over 6 s, 10/20/30 rage, 6 s. **Overpower** 5/5.5/6/6.5/7 +
   100 to 140 % AD with +10 to 30 % crit chance (above 100 %, crit damage), for 5 s after a block, 10 rage, 4 s.
   **Victory Rush** 5/6/7 + 80/90/100 % AD and a heal of 10/15/20 % of max health, for 20 s after a kill that is not
   gray, free, no cooldown. **Execute** below 20 % health, 8/10/12 + 150/175/200 % AD, 15/20/25 rage and up to 30 more
   for 3 % more damage each, 5/10/15 rage back for a kill, no cooldown. **Deep Wounds** a crit bleeds for 20/40/60 % of
-  its damage over 6 s. **Taste for Blood** a 15/30 % chance on a tick of Rend's Bleeding to open Overpower, once every
+  its damage over 6 s. **Bloodthirst** a 15/30 % chance on a tick of Rend's Bleeding to open Overpower, once every
   6 s on each target. Slam, Battle Shout and Two-Handed Specialization: below and [11.1](#111-model).
 - **The target** (RLM-503): about 35 damage a second before armor at level 18, against the Frost Mage's about 40, so
   both kill Astone (about 3,000 health in RLM-503's balance; 1,500 since RLM-580) in 2.5 to 3 minutes.
 - `ArmsTreeGameTests` covers every active's damage at rank 1 and its highest rank, Rend's bleed, Overpower only after
   a block, Victory Rush only after a kill that is not gray and its heal, Execute's condition, extra rage, refund and lit
-  slot, Charge's rush to the near side (from either side), landing stun and distance by rank, Deep Wounds' share, Taste
-  for Blood's proc, the tooltips' next rank, the kit by rows and the handoff's setup line.
+  slot, Charge's closest point, stun and hop back (from either side) and its distance by rank, Deep Wounds' share,
+  Bloodthirst's proc, the tooltips' next rank, the kit by rows and the handoff's setup line.
 
-- **Slam:** 4 + 1.5 per rank + 120 % of attack damage, 30 rage, 4 s, needs a melee weapon (RLM-499); armor shred
+- **Slam:** 5 + 1.5 per rank + 150 % of attack damage and 25 % more per rank, 30 rage, 4 s, needs a melee weapon (RLM-499); armor shred
   5 % per rank. **Reckless Strike:** 2 + 1 per rank + 100 % of attack damage, 20 rage, 4 s, a melee weapon; crit
   chance +10 % and 5 % more per rank. **Shield Bash:** 1 + 0.5 per rank + 60 % of attack damage, 15 rage, 6 s, a
   shield; Stunned 0.5 s and 0.25 s more per rank.
@@ -2299,12 +2305,12 @@ return; the proc engine at its end exists since C3a.
   cooldown, a proc's own hit triggering nothing, and the crit and kill triggers.
 - **In code (RLM-540): procs of passive spells.** Two more triggers: `APPLIES_EFFECT` (the holder gave another entity a
   status effect, `MobEffectEvent.Added`; Frostbite on the player's Slowness) and `TICK` (a tick of the holder's damage
-  over time, which `SchoolDamageSource.Tick` names; Taste for Blood on Rend's), each watching a named effect and, for a
+  over time, which `SchoolDamageSource.Tick` names; Bloodthirst on Rend's), each watching a named effect and, for a
   tick, a named spell; a third action, `OpenWindow`. A proc's internal cooldown may run per target
   (`Proc#perTarget`), as every passive spell's does (research SP-15). While a proc's action runs, nothing it sets off (a
   status effect it gives, a spell it casts) fires another proc, so the rule holds for synchronous chains too; a
   proc's `ApplyEffect` records its origin in the effect's source. `WindowsAndProcsGameTests` covers Frostbite's per-target
-  cooldown, Taste for Blood and Deep Wounds.
+  cooldown, Bloodthirst and Deep Wounds.
 - **In code (RLM-543): a proc's damage over time.** A fourth action, `DamageOverTime` (a passive's `damage_over_time`,
   Deep Wounds): a hit or crit proc gives the entity hit the holder's stack of a status effect with stacks
   ([11.4](#114-status-effects)), named after the passive spell, dealing a share of the hit's damage after its
@@ -2776,7 +2782,9 @@ numbers stay proposals. Until then she is buffed for the M1 class checks (RLM-58
 level-18 classes found her far too weak): 1,500 health at level 18 (it was 800), three times her damage (attack damage
 21, her spells' amounts tripled), and her fists ignore 15 % of a player's armor and drain 15 % more of a magic shield
 (`armor_shred_percent` and `magic_shield_damage_percent` in her mob data), her spells 30 % (15 % of their own on
-hers).
+hers). Her hits wear armor a quarter as much (`armor_wear_reduction_percent`: 75, the mob-only stat
+`realmforge:armor_wear_reduction`, `combat/ArmorWear` on NeoForge's `ArmorHurtEvent`; his playtest: she should ignore
+armor, not destroy it).
 
 | Phase | Enters | `on_enter` | Abilities |
 | --- | --- | --- | --- |
@@ -2790,8 +2798,8 @@ with their realms. The altar, her summoning item and the arena dungeon are W6 (R
 `/summon realmforge:astone`. `AstoneGameTests` cover each phase change (the bar's title, the shockwave's push, the
 cracks), each ability cast through the spell engine at a husk (the boulder formed in her hands, Quake only with its
 target inside and hitting slam after slam, Rockfall where its target stood, dodged by a husk that left the ring,
-Cracked Stone again as an ability), her buff's health, damage, armor shred and magic shield drain (a shield loses
-1.15 times her fist's hit and 1.3 times her boulder's), her three drops on three kills, and the playtest's commands
+Cracked Stone again as an ability), her buff's health, damage, armor shred, magic shield drain (a shield loses
+1.15 times her fist's hit and 1.3 times her boulder's) and armor wear, her three drops on three kills, and the playtest's commands
 (`/summon`, `/qa boss phase`, `/qa boss reset`, `/kill`); `BossPhaseMachineTest` walks her definition through all three
 phases.
 
@@ -4133,7 +4141,9 @@ on one target). Apotheosis's Bloodletting and Devilish affixes and its Tyrannica
 every application of it into a stack of our `realmforge:bleeding` ([11.4](#114-status-effects)) with the same damage, a
 quarter of 1 + its level every half second: `MobEffectEvent.Applicable` refuses the effect (`DO_NOT_APPLY`) and gives
 the target's last attacker's stack instead, its spell and proc origin `realmforge:apothic_bleeding` (one stack per
-attacker for these sources, beside Rend's and Deep Wounds', and no proc from its ticks). A source that stacks on
+attacker for these sources, beside Rend's and Deep Wounds', and no proc from its ticks). The level shows as the
+effect's amplifier, Bleeding IV, the highest of a target's sources' (Matěj's playtest of 2026-11-03: without it, the
+stacking looked gone); the damage is the stacks'. A source that stacks on
 reapply reads the target's effect to raise it; `mixin/ApothicBleedStackingMixin` ([19.3](#193-mixins-and-access-transformers))
 hands it a stand-in at the stack's level and remaining time, so Apotheosis's own step, limit (Bloodletting's Bleeding
 IV) and longer duration decide the raise, which goes to the stack. Nothing else reads the effect: Apothic Attributes'

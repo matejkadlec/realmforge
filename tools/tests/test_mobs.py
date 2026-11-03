@@ -198,11 +198,15 @@ def test_a_mob_may_walk_silently(repo: RepoPaths) -> None:
 
 def test_a_mob_may_ignore_armor_and_drain_magic_shields(repo: RepoPaths) -> None:
     # RLM-580: Astone's hits ignore 15 % of a player's armor and drain 15 % more of a magic shield.
-    stats = "movement_speed: 0.2, armor_shred_percent: 25, magic_shield_damage_percent: 40}"
+    stats = (
+        "movement_speed: 0.2, armor_shred_percent: 25, magic_shield_damage_percent: 40, "
+        "armor_wear_reduction_percent: 60}"
+    )
     mob(repo, "hewn_brute", MELEE.replace("movement_speed: 0.2}", stats))
     registrations = generate(repo)[REGISTRATIONS].decode()
     assert ".add(GeneratedStats.ARMOR_SHRED, 0.25)" in registrations
     assert ".add(GeneratedStats.MAGIC_SHIELD_DAMAGE, 0.4)" in registrations
+    assert ".add(GeneratedStats.ARMOR_WEAR_REDUCTION, 0.6)" in registrations
     mob(repo, "hewn_brute", MELEE.replace("movement_speed: 0.2}", stats.replace("25,", "120,")))
     assert_problem(repo, "armor_shred_percent")
 

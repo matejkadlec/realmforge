@@ -28,6 +28,7 @@ import io.github.matejkadlec.realmforge.client.render.ScrollCharge;
 import io.github.matejkadlec.realmforge.client.render.SpellEntityRenderers;
 import io.github.matejkadlec.realmforge.client.screen.CharacterCreationScreen;
 import io.github.matejkadlec.realmforge.client.spell.ClientCasts;
+import io.github.matejkadlec.realmforge.client.spell.ClientCharges;
 import io.github.matejkadlec.realmforge.client.spell.SpellBarInput;
 import io.github.matejkadlec.realmforge.client.spell.TargetCircle;
 import io.github.matejkadlec.realmforge.client.spell.WandCasting;
@@ -69,6 +70,7 @@ public final class RealmforgeClient {
         BackpacksStayInPlace.register();
         PotionCharmTooltip.register();
         ClientCasts.register();
+        ClientCharges.register();
         CastAnimation.register(modBus);
         SpellBarInput.register();
         AutoShootInput.register();

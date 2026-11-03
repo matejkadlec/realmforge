@@ -49,8 +49,9 @@ public final class ApothicBleedGameTests {
     /**
      * A Bloodletting sword's hit makes the husk bleed with our Bleeding alone, the player's stack at level 0 for its
      * 5 s (Uncommon); a hit within its 4 s cooldown on the target raises nothing; each next hit raises that stack by a
-     * level, up to Bleeding IV (its stacking limit, 3), and never adds a second one; Rend's bleed then lies beside it as
-     * a stack of its own, under the same one effect.
+     * level, up to Bleeding IV (its stacking limit, 3), which the target's one effect shows (Matěj's playtest of
+     * 2026-11-03), and never adds a second one; Rend's bleed then lies beside it as a stack of its own, under the same
+     * one effect, and leaves the level shown.
      */
     @QaGameTest
     public static void aBloodlettingSwordGivesOneBleedingThatStacks(GameTestHelper helper) {
@@ -77,6 +78,8 @@ public final class ApothicBleedGameTests {
                             + stack);
             helper.assertTrue(Math.abs(stack.perTick() - (1 + level) * 0.25) < TOLERANCE, "level " + level + " deals "
                     + (1 + level) * 0.25 + " a tick: " + stack);
+            helper.assertValueEqual(husk.getEffect(GeneratedEffects.BLEEDING).getAmplifier(), level,
+                    "the target shows the level, Bleeding " + (level + 1));
             if (level == 0) {
                 ApotheosisGameTests.ticks(player, 20);
                 CombatGameTests.settle(husk);
@@ -94,6 +97,7 @@ public final class ApothicBleedGameTests {
         List<EffectStacks.Stack> stacks = StackTicks.of(husk, GeneratedEffects.BLEEDING);
         helper.assertValueEqual(stacks.size(), 2, "Rend's stack beside Bloodletting's: " + stacks);
         helper.assertFalse(husk.hasEffect(apothicBleeding()), "still no Apothic Bleeding");
+        helper.assertValueEqual(husk.getEffect(GeneratedEffects.BLEEDING).getAmplifier(), 3, "still Bleeding IV");
         ApotheosisGameTests.logout(player);
         helper.succeed();
     }
@@ -141,6 +145,7 @@ public final class ApothicBleedGameTests {
         EffectStacks.Stack stack = stacks.getFirst();
         helper.assertTrue(stack.caster().equals(Util.NIL_UUID) && Math.abs(stack.perTick() - 0.75) < TOLERANCE
                 && stack.remainingTicks() == 200, "Bleeding III's stack, without a caster, for 10 s: " + stack);
+        helper.assertValueEqual(husk.getEffect(GeneratedEffects.BLEEDING).getAmplifier(), 2, "it shows as Bleeding III");
         helper.succeed();
     }
 

@@ -70,7 +70,7 @@ import net.minecraft.world.phys.Vec3;
  * damage at rank 1 and at its highest rank at a fixed Attack Damage (system C, RLM-534), Rend's bleed, Overpower only
  * after a block, Victory Rush only after a kill that is not gray and its heal, Execute only below 20 % with its extra
  * rage, its refund and its lit window, Charge's rush to the near side and stun round the landing and its distance by
- * rank, Deep Wounds' bleed of a share of the crit, Taste for Blood's proc, the tooltips' next rank, the Warrior
+ * rank, Deep Wounds' bleed of a share of the crit, Bloodthirst's proc, the tooltips' next rank, the Warrior
  * learning the tree by its rows (1, 6, 12, 18), and the handoff's setup line against Astone.
  */
 public final class ArmsTreeGameTests {
@@ -84,7 +84,7 @@ public final class ArmsTreeGameTests {
     /**
      * The playtest's setup line against Astone (RLM-543, RLM-503; gear.md's expected gear for Astone, RLM-551): a new
      * Human Warrior, chapter 1's raised cap, level 18, the tree at a 17-point build on top of the kit's rank 1 (Slam and
-     * Overpower 5, Deep Wounds, Rend and Execute 3, Taste for Blood, Charge and Victory Rush 2, Battle Shout and
+     * Overpower 5, Deep Wounds, Rend and Execute 3, Bloodthirst, Charge and Victory Rush 2, Battle Shout and
      * Two-Handed Specialization 1), full netherite armor with Protection V and Unbreaking V, and a netherite
      * sword with Sharpness V and Unbreaking V; the kit's shield stays for Overpower's blocks. The handoff gives it to
      * Matěj as {@code execute as @p at @p run} and this line.
@@ -94,7 +94,7 @@ public final class ArmsTreeGameTests {
             + "advancement grant @s only realmforge:chapter/chapter_1; qa level 18; "
             + "qa spell learn realmforge:slam 5; qa spell learn realmforge:overpower 5; "
             + "qa spell learn realmforge:deep_wounds 3; qa spell learn realmforge:rend 3; "
-            + "qa spell learn realmforge:execute 3; qa spell learn realmforge:taste_for_blood 2; "
+            + "qa spell learn realmforge:execute 3; qa spell learn realmforge:bloodthirst 2; "
             + "qa spell learn realmforge:charge 2; qa spell learn realmforge:victory_rush 2; "
             + "give @s minecraft:netherite_helmet" + ARMOR_V + "; give @s minecraft:netherite_chestplate" + ARMOR_V
             + "; give @s minecraft:netherite_leggings" + ARMOR_V + "; give @s minecraft:netherite_boots" + ARMOR_V
@@ -105,7 +105,7 @@ public final class ArmsTreeGameTests {
 
     /**
      * Each active spell's first damage effect at rank 1 and at its highest rank, at 10 Attack Damage, no crit and no
-     * school power: the table's amount plus its coefficient of 10 (Slam 4 + 120 % and 10 + 200 %, Rend 2 + 30 % and
+     * school power: the table's amount plus its coefficient of 10 (Slam 5 + 150 % and 11 + 250 %, Rend 2 + 30 % and
      * 4 + 50 %, Overpower 5 + 100 % and 7 + 140 %, Victory Rush 5 + 80 % and 7 + 100 %, Execute 8 + 150 % and
      * 12 + 200 %),
      * on a husk without armor; Rend's bleed 4 + 60 % and 8 + 100 % over its 6 s.
@@ -115,7 +115,7 @@ public final class ArmsTreeGameTests {
         ServerPlayer player = fighter(helper, "qa-arms-ranks", QaPlayers.PLATFORM_MIDDLE);
         Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 4));
         Map<ResourceKey<Spell>, double[]> table = Map.of(
-                GeneratedSpells.SLAM, new double[] {1, 16, 5, 30},
+                GeneratedSpells.SLAM, new double[] {1, 20, 5, 36},
                 GeneratedSpells.REND, new double[] {1, 5, 3, 9},
                 GeneratedSpells.OVERPOWER, new double[] {1, 15, 5, 21},
                 GeneratedSpells.VICTORY_RUSH, new double[] {1, 13, 3, 17},
@@ -323,9 +323,11 @@ public final class ArmsTreeGameTests {
     }
 
     /**
-     * A husk's Charge (the server moves mobs, not a test's fake players) rushes it at its target 7 blocks away until it
-     * stands against the side of its target it came from, never through it (Matěj, 2026-11-03), and stuns for 1 s the
-     * target and a husk beside it, within 1.5 blocks of the landing, but not a husk 4 blocks to the side.
+     * A husk's Charge (the server moves mobs, not a test's fake players; a player's client runs the same
+     * {@code ChargeMotion}, which the QA mod's charge trace measures) rushes it at its target 7 blocks away until their
+     * middles are 1 block apart on the side it came from, never through it, stuns for 3 s the target and a husk beside
+     * it, within 1.5 blocks of that point, but not a husk 4 blocks to the side, then hops a block back, so their middles
+     * end up 2 blocks apart (Matěj's playtests of 2026-11-03).
      */
     @QaGameTest(template = QaGameTests.PLATFORM_17X17, timeoutTicks = 60)
     public static void chargeRushesAtItsTargetAndStunsRoundTheLanding(GameTestHelper helper) {
@@ -337,16 +339,18 @@ public final class ArmsTreeGameTests {
         CastResult result = SpellCaster.cast(caster, GeneratedSpells.CHARGE, target);
         helper.assertTrue(result.success(), "Charge was refused: " + result.failure());
         helper.assertTrue(Charges.isCharging(caster), "the husk charges");
+        double[] closest = trackCharge(helper, caster, target, -1);
         helper.succeedWhen(() -> {
-            helper.assertFalse(Charges.isCharging(caster), "the husk landed");
-            assertLandedOnTheNearSide(helper, caster, target, -1);
-            helper.assertTrue(target.hasEffect(GeneratedEffects.STUNNED), "the target is stunned");
+            helper.assertFalse(Charges.isCharging(caster), "the husk landed and hopped back");
+            assertChargeEnded(helper, caster, target, -1, closest);
+            helper.assertTrue(target.getEffect(GeneratedEffects.STUNNED) != null
+                    && target.getEffect(GeneratedEffects.STUNNED).getDuration() > 40, "the target is stunned for 3 s");
             helper.assertTrue(beside.hasEffect(GeneratedEffects.STUNNED), "the husk beside it is stunned");
             helper.assertFalse(aside.hasEffect(GeneratedEffects.STUNNED), "the husk 4 blocks aside is not");
         });
     }
 
-    /** A Charge from the target's other side stops at that side, its back, without passing through it. */
+    /** A Charge from the target's other side stops at that side, its back, and hops back from there. */
     @QaGameTest(template = QaGameTests.PLATFORM_17X17, timeoutTicks = 60)
     public static void chargeStopsOnTheSideItCameFrom(GameTestHelper helper) {
         Husk caster = helper.spawnWithNoFreeWill(EntityType.HUSK, new BlockPos(8, 1, 15));
@@ -354,23 +358,37 @@ public final class ArmsTreeGameTests {
         Husk target = SpellGameTests.husk(helper, new BlockPos(8, 1, 8));
         CastResult result = SpellCaster.cast(caster, GeneratedSpells.CHARGE, target);
         helper.assertTrue(result.success(), "Charge was refused: " + result.failure());
+        double[] closest = trackCharge(helper, caster, target, 1);
         helper.succeedWhen(() -> {
-            helper.assertFalse(Charges.isCharging(caster), "the husk landed");
-            assertLandedOnTheNearSide(helper, caster, target, 1);
+            helper.assertFalse(Charges.isCharging(caster), "the husk landed and hopped back");
+            assertChargeEnded(helper, caster, target, 1, closest);
         });
     }
 
     /**
-     * {@code caster} stands against {@code target} on the side it came from ({@code side} -1 below the target's z, 1
-     * above), their boxes apart but within half a block, in line with it.
+     * Watches a charge along z ({@code side} -1: from below the target's z, 1: from above it): the closest the caster's
+     * middle came to the target's, and how far they were when the target was first stunned.
      */
-    private static void assertLandedOnTheNearSide(GameTestHelper helper, LivingEntity caster, LivingEntity target,
-            int side) {
-        double dz = (caster.getZ() - target.getZ()) * side;
-        double touching = (caster.getBbWidth() + target.getBbWidth()) / 2;
-        helper.assertTrue(dz >= touching - 1e-3 && dz <= touching + 0.5, "against its target on the side it came "
-                + "from: " + caster.position() + ", the target at " + target.position());
-        helper.assertTrue(Math.abs(caster.getX() - target.getX()) < 0.2, "in line with its target: "
+    private static double[] trackCharge(GameTestHelper helper, LivingEntity caster, LivingEntity target, int side) {
+        double[] seen = {Double.MAX_VALUE, Double.NaN};
+        helper.onEachTick(() -> {
+            double along = (caster.getZ() - target.getZ()) * side;
+            seen[0] = Math.min(seen[0], along);
+            if (Double.isNaN(seen[1]) && target.hasEffect(GeneratedEffects.STUNNED)) {
+                seen[1] = along;
+            }
+        });
+        return seen;
+    }
+
+    /** The caster came within exactly a block of the target and was stunning it then, and stopped 2 blocks from it. */
+    private static void assertChargeEnded(GameTestHelper helper, LivingEntity caster, LivingEntity target, int side,
+            double[] seen) {
+        double along = (caster.getZ() - target.getZ()) * side;
+        helper.assertTrue(Math.abs(seen[0] - 1) < 0.05, "a block from its target at the closest: " + seen[0]);
+        helper.assertTrue(Math.abs(seen[1] - 1) < 0.3, "the stun lands at the closest: " + seen[1]);
+        helper.assertTrue(Math.abs(along - 2) < 0.1, "2 blocks from its target after the hop: " + along);
+        helper.assertTrue(Math.abs(caster.getX() - target.getX()) < 0.05, "in line with its target: "
                 + caster.position());
     }
 
@@ -435,14 +453,14 @@ public final class ArmsTreeGameTests {
     }
 
     /**
-     * Taste for Blood's proc at the player's rank: a tick of Rend's Bleeding opens Overpower's window, at 15 % at rank 1
+     * Bloodthirst's proc at the player's rank: a tick of Rend's Bleeding opens Overpower's window, at 15 % at rank 1
      * and 30 % at rank 2, at most once every 6 s on each target.
      */
     @QaGameTest
-    public static void tasteForBloodOpensOverpowerOnRendsTicks(GameTestHelper helper) {
+    public static void bloodthirstOpensOverpowerOnRendsTicks(GameTestHelper helper) {
         ServerPlayer player = fighter(helper, "qa-arms-taste", QaPlayers.PLATFORM_MIDDLE);
         for (double[] check : new double[][] {{1, 0.15}, {2, 0.3}}) {
-            learn(helper, player, GeneratedSpells.TASTE_FOR_BLOOD, (int) check[0]);
+            learn(helper, player, GeneratedSpells.BLOODTHIRST, (int) check[0]);
             List<Proc> procs = Passives.procs(player);
             helper.assertValueEqual(procs.size(), 1, "one proc at rank " + (int) check[0]);
             Proc proc = procs.getFirst();
@@ -470,9 +488,9 @@ public final class ArmsTreeGameTests {
         List<String> charge = tooltip(helper, player, spell(helper, GeneratedSpells.CHARGE).value(), 1);
         helper.assertTrue(charge.contains("10 block range"), "rank 1 reaches 10 blocks: " + charge);
         helper.assertValueEqual(charge.subList(charge.size() - 3, charge.size()), List.of(
-                "Charges an enemy 3 to 10 blocks away and stuns every enemy within 1.5 blocks of where you land for 1 "
+                "Charges an enemy 3 to 10 blocks away and stuns every enemy within 1.5 blocks of where you land for 3 "
                         + "sec. Generates 10 rage.", "Next rank:",
-                "Charges an enemy 3 to 12 blocks away and stuns every enemy within 1.5 blocks of where you land for 2 "
+                "Charges an enemy 3 to 12 blocks away and stuns every enemy within 1.5 blocks of where you land for 3 "
                         + "sec. Generates 20 rage."), "Charge at rank 1 and rank 2");
         helper.assertTrue(tooltip(helper, player, spell(helper, GeneratedSpells.CHARGE).value(), 2)
                 .contains("12 block range"), "rank 2 reaches 12 blocks");
@@ -497,7 +515,7 @@ public final class ArmsTreeGameTests {
 
     /**
      * The Warrior learns the tree at rank 1 by its rows: Slam, Charge and Deep Wounds at level 1; Rend, Battle Shout and
-     * Two-Handed Specialization at 6; Taste for Blood, Overpower and Victory Rush at 12; Execute at 18 (once
+     * Two-Handed Specialization at 6; Bloodthirst, Overpower and Victory Rush at 12; Execute at 18 (once
      * chapter 1 raised the cap); the bar holds the actives in that order, never the passives, and Reckless Strike and
      * Shield Bash never come.
      */
@@ -508,13 +526,13 @@ public final class ArmsTreeGameTests {
                 List.of(GeneratedSpells.REND), 1);
         reachLevel(helper, player, 6);
         assertKnows(helper, player, List.of(GeneratedSpells.REND, GeneratedSpells.BATTLE_SHOUT,
-                GeneratedSpells.TWO_HANDED_WEAPON_SPECIALIZATION), List.of(GeneratedSpells.TASTE_FOR_BLOOD,
+                GeneratedSpells.TWO_HANDED_WEAPON_SPECIALIZATION), List.of(GeneratedSpells.BLOODTHIRST,
                 GeneratedSpells.OVERPOWER), 6);
         AdvancementHolder chapter = helper.getLevel().getServer().getAdvancements()
                 .get(Identifier.parse("realmforge:chapter/chapter_1"));
         helper.assertTrue(player.getAdvancements().award(chapter, "completed"), "chapter 1 raises the cap to 18");
         reachLevel(helper, player, 12);
-        assertKnows(helper, player, List.of(GeneratedSpells.TASTE_FOR_BLOOD, GeneratedSpells.OVERPOWER,
+        assertKnows(helper, player, List.of(GeneratedSpells.BLOODTHIRST, GeneratedSpells.OVERPOWER,
                 GeneratedSpells.VICTORY_RUSH), List.of(GeneratedSpells.EXECUTE), 12);
         reachLevel(helper, player, 18);
         assertKnows(helper, player, List.of(GeneratedSpells.EXECUTE),
@@ -547,7 +565,7 @@ public final class ArmsTreeGameTests {
         Spellbook book = player.getData(SpellAttachments.SPELLBOOK);
         Map<ResourceKey<Spell>, Integer> build = Map.of(GeneratedSpells.SLAM, 5, GeneratedSpells.OVERPOWER, 5,
                 GeneratedSpells.DEEP_WOUNDS, 3, GeneratedSpells.REND, 3, GeneratedSpells.EXECUTE, 3,
-                GeneratedSpells.TASTE_FOR_BLOOD, 2, GeneratedSpells.CHARGE, 2, GeneratedSpells.VICTORY_RUSH, 2,
+                GeneratedSpells.BLOODTHIRST, 2, GeneratedSpells.CHARGE, 2, GeneratedSpells.VICTORY_RUSH, 2,
                 GeneratedSpells.BATTLE_SHOUT, 1, GeneratedSpells.TWO_HANDED_WEAPON_SPECIALIZATION, 1);
         build.forEach((spell, rank) -> helper.assertValueEqual(book.level(spell), Optional.of(rank),
                 spell.identifier() + "'s rank"));

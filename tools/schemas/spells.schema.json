@@ -1631,7 +1631,7 @@
     },
     "PassiveDef": {
       "additionalProperties": false,
-      "description": "What a passive spell does (RLM-541): it is never cast and never on the spell bar; while the player knows it, at\nits rank, it gives modifiers, raises named spells' damage, adds crit chance against a condition or shortens a\ntwo-handed block's cooldown, and its procs fire (RLM-540: Frostbite, Taste for Blood, Deep Wounds).",
+      "description": "What a passive spell does (RLM-541): it is never cast and never on the spell bar; while the player knows it, at\nits rank, it gives modifiers, raises named spells' damage, adds crit chance against a condition or shortens a\ntwo-handed block's cooldown, and its procs fire (RLM-540: Frostbite, Bloodthirst, Deep Wounds).",
       "properties": {
         "block_cooldown": {
           "anyOf": [
@@ -1666,7 +1666,7 @@
           "type": "array"
         },
         "procs": {
-          "description": "What fires on the player's hits, crits, kills, effects and ticks (RLM-540): Frostbite, Taste for Blood, Deep Wounds.",
+          "description": "What fires on the player's hits, crits, kills, effects and ticks (RLM-540): Frostbite, Bloodthirst, Deep Wounds.",
           "items": {
             "$ref": "#/$defs/ProcDef"
           },

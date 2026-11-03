@@ -40,10 +40,13 @@ import net.minecraft.server.permissions.PermissionSet;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.zombie.Husk;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -321,7 +324,9 @@ public final class AstoneGameTests {
      * damage (attack damage 21; her spells' amounts 6, 3 and 15), and her fists ignore 15 % of a player's armor and
      * drain 15 % more of a magic shield, her spells 30 % (15 % of their own on hers): a full shield loses 1.15 times
      * what her fist takes from a player without one, and 1.3 times what her boulder takes; against 20 armor her fist
-     * deals what it deals against 17 without her shred, and her boulder what one without any shred deals against 14.
+     * deals what it deals against 17 without her shred, and her boulder what one without any shred deals against 14;
+     * her hits wear each piece of armor a quarter as much (Matěj's playtest of 2026-11-03: she should ignore armor, not
+     * destroy it), and what they deal stays the same.
      */
     @QaGameTest(template = QaGameTests.PLATFORM_17X17)
     public static void astoneHitsHarderThroughArmorAndMagicShields(GameTestHelper helper) {
@@ -382,6 +387,20 @@ public final class AstoneGameTests {
                 Optional.empty()), player, SpellTarget.of(astone, player)));
         helper.assertTrue(Math.abs(boulderThrough - boulderPlain) < 1e-3, "her boulder ignores 30 % of 20 armor: "
                 + boulderThrough + " against " + boulderPlain + " through 14 armor without any shred");
+
+        helper.assertValueEqual(astone.getAttributeValue(GeneratedStats.ARMOR_WEAR_REDUCTION), 0.75,
+                "a quarter of the wear");
+        StatsCommands.setBase(player, Attributes.ARMOR, 0);
+        CombatGameTests.setBase(astone, GeneratedStats.ARMOR_SHRED, 0.15);
+        ItemStack chestplate = new ItemStack(Items.NETHERITE_CHESTPLATE);
+        player.setItemSlot(EquipmentSlot.CHEST, chestplate);
+        loss(player, 0, fist);
+        int worn = chestplate.getDamageValue();
+        CombatGameTests.setBase(astone, GeneratedStats.ARMOR_WEAR_REDUCTION, 0);
+        loss(player, 0, fist);
+        int unreduced = chestplate.getDamageValue() - worn;
+        helper.assertTrue(unreduced >= 8 && worn == unreduced / 4, "her fist wears the chestplate by a quarter of what "
+                + "it would: " + worn + " instead of " + unreduced);
         player.level().getServer().getPlayerList().remove(player);
         helper.succeed();
     }

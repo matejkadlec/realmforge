@@ -34,8 +34,7 @@
         {
           "type": "realmforge:apply_effect",
           "effect": "realmforge:stunned",
-          "duration_ticks": 20,
-          "duration_per_level_ticks": 20,
+          "duration_ticks": 60,
           "amplifier": 0,
           "stronger_at_levels": []
         }

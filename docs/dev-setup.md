@@ -225,6 +225,15 @@ there while the game runs. The handoff gives the commands
   pack (RLM-382). It needs no world and no mouse, so it runs headless too:
   `xvfb-run -a -s "-screen 0 1920x1080x24" ./gradlew runClient -PofflineClient` with the variable set (cloud sessions
   have Xvfb and Mesa).
+- **A trace of real charges without input.** `REALMFORGE_QA_CHARGE_TRACE=<label> ./gradlew runClient -PofflineClient`
+  makes the QA mod create a superflat world from the title screen, make a level-18 Warrior and cast Charge at a husk from
+  several setups (from either side, diagonally, with forward held, at a mod's target dummy when the pack has one),
+  logging the real local player's position tick by tick in `[charge-trace]` lines and quit, in about two minutes with
+  the whole pack (`-PleanClient` shortens it). It is the only automated check of what a player's client does with a
+  charge, as a GameTest's fake player has no client (RLM-543). It runs headless:
+  `xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew runClient -PofflineClient` with the variable set. Each setup ends with
+  a `===` line: the closest the player came to the target, where the target was stunned and where the player stopped, in
+  blocks from the target's middle.
 - `./gradlew runServer` starts a dev dedicated server in `run/server` with the pack's `server` and `both` mods;
   accept the EULA once in `run/server/eula.txt`.
 

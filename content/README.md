@@ -166,8 +166,9 @@ Rules:
   that targets an enemy and reaches farther than one kiting step) and its `kiting` (`step_blocks`, `speed_percent` of
   its walking speed: the quick step it takes between casts) under `caster`. `attributes` are its numbers at level 1,
   which its level scales like every hostile mob's, and may add `armor_shred_percent` (the share of a player's armor
-  its hits ignore) and `magic_shield_damage_percent` (how much more of a magic shield they drain; both RLM-580,
-  Astone's 15, which her spells add their own to); `idle` is `stroll` (the default: wanders as vanilla's mobs do, at the
+  its hits ignore), `magic_shield_damage_percent` (how much more of a magic shield they drain; both RLM-580, Astone's
+  15, which her spells add their own to) and `armor_wear_reduction_percent` (how much less they wear a target's armor,
+  RLM-580, Astone's 75); `idle` is `stroll` (the default: wanders as vanilla's mobs do, at the
   Zombified Piglin's speed, so its `movement_speed` is how fast it fights) or `guard` (stands at the spot where it first
   stood and walks back to it); `sounds` name sound events, ours from `sounds/` (`realmforge:entity.<mob>.<name>`) or
   vanilla's, and `step: silent` walks without a sound; `death_particles` names the block it breaks apart into when it
@@ -521,7 +522,7 @@ Rules:
   point, or along a direction as far as its range and blocks allow); `realmforge:dash` (`strength`, a burst of
   speed in blocks per tick toward an enemy, a ground point or along a direction); `realmforge:charge` (RLM-543, at an
   enemy: the caster rushes at it at `speed` blocks a second, at most 60, until it stands against the side of it the
-  charge came from, never through it, then its own
+  charge came from, never through it, then hops a block back; at the closest point its own
   `effects` run on every enemy within `landing_radius` of where it lands: Charge's stun); and
   `realmforge:gain_resource` (RLM-543: `resource`, `amount` and `per_level` the caster gains, whatever the spell targets;
   players only; a class's spell gains the class's resource). The effects of a projectile or an
@@ -556,7 +557,7 @@ Rules:
   `{block_cooldown_rank}`, `{splash_radius}` and `{splash_radius_rank}`, and the first proc's `{proc_chance}`,
   `{proc_duration}`, `{proc_cooldown}` and `{proc_damage}`. It never goes onto the spell bar and is never cast. Improved Frostbolt,
   Frostbite, Shatter and Two-Handed Specialization are the first, of the M1 trees: the Frost Mage's "Shatter"
-  (RLM-542) and the Arms Warrior's "Bloodletter" (RLM-543, with Deep Wounds and Taste for Blood).
+  (RLM-542) and the Arms Warrior's "Bloodletter" (RLM-543, with Deep Wounds and Bloodthirst).
 - `worldgen/` is the one exception to YAML: Minecraft's own worldgen JSON (`dimension/`, `dimension_type/`,
   `biome/`, `noise_settings/`, ...), validated (location, id, JSON, dimension types, no clash with the core mod's
   own `realmforge:instances`) and copied byte for byte; the game decodes it when a world loads.

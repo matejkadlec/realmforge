@@ -5,7 +5,7 @@
 # the main hand, as Attack Damage the way the Human's Sword Specialization gives it, so melee hits and the Warrior's
 # spells both grow; at rank 3 a two-handed block's cooldown is 0.25 s shorter (architecture 9.3). The Warrior's kit
 # teaches it at level 6 (RLM-543). Named "Two-Handed Specialization" (Matěj, 2026-11-03); the id stays, as players'
-# spellbooks keep it. Physical, so its frame is the physical school's, as Taste for Blood's is.
+# spellbooks keep it. Physical, so its frame is the physical school's, as Bloodthirst's is.
 id: two_handed_weapon_specialization
 name: {en_us: Two-Handed Specialization}
 school: realmforge:physical

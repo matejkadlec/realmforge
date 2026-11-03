@@ -23,7 +23,7 @@ import net.minecraft.world.item.ItemStack;
  * {@code whileWielding} if it names one, it gives attribute modifiers ({@link Passives#SOURCE}), raises named spells'
  * damage ({@code spellDamage}, the hit's passives layer), adds crit chance against a target with a status effect, and
  * shortens a two-handed block's cooldown from a rank on, widens named spells' splash from a rank on (RLM-542:
- * Improved Frostbolt), and its procs fire ({@link Passives#procs}; RLM-540: Frostbite, Taste for Blood, Deep Wounds).
+ * Improved Frostbolt), and its procs fire ({@link Passives#procs}; RLM-540: Frostbite, Bloodthirst, Deep Wounds).
  * Every number grows per rank like an active spell's.
  *
  * @param whileWielding the item tag the main hand must hold for any of it to apply, if any

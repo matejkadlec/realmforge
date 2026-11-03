@@ -1247,7 +1247,7 @@ class ProcDef(StrictModel):
 class PassiveDef(StrictModel):
     """What a passive spell does (RLM-541): it is never cast and never on the spell bar; while the player knows it, at
     its rank, it gives modifiers, raises named spells' damage, adds crit chance against a condition or shortens a
-    two-handed block's cooldown, and its procs fire (RLM-540: Frostbite, Taste for Blood, Deep Wounds)."""
+    two-handed block's cooldown, and its procs fire (RLM-540: Frostbite, Bloodthirst, Deep Wounds)."""
 
     while_wielding: ResourceId | None = Field(
         default=None,
@@ -1266,8 +1266,8 @@ class PassiveDef(StrictModel):
     )
     procs: list[ProcDef] = Field(
         default_factory=list,
-        description="What fires on the player's hits, crits, kills, effects and ticks (RLM-540): Frostbite, Taste for "
-        "Blood, Deep Wounds.",
+        description="What fires on the player's hits, crits, kills, effects and ticks (RLM-540): Frostbite, "
+        "Bloodthirst, Deep Wounds.",
     )
     block_cooldown: BlockCooldownDef | None = Field(
         default=None, description="A two-handed block's cooldown, shorter from a rank on."

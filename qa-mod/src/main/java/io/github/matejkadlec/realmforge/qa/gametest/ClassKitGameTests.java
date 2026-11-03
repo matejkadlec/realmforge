@@ -320,7 +320,7 @@ public final class ClassKitGameTests {
             Resources.set(player, ResourceTypes.RAGE, 100);
             float before = husk.getHealth();
             swing(helper, player, GeneratedSpells.SLAM);
-            double raw = 4 + 1.5 * (rank - 1) + (1.2 + 0.2 * (rank - 1)) * attackDamage;
+            double raw = 5 + 1.5 * (rank - 1) + (1.5 + 0.25 * (rank - 1)) * attackDamage;
             double shred = 0.05 * rank;
             double expected = raw * (1 - DamageCalculator.armorReduction(raw, 15, 0, 0, shred));
             helper.assertTrue(close(before - husk.getHealth(), expected), "rank " + rank + ": " + expected
@@ -333,7 +333,7 @@ public final class ClassKitGameTests {
     /**
      * Scaling system C (Matěj, 2026-10-30, RLM-534), the ticket's checks: with 5.5 Spell Power Frostbolt rank 1 deals
      * 8 + 100 % of it, 13.5, and with 19 rank 5 deals 12 + 200 %, 50; Slam rank 5 with 15 Attack Damage deals
-     * 10 + 200 %, 40, before armor (the husk has none). No crit, no school power, a player without a character.
+     * 11 + 250 %, 48.5, before armor (the husk has none). No crit, no school power, a player without a character.
      */
     @QaGameTest
     public static void spellsAddTheirCoefficientOfTheCastersPower(GameTestHelper helper) {
@@ -364,7 +364,7 @@ public final class ClassKitGameTests {
         learn(helper, player, GeneratedSpells.SLAM, 5);
         float before = husk.getHealth();
         swing(helper, player, GeneratedSpells.SLAM);
-        helper.assertTrue(close(before - husk.getHealth(), 40), "Slam rank 5 with 15 Attack Damage: 40 expected, "
+        helper.assertTrue(close(before - husk.getHealth(), 48.5), "Slam rank 5 with 15 Attack Damage: 48.5 expected, "
                 + "dealt " + (before - husk.getHealth()));
         logout(player);
         helper.succeed();

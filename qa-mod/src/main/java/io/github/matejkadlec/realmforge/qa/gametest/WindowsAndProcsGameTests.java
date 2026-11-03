@@ -45,7 +45,7 @@ import net.minecraft.world.phys.Vec3;
  * cooldown on each target, a damage bonus against a Frozen target, a spell castable only below a share of the target's
  * health, and extra rage spent for more damage. The test spells: {@code test_overpower} (5 s after a block),
  * {@code test_victory_rush} (20 s after a kill that is not gray), {@code test_frostbite} (Slowness Freezes, 3 s per
- * target), {@code test_taste_for_blood} (Test Rend's ticks open Test Overpower's window), {@code test_deep_wounds} (a crit
+ * target), {@code test_bloodthirst} (Test Rend's ticks open Test Overpower's window), {@code test_deep_wounds} (a crit
  * makes the target bleed), {@code test_ice_lance} (4, tripled against Frozen) and {@code test_execute} (below 20 %, up to
  * 30 more rage at 3 % each).
  */
@@ -176,11 +176,11 @@ public final class WindowsAndProcsGameTests {
         helper.succeed();
     }
 
-    /** Test Taste for Blood: a tick of Test Rend's bleed opens Test Overpower's window. */
+    /** Test Bloodthirst: a tick of Test Rend's bleed opens Test Overpower's window. */
     @QaGameTest
-    public static void tasteForBloodOpensOverpowerOnARendTick(GameTestHelper helper) {
+    public static void bloodthirstOpensOverpowerOnARendTick(GameTestHelper helper) {
         ServerPlayer player = player(helper, "qa-proc-taste");
-        learn(helper, player, GeneratedSpells.TEST_TASTE_FOR_BLOOD);
+        learn(helper, player, GeneratedSpells.TEST_BLOODTHIRST);
         learn(helper, player, GeneratedSpells.TEST_OVERPOWER);
         learn(helper, player, GeneratedSpells.TEST_LACERATE);
         learn(helper, player, GeneratedSpells.TEST_REND);

@@ -97,7 +97,7 @@ def test_repository_spells_are_the_class_kits_engine_tests_stoneform_and_astones
         "charge",
         "deep_wounds",
         "rend",
-        "taste_for_blood",
+        "bloodthirst",
         "overpower",
         "victory_rush",
         "execute",
@@ -152,7 +152,7 @@ def test_repository_spells_are_the_class_kits_engine_tests_stoneform_and_astones
         "test_lacerate",
         "test_overpower",
         "test_rend",
-        "test_taste_for_blood",
+        "test_bloodthirst",
         "test_victory_rush",
     }
     assert universe.contains("realmforge:spell", "realmforge:test_bolt")
@@ -462,15 +462,15 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
     assert 'public static final ResourceKey<Spell> TEST_BOLT = key("test_bolt");' in keys
     assert (
         "ALL = List.of(ARCANE_MISSILES, ASTONE_BOULDER, ASTONE_CRACKED_STONE, ASTONE_QUAKE, ASTONE_ROCKFALL, "
-        "ASTONE_SHOCKWAVE, BATTLE_SHOUT, BLIZZARD, CHARGE, CONE_OF_COLD, DEEP_WOUNDS, EXECUTE, FIREBALL, FROST_NOVA, "
+        "ASTONE_SHOCKWAVE, BATTLE_SHOUT, BLIZZARD, BLOODTHIRST, CHARGE, CONE_OF_COLD, DEEP_WOUNDS, EXECUTE, FIREBALL, FROST_NOVA, "
         "FROSTBITE, FROSTBOLT, ICE_BARRIER, ICE_LANCE, IMPROVED_FROSTBOLT, OVERPOWER, RECKLESS_STRIKE, REND, "
-        "SHATTER, SHIELD_BASH, SLAM, STONEFORM, TASTE_FOR_BLOOD, TEST_BLINK, TEST_BOLT, TEST_CHARGE, TEST_CHILL, "
+        "SHATTER, SHIELD_BASH, SLAM, STONEFORM, TEST_BLINK, TEST_BLOODTHIRST, TEST_BOLT, TEST_CHARGE, TEST_CHILL, "
         "TEST_CLEANSE, "
         "TEST_CLEAVE, TEST_DEEP_WOUND, TEST_DEEP_WOUNDS, TEST_DRAIN, TEST_EXECUTE, TEST_FORWARD_MISSILE, "
         "TEST_FROSTBITE, TEST_HOMING_BOLT, TEST_ICE_LANCE, TEST_IGNITE, TEST_LACERATE, TEST_MEND, TEST_MENDING_RING, "
         "TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_OVERPOWER, "
         "TEST_PROC_SPARK, TEST_REGROW, TEST_REND, TEST_SAP, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, TEST_SLOW_MISSILE, "
-        "TEST_STRIKE, TEST_SURE_CRIT, TEST_TASTE_FOR_BLOOD, TEST_TITAN_HARDEN, TEST_VICTORY_RUSH, "
+        "TEST_STRIKE, TEST_SURE_CRIT, TEST_TITAN_HARDEN, TEST_VICTORY_RUSH, "
         "TWO_HANDED_WEAPON_SPECIALIZATION, VICTORY_RUSH, WILL_TO_SURVIVE);"
     ) in keys
     expectations = files[EXPECTATIONS].decode()

@@ -50,18 +50,25 @@ public final class StackTicks {
                 durationTicks);
     }
 
+    /** {@link #applyPerTick(LivingEntity, Holder, LivingEntity, EffectSource, double, int, int)} at the first level. */
+    public static boolean applyPerTick(LivingEntity target, Holder<MobEffect> effect, @Nullable LivingEntity caster,
+            EffectSource source, double perTick, int durationTicks) {
+        return applyPerTick(target, effect, caster, source, perTick, durationTicks, 0);
+    }
+
     /**
      * Gives {@code target} {@code caster}'s stack of {@code effect}, dealing {@code perTick} at each of its ticks for
      * {@code durationTicks} (RLM-579: Apothic Attributes' Bleeding keeps its damage a tick); {@code caster} may be null
-     * when no entity is known, and {@code source} names it then. Returns whether it took hold.
+     * when no entity is known, and {@code source} names it then. {@code amplifier} only names the effect's level on the
+     * target (Bleeding IV), the highest of its sources': the damage is {@code perTick}. Returns whether it took hold.
      */
     public static boolean applyPerTick(LivingEntity target, Holder<MobEffect> effect, @Nullable LivingEntity caster,
-            EffectSource source, double perTick, int durationTicks) {
+            EffectSource source, double perTick, int durationTicks, int amplifier) {
         Optional<ResourceKey<MobEffect>> key = effect.unwrapKey();
         if (stacked(effect).isEmpty() || key.isEmpty() || durationTicks < 1) {
             return false;
         }
-        Effects.apply(target, new MobEffectInstance(effect, durationTicks), caster, source);
+        Effects.apply(target, new MobEffectInstance(effect, durationTicks, amplifier), caster, source);
         if (!target.hasEffect(effect)) {
             return false;
         }

@@ -9,7 +9,9 @@
 # Her buff for the M1 class checks (RLM-580; Matěj, 2026-11-03, after both level-18 classes found her far too weak):
 # 1,500 health at her level 18 (468.75 × the level curve's 3.2; it was 800), three times her damage (attack damage
 # 21, her spells' amounts tripled too), and her regular attacks ignore 15 % of a player's armor and drain 15 % more of a
-# magic shield; her spells add 15 % of each, so they ignore 30 % and drain 30 % more. Her final balance is RLM-503.
+# magic shield; her spells add 15 % of each, so they ignore 30 % and drain 30 % more. Her hits wear armor a quarter as
+# much (Matěj's playtest of 2026-11-03: she should ignore armor, not destroy it; a fight took about 300 durability from
+# each netherite piece with Unbreaking V). Her final balance is RLM-503.
 id: astone
 name: {en_us: "Astone, the Unbroken"}
 archetype: boss
@@ -23,6 +25,7 @@ attributes:
   knockback_resistance_percent: 100
   armor_shred_percent: 15
   magic_shield_damage_percent: 15
+  armor_wear_reduction_percent: 75
 melee: {attack_interval_seconds: 2, knock_up_blocks: 0.6}
 sounds:
   ambient: realmforge:entity.astone.ambient

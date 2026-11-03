@@ -14,6 +14,7 @@ import io.github.matejkadlec.realmforge.spell.net.CastRefusedPayload;
 import io.github.matejkadlec.realmforge.spell.net.CastSpellPayload;
 import io.github.matejkadlec.realmforge.spell.net.CastStartedPayload;
 import io.github.matejkadlec.realmforge.spell.net.CastTargetPayload;
+import io.github.matejkadlec.realmforge.spell.net.ChargePayload;
 import io.github.matejkadlec.realmforge.spell.net.HighlightTargetPayload;
 import io.github.matejkadlec.realmforge.spell.net.HighlightedTargetPayload;
 import io.github.matejkadlec.realmforge.spell.net.SetSpellBarSlotPayload;
@@ -90,6 +91,7 @@ public final class RealmforgeNetwork {
         registrar.playToClient(HitDirectionPayload.TYPE, HitDirectionPayload.STREAM_CODEC);
         registrar.playToClient(CastStartedPayload.TYPE, CastStartedPayload.STREAM_CODEC);
         registrar.playToClient(CastEndedPayload.TYPE, CastEndedPayload.STREAM_CODEC);
+        registrar.playToClient(ChargePayload.TYPE, ChargePayload.STREAM_CODEC);
         registrar.playToClient(CastRefusedPayload.TYPE, CastRefusedPayload.STREAM_CODEC);
         registrar.playToClient(CastTargetPayload.TYPE, CastTargetPayload.STREAM_CODEC);
         registrar.playToClient(HighlightedTargetPayload.TYPE, HighlightedTargetPayload.STREAM_CODEC);

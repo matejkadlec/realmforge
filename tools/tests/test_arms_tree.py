@@ -364,7 +364,7 @@ def test_the_warrior_learns_the_bloodletter_tree_by_its_rows() -> None:
         ("rend", 6),
         ("battle_shout", 6),
         ("two_handed_weapon_specialization", 6),
-        ("taste_for_blood", 12),
+        ("bloodthirst", 12),
         ("overpower", 12),
         ("victory_rush", 12),
         ("execute", 18),
@@ -380,7 +380,7 @@ def test_the_warrior_learns_the_bloodletter_tree_by_its_rows() -> None:
         "rend": 3,
         "battle_shout": 2,
         "two_handed_weapon_specialization": 3,
-        "taste_for_blood": 2,
+        "bloodthirst": 2,
         "overpower": 5,
         "victory_rush": 3,
         "execute": 3,
@@ -391,8 +391,8 @@ def test_the_trees_numbers_follow_the_table() -> None:
     content, _ = load_and_validate(RepoPaths())
     spells = {entry.model.id: entry.model for entry in content.spells}
     slam = spells["slam"].effects[0].effects[0]
-    assert [slam.amount_at(rank) for rank in (1, 5)] == [4, 10]
-    assert [slam.attack_damage_at(rank) for rank in (1, 5)] == [120, 200]
+    assert [slam.amount_at(rank) for rank in (1, 5)] == [5, 11]
+    assert [slam.attack_damage_at(rank) for rank in (1, 5)] == [150, 250]
     rend_hit, rend_bleed = spells["rend"].effects
     assert [(rend_hit.amount_at(r), rend_hit.attack_damage_at(r)) for r in (1, 3)] == [(2, 30), (4, 50)]
     assert [(rend_bleed.amount_at(r), rend_bleed.attack_damage_at(r)) for r in (1, 3)] == [(4, 60), (8, 100)]
@@ -416,7 +416,7 @@ def test_the_trees_numbers_follow_the_table() -> None:
     assert charge.target_distance is not None
     assert [charge.target_distance.max_at(r) for r in (1, 2)] == [10, 12]
     assert [charge.effects[1].amount_at(r) for r in (1, 2)] == [10, 20]
-    assert [charge.effects[0].effects[0].duration_at(r) for r in (1, 2)] == [1, 2]
+    assert [charge.effects[0].effects[0].duration_at(r) for r in (1, 2)] == [3, 3]
     # Costs and cooldowns (Matěj, 2026-11-03, RLM-543's Confluence comments).
     assert [spells["slam"].cooldown_seconds, charge.cooldown_seconds, overpower.cooldown_seconds] == [
         4,
@@ -429,5 +429,5 @@ def test_the_trees_numbers_follow_the_table() -> None:
     assert [execute.cost.refund_on_kill.amount_at(r) for r in (1, 2, 3)] == [5, 10, 15]
     wounds = spells["deep_wounds"].passive.procs[0].damage_over_time
     assert [wounds.damage_at(r) for r in (1, 3)] == [20, 60]
-    taste = spells["taste_for_blood"].passive.procs[0]
+    taste = spells["bloodthirst"].passive.procs[0]
     assert [taste.chance_at(r) for r in (1, 2)] == [15, 30]

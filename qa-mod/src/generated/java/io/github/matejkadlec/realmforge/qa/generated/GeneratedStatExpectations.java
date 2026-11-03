@@ -76,6 +76,16 @@ public final class GeneratedStatExpectations {
                     0.0,
                     null),
             new StatExpectation(
+                    "realmforge:armor_wear_reduction",
+                    "attribute.realmforge.armor_wear_reduction",
+                    false,
+                    true,
+                    0.0,
+                    1.0,
+                    0.0,
+                    0.0,
+                    null),
+            new StatExpectation(
                     "realmforge:cast_time_reduction",
                     "attribute.realmforge.cast_time_reduction",
                     false,

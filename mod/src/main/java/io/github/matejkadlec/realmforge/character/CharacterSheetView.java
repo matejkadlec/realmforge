@@ -317,6 +317,7 @@ public record CharacterSheetView(Component title, CharacterTab character, List<S
         placed.add(key(GeneratedStats.SPELL_RESISTANCE));
         // Mob-only too (RLM-580): how much more of a magic shield a mob's hits drain.
         placed.add(key(GeneratedStats.MAGIC_SHIELD_DAMAGE));
+        placed.add(key(GeneratedStats.ARMOR_WEAR_REDUCTION));
         GeneratedStats.DAMAGE_RESISTANCES.forEach(resistance -> placed.add(key(resistance.stat())));
         schools.forEach(school -> {
             school.power().flatMap(Holder::unwrapKey).ifPresent(placed::add);

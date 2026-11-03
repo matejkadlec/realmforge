@@ -34,10 +34,10 @@
       "shape": "swing",
       "effects": [
         {
-          "amount": 4.0,
+          "amount": 5.0,
           "per_level": 1.5,
-          "attack_damage": 1.2,
-          "attack_damage_per_level": 0.2,
+          "attack_damage": 1.5,
+          "attack_damage_per_level": 0.25,
           "type": "realmforge:damage",
           "armor_shred": 0.05,
           "armor_shred_per_level": 0.05

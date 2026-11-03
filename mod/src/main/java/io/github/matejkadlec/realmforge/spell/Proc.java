@@ -14,7 +14,7 @@ import net.minecraft.world.effect.MobEffect;
  * damage over time, it may cast a spell, apply a status effect, open a spell's window or make the entity hit bleed for
  * a share of the hit (RLM-543), then waits out its internal
  * cooldown (research SP-15), on its holder or on each target. Items, talents (postponed, RLM-28) and passive spells
- * (RLM-540: Frostbite, Taste for Blood, Deep Wounds) give procs through a {@link Procs.Source}; {@link Procs} runs them.
+ * (RLM-540: Frostbite, Bloodthirst, Deep Wounds) give procs through a {@link Procs.Source}; {@link Procs} runs them.
  *
  * @param id names the proc: its internal cooldown and the proc origin its spell's hits carry
  * @param trigger what makes it fire
@@ -63,7 +63,7 @@ public record Proc(Identifier id, Trigger trigger, double chance, int cooldownTi
         HIT_TAKEN("hit_taken"),
         /** The holder gave another entity a status effect (Frostbite: the player's Slowness, RLM-540). */
         APPLIES_EFFECT("applies_effect"),
-        /** A tick of the holder's damage over time landed on another entity (Taste for Blood: Rend's, RLM-540). */
+        /** A tick of the holder's damage over time landed on another entity (Bloodthirst: Rend's, RLM-540). */
         TICK("tick");
 
         public static final Codec<Trigger> CODEC = StringRepresentable.fromEnum(Trigger::values);
@@ -109,7 +109,7 @@ public record Proc(Identifier id, Trigger trigger, double chance, int cooldownTi
     }
 
     /**
-     * Opens a spell's window for the holder, a player who knows it (Taste for Blood opens Overpower's, RLM-540).
+     * Opens a spell's window for the holder, a player who knows it (Bloodthirst opens Overpower's, RLM-540).
      *
      * @param spell the spell whose window opens
      */

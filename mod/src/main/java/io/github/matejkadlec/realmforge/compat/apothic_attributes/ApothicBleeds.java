@@ -18,7 +18,8 @@ import net.minecraft.world.entity.LivingEntity;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
 
 /**
- * Apothic Attributes' Bleeding as our own (RLM-579; Matěj, 2026-11-03: one Bleeding on a target, the same numbers).
+ * Apothic Attributes' Bleeding as our own (RLM-579; Matěj, 2026-11-03: one Bleeding on a target, the same numbers, and
+ * a level that shows, Bleeding IV, as his playtest found the stacking gone without one).
  * Apotheosis's Bloodletting and Devilish affixes and its Tyrannical gem give {@code apothic_attributes:bleeding},
  * which deals 1 + its level every 2 s through armor; a target that also bled from Rend showed two Bleedings. Every
  * application of it becomes a stack of {@code realmforge:bleeding} instead ({@link StackTicks}): one stack per attacker
@@ -115,7 +116,7 @@ public final class ApothicBleeds {
         LivingEntity attacker = attacker(target);
         EffectSource source = new EffectSource(caster(attacker), Optional.of(SOURCE), Optional.of(SOURCE));
         return StackTicks.applyPerTick(target, GeneratedEffects.BLEEDING, attacker, source,
-                (1 + Math.max(0, level)) * PER_TICK_PER_LEVEL, durationTicks);
+                (1 + Math.max(0, level)) * PER_TICK_PER_LEVEL, durationTicks, Math.max(0, level));
     }
 
     /** The level of a stack this class gave: from its damage a tick, a quarter of 1 + the level. */

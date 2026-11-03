@@ -75,14 +75,15 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   the test titan. The first real boss is Astone, the Unbroken (W5b, RLM-491), Undervault's guardian: three phases
   (a boulder, then a quake and a rockfall, then cracked stone), and the Stone Heart and the twins' shards on every
   kill; `/summon realmforge:astone` until W6's altar; buffed for the M1 class checks (RLM-580: 1,500 health, triple
-  damage, her hits ignoring 15 % of armor and draining 15 % more of a magic shield, her spells 30 %). A new player
+  damage, her hits ignoring 15 % of armor and draining 15 % more of a magic shield, her spells 30 %, a quarter of the
+  armor wear). A new player
   creates a character (C1): the Human race and the Warrior and Mage classes, with their stats and starting kits,
   and their class kits (C4, RLM-27), each its M1 tree at rank 1 by its rows to level 18 until C5 spends points: the
   Warrior's, the Arms Warrior's "Bloodletter" tree (RLM-543: Slam, Charge, Deep Wounds; Rend, Battle Shout, Two-Handed
-  Specialization; Taste for Blood, Overpower, Victory Rush; Execute), with a server-steered charge that stops on the
-  near side of its target and stuns round its landing, a target distance by rank, a heal of a share of max health, a
-  refund for a kill, a crit's bleed and Execute lit while the current target is low, and Apotheosis's Bleeding turned
-  into a stack of ours (RLM-579);
+  Specialization; Bloodthirst, Overpower, Victory Rush; Execute), with a charge a player's own client runs, which stops
+  a block from its target on the near side, stuns round that point and hops a block back, a target distance by rank, a
+  heal of a share of max health, a refund for a kill, a crit's bleed and Execute lit while the current target is low, and
+  Apotheosis's Bleeding turned into a stack of ours that shows its level (RLM-579);
   and the Mage's, the Frost Mage's "Shatter" tree (RLM-542: Improved Frostbolt, Frostbolt, Cone of Cold; Ice Lance,
   Frost Nova, Frostbite; Shatter, Ice Barrier; Blizzard), with a cone along the look, Ice Lance's × 2 to × 3 against
   Frozen and Frostbite's freeze on a Slowness; the first spells of rank 5, and the Human's Will To Survive in the
