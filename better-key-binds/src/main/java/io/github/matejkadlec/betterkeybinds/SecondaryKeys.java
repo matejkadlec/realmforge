@@ -10,6 +10,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import net.minecraft.client.KeyMapping;
@@ -25,6 +26,9 @@ import org.jspecify.annotations.Nullable;
  */
 public final class SecondaryKeys {
     public static final String FILE_NAME = "better_key_binds-secondary_keys.txt";
+
+    // By name, so the rules need no running game: Options#keyDebugOverlay and Options#keyDebugModifier.
+    private static final Set<String> DEBUG_KEYS_ACTING_ALONE = Set.of("key.debug.overlay", "key.debug.modifier");
 
     // KeyMapping keeps Object's equals and hashCode, so this is keyed by identity.
     private static final Map<KeyMapping, SecondaryKeyMapping> SECONDARY = new ConcurrentHashMap<>();
@@ -159,11 +163,14 @@ public final class SecondaryKeys {
      * Whether a key mapping is a primary key bind that takes its key from other key binds' secondary keys. Vanilla's
      * debug keys do not: they sit on plain keys (F3 + T reloads the resource packs, F3 + B shows hitboxes), but act
      * only while the debug modifier is held, and the keyboard handler deals with them before the key lookup: a
-     * secondary key on B opens what it should, and F3 + B still shows hitboxes alone.
+     * secondary key on B opens what it should, and F3 + B still shows hitboxes alone. F3 itself does take its key:
+     * Debug Overlay and Debug Modifier act on it alone, so a secondary key on F3 stays silent instead of acting on
+     * every F3 press.
      */
     private static boolean takesKey(KeyMapping keyMapping) {
         return !(keyMapping instanceof SecondaryKeyMapping)
-                && !KeyMapping.Category.DEBUG.equals(keyMapping.getCategory());
+                && (!KeyMapping.Category.DEBUG.equals(keyMapping.getCategory())
+                        || DEBUG_KEYS_ACTING_ALONE.contains(keyMapping.getName()));
     }
 
     /**
