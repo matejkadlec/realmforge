@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Engine test (RLM-484): Test Slow Missile's shape before spell aiming (RLM-344), a projectile at an enemy after a 1 s
+# cast that deals 4 fire damage when it hits. It flies at the target where it stands when the cast completes (the
+# entity branch of SpellTarget#now). Not gameplay content; the GameTests in the QA mod cast it.
+id: test_targeted_missile
+name: {en_us: Test Targeted Missile}
+description: {en_us: "Fires a missile at an enemy for {damage} damage."}
+school: realmforge:fire
+scales_with: spell_power
+targeting: {type: realmforge:enemy, range: 16}
+cast: {type: cast_time, duration_seconds: 1}
+effects:
+  - type: realmforge:projectile
+    speed: 20
+    lifetime_seconds: 2
+    effects:
+      - {type: realmforge:damage, amount: 4}

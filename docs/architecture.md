@@ -1566,7 +1566,8 @@ spell bar's payload will carry), and its targeting resolves that into a `spell/S
 the caster's eyes. A ground point lands where spell aiming (below) puts it; a direction points at what was aimed at, or
 else where the caster looks, and its position is its range along it or the first block in the way. Only an entity
 target is checked again before a cast time's effects and a channel's ticks, and seen afresh then (`SpellTarget#now`),
-so a projectile flies at where the target stands at the end of the cast; a direction from the caster's look follows the
+so a projectile flies at where the target stands at the end of the cast (`SpellAimingGameTests`, a husk that steps aside
+during a mob's `test_targeted_missile` cast, RLM-484); a direction from the caster's look follows the
 look then (spell aiming, below); a point, or a direction aimed at something, stays as it began. **Moving slows, it
 never interrupts** (RLM-261,
 [ADR 0039](decisions/0039-a-cast-slows-its-caster-instead-of-moving-interrupting-it.md)): a cast-time or channelled
@@ -1654,12 +1655,14 @@ spell a player aims at an enemy goes to a hostile mob near the crosshair (Matěj
 - **The Highlight Spell Target key** (RLM-468; `spell/TargetHighlight`): while a player's highlight is on (the key
   toggled on, or held), their client says so (`HighlightTargetPayload`, when it goes on and off), and every server tick
   the server names to it, when it changes, the mob `AimAssist#enemy` picks now within 32 blocks
-  (`HighlightedTargetPayload`), with no cast and no spell on the bar. The server picks because only it knows a mob's
-  target and a neutral mob's anger. The state is kept by player id, so a respawn keeps a highlight that is on, and
-  dropped at logout.
+  (`HighlightedTargetPayload`), with no cast and no spell on the bar. Going on always sends the pick at once, "no mob"
+  included (RLM-521), so it replaces an answer to an earlier "on" that reached the client after it went off. The server
+  picks because only it knows a mob's target and a neutral mob's anger. The state is kept by player id, so a respawn
+  keeps a highlight that is on, and dropped at logout.
 - `SpellAimingGameTests` covers an assisted bolt beside the crosshair, one beyond the cone or toward a cow, one after a
   moving husk, the bar's assisted pick and its view check, the sticky target beyond the range and beyond twice it, and
-  a sticky target that dies with its "Target lost", and the highlighted mob.
+  a sticky target that dies with its "Target lost", and the highlighted mob, also "no mob" said at once when it goes on
+  again (RLM-521).
 
 **Kept targets (W3 revision, RLM-33):** a timed spell may keep its entity target through the cast instead of only
 checking it before its effects. With `keep_sight`, `Casting` checks the caster's line of sight to the target every
@@ -2073,8 +2076,9 @@ Spell Bar) shows it without a cast. The client option Highlight Spell Target (`C
 row of the Realmforge config screen) makes it a toggle (the default: a press switches the highlight on until the next press) or
 Hold (on while the key is held). While the highlight is on, `TargetCircle` draws the ring under the mob the server names
 in `HighlightedTargetPayload` ([11.2](#112-casting-server-authoritative)), unless the local player's cast names its own
-mob, which wins (`TargetCircle#under`, `TargetCircleTest`). It tells the server when the highlight goes on and off, and
-forgets the highlighted mob at once when it goes off; a logout switches it off.
+mob, which wins (`TargetCircle#under`, `TargetCircleTest`). It tells the server when the highlight goes on and off,
+forgets the highlighted mob at once when it goes off, and drops a pick that arrives while it is off (RLM-521); a logout
+switches it off.
 
 ### 11.7 Class spells and stances
 
@@ -2744,8 +2748,8 @@ phases:
   another dimension gives flight back there. The bosses holding a player are counted (weak identity keys per player object), so overlapping arenas give
   flight back only once the player left them all. Skyhearth, which turns flight off too, takes the same modifier once
   it exists. `ArenaFlightGameTests` cover entering flying (landed, Slow Falling, the warning), leaving, coming back,
-  the boss's death, its reset and its removal, a player who leaves for the Nether, and a player without flight (held,
-  no warning).
+  the boss's death, its reset and its removal, a player who leaves for Undervault (through the player tick listener
+  and its gate, RLM-575), and a player without flight (held, no warning).
 - **Persistence:** a boss never despawns, however far the players are (`requiresCustomPersistence`), as vanilla's
   bosses do not; the QA mod's test boss neither (RLM-482). It never goes through a portal either (`canUsePortal`, as
   the Wither), since its arena and home belong to the dimension it stands in.
