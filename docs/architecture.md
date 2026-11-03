@@ -1495,7 +1495,8 @@ whose window is closed (`CastFailure.NO_WINDOW`) and a cast closes it. The spell
 and draws an open one with a glow and its seconds left (`SpellBarView.Slot#windowTicks`, `client/hud/SpellSlots`).
 A spell with a target health condition and no window (Execute) lights up the same way, without seconds (Matěj's
 playtest of 2026-11-03): every 5 ticks `Windows#checkTargetHealth` opens its entry for 2 s, renewed while the player's
-current target (`CombatState#currentTarget`: the enemy they last hit or aimed a spell at, within combat's 10 s) is below
+current target (`CombatState#currentTarget`: the enemy they last hit or aimed a spell at, within combat's 10 s; a tick of
+damage over time is no hit, so a bleed on another mob leaves it) is below
 the share, and closes it once it is not; a cast leaves that entry alone and still checks the health of the target it
 aims at. `WindowsAndProcsGameTests` covers both openers, a gray kill, and Execute's condition and extra rage;
 `ArmsTreeGameTests` Execute's lit slot.

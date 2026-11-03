@@ -310,6 +310,41 @@ public final class ArmsTreeGameTests {
         helper.succeed();
     }
 
+    /**
+     * A bleed's ticks on another enemy leave the current target where it is, so Execute stays lit for the low husk the
+     * player is fighting while a husk at full health bleeds beside it; a direct hit on that husk does take the target.
+     */
+    @QaGameTest(timeoutTicks = 60)
+    public static void aBleedsTicksLeaveTheCurrentTarget(GameTestHelper helper) {
+        ServerPlayer player = fighter(helper, "qa-arms-execute-bleed", new Vec3(2.5, 1, 0.5));
+        learn(helper, player, GeneratedSpells.EXECUTE, 1);
+        Husk low = SpellGameTests.husk(helper, new BlockPos(2, 1, 1));
+        Husk bleeding = SpellGameTests.husk(helper, new BlockPos(3, 1, 1));
+        low.setHealth((float) (HEALTH * 0.15));
+        CombatState state = player.getData(SpellAttachments.COMBAT);
+        state.setCurrentTarget(low.getUUID(), helper.getLevel().getGameTime());
+        Holder.Reference<Spell> rend = spell(helper, GeneratedSpells.REND);
+        DamageOverTimeEffect bleed = (DamageOverTimeEffect) rend.value().effects().get(1);
+        bleed.applyTo(EffectContext.of(helper.getLevel(), player, rend, 1, Optional.empty()), bleeding,
+                SpellTarget.of(player, bleeding));
+        float full = bleeding.getHealth();
+        helper.runAfterDelay(25, () -> {
+            helper.assertTrue(bleeding.getHealth() < full, "the bleed ticked on the second husk");
+            long now = helper.getLevel().getGameTime();
+            helper.assertTrue(state.isCurrentTarget(low.getUUID(), now, 200), "its ticks left the current target");
+            Windows.checkTargetHealth(player);
+            helper.assertTrue(lit(helper, player), "Execute stays lit for the low husk");
+
+            bleeding.invulnerableTime = 0;
+            bleeding.hurtServer(helper.getLevel(), helper.getLevel().damageSources().playerAttack(player), 1);
+            helper.assertTrue(state.isCurrentTarget(bleeding.getUUID(), now, 200), "a direct hit takes the target");
+            Windows.checkTargetHealth(player);
+            helper.assertFalse(lit(helper, player), "the new target is not low, so Execute is dark");
+            logout(player);
+            helper.succeed();
+        });
+    }
+
     /** Whether Execute's slot on {@code player}'s spell bar glows, as the client draws it from the synced windows. */
     private static boolean lit(GameTestHelper helper, ServerPlayer player) {
         SpellBarView view = SpellBarView.of(player.getData(SpellAttachments.SPELLBOOK),
