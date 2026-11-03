@@ -207,7 +207,7 @@ entries with its content.
 
 ## Milestone
 
-**M4** (The world grows; Matěj, 2026-10-13), which brings chapter 3 with its twin realms (Sunwastes and
+**M4** (The world grows; Matěj, 2026-10-13), which brings chapters 3 and 4 with their twin realms (Sunwastes and
 Everwinter) and more dungeons and bosses, so the unlock rule matters and there is content to look up. The entries
 for the content of chapters 1 and 2 (Overworld and Undervault, M1) are written in the same milestone. M1 (v0.1.0) has
 one sealed realm, its dungeons and one boss, which the quest book describes; the guide there would widen the

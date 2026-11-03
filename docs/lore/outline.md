@@ -550,8 +550,8 @@ Matěj's answers of 2026-10-13 and 2026-10-14 (RLM-139), and the decisions since
     numbering and left the pick to Claude): the quest book, the guide, the chapter advancements and the story show the
     same numbers. The twins are chapters 3 (Sunwastes) and 4 (Everwinter) under the shared cap 30, so chapter 3's end
     raises no cap; Deepholm is chapter 5, Quagmire 6, Ashfire 7 and Unmade Isles 8. The approved texts of chapters 1
-    and 2 keep their "chapter 8" unchanged, and the practices keep "the chapter 8 guard". The design documents still
-    count RLM-188's seven chapters until RLM-568 renumbers them.
+    and 2 keep their "chapter 8" unchanged, and the practices keep "the chapter 8 guard". The design documents, the
+    architecture and the roadmap count the eight since RLM-568 (2026-11-03).
 
 ## Open questions
 

@@ -85,7 +85,8 @@ by the realm the source stands in:
 - **Bosses take the band's top:** a dungeon boss's gear drop is the band's upper rarity (Undervault's Astone: an
   Uncommon), a realm's final boss one above the band for its unique piece (Astone's unique: Rare). Chests and trash
   mobs roll the whole band.
-- **Deepholm** (formerly Prestoria, then Atlantis) keeps the chapter 4 band; Skyhearth has no loot of its own.
+- **Deepholm** (formerly Prestoria, then Atlantis) keeps the band of the realm it replaced (chapter 5 of the story's
+  eight, RLM-466); Skyhearth has no loot of its own.
 - **Repeat runs** roll the same band: no diminishing loot from one spot (Matěj, 2026-10-15), and no item drops
   only by luck without another way to it (LE-15, LE-17): a boss's unique drops at 100 %, and one that ever drops below
   that also goes into its dungeon's quest shop ([Second sources](#second-sources)).
@@ -228,7 +229,7 @@ gap between iron and diamond (a chestplate's 6 and 8 armor) and the fixed step p
 diamond-level: its chests diamond +15 % and its boss diamond +30 % (Haven's reference set, the table above), which is
 Matěj's "an early dungeon's curio is about as strong as diamond-tier gear". Undervault's dungeon chests and bosses give
 netherite +15 % and +30 %, and Astone, Undervault's final boss, the next tier's set: her unique piece has the Twins
-set's numbers, above anything a level 18 player can craft, and equal to what chapter 3 crafts.
+set's numbers, above anything a level 18 player can craft, and equal to what the twins' chapters 3 and 4 craft.
 
 ### Armor and toughness climb slowest
 

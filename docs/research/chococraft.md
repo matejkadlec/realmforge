@@ -7,7 +7,10 @@
 > Mechanics only: no code, asset or name of Chococraft goes into Realmforge without its licence allowing it.
 > **Decided 2026-10-12 and 2026-10-13 (RLM-115): option B, our own mounts**, with the tier table as proposed, the
 > mount system and tiers 1 to 3 in M4, and elytra faster in the air while mounts win on everything else
-> ([Decision](#decision-rlm-115)).
+> ([Decision](#decision-rlm-115)). **Chapter numbers** below are those of 2026-10-12, before the v1 realm layout
+> (RLM-188) and the story's eight chapters (RLM-466, where the twins are chapters 3 and 4 and Deepholm chapter 5); the
+> tier per chapter follows the current chapters when the mount tasks set it. **Elytra** come from no boss since
+> 2026-11-03: a Skyhearth NPC sells them ([ADR 0068](../decisions/0068-elytra-are-bought-in-skyhearth.md), RLM-568).
 
 **In short.** Chococraft 0.11.12 runs on NeoForge 1.21.1 and needs only Architectury API, which the pack already
 has. Its code is MIT. Its chocobos, models, animations, flight, saddle bags and taming all exist, so a first
@@ -231,7 +234,8 @@ Matěj decided on 2026-10-12 and 2026-10-13; the ticket's comments hold his word
 
    This settles the same question in [ADR 0025](../decisions/0025-remove-the-nether-and-end.md) ("Elytra and flying
    mounts"), the [realm design](../design/realms.md#open-questions) (open question 7) and the
-   [vision](../vision.md) (flying mounts against elytra). Elytra come from chapter 3's final boss (RLM-138).
+   [vision](../vision.md) (flying mounts against elytra). Elytra came from chapter 3's final boss (RLM-138); since
+   2026-11-03 a Skyhearth NPC sells them instead ([ADR 0068](../decisions/0068-elytra-are-bought-in-skyhearth.md)).
 
 ### Notes for the mount tasks
 

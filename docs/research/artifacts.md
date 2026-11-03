@@ -10,7 +10,9 @@
 > mixins named below). Apotheosis's `charm` category was checked in the pack's Apotheosis 9.1.0 jar. The jar is not
 > in the repository, and nothing of Artifacts' code or assets goes into Realmforge: mechanics only.
 > **Decided by Matěj on 2026-10-30 (RLM-512): option C,** neither of the catalogue's options: the curio rule ends,
-> Artifacts joins the pack, and each item gets its own place
+> Artifacts joins the pack, and each item gets its own place. Matěj's C is not the [options table](#options)'s column C
+> ("Artifacts as it ships", every world source on): the table's columns are the catalogue's own, and his C is a third
+> way past A and B
 > ([ADR 0066](../decisions/0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md),
 > [Matěj's decision and where each item goes](#matějs-decision-and-where-each-item-goes)). The catalogue below is the
 > research the placement reads.
@@ -32,7 +34,9 @@ effects as our own curios later ([Proposal](#proposal-for-matěj)).
 
 ## Matěj's decision and where each item goes
 
-**Matěj, 2026-10-30 (RLM-512): option C.** The curio rule (RLM-7, 2026-10-12) is cancelled: Artifacts was picked
+**Matěj, 2026-10-30 (RLM-512): option C,** his own third way, not the [options table](#options)'s column C
+("Artifacts as it ships", with every world source on), which stays not recommended. The curio rule (RLM-7, 2026-10-12)
+is cancelled: Artifacts was picked
 precisely because it is a curios mod. Artifacts is in. Instead of a keep-list, every item gets a place: which realm,
 dungeon or boss gives it, at what level, as loot, a quest reward or a boss drop. The more items find a place, the
 better; an item that clashes with our systems (stats, the damage pipeline, a later realm's progression) gets a place
@@ -47,9 +51,10 @@ player has Night Vision by default), and the Onion Ring, as far as he knows, doe
   our two rings and our bracelet. The necklace is one slot (Curios' `necklace`, which both use): an Artifacts necklace
   and one of our stat necklaces compete for it, as WoW's trinket slots make a player choose. A hand item is worn in
   Artifacts' hands slots, never in our ring or bracelet.
-- **Sources are ours:** a quest reward (**quest**), a boss's drop at 100 % (**boss**, as every boss drop designed so
-  far, [gear design](../design/gear.md#second-sources)), or one item per player from a dungeon's treasure through Lootr
-  (**treasure**). Artifacts' own sources are off (`artifactRarity` 10000, `archaeologyChance` 0,
+- **Sources are ours** (the placement's proposal, which Matěj's playtest of RLM-314 confirms or changes; his decision
+  named loot as one possible source): a quest reward (**quest**), a boss's drop at 100 % (**boss**, as every boss drop
+  designed so far, [gear design](../design/gear.md#second-sources)), or one item per player from a dungeon's treasure
+  through Lootr (**treasure**). Artifacts' own sources are off (`artifactRarity` 10000, `archaeologyChance` 0,
   `entityEquipmentChance` 0, `campsiteCount` 0, `generateAsLoot` false for every item, the beef's `dropRate` 0), so no
   item is only a chance roll, and an item's realm decides who meets it.
 - **One of each:** a reward gives an item once per player; a player who loses one gets it again from the quest giver
@@ -91,7 +96,7 @@ player has Night Vision by default), and the Onion Ring, as far as he knows, doe
 | Obsidian Skull | belt | Ashfire, an entry quest | 41 | quest | Fire Resistance after fire damage: Ashfire's hazard, at Ashfire |
 | Crystal Heart | belt | Deepholm, the underwater city's boss | 36 | boss | +10 max health: after RLM-565 keeps gear's max health through a login, and late, where +10 is a few VIT points instead of a doubled pool |
 | Cloud in a Bottle | belt | Skyhearth, the heavens' questline | 30 | quest | the double jump comes after Undervault's and the twins' jumping puzzles; later realms' puzzles and arenas are built knowing it |
-| Helium Flamingo | belt | Deepholm, after elytra | 32 | quest | swimming in the air for 8 s comes after elytra (the twins' final boss, [ADR 0037](../decisions/0037-elytra-from-chapter-3s-final-boss-amends-the-nether-and-end-removal.md)), when flight is no longer new |
+| Helium Flamingo | belt | Deepholm, after elytra | 32 | quest | swimming in the air for 8 s comes after elytra (bought in Skyhearth, [ADR 0068](../decisions/0068-elytra-are-bought-in-skyhearth.md); the placement assumed the twins' final boss, ADR 0037), when flight is no longer new |
 | Warp Drive | belt | Unmade Isles, the void's questline | 52 | quest | free ender pearls skip rooms: late, with ender pearls refused in instances (a rule RLM-314 checks for, or a follow-up) |
 | Chorus Totem | | | | off | a random teleport on a fatal hit leaves a boss arena (which resets the boss) or an instance, beside vanilla's totem |
 | Onion Ring | hands | Undervault, a Cairnfolk mining quest | 8 | quest | it does work, against Matěj's note: Haste II for 6 s per food point eaten (a steak gives 48 s); faster mining in the mining realm |
@@ -113,8 +118,8 @@ player has Night Vision by default), and the Onion Ring, as far as he knows, doe
 | Strider Shoes | feet | Ashfire, a lava lake quest | 43 | quest | standing on lava is Ashfire's, at Ashfire |
 | Aqua-Dashers | feet | Unmade Isles, an entry quest | 50 | quest | sprinting on fluids, lava included, comes after Ashfire's lava lakes and Deepholm's water |
 | Steadfast Spikes | feet | Unmade Isles, the Void Cathedral's treasure | 56 | treasure | full knockback immunity lowered to +0.5 knockback resistance, so our knockback spells and bosses' pushes still move a player |
-| Umbrella | off hand | Overworld, a rainy-day quest | 5 | quest | added to `#c:tools/shield` by our data, so the two-handed wands' shield lock (RLM-461) covers it; its slow fall is a small glider long before elytra; Better Combat has no preset, so it stays vanilla in the hand |
-| Eternal Steak | any | Unmade Isles, the finale's last quest | 58 | quest | food that is never used up, at the end of the game, when every food buff (M2) and cooking (M5) has had its time |
+| Umbrella | off hand | Overworld, a rainy-day quest | 5 | quest | added to our own lock tag `#realmforge:two_handed_lock` (`#c:tools/shield` plus the Umbrella), which the two-handed wands' shield lock (RLM-461, `item/TwoHandedGear`) reads instead of `#c:tools/shield`; `#c:tools/shield` stays as it is, because Shield Bash's requirement (`spell/SpellRequirement`, `SHIELD`) and RLM-378's shield tiers read it, and the Umbrella in it would let a Warrior Shield Bash with it; its slow fall is a small glider long before elytra; Better Combat has no preset, so it stays vanilla in the hand |
+| Eternal Steak | any | Unmade Isles, the finale's last quest | 58 | quest | food that is never used up, at the end of the game, when every food buff (M2) and cooking (postponed from M5, RLM-578) has had its time |
 | Everlasting Beef | | | | off | the raw form of the Eternal Steak, and its source (cows) is off; the steak is the reward |
 | Whoopee Cushion | | | | off | a fart joke against the lore's tone, and it sits in the spawn bonus chest |
 | Mimic Spawn Egg | | | | off | creative only; the Mimic is off with the campsites (below) |
@@ -135,8 +140,11 @@ ours (an override of `artifacts:artifact`) and its spawns in our rooms.
 - `items.toml`: `generateAsLoot` false everywhere; the tweaks of the table (Villager Hat, Cowboy Hat, Shock Pendant,
   Feral Claws, Running Shoes, Steadfast Spikes); `enabled` false for the off items where they have the switch,
   their bonuses at 0 otherwise.
-- Data: the Umbrella in `#c:tools/shield`; every item to `none` in `apotheosis:loot_category_overrides`; the off items
-  hidden from JEI and the creative tab; the rename of the Novelty Drinking Hat.
+- Data: the Umbrella in `#realmforge:two_handed_lock`, our lock tag that holds `#c:tools/shield` and the Umbrella, with
+  `item/TwoHandedGear` reading it instead of `#c:tools/shield` (never the Umbrella in `#c:tools/shield`: Shield Bash's
+  requirement reads that tag, so the Umbrella would unlock Shield Bash); every item to `none` in
+  `apotheosis:loot_category_overrides`; the off items hidden from JEI and the creative tab; the rename of the Novelty
+  Drinking Hat.
 - Sources: each item's quest, boss drop or treasure as its content lands (most are M2 and later); the ids need the
   full-pack registry dump.
 - Checks: a pack boot; the damage pipeline's GameTests with Artifacts loaded (the Cross Necklace's mixin runs worn or
@@ -285,7 +293,7 @@ and 2). **Pick**: *keep* (the proposed keep-list), *later* (worth deciding when 
 | Obsidian Skull `obsidian_skull` | Fire Resistance for 30 s after fire damage, cooldown 60 | Ashfire's fire and lava hazards | Ashfire 40 | no | later |
 | Antidote Vessel `antidote_vessel` | caps nine vanilla negative effects (Blindness, Nausea, Mining Fatigue, Hunger, Levitation, Slowness, Poison, Weakness, Wither) at 5 s | boss debuffs and the planned tenacity; our own `realmforge:` effects are not in its tag | Quagmire 36 | no | off |
 | Crystal Heart `crystal_heart` | +10 max health (`minecraft:max_health`, add) | our rule that gear never adds max health directly (the login clamp, [architecture 8.2](../architecture.md#82-where-modifiers-come-from)); VIT | none | no | off |
-| Helium Flamingo `helium_flamingo` | "swims" in the air for 8 s, recharging in 15 s, cooldown 3, on a key | flight: mounts fly from chapter 2 (M4), elytra come from chapter 3's final boss ([ADR 0037](../decisions/0037-elytra-from-chapter-3s-final-boss-amends-the-nether-and-end-removal.md)) | none | no | off |
+| Helium Flamingo `helium_flamingo` | "swims" in the air for 8 s, recharging in 15 s, cooldown 3, on a key | flight: mounts fly from chapter 2 (M4), elytra are bought in Skyhearth ([ADR 0068](../decisions/0068-elytra-are-bought-in-skyhearth.md), superseding ADR 0037's chapter 3 boss) | none | no | off |
 | Chorus Totem `chorus_totem` | on a fatal hit: used up, clears every effect, teleports at random (diameter 32), heals 9 | boss arenas (a teleport out resets the boss), dungeon instances, a second totem beside vanilla's | none | no | off |
 | Warp Drive `warp_drive` | ender pearls are not used up and cost 2 hunger instead, deal no damage, cooldown 0 | travel design next to waystones; skipping rooms in dungeons | none | no | off |
 
@@ -324,7 +332,7 @@ and 2). **Pick**: *keep* (the proposed keep-list), *later* (worth deciding when 
 | --- | --- | --- | --- | --- | --- |
 | Whoopee Cushion `whoopee_cushion` (any slot) | 12 % chance of a fart sound on sneaking or double jumping; always in the spawn bonus chest | the lore's tone | none | no | off |
 | Umbrella `umbrella` (off hand) | blocks attacks like a shield, slows a fall while held, and stabs as a spear (26.1's spear components; in `#minecraft:spears`) | our two-handed wands lock items in `#c:tools/shield`, and the Umbrella is not in it, so a caster could block with it; no Better Combat preset; a glider before elytra | none | no | off |
-| Everlasting Beef `everlasting_beef` | raw beef that is never used up, 15 s cooldown | food and the coming foods with buffs (M2) and cooking (M5); the vision keeps hunger | none | no | off |
+| Everlasting Beef `everlasting_beef` | raw beef that is never used up, 15 s cooldown | food and the coming foods with buffs (M2) and cooking (postponed from M5, RLM-578); the vision keeps hunger | none | no | off |
 | Eternal Steak `eternal_steak` | the same as cooked beef (smelted, smoked or campfire-cooked from the beef) | as above | none | no | off |
 | Mimic Spawn Egg `mimic_spawn_egg` | spawns a mimic (creative) | none | n/a | no | n/a |
 
@@ -467,8 +475,9 @@ and the Strider Shoes (Ashfire). Each would need a slot of ours or a reason to t
 
 ### What the ADR would say (for B, not taken)
 
-Matěj chose option C instead; [ADR 0066](../decisions/0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md)
-records it. The draft for B stays as written:
+Matěj chose his own option C instead (not the options table's column C); [ADR
+0066](../decisions/0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md) records it. The draft for
+B stays as written:
 
 "Amends [0025](../decisions/0025-remove-the-nether-and-end.md)'s curio rule (RLM-7) and lifts
 [0044](../decisions/0044-third-party-mods-by-milestone.md)'s hold on Artifacts. Artifacts joins the pack. The items on
@@ -485,8 +494,8 @@ Tweaks). Its milestone needs no ADR in either case: ADR 0058 already moved Artif
 
 ## Questions for Matěj
 
-Answered on 2026-10-30 (RLM-512): option C, [above](#matějs-decision-and-where-each-item-goes); questions 2–9 fall away
-with it. The questions as they were asked:
+Answered on 2026-10-30 (RLM-512): Matěj's option C (not the options table's column C),
+[above](#matějs-decision-and-where-each-item-goes); questions 2–9 fall away with it. The questions as they were asked:
 
 1. **Artifacts in or out?** Proposed: in, narrowly (option B), with an ADR that amends the curio rule for the kept
    items alone. Otherwise out (option A), and the six effects become our own curios later.

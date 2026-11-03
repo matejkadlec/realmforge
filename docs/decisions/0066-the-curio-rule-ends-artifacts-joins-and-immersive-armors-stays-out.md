@@ -4,7 +4,8 @@ Date: 2026-10-31
 
 Status: Accepted (amends [0025](0025-remove-the-nether-and-end.md)'s curio rule,
 [0044](0044-third-party-mods-by-milestone.md)'s hold on Artifacts and its Immersive Armors pick, and
-[0058](0058-player-systems-before-world-content.md)'s "Artifacts and Immersive Armors as Matěj picks them")
+[0058](0058-player-systems-before-world-content.md)'s "Artifacts and Immersive Armors as Matěj picks them"); "option C"
+and the world-sources consequence clarified 2026-11-03 (RLM-569)
 
 ## Context
 
@@ -21,6 +22,8 @@ RLM-313), and Matěj decided on 2026-10-30:
   keep-list, an analysis gives each item its place (realm, dungeon or boss, level, loot, quest reward or boss drop);
   the more items find a place, the better, and an item that clashes with our systems gets a place late enough, a tweak,
   or is switched off, each with its reason.
+  - 2026-11-03 (RLM-569): Matěj called this third way option C. It is not the catalogue's column C ("Artifacts as it
+    ships", every world source on, not recommended), whose name it shares.
 - **Immersive Armors (RLM-513):** not taken. Its effects act in `LivingDamageEvent.Pre`, outside our damage pipeline and
   its caps, and can only be switched off all together; its fire and magic resistance would be a second magic defense on
   players, where Spell Resistance is a mob-only stat (RLM-233). With the effects off, its sets are only armor with
@@ -50,6 +53,9 @@ RLM-313), and Matěj decided on 2026-10-30:
 - **Its items come from our sources:** the placement gives each one a quest reward, a boss drop or a dungeon's
   treasure of ours, so Artifacts' own world sources (chests, brushing, mob equipment, campsites and the Mimic) are
   off, and no item is only a chance roll.
+  - 2026-11-03 (RLM-569): this follows from the placement, which proposes those sources; decision 2 already leaves
+    what changes to Matěj's playtest of RLM-314, and his decision named loot as one possible source, so the playtest
+    confirms the world sources staying off or changes it.
 - **Checks before it ships:** the Cross Necklace's mixin writes `invulnerableTime` on every hit, worn or not, so the
   damage pipeline's GameTests run with Artifacts loaded; quest rewards name its ids, which needs the full-pack registry
   dump ([0005](0005-content-pipeline-yaml-single-source-of-truth.md), rule 3).

@@ -199,13 +199,13 @@ hoppers have nothing to take.
     left; with keep inventory, losing a signet 4 times should be rare. This replaces the first version's repeatable
     quest that gave a new Signet of the Undervault for a few copper ingots. M1's case is
     [open question 4](#open-questions);
-  - **when the next chapter has two realms** (chapter 3: Sunwastes and Everwinter), the boss before them drops one
-    shard per realm it opens: Undervault's final boss, Astone, the Unbroken, drops the Sun Signet Shard and the Ice
-    Signet Shard, with the Stone Heart for the Skyhearth Medallion, all three at 100% on every kill (Matěj, 2026-10-25
-    and 2026-10-27, RLM-432; [open question 2](#open-questions));
-  - **when two realms share a chapter, the next main-path signet needs both:** its recipe takes the guaranteed drop
-    of each realm's main-path boss (for the realm after chapter 3: Sunwastes' and Everwinter's), so finishing one
-    branch never opens the next realm. Both realms are needed for further progress
+  - **when the next two chapters are the twins** (chapters 3 and 4: Sunwastes and Everwinter), the boss before them
+    drops one shard per realm it opens: Undervault's final boss, Astone, the Unbroken, drops the Sun Signet Shard and
+    the Ice Signet Shard, with the Stone Heart for the Skyhearth Medallion, all three at 100% on every kill (Matěj,
+    2026-10-25 and 2026-10-27, RLM-432; [open question 2](#open-questions));
+  - **when two realms run side by side, the next main-path signet needs both:** its recipe takes the guaranteed drop
+    of each realm's main-path boss (for chapter 5's realm, after the twins: Sunwastes' and Everwinter's), so finishing
+    one branch never opens the next realm. Both realms are needed for further progress
     ([realm design](realms.md#the-desert-realm)); how that fits a recipe with one shard is
     [open question 3](#open-questions);
   - **an optional side realm's signet** comes from wherever its design puts it: a chest at 100% in an instanced

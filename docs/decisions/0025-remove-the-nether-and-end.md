@@ -2,16 +2,17 @@
 
 Date: 2026-10-12
 
-Status: Accepted (resolves the Nether and End question left open by
-[0012](0012-procedural-dungeons-and-dimensions.md)), amended by
-[0032](0032-v1-realm-layout-amends-the-nether-and-end-removal.md) (Overworld for levels 1–10, Ashfire no replacement
-for the Nether, netherite in Undervault), by
+Status: Accepted (resolves the Nether and End question left open by [0012](0012-procedural-dungeons-and-dimensions.md)),
+amended by [0032](0032-v1-realm-layout-amends-the-nether-and-end-removal.md) (Overworld for levels 1–10, Ashfire no
+replacement for the Nether, netherite in Undervault), by
 [0034](0034-ancient-merchants-and-the-wither-amend-the-nether-and-end-removal.md) (merchants sell the Nether and End
 materials, the Wither can be summoned again, no desert refining items) and by
 [0037](0037-elytra-from-chapter-3s-final-boss-amends-the-nether-and-end-removal.md) (elytra source: chapter 3's final
-boss); amended by [0044](0044-third-party-mods-by-milestone.md) (strongholds are off from M1, so the End is unreachable
-from M1); amended by [0066](0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md) (the curio rule
-ends: other mods' curio items may join the pack, never the elytra slot), 2026-10-31
+boss, superseded by [0068](0068-elytra-are-bought-in-skyhearth.md): elytra, End Stone, the Dragon Head and the Dragon
+Egg are bought from an NPC in Skyhearth); amended by [0044](0044-third-party-mods-by-milestone.md) (strongholds are off
+from M1, so the End is unreachable from M1); amended by
+[0066](0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md) (the curio rule ends: other mods'
+curio items may join the pack, never the elytra slot), 2026-10-31
 
 ## Context
 

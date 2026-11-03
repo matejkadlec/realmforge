@@ -2,7 +2,8 @@
 
 Date: 2026-10-18
 
-Status: Accepted (amends [0025](0025-remove-the-nether-and-end.md))
+Status: Superseded by [0068](0068-elytra-are-bought-in-skyhearth.md) (elytra are bought in Skyhearth, no drop); it
+amended [0025](0025-remove-the-nether-and-end.md)
 
 ## Context
 

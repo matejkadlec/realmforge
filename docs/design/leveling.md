@@ -66,11 +66,11 @@ Hours per chapter, from one chapter's cap to the next (chapter 1 from level 1):
 | --- | --- | --- | --- | --- |
 | 1 | Overworld | 1–10 | 4.9 | 1.6 |
 | 2 | Undervault | 10–18 | 6.9 | 2.1 |
-| 3 | Sunwastes and Everwinter (twins) | 18–30 | 14.8 | 4.2 |
-| 4 | Deepholm | 30–40 | 16.8 | 4.5 |
-| 5 | Quagmire | 40–44 | 8.0 | 2.1 |
-| 6 | Ashfire | 44–52 | 18.7 | 4.6 |
-| 7 | Unmade Isles | 52–60 | 22.9 | 5.5 |
+| 3 and 4 | Sunwastes and Everwinter (the twins, played side by side) | 18–30 | 14.8 | 4.2 |
+| 5 | Deepholm | 30–40 | 16.8 | 4.5 |
+| 6 | Quagmire | 40–44 | 8.0 | 2.1 |
+| 7 | Ashfire | 44–52 | 18.7 | 4.6 |
+| 8 | Unmade Isles | 52–60 | 22.9 | 5.5 |
 
 M2 (chapters 1 and 2, levels 1–18) therefore takes about 12 hours on average and 4 for a fast player.
 
@@ -153,17 +153,19 @@ RLM-190 implements dungeon XP.
 ## Chapters and caps
 
 Each chapter's cap is its last level, and the chapter's main questline raises it (Matěj, 2026-10-15; the layout is
-[realms.md](realms.md#chapters-and-levels)):
+[realms.md](realms.md#chapters-and-levels)). The chapters are the story's eight (RLM-466): the twins are chapters 3
+and 4 under one cap, 30, so chapter 3's end raises no cap and chapter 4's raises it to 40 (RLM-367).
 
 | Chapter | Cap while current | Cap once completed |
 | --- | --- | --- |
 | 1, Overworld | 10 | 18 |
 | 2, Undervault | 18 | 30 |
-| 3, Sunwastes and Everwinter | 30 | 40 |
-| 4, Deepholm | 40 | 44 |
-| 5, Quagmire | 44 | 52 |
-| 6, Ashfire | 52 | 60 |
-| 7, Unmade Isles | 60 | - |
+| 3, Sunwastes | 30 | 30 (no raise) |
+| 4, Everwinter | 30 | 40 |
+| 5, Deepholm | 40 | 44 |
+| 6, Quagmire | 44 | 52 |
+| 7, Ashfire | 52 | 60 |
+| 8, Unmade Isles | 60 | - |
 
 **XP stops at the cap,** as in WotLK (Matěj's `qa2 B` on RLM-23, 2026-10-15): a player holds at most the XP of the
 cap's level, a gain past it is lost, and completing a chapter raises the cap but brings no level by itself. The next
@@ -185,10 +187,11 @@ and dungeon runs (from the report; Q2 and later chapters set the exact counts ag
 | Ashfire | about 428,000 | about 33 | about 470 | about 5 |
 | Unmade Isles | about 807,000 | about 48 | about 760 | about 8 |
 
-In all: about 190 standard quests (about 200–250 real ones, since small quests count half), about 2,400 kills and
-about 26 dungeon runs. Skyhearth, the hub and the centre of the game, hands out a share of the quests of every realm
-from chapter 3 on, Sunwastes to Unmade Isles (Matěj, 2026-10-17, RLM-245, since Skyhearth opens at about level 15). The
-report assumed about a fifth of the quests of realms 4–7; the share per realm is set with Q2 and later chapters.
+In all: about 190 standard quests (about 200–250 real ones, since small quests count half), about 2,400 kills and about
+26 dungeon runs. Skyhearth, the hub and the centre of the game, hands out a share of the quests of every realm from
+chapter 3 on, Sunwastes to Unmade Isles (Matěj, 2026-10-17, RLM-245, since Skyhearth opens at about level 15). The
+report assumed about a fifth of the quests of Deepholm to Unmade Isles (chapters 5–8); the share per realm is set with
+Q2 and later chapters.
 
 ## Anti-farm
 
