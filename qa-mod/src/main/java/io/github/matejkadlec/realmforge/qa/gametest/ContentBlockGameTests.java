@@ -36,7 +36,9 @@ public final class ContentBlockGameTests {
             Block block = BuiltInRegistries.BLOCK.getValue(id);
             BlockState state = block.defaultBlockState();
             helper.assertValueEqual(block.defaultDestroyTime(), expected.hardness(), id + " hardness");
-            helper.assertValueEqual(block.getExplosionResistance(), expected.blastResistance(), id + " blast resistance");
+            // NeoForge's state-sensitive resistance; no block of ours reads the position or the explosion.
+            helper.assertValueEqual(state.getExplosionResistance(helper.getLevel(), BlockPos.ZERO, null),
+                    expected.blastResistance(), id + " blast resistance");
             helper.assertValueEqual(state.requiresCorrectToolForDrops(), expected.requiresTool(), id + " needs a tool");
             helper.assertValueEqual(block.getDescriptionId(), expected.translationKey(), id + " translation key");
             helper.assertTrue(Language.getInstance().has(expected.translationKey()), id + ": no en_us name");

@@ -1,5 +1,6 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
+import com.mojang.serialization.Codec;
 import io.github.matejkadlec.realmforge.dungeon.instance.DataMarker;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedRoomExpectations;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedRoomExpectations.RoomExpectation;
@@ -31,6 +32,9 @@ public final class ContentRoomGameTests {
     public static void contentRoomsLoadAsWritten(GameTestHelper helper) {
         helper.assertFalse(GeneratedRoomExpectations.ROOMS.isEmpty(), "no room expectations were generated");
         StructureTemplateManager templates = helper.getLevel().getStructureManager();
+        // Deprecated, but vanilla's StructureBlockEntity writes and reads "mode" with it, and StructureMode has no other.
+        @SuppressWarnings("deprecation")
+        Codec<StructureMode> modeCodec = StructureMode.LEGACY_CODEC;
         for (RoomExpectation expected : GeneratedRoomExpectations.ROOMS) {
             Optional<StructureTemplate> loaded = templates.get(Identifier.parse(expected.id()));
             helper.assertTrue(loaded.isPresent(), "room does not load: " + expected.id());
@@ -45,7 +49,7 @@ public final class ContentRoomGameTests {
                     : room.filterBlocks(BlockPos.ZERO, new StructurePlaceSettings(), Blocks.STRUCTURE_BLOCK)) {
                 CompoundTag data = marker.nbt();
                 String name = data == null ? "" : data.getStringOr("metadata", "");
-                helper.assertTrue(data != null && data.read("mode", StructureMode.LEGACY_CODEC)
+                helper.assertTrue(data != null && data.read("mode", modeCodec)
                                 .orElse(null) == StructureMode.DATA && DataMarker.Kind.byName(name).isPresent(),
                         expected.id() + ": the structure block at " + marker.pos().toShortString()
                                 + " is no data marker the builder knows ('" + name + "')");

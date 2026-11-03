@@ -116,8 +116,8 @@ public final class MagicProtectionGameTests {
         ItemStack third = anvil(player, fireBlast, book(helper, Enchantments.PROJECTILE_PROTECTION, 4));
         helper.assertTrue(third.isEmpty(), "a third protection gives no result: " + third);
         ItemStack other = anvil(player, fireBlast, book(helper, Enchantments.UNBREAKING, 3));
-        helper.assertValueEqual(EnchantmentHelper.getItemEnchantmentLevel(enchantment(helper, Enchantments.UNBREAKING),
-                other), 3, "two protections still take another enchantment");
+        helper.assertValueEqual(other.getEnchantmentLevel(enchantment(helper, Enchantments.UNBREAKING)), 3,
+                "two protections still take another enchantment");
         ApotheosisGameTests.logout(player);
         helper.succeed();
     }

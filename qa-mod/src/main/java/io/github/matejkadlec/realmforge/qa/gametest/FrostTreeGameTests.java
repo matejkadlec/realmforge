@@ -408,7 +408,7 @@ public final class FrostTreeGameTests {
                 GeneratedItems.NETHERITE_PANTS.get(), GeneratedItems.NETHERITE_SANDALS.get())) {
             ItemStack stack = held(player, piece);
             helper.assertTrue(!stack.isEmpty(), "holds " + piece);
-            helper.assertValueEqual(stack.getEnchantments().getLevel(protection), 5, piece + "'s Protection");
+            helper.assertValueEqual(stack.getTagEnchantments().getLevel(protection), 5, piece + "'s Protection");
         }
         helper.assertTrue(!held(player, GeneratedItems.NETHERITE_WAND.get()).isEmpty(), "holds the Netherite Wand");
         logout(player);
