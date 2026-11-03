@@ -2782,7 +2782,7 @@ numbers stay proposals. Until then she is buffed for the M1 class checks (RLM-58
 level-18 classes found her far too weak): 1,500 health at level 18 (it was 800), three times her damage (attack damage
 21, her spells' amounts tripled), and her fists ignore 15 % of a player's armor and drain 15 % more of a magic shield
 (`armor_shred_percent` and `magic_shield_damage_percent` in her mob data), her spells 30 % (15 % of their own on
-hers). Her hits wear armor a quarter as much (`armor_wear_reduction_percent`: 75, the mob-only stat
+hers). Her hits wear armor half as much (`armor_wear_reduction_percent`: 50, the mob-only stat
 `realmforge:armor_wear_reduction`, `combat/ArmorWear` on NeoForge's `ArmorHurtEvent`; his playtest: she should ignore
 armor, not destroy it).
 

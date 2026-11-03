@@ -114,7 +114,7 @@ class MobAttributesDef(StrictModel):
         le=100,
         allow_inf_nan=False,
         description="How much less its hits wear a target's armor (realmforge:armor_wear_reduction), 0 to 100 "
-        "(RLM-580: Astone's 75).",
+        "(RLM-580: Astone's 50).",
     )
 
 

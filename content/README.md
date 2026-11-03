@@ -168,7 +168,7 @@ Rules:
   which its level scales like every hostile mob's, and may add `armor_shred_percent` (the share of a player's armor
   its hits ignore), `magic_shield_damage_percent` (how much more of a magic shield they drain; both RLM-580, Astone's
   15, which her spells add their own to) and `armor_wear_reduction_percent` (how much less they wear a target's armor,
-  RLM-580, Astone's 75); `idle` is `stroll` (the default: wanders as vanilla's mobs do, at the
+  RLM-580, Astone's 50); `idle` is `stroll` (the default: wanders as vanilla's mobs do, at the
   Zombified Piglin's speed, so its `movement_speed` is how fast it fights) or `guard` (stands at the spot where it first
   stood and walks back to it); `sounds` name sound events, ours from `sounds/` (`realmforge:entity.<mob>.<name>`) or
   vanilla's, and `step: silent` walks without a sound; `death_particles` names the block it breaks apart into when it

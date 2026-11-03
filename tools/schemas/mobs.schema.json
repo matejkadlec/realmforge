@@ -145,7 +145,7 @@
         },
         "armor_wear_reduction_percent": {
           "default": 0,
-          "description": "How much less its hits wear a target's armor (realmforge:armor_wear_reduction), 0 to 100 (RLM-580: Astone's 75).",
+          "description": "How much less its hits wear a target's armor (realmforge:armor_wear_reduction), 0 to 100 (RLM-580: Astone's 50).",
           "maximum": 100,
           "minimum": 0,
           "title": "Armor Wear Reduction Percent",

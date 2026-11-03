@@ -75,8 +75,8 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   the test titan. The first real boss is Astone, the Unbroken (W5b, RLM-491), Undervault's guardian: three phases
   (a boulder, then a quake and a rockfall, then cracked stone), and the Stone Heart and the twins' shards on every
   kill; `/summon realmforge:astone` until W6's altar; buffed for the M1 class checks (RLM-580: 1,500 health, triple
-  damage, her hits ignoring 15 % of armor and draining 15 % more of a magic shield, her spells 30 %, a quarter of the
-  armor wear). A new player
+  damage, her hits ignoring 15 % of armor and draining 15 % more of a magic shield, her spells 30 %, half the armor
+  wear). A new player
   creates a character (C1): the Human race and the Warrior and Mage classes, with their stats and starting kits,
   and their class kits (C4, RLM-27), each its M1 tree at rank 1 by its rows to level 18 until C5 spends points: the
   Warrior's, the Arms Warrior's "Bloodletter" tree (RLM-543: Slam, Charge, Deep Wounds; Rend, Battle Shout, Two-Handed
