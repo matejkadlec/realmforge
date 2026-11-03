@@ -16,12 +16,12 @@ rings, necklaces, gloves and the like from other mods, only the Sophisticated ba
 2026-10-29 ([artifacts.md](../research/artifacts.md), RLM-312; [immersive-armors.md](../research/immersive-armors.md),
 RLM-313), and Matěj decided on 2026-10-30:
 
-- **Artifacts (RLM-512):** neither of the catalogue's options A (out) and B (six utility items in our own
-  slots), but a third, which Matěj called option C. It is not the catalogue's column C ("Artifacts as it ships", every
-  world source on, not recommended): the curio rule is cancelled, since Artifacts was picked precisely because it is a curios mod. Instead of a
-  keep-list, an analysis gives each item its place (realm, dungeon or boss, level, loot, quest reward or boss drop);
-  the more items find a place, the better, and an item that clashes with our systems gets a place late enough, a tweak,
-  or is switched off, each with its reason.
+- **Artifacts (RLM-512):** neither of the catalogue's options A (out) and B (six utility items in our own slots), but
+  a third, which Matěj called option C. It is not the catalogue's column C ("Artifacts as it ships", every world source
+  on, not recommended): the curio rule is cancelled, since Artifacts was picked precisely because it is a curios mod.
+  Instead of a keep-list, an analysis gives each item its place (realm, dungeon or boss, level, loot, quest reward or
+  boss drop); the more items find a place, the better, and an item that clashes with our systems gets a place late
+  enough, a tweak, or is switched off, each with its reason.
 - **Immersive Armors (RLM-513):** not taken. Its effects act in `LivingDamageEvent.Pre`, outside our damage pipeline and
   its caps, and can only be switched off all together; its fire and magic resistance would be a second magic defense on
   players, where Spell Resistance is a mob-only stat (RLM-233). With the effects off, its sets are only armor with

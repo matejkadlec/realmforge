@@ -52,9 +52,9 @@ player has Night Vision by default), and the Onion Ring, as far as he knows, doe
   and one of our stat necklaces compete for it, as WoW's trinket slots make a player choose. A hand item is worn in
   Artifacts' hands slots, never in our ring or bracelet.
 - **Sources are ours** (the placement's proposal, which Matěj's playtest of RLM-314 confirms or changes; his decision
-  named loot as one possible source): a quest reward (**quest**), a boss's drop at 100 % (**boss**, as every boss drop designed so
-  far, [gear design](../design/gear.md#second-sources)), or one item per player from a dungeon's treasure through Lootr
-  (**treasure**). Artifacts' own sources are off (`artifactRarity` 10000, `archaeologyChance` 0,
+  named loot as one possible source): a quest reward (**quest**), a boss's drop at 100 % (**boss**, as every boss drop
+  designed so far, [gear design](../design/gear.md#second-sources)), or one item per player from a dungeon's treasure
+  through Lootr (**treasure**). Artifacts' own sources are off (`artifactRarity` 10000, `archaeologyChance` 0,
   `entityEquipmentChance` 0, `campsiteCount` 0, `generateAsLoot` false for every item, the beef's `dropRate` 0), so no
   item is only a chance roll, and an item's realm decides who meets it.
 - **One of each:** a reward gives an item once per player; a player who loses one gets it again from the quest giver
@@ -142,8 +142,9 @@ ours (an override of `artifacts:artifact`) and its spawns in our rooms.
   their bonuses at 0 otherwise.
 - Data: the Umbrella in `#realmforge:two_handed_lock`, our lock tag that holds `#c:tools/shield` and the Umbrella, with
   `item/TwoHandedGear` reading it instead of `#c:tools/shield` (never the Umbrella in `#c:tools/shield`: Shield Bash's
-  requirement reads that tag, so the Umbrella would unlock Shield Bash); every item to `none` in `apotheosis:loot_category_overrides`; the off items
-  hidden from JEI and the creative tab; the rename of the Novelty Drinking Hat.
+  requirement reads that tag, so the Umbrella would unlock Shield Bash); every item to `none` in
+  `apotheosis:loot_category_overrides`; the off items hidden from JEI and the creative tab; the rename of the Novelty
+  Drinking Hat.
 - Sources: each item's quest, boss drop or treasure as its content lands (most are M2 and later); the ids need the
   full-pack registry dump.
 - Checks: a pack boot; the damage pipeline's GameTests with Artifacts loaded (the Cross Necklace's mixin runs worn or
@@ -474,8 +475,8 @@ and the Strider Shoes (Ashfire). Each would need a slot of ours or a reason to t
 
 ### What the ADR would say (for B, not taken)
 
-Matěj chose his own option C instead (not the options table's column C); [ADR 0066](../decisions/0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md)
-records it. The draft for B stays as written:
+Matěj chose his own option C instead (not the options table's column C);
+[ADR 0066](../decisions/0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md) records it. The draft for B stays as written:
 
 "Amends [0025](../decisions/0025-remove-the-nether-and-end.md)'s curio rule (RLM-7) and lifts
 [0044](../decisions/0044-third-party-mods-by-milestone.md)'s hold on Artifacts. Artifacts joins the pack. The items on
@@ -492,8 +493,8 @@ Tweaks). Its milestone needs no ADR in either case: ADR 0058 already moved Artif
 
 ## Questions for Matěj
 
-Answered on 2026-10-30 (RLM-512): Matěj's option C (not the options table's column C), [above](#matějs-decision-and-where-each-item-goes); questions 2–9 fall away
-with it. The questions as they were asked:
+Answered on 2026-10-30 (RLM-512): Matěj's option C (not the options table's column C),
+[above](#matějs-decision-and-where-each-item-goes); questions 2–9 fall away with it. The questions as they were asked:
 
 1. **Artifacts in or out?** Proposed: in, narrowly (option B), with an ADR that amends the curio rule for the kept
    items alone. Otherwise out (option A), and the six effects become our own curios later.
