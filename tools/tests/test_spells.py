@@ -140,6 +140,7 @@ def test_repository_spells_are_the_class_kits_engine_tests_stoneform_and_astones
         "test_slow_missile",
         "test_strike",
         "test_sure_crit",
+        "test_targeted_missile",
         # The boss framework's test boss hardens in its second phase (W5a, RLM-490).
         "test_titan_harden",
         # Bleeding's (RLM-539), the windows', procs' and conditions' (RLM-540) and the melee shapes' (RLM-399).
@@ -470,7 +471,7 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
         "TEST_FROSTBITE, TEST_HOMING_BOLT, TEST_ICE_LANCE, TEST_IGNITE, TEST_LACERATE, TEST_MEND, TEST_MENDING_RING, "
         "TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_OVERPOWER, "
         "TEST_PROC_SPARK, TEST_REGROW, TEST_REND, TEST_SAP, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, TEST_SLOW_MISSILE, "
-        "TEST_STRIKE, TEST_SURE_CRIT, TEST_TITAN_HARDEN, TEST_VICTORY_RUSH, "
+        "TEST_STRIKE, TEST_SURE_CRIT, TEST_TARGETED_MISSILE, TEST_TITAN_HARDEN, TEST_VICTORY_RUSH, "
         "TWO_HANDED_WEAPON_SPECIALIZATION, VICTORY_RUSH, WILL_TO_SURVIVE);"
     ) in keys
     expectations = files[EXPECTATIONS].decode()

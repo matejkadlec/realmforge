@@ -49,7 +49,8 @@ import net.minecraft.world.phys.Vec3;
  * Spell aiming (RLM-344, RLM-346) and aim assistance (RLM-345; architecture 11.2, 11.3). Players cast the test
  * spells of {@code content/spells/}: {@code test_forward_missile} (an instant frost bolt along the caster's look, 20
  * blocks a second, no lifetime, 3 damage, shattering like ice where it hits), {@code test_slow_missile} (the same after
- * a 1 s cast, 4 damage, a 2 s lifetime), {@code test_scorch} (an area at a ground point within 16 blocks), and the
+ * a 1 s cast, 4 damage, a 2 s lifetime), {@code test_targeted_missile} (the same at an enemy within 16 blocks, RLM-484),
+ * {@code test_scorch} (an area at a ground point within 16 blocks), and the
  * targeted {@code test_bolt} (instant, 6 damage) and {@code test_slow_bolt} (a 2 s cast, 10 damage), both 16 blocks,
  * and the ally spell {@code test_mend} (instant, a heal of 4, 16 blocks).
  * They aim as the spell bar does: at nothing, so the bolt flies where the caster looks and the area lands where it
@@ -229,6 +230,31 @@ public final class SpellAimingGameTests {
             assertHealth(helper, ally, allyHealth, "the ally in the way");
             assertHealth(helper, husk, HEALTH - 3, "the husk behind the ally");
             logout(ally);
+            logout(player);
+            helper.succeed();
+        });
+    }
+
+    /**
+     * RLM-484: a cast-time bolt at an entity flies at where that entity stands when the cast completes, not where it
+     * stood when the cast began (the entity branch of {@link SpellTarget#now}). The caster keeps looking at the husk's
+     * first spot, so neither that spot nor the look would hit it.
+     */
+    @QaGameTest
+    public static void aCastTimeBoltAtAnEnemyFliesAtWhereItStandsAtTheEnd(GameTestHelper helper) {
+        ServerPlayer player = caster(helper, "qa-aim-moving-target");
+        Husk husk = husk(helper, new BlockPos(2, 1, 4));
+        learn(helper, player, GeneratedSpells.TEST_TARGETED_MISSILE);
+        Vec3 firstSpot = husk.getBoundingBox().getCenter();
+        lookAt(player, firstSpot);
+        CastResult result = SpellCaster.cast(player, GeneratedSpells.TEST_TARGETED_MISSILE, husk);
+        helper.assertTrue(result.begun(), "test_targeted_missile did not begin: " + result);
+        helper.assertTrue(result.entity().orElse(null) == husk, "the cast aims at the husk: " + result.target());
+        // The husk steps 2 blocks aside during the cast: the line to where it stood misses it by far.
+        husk.snapTo(helper.absoluteVec(new Vec3(0.5, 1, 4.5)), 0, 0);
+        helper.runAfterDelay(45, () -> {
+            assertEnded(helper, player, GeneratedSpells.TEST_TARGETED_MISSILE, CastEnd.COMPLETED);
+            assertHealth(helper, husk, HEALTH - 4, "the bolt hit the husk where it stood at the end");
             logout(player);
             helper.succeed();
         });
@@ -489,7 +515,7 @@ public final class SpellAimingGameTests {
     /**
      * The Highlight Spell Target (RLM-468): while the client says it is on (toggled or held), the server names the mob
      * an enemy spell would go to now (a husk beside the crosshair), names none once the husk leaves the cone, and stops
-     * when it goes off.
+     * when it goes off. Switched on again with no mob in the cone, it says "none" at once (RLM-521).
      */
     @QaGameTest(template = QaGameTests.PLATFORM_17X17)
     public static void theHighlightNamesTheMobAnEnemySpellWouldGoTo(GameTestHelper helper) {
@@ -512,6 +538,17 @@ public final class SpellAimingGameTests {
         helper.runAfterDelay(4, () -> {
             helper.assertValueEqual(QaPlayers.sentPayloads(player, HighlightedTargetPayload.class), List.of(),
                     "the server named a mob after the highlight went off");
+            // RLM-521: switched on again with no mob in the cone, the server still says "none", which replaces
+            // whatever late pick the client may hold.
+            husk.snapTo(helper.absoluteVec(new Vec3(15.5, 1, 12.5)), 0, 0);
+            TargetHighlight.setOn(player, true);
+        });
+        // The server flushes what a tick sent once the tick ends, so the answer shows on the fake connection one tick
+        // later; the ticks in between pick none again and send nothing more.
+        helper.runAfterDelay(6, () -> {
+            helper.assertValueEqual(QaPlayers.sentPayloads(player, HighlightedTargetPayload.class),
+                    List.of(new HighlightedTargetPayload(Optional.empty())), "no mob, said on switching on");
+            TargetHighlight.setOn(player, false);
             logout(player);
             helper.succeed();
         });

@@ -459,6 +459,8 @@
   "spell.realmforge.test_strike.name": "Test Strike",
   "spell.realmforge.test_sure_crit.description": "Always strikes critically for {damage} damage.",
   "spell.realmforge.test_sure_crit.name": "Test Sure Crit",
+  "spell.realmforge.test_targeted_missile.description": "Fires a missile at an enemy for {damage} damage.",
+  "spell.realmforge.test_targeted_missile.name": "Test Targeted Missile",
   "spell.realmforge.test_titan_harden.description": "Hardens the caster for {duration} sec.",
   "spell.realmforge.test_titan_harden.name": "Test Titan Harden",
   "spell.realmforge.test_victory_rush.description": "Usable for 20 sec after a kill. Strikes an enemy for {damage} damage.",
