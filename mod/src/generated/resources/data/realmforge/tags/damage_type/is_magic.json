@@ -1,0 +1,9 @@
+{
+  "values": [
+    "realmforge:arcane",
+    "realmforge:fire",
+    "realmforge:frost",
+    "minecraft:magic",
+    "minecraft:indirect_magic"
+  ]
+}

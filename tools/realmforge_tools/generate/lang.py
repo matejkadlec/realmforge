@@ -11,6 +11,7 @@ from realmforge_tools.generate import (
     datapack,
     dungeons,
     effects,
+    enchantments,
     instance_biomes,
     mobs,
     sounds,
@@ -38,6 +39,7 @@ def collect(content: Content) -> dict[str, dict[str, str]]:
         datapack.translations(content)
         | stats.translations(content)
         | effects.translations(content)
+        | enchantments.translations(content)
         | mobs.translations(content)
         | sounds.translations(content)
         | spell_schools.translations(content)

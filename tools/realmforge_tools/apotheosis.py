@@ -35,8 +35,10 @@ from realmforge_tools.formats.jsonfmt import dump_json
 from realmforge_tools.problems import Problem
 from realmforge_tools.project import RepoPaths
 from realmforge_tools.schema.apotheosis import (
+    AFFIX_KINDS,
     CURIOS_LOOT_CATEGORIES,
     LOOT_CATEGORIES,
+    OUR_LOOT_CATEGORIES,
     RARITIES,
     ApotheosisAffixDef,
     ApotheosisEntryDef,
@@ -313,12 +315,22 @@ def _rarity_override(
             Problem(entry.source, "category", f"{category} exists only with Curios, which the pack lacks")
         )
         return None
-    if category not in LOOT_CATEGORIES:
+    if category not in LOOT_CATEGORIES and category not in OUR_LOOT_CATEGORIES:
         fitted.problems.append(
             Problem(
                 entry.source,
                 "category",
-                f"unknown loot category {category!r}; Apotheosis has {', '.join(LOOT_CATEGORIES)}",
+                f"unknown loot category {category!r}; Apotheosis has {', '.join(LOOT_CATEGORIES)}, and we have "
+                f"{', '.join(OUR_LOOT_CATEGORIES)}",
+            )
+        )
+        return None
+    if model.no_affixes and category not in OUR_LOOT_CATEGORIES:
+        fitted.problems.append(
+            Problem(
+                entry.source,
+                "no_affixes",
+                f"{category} is Apotheosis's and has affixes: cap its slots with max_slots instead",
             )
         )
         return None
@@ -331,6 +343,24 @@ def _rarity_override(
         None,
     )
     overrides: dict[str, Any] = copy.deepcopy(own["overrides"]) if own else {}
+    if model.no_affixes:
+        for rarity in RARITIES:
+            rules = overrides.get(rarity)
+            if rules is None:
+                rules = changed.get(("rarities", rarity), snapshot.entry("rarities", rarity) or {}).get(
+                    "rules", []
+                )
+            if any(
+                _names_kind(rule, kind) for rule in rules if _slot_kind(rule) is None for kind in AFFIX_KINDS
+            ):
+                fitted.problems.append(
+                    Problem(
+                        entry.source,
+                        "no_affixes",
+                        f"{category}'s rules at {rarity} name affixes inside another rule",
+                    )
+                )
+            overrides[rarity] = [copy.deepcopy(rule) for rule in rules if _slot_kind(rule) is None]
     for rarity, limits in model.max_slots.items():
         if rarity not in RARITIES:
             fitted.problems.append(

@@ -13,6 +13,15 @@ texts:
     en_us: Welcome to Realmforge v%1$s (%2$s)
   night_vision_on:
     en_us: Night Vision On
+  # Creative flight (Apotheosis's Unbound) is off in a boss's arena (RLM-559; Matěj, 2026-10-16, RLM-232): the title,
+  # subtitle and chat line a player sees on entering one with flight on. It returns on leaving the arena, and when the
+  # boss dies or resets.
+  arena_no_flight:
+    en_us: Flight Disabled
+  arena_no_flight_subtitle:
+    en_us: You entered a boss arena
+  arena_no_flight_chat:
+    en_us: Flight is disabled in this boss arena. It returns when you leave the arena or the fight ends.
   # Leveling (C2, architecture 10.2). XP a kill gave, in the action bar: "+50 XP" (%1$s the XP).
   xp_gained:
     en_us: "+%1$s XP"

@@ -4,6 +4,9 @@
   "package": "io.github.matejkadlec.realmforge.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
+    "ApothicTableSelectionMixin",
+    "ArcanaEnchantmentDataAccessor",
+    "EnchantmentSelectionMixin",
     "InventorySortingStacksMixin",
     "MobStunMixin",
     "PlayerBlockActionMixin",

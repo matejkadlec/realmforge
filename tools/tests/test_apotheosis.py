@@ -16,6 +16,7 @@ from realmforge_tools.generate import generate_all
 from realmforge_tools.problems import ValidationFailed
 from realmforge_tools.project import REPO_ROOT, RepoPaths
 from realmforge_tools.schema.apotheosis import (
+    RARITIES,
     ApotheosisAffixDef,
     ApotheosisRarityDef,
     ApotheosisRarityOverrideDef,
@@ -718,6 +719,23 @@ def test_the_rest_of_a_capped_rarity_is_the_fitted_rarity_s(files: dict[str, byt
     assert helmet == [rule for rule in rare if rule["type"] != "apotheosis:chanced"]
 
 
+@pytest.mark.parametrize("category", ["wand", "robe_head", "robe_chest", "robe_legs", "robe_feet"])
+def test_our_categories_drop_every_affix_slot_and_keep_the_rest(
+    files: dict[str, bytes], category: str
+) -> None:
+    """RLM-546: the wand and the robes have no affix to roll yet, so every rarity keeps its sockets and durability and
+    no slot is left for Apotheosis to log as empty."""
+    override = generated_json(files, RARITY_OVERRIDES + f"realmforge/{category}.json")
+    assert override["category"] == f"realmforge:{category}"
+    rules = override["overrides"]
+    assert list(rules) == list(RARITIES)
+    assert rules["apotheosis:common"] == []
+    assert labels(rules["apotheosis:uncommon"]) == ["socket"]
+    assert labels(rules["apotheosis:rare"]) == ["socket", "durability"]
+    assert labels(rules["apotheosis:epic"]) == ["socket", "durability"]
+    assert labels(rules["apotheosis:mythic"]) == ["select", "select"]
+
+
 def overriding(repo: RepoPaths, body: str) -> None:
     write(repo.content / "apotheosis_rarity_overrides" / "test.yaml", "id: test\n" + body)
 
@@ -756,6 +774,12 @@ def test_chanced_slots_go_first(repo: RepoPaths) -> None:
             "category: apotheosis:helmet\nmax_slots: {apotheosis:rare: {stat: 1}}\n",
             "apotheosis:helmet already has a rarity override",
         ),
+        ("category: apotheosis:bow\nno_affixes: true\n", "apotheosis:bow is Apotheosis's and has affixes"),
+        ("category: realmforge:wand\nno_affixes: true\n", "realmforge:wand already has a rarity override"),
+        (
+            "category: realmforge:robe_hands\nno_affixes: true\n",
+            "unknown loot category 'realmforge:robe_hands'",
+        ),
     ],
 )
 def test_a_rarity_override_is_checked(repo: RepoPaths, body: str, message: str) -> None:
@@ -780,6 +804,18 @@ def test_a_rarity_override_names_rarities_kinds_and_counts(max_slots: dict) -> N
     with pytest.raises(ValidationError):
         ApotheosisRarityOverrideDef.model_validate(
             {"id": "test", "category": "apotheosis:bow", "max_slots": max_slots}
+        )
+
+
+def test_a_rarity_override_caps_slots_or_drops_them_all_not_both() -> None:
+    with pytest.raises(ValidationError, match="max_slots, or no_affixes"):
+        ApotheosisRarityOverrideDef.model_validate(
+            {
+                "id": "test",
+                "category": "realmforge:wand",
+                "max_slots": {"apotheosis:rare": {"stat": 0}},
+                "no_affixes": True,
+            }
         )
 
 
@@ -816,4 +852,8 @@ def test_no_apotheosis_data_needs_no_license(repo: RepoPaths) -> None:
     for path in (repo.content / "recipe_removals").glob("*.yaml"):
         path.unlink()
     files = generated(repo)
-    assert not any(path.startswith(NOTICES) or "/data/apotheosis/" in path for path in files)
+    # The robes' loot category data map is ours, written from our items (RLM-546), not Apotheosis's data.
+    ours = DATA + "apotheosis/data_maps/item/loot_category_overrides.json"
+    assert not any(
+        path.startswith(NOTICES) or ("/data/apotheosis/" in path and path != ours) for path in files
+    )

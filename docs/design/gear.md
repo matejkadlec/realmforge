@@ -325,7 +325,11 @@ stand in, and the handoff says so. Later handoffs add rows; Matěj's corrections
 These tickets carry the approved design:
 
 - **RLM-272** (Done): Apotheosis's data from our YAML. RLM-273 (Done): the wand loot category.
-- **RLM-546:** the four robe loot categories and their `loot_category_overrides`.
+- **RLM-546** (built): the four robe loot categories and their `loot_category_overrides`; until the caster affixes,
+  the wand and robe categories roll no affix slot (rarity overrides with `no_affixes`).
+- **RLM-537** (built): Magic Protection, 0.5 protection point per level in vanilla's shared pool (Matěj's pick of
+  2026-11-01; the pool stops at 80 %), up to VIII with Apothic Enchanting, and at most two different protections on one
+  piece.
 - **RLM-557:** the pipeline for affixes of our own and the robe affixes (the table above).
 - **RLM-562:** the wand affixes (stats, effects on spell hit, abilities), a stun ability for every weapon, and Hexed.
 - **RLM-547** and **RLM-548:** the gem bonuses for wands and robes; **RLM-556:** the curio categories, their affixes,

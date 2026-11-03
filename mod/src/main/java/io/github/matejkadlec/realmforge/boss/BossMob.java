@@ -71,7 +71,8 @@ import net.minecraft.world.phys.Vec3;
  *   arena's radius of home ({@link #canAttack}, which vanilla's target goals and {@code Mob#getTarget} ask, so they
  *   let go of a target that leaves it), and takes no hurt from outside it. Pulled out of it, it resets: back home, at full
  *   health, in its first phase, its effects, casts and cooldowns gone. It resets the same way once its fight is
- *   over: it had a target and has none now, and it is out of combat (architecture 9.4).</li>
+ *   over: it had a target and has none now, and it is out of combat (architecture 9.4). Creative flight is off in its
+ *   arena while it lives ({@link ArenaFlight}, RLM-559).</li>
  *   <li><b>Boss bar:</b> its {@link BossBar} in the definition's colour, titled with its name and its phase's.</li>
  *   <li><b>Level:</b> its definition's, unless a dungeon run gives it the run's ({@link MobLevels.FixedLevel}).</li>
  *   <li><b>Persistence:</b> it never despawns, as vanilla's bosses do not, however far the players are, and it never
@@ -233,6 +234,9 @@ public class BossMob extends MeleeMob implements MobLevels.FixedLevel {
             reset();
             return;
         }
+        if (tickCount % ArenaFlight.CHECK_INTERVAL == 0) {
+            ArenaFlight.track(level, this);
+        }
         if (engaged) {
             OptionalInt next = BossPhaseMachine.next(boss.get().value().phases(), phase,
                     new BossPhaseMachine.Progress(getHealth() / getMaxHealth(), phaseTicks));
@@ -340,6 +344,28 @@ public class BossMob extends MeleeMob implements MobLevels.FixedLevel {
         phaseTicks = 0;
         phaseChangeLeft = 0;
         updateTitle();
+        ArenaFlight.releaseAll(this);
+    }
+
+    /** Its death gives back the flight its arena took (RLM-559). */
+    @Override
+    public void die(DamageSource source) {
+        super.die(source);
+        if (level() instanceof ServerLevel) {
+            ArenaFlight.releaseAll(this);
+        }
+    }
+
+    /**
+     * So does its removal (RLM-559): a kill command, a discard, or its chunk unloading, which goes through
+     * {@code Entity#setRemoved} and so through here, never through {@code Entity#remove}.
+     */
+    @Override
+    public void onRemoval(RemovalReason reason) {
+        super.onRemoval(reason);
+        if (level() instanceof ServerLevel) {
+            ArenaFlight.releaseAll(this);
+        }
     }
 
     @Override

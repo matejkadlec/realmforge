@@ -41,8 +41,11 @@ public final class QaGameTests {
 
     private static final List<Class<?>> HOLDERS = List.of(
             ApotheosisGameTests.class,
+            ApotheosisGemGameTests.class,
             ApotheosisLootGameTests.class,
             ApothicAttributesGameTests.class,
+            AreaMiningGameTests.class,
+            ArenaFlightGameTests.class,
             AstoneGameTests.class,
             AutoShootGameTests.class,
             BossBarGameTests.class,
@@ -91,6 +94,7 @@ public final class QaGameTests {
             InstanceGameTests.class,
             InstanceRulesGameTests.class,
             LevelingGameTests.class,
+            MagicProtectionGameTests.class,
             MobLevelGameTests.class,
             NpcCastGameTests.class,
             PassiveSpellGameTests.class,

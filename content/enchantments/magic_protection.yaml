@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=../../tools/schemas/enchantments.schema.json
+# Magic Protection (RLM-537): bosses' and players' magic damage gets an enchantment like Projectile and Blast
+# Protection (Matěj, 2026-10-30). It stays apart from the stats: a player's magic defense is this, Magic Shield, Dodge
+# and health, and the sheet's Resistances -> Magic shows what it blocks (RLM-537 comment of 2026-10-31).
+# Matěj's pick of 2026-11-01 (option A): 0.5 point per level in vanilla's shared protection pool, whose cap stays
+# 20 points, 80 % (the pack's Apothic Attributes formula). VIII on all four pieces is 16 points, 64 % against magic,
+# the magic twin of Protection IV on all four; with Protection the shared 80 % cap holds.
+# Up to VIII, as Apothic Enchanting raises Protection; vanilla's IV where it does not reach. Table, loot and anvil
+# numbers as Projectile Protection's.
+id: magic_protection
+name: {en_us: Magic Protection}
+description: {en_us: "Reduces damage taken from magic, such as spells of the magic schools and Potions of Harming."}
+supported_items: minecraft:enchantable/armor
+slots: [armor]
+weight: 5
+vanilla_max_level: 4
+max_level: 8
+min_cost: {base: 3, per_level_above_first: 6}
+max_cost: {base: 9, per_level_above_first: 6}
+anvil_cost: 2
+protection:
+  points_per_level: 0.5
+  against: realmforge:is_magic
+tags: [minecraft:non_treasure]

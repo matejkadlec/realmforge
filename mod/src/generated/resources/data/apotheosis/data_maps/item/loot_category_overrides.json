@@ -1,0 +1,20 @@
+{
+  "values": {
+    "realmforge:apprentice_boots": "realmforge:robe_feet",
+    "realmforge:apprentice_hat": "realmforge:robe_head",
+    "realmforge:apprentice_pants": "realmforge:robe_legs",
+    "realmforge:apprentice_robes": "realmforge:robe_chest",
+    "realmforge:arcane_silk_cap": "realmforge:robe_head",
+    "realmforge:arcane_silk_pants": "realmforge:robe_legs",
+    "realmforge:arcane_silk_robes": "realmforge:robe_chest",
+    "realmforge:arcane_silk_sandals": "realmforge:robe_feet",
+    "realmforge:netherite_cap": "realmforge:robe_head",
+    "realmforge:netherite_pants": "realmforge:robe_legs",
+    "realmforge:netherite_robes": "realmforge:robe_chest",
+    "realmforge:netherite_sandals": "realmforge:robe_feet",
+    "realmforge:spellweave_cap": "realmforge:robe_head",
+    "realmforge:spellweave_pants": "realmforge:robe_legs",
+    "realmforge:spellweave_robes": "realmforge:robe_chest",
+    "realmforge:spellweave_sandals": "realmforge:robe_feet"
+  }
+}

@@ -10,6 +10,8 @@ import dev.shadowsoffire.apotheosis.loot.LootController;
 import dev.shadowsoffire.apotheosis.loot.LootRarity;
 import dev.shadowsoffire.apotheosis.loot.LootRule;
 import dev.shadowsoffire.apotheosis.loot.RarityRegistry;
+import dev.shadowsoffire.apotheosis.socket.SocketHelper;
+import dev.shadowsoffire.apotheosis.socket.gem.Purity;
 import dev.shadowsoffire.apotheosis.tiers.GenContext;
 import dev.shadowsoffire.apotheosis.tiers.WorldTier;
 import dev.shadowsoffire.apotheosis.tiers.augments.TierAugmentRegistry;
@@ -20,10 +22,12 @@ import io.github.matejkadlec.realmforge.spell.SpellCaster;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -196,6 +200,79 @@ final class ApotheosisLoot {
             }
             helper.assertTrue(LootController.getAvailableAffixes(sword, rarity, AffixType.STAT).findAny().isPresent(),
                     "a sword has stat affixes at " + id);
+        }
+        helper.succeed();
+    }
+
+    /**
+     * Done when of RLM-546: every armor piece of ours is the robe category of its slot, never Apotheosis's armor,
+     * through the data map; a diamond chestplate stays a chestplate, and the tooltips name the categories by our texts.
+     */
+    static void aRobeIsARobeNotArmor(GameTestHelper helper) {
+        LootCategory chest = ApotheosisCompat.ROBE_CHEST.get();
+        helper.assertValueEqual(chest.getKey(), Identifier.fromNamespaceAndPath("realmforge", "robe_chest"), "the key");
+        helper.assertTrue(LootCategory.forItem(new ItemStack(GeneratedItems.NETHERITE_ROBES.get())) == chest,
+                "Netherite Robes are realmforge:robe_chest");
+        Map<EquipmentSlot, LootCategory> robes = Map.of(EquipmentSlot.HEAD, ApotheosisCompat.ROBE_HEAD.get(),
+                EquipmentSlot.CHEST, chest, EquipmentSlot.LEGS, ApotheosisCompat.ROBE_LEGS.get(),
+                EquipmentSlot.FEET, ApotheosisCompat.ROBE_FEET.get());
+        int pieces = 0;
+        for (Item item : BuiltInRegistries.ITEM) {
+            ItemStack stack = new ItemStack(item);
+            var equippable = stack.get(DataComponents.EQUIPPABLE);
+            if (BuiltInRegistries.ITEM.getKey(item).getNamespace().equals("realmforge") && equippable != null) {
+                LootCategory category = LootCategory.forItem(stack);
+                helper.assertTrue(category == robes.get(equippable.slot()),
+                        item + " is the robe category of its slot, not " + category);
+                pieces++;
+            }
+        }
+        helper.assertValueEqual(pieces, 16, "the four robe sets' pieces");
+        LootCategory diamond = LootCategory.forItem(new ItemStack(Items.DIAMOND_CHESTPLATE));
+        helper.assertTrue(diamond == Apoth.LootCategories.CHESTPLATE, "a diamond chestplate is still a chestplate");
+        helper.assertValueEqual(chest.getDescId(), GeneratedTexts.LOOT_CATEGORY_ROBE_CHEST, "its name's key");
+        helper.assertValueEqual(chest.getDescIdPlural(), GeneratedTexts.LOOT_CATEGORY_ROBE_CHEST_PLURAL,
+                "its plural's key");
+        helper.succeed();
+    }
+
+    /**
+     * Done when of RLM-546: a gem with armor bonuses only (Guardian) has no bonus for a robe category, so it cannot be
+     * socketed into a robe until the robe gem bonuses exist (RLM-548); a chestplate still takes it.
+     */
+    static void aGuardianGemFitsNoRobe(GameTestHelper helper) {
+        ItemStack guardian = ApotheosisGems.gem("core/guardian").toStack(Purity.PERFECT);
+        ItemStack robes = new ItemStack(GeneratedItems.NETHERITE_ROBES.get());
+        SocketHelper.setSockets(robes, 1);
+        ItemStack chestplate = new ItemStack(Items.NETHERITE_CHESTPLATE);
+        SocketHelper.setSockets(chestplate, 1);
+        helper.assertFalse(SocketHelper.canSocketGemInItem(robes, guardian), "Guardian does not fit Netherite Robes");
+        helper.assertTrue(SocketHelper.canSocketGemInItem(chestplate, guardian),
+                "Guardian fits a netherite chestplate");
+        helper.succeed();
+    }
+
+    /**
+     * RLM-546: our categories have no affix to roll yet, and their rarity overrides drop every affix slot, so a robe
+     * or a wand rolled (as the reforging table rolls it) at every rarity and tier gets the rarity and no affix, and
+     * Apotheosis logs no "no affixes available" error (the log check).
+     */
+    static void aRobeOrAWandRollsARarityWithoutAffixes(GameTestHelper helper) {
+        List<Item> items = List.of(GeneratedItems.NETHERITE_CAP.get(), GeneratedItems.NETHERITE_ROBES.get(),
+                GeneratedItems.NETHERITE_PANTS.get(), GeneratedItems.NETHERITE_SANDALS.get(),
+                GeneratedItems.NETHERITE_WAND.get());
+        for (WorldTier tier : new WorldTier[] {WorldTier.HAVEN, WorldTier.PINNACLE}) {
+            GenContext context = context(helper, tier, 546);
+            for (String id : RARITIES) {
+                LootRarity rarity = rarity(id);
+                for (Item item : items) {
+                    ItemStack rolled = LootController.createLootItem(new ItemStack(item), rarity, context);
+                    String what = BuiltInRegistries.ITEM.getKey(item) + " at " + id;
+                    helper.assertTrue(AffixHelper.getRarity(rolled).isBound()
+                            && AffixHelper.getRarity(rolled).get() == rarity, what + " has the rarity");
+                    helper.assertTrue(AffixHelper.getAffixes(rolled).isEmpty(), what + " rolls no affix");
+                }
+            }
         }
         helper.succeed();
     }

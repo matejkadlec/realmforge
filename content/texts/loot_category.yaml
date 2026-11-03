@@ -1,10 +1,26 @@
 # yaml-language-server: $schema=../../tools/schemas/texts.schema.json
-# Apotheosis's loot categories of ours (compat/apotheosis, RLM-273). Apotheosis reads a category's name from
+# Apotheosis's loot categories of ours (compat/apotheosis, RLM-273, RLM-546). Apotheosis reads a category's name from
 # loot_category.<namespace>.<path> and its plural from <that>.plural, in gem tooltips ("Wands: ...") and the reforging
-# screens.
+# screens. The robe categories are named by the caster sets' piece names (gear design: Cap, Robes, Pants, Sandals).
 id: loot_category
 texts:
   wand:
     en_us: Wand
   wand.plural:
     en_us: Wands
+  robe_head:
+    en_us: Caster Cap
+  robe_head.plural:
+    en_us: Caster Caps
+  robe_chest:
+    en_us: Caster Robes
+  robe_chest.plural:
+    en_us: Caster Robes
+  robe_legs:
+    en_us: Caster Pants
+  robe_legs.plural:
+    en_us: Caster Pants
+  robe_feet:
+    en_us: Caster Sandals
+  robe_feet.plural:
+    en_us: Caster Sandals

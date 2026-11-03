@@ -23,6 +23,7 @@ from realmforge_tools.schema.curve import CurveDef
 from realmforge_tools.schema.dimension_rules import DimensionRulesDef
 from realmforge_tools.schema.dungeon import DungeonTypeDef
 from realmforge_tools.schema.effect import EffectDef
+from realmforge_tools.schema.enchantment import EnchantmentDef
 from realmforge_tools.schema.item import ItemDef
 from realmforge_tools.schema.kill_xp_multiplier import KillXpMultiplierDef
 from realmforge_tools.schema.mob import MobDef
@@ -54,6 +55,7 @@ CONTENT_TYPES: dict[str, type] = {
     "quests": QuestDef,
     "kill_xp_multipliers": KillXpMultiplierDef,
     "effects": EffectDef,
+    "enchantments": EnchantmentDef,
     "spells": SpellDef,
     "mobs": MobDef,
     "bosses": BossDef,
@@ -119,6 +121,7 @@ __all__ = [
     "DimensionRulesDef",
     "DungeonTypeDef",
     "EffectDef",
+    "EnchantmentDef",
     "ItemDef",
     "KillXpMultiplierDef",
     "MobDef",

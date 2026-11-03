@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_rarity_overrides.schema.json
+# The wand category (RLM-273) has no affix to roll until the wand affixes (RLM-562), so every rarity keeps its sockets
+# and durability and drops its affix slots: a wand reforged gets a rarity without an error for each empty slot
+# (RLM-546). RLM-562 replaces this with the wand's own slots.
+id: wand
+category: realmforge:wand
+no_affixes: true

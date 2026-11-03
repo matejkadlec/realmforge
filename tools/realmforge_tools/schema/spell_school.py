@@ -112,3 +112,11 @@ def death_message_keys(school: SpellSchoolDef) -> tuple[str, str, str]:
     for a killer holding a named item (``.item``). All three get the same text."""
     base = f"death.attack.{school.message_id}"
     return base, f"{base}.player", f"{base}.item"
+
+
+# The damage type tag of magic hits (RLM-537), which Magic Protection lowers (content/enchantments/): the damage types
+# of every magic school, which generate/spell_schools.py adds, and vanilla's magic (a Potion of Harming, an evoker's
+# fangs, a witch's potions). Not #neoforge:is_magic, which also holds poison, wither, thorns and dragon's breath, and
+# which our schools stay out of so no Apotheosis magic reduction stacks with Magic Protection (RLM-549).
+MAGIC_TAG = f"{MOD_ID}:is_magic"
+VANILLA_MAGIC_DAMAGE_TYPES: tuple[str, ...] = ("minecraft:magic", "minecraft:indirect_magic")
