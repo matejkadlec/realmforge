@@ -141,7 +141,7 @@ class StatRulesTest {
                 """).getOrThrow();
         assertTrue(rule.stat().is(GeneratedStats.STRENGTH.getKey()));
         assertEquals(1, rule.perPoint().size());
-        assertTrue(rule.perPoint().getFirst().modifier().attribute().is(Attributes.MOVEMENT_SPEED));
+        assertEquals(Attributes.MOVEMENT_SPEED, rule.perPoint().getFirst().modifier().attribute());
         assertEquals(Operation.ADD_MULTIPLIED_BASE, rule.perPoint().getFirst().modifier().operation());
         assertEquals(Optional.of(0.2), rule.perPoint().getFirst().max());
         assertEquals(25, rule.milestones().getFirst().points());
