@@ -129,10 +129,17 @@ jobs:
           path: .cache/vanilla
           key: vanilla-server-${{ hashFiles('tools/realmforge_tools/project.py') }}
 
+      - uses: actions/cache@v6
+        with:
+          path: .cache/apotheosis
+          key: apotheosis-jar-${{ hashFiles('pack/mods/apotheosis.pw.toml') }}
+
+      # Both snapshots: `rf gen` copies whole entries from Apotheosis's, so only this finds a hand edit to it.
       - name: Re-extract and compare
         run: |
           uv sync --locked
           uv run rf ids vanilla
+          uv run rf ids apotheosis
           git diff --exit-code tools/id_universe
 
   pack:
