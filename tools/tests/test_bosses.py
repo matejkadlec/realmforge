@@ -307,6 +307,24 @@ def test_a_boss_casts_no_ally_spell(repo: RepoPaths) -> None:
     assert_problem(repo, "realmforge:test_regrow targets realmforge:ally; a boss casts with")
 
 
+@pytest.mark.parametrize(
+    ("old", "new", "path"),
+    [
+        ("realmforge:test_titan_harden", "realmforge:test_frostbite", "phases.1.on_enter.0"),
+        (
+            "realmforge:test_npc_target_bolt, cooldown",
+            "realmforge:test_frostbite, cooldown",
+            "phases.0.abilities.0.spell",
+        ),
+    ],
+)
+def test_a_boss_casts_no_passive_spell(repo: RepoPaths, old: str, new: str, path: str) -> None:
+    # RLM-554: a passive spell is never cast, so the boss would try it forever and it would never fire.
+    body(repo)
+    fight(repo, text=FIGHT.replace(old, new))
+    assert_problem(repo, f"{path}: realmforge:test_frostbite is passive")
+
+
 def test_generation_writes_the_fight_the_body_and_the_expectations(repo: RepoPaths) -> None:
     body(repo)
     fight(repo)

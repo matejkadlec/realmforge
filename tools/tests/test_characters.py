@@ -145,6 +145,13 @@ def test_class_no_race_lists_is_refused(repo: RepoPaths) -> None:
     assert_problem(repo, "no race lists realmforge:rogue in its classes")
 
 
+def test_a_racial_spell_is_never_passive(repo: RepoPaths) -> None:
+    # RLM-554: the racial slot (X) casts its spell, and the spell engine refuses to cast a passive one.
+    human = repo.content / "races" / "human.yaml"
+    human.write_text(human.read_text().replace("realmforge:will_to_survive", "realmforge:test_frostbite"))
+    assert_problem(repo, "racial_spell: realmforge:test_frostbite is passive")
+
+
 def test_a_class_names_its_role(repo: RepoPaths) -> None:
     write(repo.content / "classes" / "rogue.yaml", CLASS.replace("role: ranged\n", ""))
     assert_problem(repo, "role: Field required")
