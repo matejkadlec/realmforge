@@ -1,6 +1,7 @@
 package io.github.matejkadlec.realmforge.dungeon.instance;
 
 import com.mojang.logging.LogUtils;
+import com.mojang.serialization.Codec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -108,10 +109,13 @@ final class InstanceBuilder {
      */
     static List<DataMarker> markers(StructureTemplate template, int index, RoomPlacement room) {
         List<DataMarker> markers = new ArrayList<>();
+        // Deprecated, but vanilla's StructureBlockEntity writes and reads "mode" with it, and StructureMode has no other.
+        @SuppressWarnings("deprecation")
+        Codec<StructureMode> modeCodec = StructureMode.LEGACY_CODEC;
         for (StructureTemplate.StructureBlockInfo info
                 : template.filterBlocks(room.offset(), settings(room), Blocks.STRUCTURE_BLOCK)) {
             CompoundTag data = info.nbt();
-            if (data == null || data.read("mode", StructureMode.LEGACY_CODEC).orElse(null) != StructureMode.DATA) {
+            if (data == null || data.read("mode", modeCodec).orElse(null) != StructureMode.DATA) {
                 continue;
             }
             String name = data.getStringOr("metadata", "");

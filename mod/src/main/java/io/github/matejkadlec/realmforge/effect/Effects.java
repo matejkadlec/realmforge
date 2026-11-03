@@ -131,7 +131,7 @@ public final class Effects {
 
     private record Pending(LivingEntity target, Holder<MobEffect> effect) {
         boolean matches(LivingEntity entity, Holder<MobEffect> added) {
-            return entity == target && added.is(effect);
+            return entity == target && added.equals(effect);
         }
     }
 }

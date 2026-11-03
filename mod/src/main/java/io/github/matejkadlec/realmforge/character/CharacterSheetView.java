@@ -563,7 +563,7 @@ public record CharacterSheetView(Component title, CharacterTab character, List<S
         for (Entry entry : entries) {
             Holder<Attribute> attribute = entry.attribute();
             double current = value.applyAsDouble(attribute);
-            String shown = PERCENT_OF_BASE.stream().anyMatch(percent -> attribute.is(percent))
+            String shown = PERCENT_OF_BASE.contains(attribute)
                     ? StatNumbers.percentOf(current, base.applyAsDouble(attribute))
                     : StatNumbers.value(attribute, current);
             rows.add(new Row(attribute.value().getDescriptionId(), name(attribute), shown, STAT,

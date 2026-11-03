@@ -5,6 +5,7 @@ import io.github.matejkadlec.realmforge.Realmforge;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.LevelReader;
@@ -43,10 +44,15 @@ public final class BlockSwapProcessor extends StructureProcessor {
         TYPES.register(modBus);
     }
 
+    /**
+     * NeoForge's overload, which {@code StructureTemplate#processBlockInfos} calls; vanilla's {@code processBlock} is
+     * deprecated and reached only through this method's default body (RLM-581).
+     */
     @Override
-    public StructureTemplate.StructureBlockInfo processBlock(LevelReader level, BlockPos targetPosition,
+    public StructureTemplate.StructureBlockInfo process(LevelReader level, BlockPos targetPosition,
             BlockPos referencePos, StructureTemplate.StructureBlockInfo originalBlockInfo,
-            StructureTemplate.StructureBlockInfo processedBlockInfo, StructurePlaceSettings settings) {
+            StructureTemplate.StructureBlockInfo processedBlockInfo, StructurePlaceSettings settings,
+            @Nullable StructureTemplate template) {
         BlockState state = swaps.get(originalBlockInfo.pos());
         return state == null ? processedBlockInfo
                 : new StructureTemplate.StructureBlockInfo(processedBlockInfo.pos(), state, null);
