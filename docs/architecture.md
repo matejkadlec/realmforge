@@ -1801,8 +1801,8 @@ vanilla's multiplying by the level (`per_amplifier`, NeoForge's attribute curve:
 a stun included. **Frozen** (`realmforge:frozen`, RLM-541, RLM-539) is a root: -100 % movement speed and jump strength,
 but no `stun`, so its holder still attacks and casts; Shatter's crit chance and Ice Lance's bonus read it, Frostbite's
 proc applies it, and Will To Survive's cleanse breaks it as a loss of control. **Damage breaks it** (Matěj's playtest
-of 2026-11-01, RLM-542): an effect with `breaks_on_damage` (`StatusEffect#breakChance`, Frozen's 50 %, every Frost
-freeze's) ends at that chance whenever its holder takes damage of any kind, rolled for each hit after it lands
+of 2026-11-01, RLM-542): an effect with `breaks_on_damage_percent` (`StatusEffect#breakChance`, Frozen's 50 %, every
+Frost freeze's) ends at that chance whenever its holder takes damage of any kind, rolled for each hit after it lands
 (`effect/DamageBreaks`, `LivingDamageEvent.Post`), so the hit itself still sees it: Ice Lance's bonus and Shatter's crit
 chance count on the hit that may break it, and a spell that damages and then freezes (Frost Nova) freezes after its own
 damage. Bosses are immune boss by boss ([14.3](#143-bosses)). **Its look** (Matěj, 2026-10-30): an effect's `look` (`StatusEffect.Look`, Frozen's `ice`) reaches

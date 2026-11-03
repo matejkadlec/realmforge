@@ -305,7 +305,8 @@ Rules:
   gives `modifiers` and a `starting_kit` (items with a `count` of 1 to 64, given once, when the player's first character is created; every class's kit
   holds Bread ×32, Matěj, 2026-10-14, which validation checks), and its `spells` by level (C4: `{spell, level}`, each
   spell once, taught at rank 1 when the character reaches the level; the class's resource must pay for them; one at
-  level 1, decision D4, and at most 4 × N by the end of chapter N's level cap). A modifier is the stat rules' shape (`attribute`,
+  level 1, decision D4, and at most 4 × N active spells by the end of chapter N's level cap: passive spells never go on
+  the bar, so they do not count, Matěj, 2026-10-30, RLM-333). A modifier is the stat rules' shape (`attribute`,
   `operation`, `amount` or `amount_percent`, in the same units) and gives the same at every level: levels give stat
   points to spend instead (Matěj, 2026-10-15, RLM-196), so `per_level` is refused. A race's or class's `name` is a
   label (Title Case); its `description` is one or two sentences in the lore style guide's voice, which never assume
