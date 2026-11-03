@@ -8,6 +8,7 @@
     "ArcanaEnchantmentDataAccessor",
     "EnchantmentSelectionMixin",
     "InventorySortingStacksMixin",
+    "MobStunMixin",
     "PlayerBlockActionMixin",
     "PlayerExhaustionMixin",
     "RangedAttributeAccessor"

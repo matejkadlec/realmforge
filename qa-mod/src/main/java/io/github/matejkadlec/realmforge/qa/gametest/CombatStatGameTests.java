@@ -6,6 +6,7 @@ import io.github.matejkadlec.realmforge.combat.Overheal;
 import io.github.matejkadlec.realmforge.generated.GeneratedSpellSchools;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.qa.combat.TrainingDummy;
+import io.github.matejkadlec.realmforge.qa.combat.TrainingDummyMob;
 import io.github.matejkadlec.realmforge.qa.command.StatsCommands;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
@@ -40,7 +41,7 @@ public final class CombatStatGameTests {
     public static void armorPierceAndShredLowerTheArmorAHitMeets(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ServerPlayer player = player(helper, "qa-pierce");
-        Pillager dummy = TrainingDummy.spawn(level, helper.absoluteVec(new Vec3(2.5, 1, 2.5)), 0, 15);
+        TrainingDummyMob dummy = TrainingDummy.spawn(level, helper.absoluteVec(new Vec3(2.5, 1, 2.5)), 0, 15);
         DamageSource hit = level.damageSources().playerAttack(player);
 
         assertMetered(helper, dummy, hit, 10 * (1 - CombatGameTests.blocked(dummy, 10, 15, 0)), "no armor pierce");
@@ -294,7 +295,7 @@ public final class CombatStatGameTests {
     }
 
     /** One hit on the training dummy, measured by its meter from a fresh session. */
-    private static void assertMetered(GameTestHelper helper, Pillager dummy, DamageSource source, double expected,
+    private static void assertMetered(GameTestHelper helper, LivingEntity dummy, DamageSource source, double expected,
             String what) {
         TrainingDummy.reset(dummy);
         CombatGameTests.settle(dummy);

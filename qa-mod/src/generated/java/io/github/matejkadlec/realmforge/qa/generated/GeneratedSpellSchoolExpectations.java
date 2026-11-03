@@ -13,8 +13,8 @@ public final class GeneratedSpellSchoolExpectations {
      * opaque ARGB, as the school's codec reads {@code "#RRGGBB"}.
      */
     public record SpellSchoolExpectation(String id, String nameKey, boolean magic, int color,
-            int combatTextColor, String damageType, String messageId, Optional<String> power,
-            Optional<String> resistance) {
+            int combatTextColor, Optional<Integer> critColor, String damageType, String messageId,
+            Optional<String> power, Optional<String> resistance) {
     }
 
     public static final List<SpellSchoolExpectation> SPELL_SCHOOLS = List.of(
@@ -24,6 +24,7 @@ public final class GeneratedSpellSchoolExpectations {
                     true,
                     0xFFC77DFF,
                     0xFFC77DFF,
+                    Optional.of(0xFF9333EA),
                     "realmforge:arcane",
                     "realmforge.arcane",
                     Optional.of("realmforge:arcane_power"),
@@ -34,6 +35,7 @@ public final class GeneratedSpellSchoolExpectations {
                     true,
                     0xFFFF7F1F,
                     0xFFFF7F1F,
+                    Optional.of(0xFFCC5500),
                     "realmforge:fire",
                     "realmforge.fire",
                     Optional.of("realmforge:fire_power"),
@@ -44,6 +46,7 @@ public final class GeneratedSpellSchoolExpectations {
                     true,
                     0xFF7FD4FF,
                     0xFF7FD4FF,
+                    Optional.of(0xFF2D7DFF),
                     "realmforge:frost",
                     "realmforge.frost",
                     Optional.of("realmforge:frost_power"),
@@ -54,6 +57,7 @@ public final class GeneratedSpellSchoolExpectations {
                     false,
                     0xFFB2560D,
                     0xFFFFAA00,
+                    Optional.empty(),
                     "realmforge:physical",
                     "realmforge.physical",
                     Optional.empty(),

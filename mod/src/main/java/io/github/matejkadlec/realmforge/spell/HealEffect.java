@@ -3,6 +3,7 @@ package io.github.matejkadlec.realmforge.spell;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.matejkadlec.realmforge.combat.CritCounters;
 import io.github.matejkadlec.realmforge.combat.DamageCalculator;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import net.minecraft.world.entity.LivingEntity;
@@ -41,7 +42,7 @@ public record HealEffect(double amount, double perLevel, Coefficient coefficient
         double heal = SpellScaling.heal(base, spell.scalesWith(), schoolPower);
         DamageCalculator.Crit crit = DamageCalculator.crit(spell.crit().atLevel(context.spellLevel()),
                 context.casterStat(GeneratedStats.CRIT_CHANCE), context.casterStat(GeneratedStats.CRIT_DAMAGE),
-                context.random());
+                CritCounters.roller(context.caster(), CritCounters.Kind.SPELL, context.random()));
         target.heal((float) (heal * crit.multiplier()));
     }
 }

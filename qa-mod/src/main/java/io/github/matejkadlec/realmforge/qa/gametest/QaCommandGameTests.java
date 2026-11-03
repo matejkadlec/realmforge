@@ -11,6 +11,7 @@ import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.mob.MobLevels;
 import io.github.matejkadlec.realmforge.mob.MobScaling;
 import io.github.matejkadlec.realmforge.qa.combat.TrainingDummy;
+import io.github.matejkadlec.realmforge.qa.combat.TrainingDummyMob;
 import io.github.matejkadlec.realmforge.qa.command.MobCommands;
 import io.github.matejkadlec.realmforge.qa.command.PuppetCommands;
 import io.github.matejkadlec.realmforge.qa.command.ResourceCommands;
@@ -45,7 +46,6 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.monster.illager.Pillager;
 import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
@@ -64,11 +64,10 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
 /**
  * The commands a playtest handoff gives (the flow's "Reaching the state") reach their states: they run here through
  * the server's command dispatcher as typed, by a fake player with operator rights standing on the test platform. The
- * handoff selects the dummy with {@code @n[type=pillager]}; here other tests' pillagers may stand nearby, so the
- * selector also names the dummy's tag.
+ * handoff selects the dummy with {@code @n[type=realmforge_qa:training_dummy]}.
  */
 public final class QaCommandGameTests {
-    private static final String DUMMY = "@n[type=pillager,tag=" + TrainingDummy.TAG + "]";
+    private static final String DUMMY = "@n[type=realmforge_qa:training_dummy]";
 
     private QaCommandGameTests() {
     }
@@ -154,7 +153,7 @@ public final class QaCommandGameTests {
      */
     @QaGameTest
     public static void anOldDummyLosesItsLabel(GameTestHelper helper) {
-        Pillager dummy = TrainingDummy.spawn(helper.getLevel(), helper.absoluteVec(new Vec3(2.5, 1, 2.5)), 0, 0);
+        TrainingDummyMob dummy = TrainingDummy.spawn(helper.getLevel(), helper.absoluteVec(new Vec3(2.5, 1, 2.5)), 0, 0);
         Entity label = EntityType.TEXT_DISPLAY.create(helper.getLevel(), EntitySpawnReason.COMMAND);
         helper.assertTrue(label != null, "a text display can be created");
         label.addTag(TrainingDummy.OLD_LABEL_TAG);
@@ -178,7 +177,7 @@ public final class QaCommandGameTests {
     }
 
     /**
-     * RLM-185, RLM-186 and RLM-187's playtest: the dummy is a pillager, {@code /effect give} makes the player the
+     * RLM-185, RLM-186 and RLM-187's playtest: the dummy is a training dummy, {@code /effect give} makes the player the
      * applier of its poison and wither, and the splash potions and the bow the handoff gives arrive.
      */
     @QaGameTest
@@ -190,7 +189,7 @@ public final class QaCommandGameTests {
         List<LivingEntity> dummies = dummies(helper);
         helper.assertValueEqual(dummies.size(), 1, "dummies after /qa dummy");
         LivingEntity dummy = dummies.getFirst();
-        helper.assertValueEqual(dummy.getType(), EntityType.PILLAGER, "the dummy's type");
+        helper.assertValueEqual(dummy.getType(), TrainingDummy.ENTITY_TYPE.get(), "the dummy's type");
         run(server, player, "effect give " + DUMMY + " minecraft:poison 10");
         run(server, player, "effect give " + DUMMY + " minecraft:wither 10");
         DamageSource poison = new DamageSource(helper.getLevel().registryAccess()
@@ -371,7 +370,7 @@ public final class QaCommandGameTests {
         double crit = raw * (1 + player.getAttributeValue(GeneratedStats.CRIT_DAMAGE) + 0.3);
 
         // In Reckless Strike's box in front of the player (RLM-399).
-        Pillager dummy = TrainingDummy.spawn(helper.getLevel(), helper.absoluteVec(new Vec3(2.5, 1, 1.5)), 0, 0);
+        TrainingDummyMob dummy = TrainingDummy.spawn(helper.getLevel(), helper.absoluteVec(new Vec3(2.5, 1, 1.5)), 0, 0);
         try {
             for (double armor : new double[] {0, 20}) {
                 dummy.getAttribute(Attributes.ARMOR).setBaseValue(armor);

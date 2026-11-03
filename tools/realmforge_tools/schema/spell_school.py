@@ -57,6 +57,12 @@ class SpellSchoolDef(StrictModel):
         default=None,
         description='Colour of its floating combat text, "#RRGGBB"; the school\'s color when left out.',
     )
+    crit_color: HexColor | None = Field(
+        default=None,
+        description='Colour of a magic school\'s crit in floating combat text, "#RRGGBB": a darker shade of its combat '
+        "text colour, readable on dark backgrounds (RLM-553). Left out, the game darkens the combat text colour by a "
+        "fixed factor. Hits that are not magic (melee, ranged, the Physical school) crit in red whatever it says.",
+    )
     power: ResourceId | None = Field(
         default=None,
         description="Secondary stat (a share) that raises this school's damage, e.g. realmforge:fire_power.",
