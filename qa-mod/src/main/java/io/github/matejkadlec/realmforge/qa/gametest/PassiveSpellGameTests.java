@@ -42,7 +42,7 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * RLM-541: passive spells, learned with ranks, never cast and never on the spell bar. Improved Frostbolt raises
- * Frostbolt's damage, Two-Handed Weapon Specialization gives its Attack Damage only with a two-handed weapon in hand
+ * Frostbolt's damage, Two-Handed Specialization gives its Attack Damage only with a two-handed weapon in hand
  * and shortens a two-handed block's cooldown at rank 3, Shatter raises crit chance only against Frozen targets, and the
  * tooltip shows a passive's rank and the next one. Frostbolt's hit runs through its damage effect at once, with no
  * crit and no Spell Power, so the numbers are its base: 8 at rank 1 (RLM-534).
@@ -89,7 +89,7 @@ public final class PassiveSpellGameTests {
     }
 
     /**
-     * Done when of RLM-541: Two-Handed Weapon Specialization gives its +12 % Attack Damage at rank 3 only while a
+     * Done when of RLM-541: Two-Handed Specialization gives its +12 % Attack Damage at rank 3 only while a
      * two-handed weapon (Better Combat's: the test greatsword, a spear) is in the main hand, never with a one-handed
      * sword or an empty hand; and from rank 3 a two-handed block's cooldown is 0.25 s shorter.
      */

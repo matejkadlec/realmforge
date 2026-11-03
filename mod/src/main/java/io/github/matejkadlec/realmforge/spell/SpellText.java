@@ -56,7 +56,9 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
  *   <li>{@code crit_chance}: the spell's bonus crit chance at the rank, in percent, for a spell that has one;</li>
  *   <li>{@code bonus}: the one attribute modifier of the first applied status effect at its strength (the pipeline
  *   allows it only for an effect with one), in percent for a multiplied operation and in the attribute's points
- *   otherwise (Ice Barrier's Magic Shield);</li>
+ *   otherwise (Ice Barrier's Magic Shield); {@code bonus_<attribute>}, its modifier on that attribute, by the id's
+ *   path, for an effect with several (RLM-543: Battle Shout's {@code bonus_attack_damage} and
+ *   {@code bonus_attack_speed});</li>
  *   <li>{@code dot_damage}, {@code dot_duration}: the first damage over time's damage over its whole duration, raised
  *   by its school's power as its ticks are, and its duration in seconds (RLM-543: Rend's bleed);</li>
  *   <li>{@code max_health_heal}: the first heal's share of max health, in percent (Victory Rush);</li>
@@ -221,6 +223,11 @@ public final class SpellText {
             firstModifier(applied.effect(), amplifier).ifPresent(modifier -> values.put("bonus", decimal(
                     modifier.operation() == AttributeModifier.Operation.ADD_VALUE ? modifier.amount()
                             : modifier.amount() * PERCENT)));
+            // {bonus_<attribute>} (RLM-543): the modifier on each attribute, by the id's path (Battle Shout's two).
+            applied.effect().value().createModifiers(amplifier, (attribute, modifier) -> attribute.unwrapKey()
+                    .ifPresent(key -> values.put("bonus_" + key.identifier().getPath(), decimal(
+                            modifier.operation() == AttributeModifier.Operation.ADD_VALUE ? modifier.amount()
+                                    : modifier.amount() * PERCENT))));
         });
         first(effects, AreaEffect.class).map(AreaEffect::radius)
                 .or(() -> first(effects, ConeEffect.class).map(ConeEffect::range))
@@ -264,7 +271,7 @@ public final class SpellText {
             values.put("extra_damage", decimal(extra.damagePerPoint() * PERCENT));
         });
         spell.cost().flatMap(SpellCost::refundOnKill).ifPresent(refund -> {
-            values.put("refund", decimal(refund.amount()));
+            values.put("refund", decimal(refund.amountAt(Math.max(level, refund.fromLevel()))));
             values.put("refund_rank", Integer.toString(refund.fromLevel()));
         });
     }

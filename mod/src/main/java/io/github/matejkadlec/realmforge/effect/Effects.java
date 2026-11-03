@@ -31,7 +31,7 @@ public final class Effects {
      * Gives {@code target} {@code instance} from {@code caster}, remembering {@code source}. Returns whether the effect
      * was added or changed; when the target already had a stronger or longer one, nothing changes, its source included.
      */
-    public static boolean apply(LivingEntity target, MobEffectInstance instance, LivingEntity caster,
+    public static boolean apply(LivingEntity target, MobEffectInstance instance, @Nullable LivingEntity caster,
             EffectSource source) {
         Objects.requireNonNull(source, "source");
         Pending previous = pending;

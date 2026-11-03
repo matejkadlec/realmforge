@@ -11,11 +11,11 @@
     "type": "instant"
   },
   "cost": {
-    "amount": 5.0,
+    "amount": 10.0,
     "per_level": 0,
     "resource": "realmforge:rage"
   },
-  "cooldown_ticks": 100,
+  "cooldown_ticks": 80,
   "global_cooldown_ticks": 10,
   "max_level": 5,
   "crit": {

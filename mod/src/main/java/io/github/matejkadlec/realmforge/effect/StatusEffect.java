@@ -102,8 +102,8 @@ public class StatusEffect extends MobEffect {
 
     /**
      * Adds the modifier {@code id} on {@code attribute} that gives {@code amount} at the first level and
-     * {@code perAmplifier} more at each level above it, instead of vanilla's multiplying by the level (Battle Shout's
-     * 10, 15 and 20 %): NeoForge's attribute curve.
+     * {@code perAmplifier} more at each level above it, instead of vanilla's multiplying by the level: NeoForge's
+     * attribute curve.
      */
     public StatusEffect modifier(String attribute, String id, double amount, AttributeModifier.Operation operation,
             double perAmplifier) {

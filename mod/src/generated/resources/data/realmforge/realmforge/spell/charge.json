@@ -10,7 +10,7 @@
   "cast": {
     "type": "instant"
   },
-  "cooldown_ticks": 300,
+  "cooldown_ticks": 200,
   "global_cooldown_ticks": 10,
   "max_level": 2,
   "crit": {
@@ -35,14 +35,15 @@
           "type": "realmforge:apply_effect",
           "effect": "realmforge:stunned",
           "duration_ticks": 20,
+          "duration_per_level_ticks": 20,
           "amplifier": 0,
           "stronger_at_levels": []
         }
       ]
     },
     {
-      "amount": 15.0,
-      "per_level": 5.0,
+      "amount": 10.0,
+      "per_level": 10.0,
       "type": "realmforge:gain_resource",
       "resource": "realmforge:rage"
     }

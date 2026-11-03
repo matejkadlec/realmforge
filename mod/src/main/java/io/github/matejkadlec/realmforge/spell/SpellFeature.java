@@ -9,6 +9,7 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.registries.DataPackRegistryEvent;
 import net.neoforged.neoforge.registries.NewRegistryEvent;
 
@@ -42,6 +43,7 @@ public final class SpellFeature {
         Procs.addSource(Passives::procs);
         NeoForge.EVENT_BUS.addListener(CombatEvent.Block.class, Windows::onBlock);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, LivingDeathEvent.class, Windows::onDeath);
+        NeoForge.EVENT_BUS.addListener(ServerTickEvent.Post.class, Windows::onServerTick);
         // After the stats recompute of the same tick (StatsFeature registers first), so a pool sees its maximum.
         NeoForge.EVENT_BUS.addListener(PlayerTickEvent.Post.class, Resources::onPlayerTick);
     }

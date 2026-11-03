@@ -1,15 +1,16 @@
 # yaml-language-server: $schema=../../tools/schemas/spells.schema.json
 # The Arms Warrior's tree, row 4 (level 18) (RLM-543; Matěj, 2026-10-30, "Spell Trees to Level 18", chosen for M1): a
 # finishing blow, usable only on an enemy below 20 % of its health (RLM-540), of 8/10/12 + 150/175/200 % of Attack Damage.
-# It costs 15 rage and spends up to 30 more, 3 % more damage for each point; at rank 3 a kill refunds 10 rage, so a
-# Warrior can chain it through a pack. No cooldown, as in WoW: the rage paces it. It needs a melee weapon (RLM-499), and
+# It costs 15/20/25 rage and spends up to 30 more, 3 % more damage for each point; a kill refunds 5/10/15 rage, so a
+# Warrior can chain it through a pack (Matěj, 2026-11-03, RLM-543's Confluence comments). No cooldown, as in WoW: the
+# rage paces it. Its slot lights up while the Warrior's current target is below 20 % (Matěj's playtest of 2026-11-03). It needs a melee weapon (RLM-499), and
 # its target must be in the Warrior's melee swing (melee: true). Placeholder look until RLM-545.
 id: execute
 name: {en_us: Execute}
 description:
   en_us: >-
     Usable only on an enemy below {health_below}% health. Strikes it for {damage} damage, spending up to {extra_cost}
-    more rage for {extra_damage}% more damage each. From rank {refund_rank}, a kill refunds {refund} rage.
+    more rage for {extra_damage}% more damage each. A kill refunds {refund} rage.
 school: realmforge:physical
 scales_with: attack_damage
 targeting: {type: realmforge:enemy, melee: true}
@@ -17,8 +18,9 @@ cast: {type: instant}
 cost:
   resource: realmforge:rage
   amount: 15
+  per_level: 5
   extra: {max: 30, damage_per_point_percent: 3}
-  refund_on_kill: {amount: 10, from_level: 3}
+  refund_on_kill: {amount: 5, per_level: 5}
 max_level: 3
 requires: [melee_weapon]
 target_health_below_percent: 20

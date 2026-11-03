@@ -215,6 +215,7 @@ public final class ContentSpellGameTests {
         putIfSet(numbers, "armor_shred_per_level", damage.armorShredPerLevel());
         putIfSet(numbers, "penetration", damage.penetration());
         putIfSet(numbers, "penetration_per_level", damage.penetrationPerLevel());
+        putIfSet(numbers, "magic_shield_damage", damage.magicShieldDamage());
         return Map.copyOf(numbers);
     }
 

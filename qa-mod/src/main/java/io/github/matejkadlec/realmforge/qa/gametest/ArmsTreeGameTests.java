@@ -13,6 +13,7 @@ import io.github.matejkadlec.realmforge.qa.command.StatsCommands;
 import io.github.matejkadlec.realmforge.spell.CastFailure;
 import io.github.matejkadlec.realmforge.spell.CastResult;
 import io.github.matejkadlec.realmforge.spell.Charges;
+import io.github.matejkadlec.realmforge.spell.CombatState;
 import io.github.matejkadlec.realmforge.spell.DamageEffect;
 import io.github.matejkadlec.realmforge.spell.DamageOverTimeEffect;
 import io.github.matejkadlec.realmforge.spell.EffectContext;
@@ -23,6 +24,7 @@ import io.github.matejkadlec.realmforge.spell.ResourceTypes;
 import io.github.matejkadlec.realmforge.spell.Resources;
 import io.github.matejkadlec.realmforge.spell.Spell;
 import io.github.matejkadlec.realmforge.spell.SpellAttachments;
+import io.github.matejkadlec.realmforge.spell.SpellBarView;
 import io.github.matejkadlec.realmforge.spell.SpellCaster;
 import io.github.matejkadlec.realmforge.spell.SpellEffect;
 import io.github.matejkadlec.realmforge.spell.SpellTarget;
@@ -30,6 +32,7 @@ import io.github.matejkadlec.realmforge.spell.SpellText;
 import io.github.matejkadlec.realmforge.spell.SpellTooltip;
 import io.github.matejkadlec.realmforge.spell.Spellbook;
 import io.github.matejkadlec.realmforge.spell.Spells;
+import io.github.matejkadlec.realmforge.spell.Windows;
 import io.github.matejkadlec.realmforge.stats.EntityLevel;
 import io.github.matejkadlec.realmforge.stats.StatsAttachments;
 import java.util.ArrayList;
@@ -66,9 +69,9 @@ import net.minecraft.world.phys.Vec3;
  * The Arms Warrior's "Bloodletter" tree (RLM-543; Matěj, 2026-10-30, "Spell Trees to Level 18"): every active spell's
  * damage at rank 1 and at its highest rank at a fixed Attack Damage (system C, RLM-534), Rend's bleed, Overpower only
  * after a block, Victory Rush only after a kill that is not gray and its heal, Execute only below 20 % with its extra
- * rage and its refund at rank 3, Charge's rush and stun round the landing and its distance by rank, Deep Wounds' bleed
- * of a share of the crit, Taste for Blood's proc, the tooltips' next rank, the Warrior learning the tree by its rows
- * (1, 6, 12, 18), and the handoff's setup line against Astone.
+ * rage, its refund and its lit window, Charge's rush to the near side and stun round the landing and its distance by
+ * rank, Deep Wounds' bleed of a share of the crit, Taste for Blood's proc, the tooltips' next rank, the Warrior
+ * learning the tree by its rows (1, 6, 12, 18), and the handoff's setup line against Astone.
  */
 public final class ArmsTreeGameTests {
     private static final double HEALTH = SpellGameTests.HEALTH;
@@ -82,7 +85,7 @@ public final class ArmsTreeGameTests {
      * The playtest's setup line against Astone (RLM-543, RLM-503; gear.md's expected gear for Astone, RLM-551): a new
      * Human Warrior, chapter 1's raised cap, level 18, the tree at a 17-point build on top of the kit's rank 1 (Slam and
      * Overpower 5, Deep Wounds, Rend and Execute 3, Taste for Blood, Charge and Victory Rush 2, Battle Shout and
-     * Two-Handed Weapon Specialization 1), full netherite armor with Protection V and Unbreaking V, and a netherite
+     * Two-Handed Specialization 1), full netherite armor with Protection V and Unbreaking V, and a netherite
      * sword with Sharpness V and Unbreaking V; the kit's shield stays for Overpower's blocks. The handoff gives it to
      * Matěj as {@code execute as @p at @p run} and this line.
      */
@@ -103,7 +106,8 @@ public final class ArmsTreeGameTests {
     /**
      * Each active spell's first damage effect at rank 1 and at its highest rank, at 10 Attack Damage, no crit and no
      * school power: the table's amount plus its coefficient of 10 (Slam 4 + 120 % and 10 + 200 %, Rend 2 + 30 % and
-     * 4 + 50 %, Overpower 5 + 100 % and 7 + 140 %, Victory Rush 3 + 70 % and 5 + 90 %, Execute 8 + 150 % and 12 + 200 %),
+     * 4 + 50 %, Overpower 5 + 100 % and 7 + 140 %, Victory Rush 5 + 80 % and 7 + 100 %, Execute 8 + 150 % and
+     * 12 + 200 %),
      * on a husk without armor; Rend's bleed 4 + 60 % and 8 + 100 % over its 6 s.
      */
     @QaGameTest
@@ -114,7 +118,7 @@ public final class ArmsTreeGameTests {
                 GeneratedSpells.SLAM, new double[] {1, 16, 5, 30},
                 GeneratedSpells.REND, new double[] {1, 5, 3, 9},
                 GeneratedSpells.OVERPOWER, new double[] {1, 15, 5, 21},
-                GeneratedSpells.VICTORY_RUSH, new double[] {1, 10, 3, 14},
+                GeneratedSpells.VICTORY_RUSH, new double[] {1, 13, 3, 17},
                 GeneratedSpells.EXECUTE, new double[] {1, 23, 3, 32});
         table.forEach((key, checks) -> {
             Holder.Reference<Spell> spell = spell(helper, key);
@@ -150,7 +154,7 @@ public final class ArmsTreeGameTests {
 
     /**
      * Overpower is refused while its window is closed; the player's raised greatsword blocking a zombie's hit opens it
-     * for 5 s, a cast uses it for 5 + 100 % of Attack Damage and 5 rage, and the next cast is refused again.
+     * for 5 s, a cast uses it for 5 + 100 % of Attack Damage and 10 rage, and the next cast is refused again.
      */
     @QaGameTest
     public static void overpowerIsUsableOnlyAfterABlock(GameTestHelper helper) {
@@ -178,7 +182,7 @@ public final class ArmsTreeGameTests {
         assertCast(helper, player, GeneratedSpells.OVERPOWER, husk);
         helper.assertTrue(close(HEALTH - husk.getHealth(), expected), "Overpower hit for " + expected + ": "
                 + (HEALTH - husk.getHealth()));
-        helper.assertTrue(close(Resources.amount(player, ResourceTypes.RAGE), 95), "for 5 rage");
+        helper.assertTrue(close(Resources.amount(player, ResourceTypes.RAGE), 90), "for 10 rage");
         Spells.resetCooldowns(player);
         assertRefused(helper, player, GeneratedSpells.OVERPOWER, husk, CastFailure.NO_WINDOW);
         logout(player);
@@ -187,7 +191,7 @@ public final class ArmsTreeGameTests {
 
     /**
      * Victory Rush is refused without a kill and after a gray one (4 levels below a level 10 player); a kill 3 levels
-     * below opens it, and a cast strikes for 3 + 70 % of Attack Damage and heals the player 10 % of their max health.
+     * below opens it, and a cast strikes for 5 + 80 % of Attack Damage and heals the player 10 % of their max health.
      */
     @QaGameTest
     public static void victoryRushIsUsableOnlyAfterAKillThatIsNotGrayAndHeals(GameTestHelper helper) {
@@ -208,7 +212,7 @@ public final class ArmsTreeGameTests {
         MobLevels.setLevel(worthy, 7);
         worthy.hurtServer(helper.getLevel(), helper.getLevel().damageSources().playerAttack(player), 100_000);
         player.setHealth(10);
-        double expected = 3 + 0.7 * attackDamage(player);
+        double expected = 5 + 0.8 * attackDamage(player);
         assertCast(helper, player, GeneratedSpells.VICTORY_RUSH, husk);
         helper.assertTrue(close(HEALTH - husk.getHealth(), expected), "Victory Rush hit for " + expected + ": "
                 + (HEALTH - husk.getHealth()));
@@ -223,11 +227,12 @@ public final class ArmsTreeGameTests {
     }
 
     /**
-     * Execute is refused on a target at 20 % health or more; below it, it costs 15 rage and spends up to 30 more, 3 %
-     * more damage each (45 rage: × 1.9). A kill refunds 10 rage at rank 3 and nothing at rank 1.
+     * Execute is refused on a target at 20 % health or more; below it, it costs 15 rage at rank 1 and spends up to 30
+     * more, 3 % more damage each (45 rage: × 1.9). A kill refunds 5 rage at rank 1 and 15 at rank 3 (Matěj,
+     * 2026-11-03), where the cast costs 25 and 45 rage leaves 20 extra.
      */
     @QaGameTest
-    public static void executeIsUsableOnlyBelowAFifthAndRefundsAKillAtRank3(GameTestHelper helper) {
+    public static void executeIsUsableOnlyBelowAFifthAndRefundsAKill(GameTestHelper helper) {
         ServerPlayer player = fighter(helper, "qa-arms-execute", new Vec3(2.5, 1, 0.5));
         learn(helper, player, GeneratedSpells.EXECUTE, 1);
         player.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.STONE_SWORD));
@@ -254,8 +259,8 @@ public final class ArmsTreeGameTests {
             dying.setHealth(5);
             assertCast(helper, player, GeneratedSpells.EXECUTE, dying);
             helper.assertFalse(dying.isAlive(), "rank " + rank + "'s Execute killed the husk");
-            helper.assertTrue(close(Resources.amount(player, ResourceTypes.RAGE), rank == 3 ? 10 : 0), "rank " + rank
-                    + "'s kill refunded " + (rank == 3 ? "10 rage" : "nothing") + ": "
+            helper.assertTrue(close(Resources.amount(player, ResourceTypes.RAGE), rank == 3 ? 15 : 5), "rank " + rank
+                    + "'s kill refunded " + (rank == 3 ? 15 : 5) + " rage: "
                     + Resources.amount(player, ResourceTypes.RAGE));
         }
         logout(player);
@@ -263,9 +268,64 @@ public final class ArmsTreeGameTests {
     }
 
     /**
+     * Execute lights up on the spell bar while the player's current target is below a fifth of its health (Matěj's
+     * playtest of 2026-11-03): the server's check opens its entry, a cast that leaves the target alive keeps it, and it
+     * goes out once the target is healed or an enemy at full health becomes the current target; the cast itself still
+     * checks only the target it aims at.
+     */
+    @QaGameTest
+    public static void executeLightsUpWhileTheCurrentTargetIsLow(GameTestHelper helper) {
+        ServerPlayer player = fighter(helper, "qa-arms-execute-lit", new Vec3(2.5, 1, 0.5));
+        learn(helper, player, GeneratedSpells.EXECUTE, 1);
+        player.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.STONE_SWORD));
+        Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 1));
+        Husk other = SpellGameTests.husk(helper, new BlockPos(3, 1, 1));
+        CombatState state = player.getData(SpellAttachments.COMBAT);
+        long now = helper.getLevel().getGameTime();
+        Windows.checkTargetHealth(player);
+        helper.assertFalse(lit(helper, player), "no current target: Execute is dark");
+
+        husk.setHealth((float) (HEALTH * 0.15));
+        state.setCurrentTarget(husk.getUUID(), now);
+        Windows.checkTargetHealth(player);
+        helper.assertTrue(lit(helper, player), "a current target below a fifth lights Execute");
+        Resources.set(player, ResourceTypes.RAGE, 15);
+        assertCast(helper, player, GeneratedSpells.EXECUTE, husk);
+        helper.assertTrue(husk.isAlive() && lit(helper, player), "a cast that leaves it alive keeps Execute lit");
+
+        husk.setHealth((float) HEALTH);
+        Windows.checkTargetHealth(player);
+        helper.assertFalse(lit(helper, player), "healed above a fifth, Execute is dark again");
+        husk.setHealth((float) (HEALTH * 0.15));
+        Windows.checkTargetHealth(player);
+        helper.assertTrue(lit(helper, player), "below a fifth again");
+        state.setCurrentTarget(other.getUUID(), now);
+        Windows.checkTargetHealth(player);
+        helper.assertFalse(lit(helper, player), "an enemy at full health as the current target puts it out");
+
+        Spells.resetCooldowns(player);
+        Resources.set(player, ResourceTypes.RAGE, 15);
+        assertCast(helper, player, GeneratedSpells.EXECUTE, husk);
+        logout(player);
+        helper.succeed();
+    }
+
+    /** Whether Execute's slot on {@code player}'s spell bar glows, as the client draws it from the synced windows. */
+    private static boolean lit(GameTestHelper helper, ServerPlayer player) {
+        SpellBarView view = SpellBarView.of(player.getData(SpellAttachments.SPELLBOOK),
+                player.getData(SpellAttachments.COMBAT), helper.getLevel().getGameTime(),
+                key -> Spells.get(player.registryAccess(), key).map(Holder::value), 0,
+                Spell.DEFAULT_GLOBAL_COOLDOWN_TICKS);
+        SpellBarView.Slot slot = view.slots().stream()
+                .filter(candidate -> candidate.key().equals(Optional.of(GeneratedSpells.EXECUTE))).findFirst()
+                .orElseThrow(() -> helper.assertionException(Component.literal("Execute is on the bar")));
+        return slot.windowTicks() > 0;
+    }
+
+    /**
      * A husk's Charge (the server moves mobs, not a test's fake players) rushes it at its target 7 blocks away until it
-     * stands in front of it, and stuns for 1 s the target and a husk beside it, within 1.5 blocks of the landing, but not
-     * a husk 4 blocks to the side.
+     * stands against the side of its target it came from, never through it (Matěj, 2026-11-03), and stuns for 1 s the
+     * target and a husk beside it, within 1.5 blocks of the landing, but not a husk 4 blocks to the side.
      */
     @QaGameTest(template = QaGameTests.PLATFORM_17X17, timeoutTicks = 60)
     public static void chargeRushesAtItsTargetAndStunsRoundTheLanding(GameTestHelper helper) {
@@ -279,16 +339,43 @@ public final class ArmsTreeGameTests {
         helper.assertTrue(Charges.isCharging(caster), "the husk charges");
         helper.succeedWhen(() -> {
             helper.assertFalse(Charges.isCharging(caster), "the husk landed");
-            helper.assertTrue(Math.abs(target.getZ() - caster.getZ()) < 1.2, "in front of its target: "
-                    + caster.position());
+            assertLandedOnTheNearSide(helper, caster, target, -1);
             helper.assertTrue(target.hasEffect(GeneratedEffects.STUNNED), "the target is stunned");
             helper.assertTrue(beside.hasEffect(GeneratedEffects.STUNNED), "the husk beside it is stunned");
             helper.assertFalse(aside.hasEffect(GeneratedEffects.STUNNED), "the husk 4 blocks aside is not");
         });
     }
 
+    /** A Charge from the target's other side stops at that side, its back, without passing through it. */
+    @QaGameTest(template = QaGameTests.PLATFORM_17X17, timeoutTicks = 60)
+    public static void chargeStopsOnTheSideItCameFrom(GameTestHelper helper) {
+        Husk caster = helper.spawnWithNoFreeWill(EntityType.HUSK, new BlockPos(8, 1, 15));
+        MobLevels.setLevel(caster, EntityLevel.MIN);
+        Husk target = SpellGameTests.husk(helper, new BlockPos(8, 1, 8));
+        CastResult result = SpellCaster.cast(caster, GeneratedSpells.CHARGE, target);
+        helper.assertTrue(result.success(), "Charge was refused: " + result.failure());
+        helper.succeedWhen(() -> {
+            helper.assertFalse(Charges.isCharging(caster), "the husk landed");
+            assertLandedOnTheNearSide(helper, caster, target, 1);
+        });
+    }
+
     /**
-     * A player's Charge needs its target at least 3 blocks away and at most 10 at rank 1, 12 at rank 2, and gives 15
+     * {@code caster} stands against {@code target} on the side it came from ({@code side} -1 below the target's z, 1
+     * above), their boxes apart but within half a block, in line with it.
+     */
+    private static void assertLandedOnTheNearSide(GameTestHelper helper, LivingEntity caster, LivingEntity target,
+            int side) {
+        double dz = (caster.getZ() - target.getZ()) * side;
+        double touching = (caster.getBbWidth() + target.getBbWidth()) / 2;
+        helper.assertTrue(dz >= touching - 1e-3 && dz <= touching + 0.5, "against its target on the side it came "
+                + "from: " + caster.position() + ", the target at " + target.position());
+        helper.assertTrue(Math.abs(caster.getX() - target.getX()) < 0.2, "in line with its target: "
+                + caster.position());
+    }
+
+    /**
+     * A player's Charge needs its target at least 3 blocks away and at most 10 at rank 1, 12 at rank 2, and gives 10
      * rage at rank 1 and 20 at rank 2.
      */
     @QaGameTest(template = QaGameTests.PLATFORM_17X17)
@@ -302,12 +389,12 @@ public final class ArmsTreeGameTests {
         assertRefused(helper, player, GeneratedSpells.CHARGE, near, CastFailure.TOO_CLOSE);
         assertRefused(helper, player, GeneratedSpells.CHARGE, far, CastFailure.OUT_OF_RANGE);
         assertCast(helper, player, GeneratedSpells.CHARGE, middle);
-        helper.assertTrue(close(Resources.amount(player, ResourceTypes.RAGE), 15), "15 rage at rank 1");
+        helper.assertTrue(close(Resources.amount(player, ResourceTypes.RAGE), 10), "10 rage at rank 1");
 
         learn(helper, player, GeneratedSpells.CHARGE, 2);
         Spells.resetCooldowns(player);
         assertCast(helper, player, GeneratedSpells.CHARGE, far);
-        helper.assertTrue(close(Resources.amount(player, ResourceTypes.RAGE), 35), "20 more at rank 2");
+        helper.assertTrue(close(Resources.amount(player, ResourceTypes.RAGE), 30), "20 more at rank 2");
         logout(player);
         helper.succeed();
     }
@@ -375,7 +462,7 @@ public final class ArmsTreeGameTests {
 
     /**
      * The tooltips show the next rank's numbers below a spell's own: Charge's reach and rage, Rend's hit and bleed,
-     * Execute's refund from rank 3, Deep Wounds' share; and the range line follows Charge's rank.
+     * Execute's refund, Deep Wounds' share; and the range line follows Charge's rank.
      */
     @QaGameTest
     public static void tooltipsShowTheNextRank(GameTestHelper helper) {
@@ -384,8 +471,8 @@ public final class ArmsTreeGameTests {
         helper.assertTrue(charge.contains("10 block range"), "rank 1 reaches 10 blocks: " + charge);
         helper.assertValueEqual(charge.subList(charge.size() - 3, charge.size()), List.of(
                 "Charges an enemy 3 to 10 blocks away and stuns every enemy within 1.5 blocks of where you land for 1 "
-                        + "sec. Generates 15 rage.", "Next rank:",
-                "Charges an enemy 3 to 12 blocks away and stuns every enemy within 1.5 blocks of where you land for 1 "
+                        + "sec. Generates 10 rage.", "Next rank:",
+                "Charges an enemy 3 to 12 blocks away and stuns every enemy within 1.5 blocks of where you land for 2 "
                         + "sec. Generates 20 rage."), "Charge at rank 1 and rank 2");
         helper.assertTrue(tooltip(helper, player, spell(helper, GeneratedSpells.CHARGE).value(), 2)
                 .contains("12 block range"), "rank 2 reaches 12 blocks");
@@ -397,7 +484,7 @@ public final class ArmsTreeGameTests {
                 "Rend at rank 1 and rank 2; as plain text the school's icon reads as its name");
         List<String> execute = tooltip(helper, player, spell(helper, GeneratedSpells.EXECUTE).value(), 2);
         helper.assertValueEqual(execute.getLast(), "Usable only on an enemy below 20% health. Strikes it for Physical "
-                + "32 damage, spending up to 30 more rage for 3% more damage each. From rank 3, a kill refunds 10 rage.",
+                + "32 damage, spending up to 30 more rage for 3% more damage each. A kill refunds 15 rage.",
                 "Execute's next rank, rank 3");
         List<String> wounds = tooltip(helper, player, spell(helper, GeneratedSpells.DEEP_WOUNDS).value(), 1);
         helper.assertValueEqual(wounds.subList(wounds.size() - 3, wounds.size()), List.of(
@@ -410,7 +497,7 @@ public final class ArmsTreeGameTests {
 
     /**
      * The Warrior learns the tree at rank 1 by its rows: Slam, Charge and Deep Wounds at level 1; Rend, Battle Shout and
-     * Two-Handed Weapon Specialization at 6; Taste for Blood, Overpower and Victory Rush at 12; Execute at 18 (once
+     * Two-Handed Specialization at 6; Taste for Blood, Overpower and Victory Rush at 12; Execute at 18 (once
      * chapter 1 raised the cap); the bar holds the actives in that order, never the passives, and Reckless Strike and
      * Shield Bash never come.
      */

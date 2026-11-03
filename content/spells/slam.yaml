@@ -5,8 +5,8 @@
 # target's armor per rank. It needs a melee weapon (RLM-499). An area
 # swing (RLM-399): Better Combat's sword swing at the player's melee reach (Matěj's playtest of 2026-10-31), 120° wide,
 # every enemy in it taking the same damage, with no target needed; it plays out over a 0.5 s swing and hits at its
-# middle. Rage per second of cooldown: 30 / 6 s = 5. Scaling system C (Matěj,
-# 2026-10-30, RLM-534): 4/5.5/7/8.5/10 + 120/140/160/180/200 % of Attack Damage.
+# middle. A 4 s cooldown (Matěj, 2026-11-03, RLM-543's Confluence comments; it was 6 s), so 30 / 4 s = 7.5 rage a
+# second. Scaling system C (Matěj, 2026-10-30, RLM-534): 4/5.5/7/8.5/10 + 120/140/160/180/200 % of Attack Damage.
 id: slam
 name: {en_us: Slam}
 description: {en_us: "Slams every enemy in front of you for {damage} damage, ignoring {armor_shred}% of their armor."}
@@ -15,7 +15,7 @@ scales_with: attack_damage
 targeting: {type: realmforge:self}
 cast: {type: instant, animation_seconds: 0.5, hit_at_percent: 50}
 cost: {resource: realmforge:rage, amount: 30}
-cooldown_seconds: 6
+cooldown_seconds: 4
 max_level: 5
 requires: [melee_weapon]
 effects:

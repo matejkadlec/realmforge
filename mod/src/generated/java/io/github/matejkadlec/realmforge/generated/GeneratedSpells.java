@@ -203,7 +203,7 @@ public final class GeneratedSpells {
     /** {@code realmforge:test_victory_rush} from {@code content/spells/test_victory_rush.yaml}: physical, enemy, damage. */
     public static final ResourceKey<Spell> TEST_VICTORY_RUSH = key("test_victory_rush");
 
-    /** {@code realmforge:two_handed_weapon_specialization} from {@code content/spells/two_handed_weapon_specialization.yaml}: no school, passive. */
+    /** {@code realmforge:two_handed_weapon_specialization} from {@code content/spells/two_handed_weapon_specialization.yaml}: physical, passive. */
     public static final ResourceKey<Spell> TWO_HANDED_WEAPON_SPECIALIZATION = key("two_handed_weapon_specialization");
 
     /** {@code realmforge:victory_rush} from {@code content/spells/victory_rush.yaml}: physical, enemy, damage, heal. */

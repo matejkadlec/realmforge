@@ -543,11 +543,11 @@ AREA = (
     [
         (
             {"type": "realmforge:apply_effect", "effect": "minecraft:slowness", "duration_seconds": 0},
-            "duration_seconds is more than 0 and at most 60",
+            "duration_seconds is more than 0 and at most 600 ",
         ),
         (
-            {"type": "realmforge:apply_effect", "effect": "minecraft:slowness", "duration_seconds": 90},
-            "research SP-8",
+            {"type": "realmforge:apply_effect", "effect": "minecraft:slowness", "duration_seconds": 900},
+            "at most 600 ",
         ),
         (
             {

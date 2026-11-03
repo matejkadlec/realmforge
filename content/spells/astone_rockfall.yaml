@@ -1,7 +1,8 @@
 # yaml-language-server: $schema=../../tools/schemas/spells.schema.json
 # Astone's rockfall (W5b, RLM-491), from her second phase on: rocks come down where her target stood when she began
 # the 2 s cast, with cracking rock as its tell and a ring of dark grey dust marking the spot (BossMob). Step out of the
-# ring to dodge it; it punishes standing still at range. Proposals for Matěj's playtest.
+# ring to dodge it; it punishes standing still at range. Three times its first damage, and 15 % more armor shred and
+# magic shield damage on her own 15 % (RLM-580; Matěj, 2026-11-03).
 id: astone_rockfall
 name: {en_us: Rockfall}
 description: {en_us: "Brings rocks down on a spot, dealing {damage} damage to every enemy within {radius} blocks of it."}
@@ -21,4 +22,4 @@ effects:
     interval_seconds: 0.5
     ring_color: "#8C8C8C"
     effects:
-      - {type: realmforge:damage, amount: 5, attack_damage_percent: 75}
+      - {type: realmforge:damage, amount: 15, attack_damage_percent: 75, armor_shred_percent: 15, magic_shield_damage_percent: 15}

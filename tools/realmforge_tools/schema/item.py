@@ -43,7 +43,7 @@ MELEE_WEAPONS_TAG = f"{MOD_ID}:melee_weapons"
 # The item tag of sword-like weapons (Matěj, 2026-10-15, RLM-219): the Human's Sword Specialization. Vanilla's swords
 # today; katanas, longswords and maybe rapiers once the pack has them.
 SWORD_LIKE_TAG = f"{MOD_ID}:sword_like"
-# The item tag of two-handed weapons (RLM-541): Two-Handed Weapon Specialization applies while one is in the main hand.
+# The item tag of two-handed weapons (RLM-541): Two-Handed Specialization applies while one is in the main hand.
 # Every weapon Better Combat calls two-handed, spears included; Better Combat decides that at run time, so the data
 # tag is empty and compat/bettercombat/TwoHandedWeapons binds its members into the items, as for the weapons a player
 # raises to block. Not TWO_HANDED_TAG's two-handed gear (wands).

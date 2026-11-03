@@ -985,7 +985,11 @@ and before health (step 5), and refills to full, all at once, 10 seconds (`Magic
 the last damage the player took, any damage, even with the pool empty (Matěj's playtest, 2026-10-14); a new player
 entity starts full. The pool syncs to its owner on every change, and `client/hud/MagicShieldHud` draws it as a
 translucent bar over the bottom row of hearts, a new colour every 10 points ([18](#18-client-code-rendering-gui-input)).
-Like absorption hearts, it takes any damage that reaches health (falls, drowning, starvation included).
+Like absorption hearts, it takes any damage that reaches health (falls, drowning, starvation included). A hit may
+drain more of it than it takes of the hit (RLM-580, Astone): the attacker's `realmforge:magic_shield_damage`, a stat
+only mobs' data set (hidden on the character sheet), plus its spell's own (`DamageEffect`'s `magic_shield_damage`, in
+the `HitBonus`) is the bonus; the shield loses the damage left × (1 + bonus), up to its points, and takes that loss
+÷ (1 + bonus) of the hit, so health gets the rest (`DamageCalculator#shieldDrained`, `#shieldAbsorbs`).
 
 `DamageCalculatorTest` covers the formulas, the armor formula against vanilla's `CombatRules` over a grid of damage,
 armor and toughness; `DamageTypeResistanceGameTests` plays each damage type resistance against a vanilla source (a
@@ -1067,7 +1071,7 @@ does**, in step 3 of the pipeline ([9.1](#91-damage-pipeline)), after the dodge:
 
 The numbers are in the common config (`combat/CombatConfig`, [19.2](#192-configuration)) for Matěj to tune in
 playtests: the full block 0.5 s, the share 50 %, the cooldown 1 s, the arc 180° (the front half). A player's passive
-spells may shorten the cooldown (RLM-541: Two-Handed Weapon Specialization's 0.25 s at rank 3): `spell` hands
+spells may shorten the cooldown (RLM-541: Two-Handed Specialization's 0.25 s at rank 3): `spell` hands
 `WeaponBlocks#cooldownTicks` the reduction through a provider (`cooldownReductionBy`), never below 0. Apotheosis's shield
 affixes (Retreating, Psychic, ...) neither roll on these weapons, which are no shields, nor fire on their blocks: they
 listen to `LivingShieldBlockEvent`, which only vanilla's shield-style blocking (`minecraft:blocks_attacks`) posts.
@@ -1087,7 +1091,7 @@ own set of tags; the tag's list of items, which the core mod's data replaces wit
 Mechanics' default is every sword), stays empty. The server logs the raised weapons when it starts. The pack has no two-handed weapon yet but the spears; the QA mod's
 `realmforge_qa:test_greatsword` is one (Better Combat's fallback reads it as a claymore). A Better Combat preset set
 on a single stack does not count, since the tag is per item. The same binding fills `#realmforge:two_handed_weapons`
-with every weapon Better Combat calls two-handed, spears included (RLM-541): Two-Handed Weapon Specialization applies
+with every weapon Better Combat calls two-handed, spears included (RLM-541): Two-Handed Specialization applies
 while one is in the main hand. It is not `#realmforge:two_handed`, our two-handed gear (wands), which locks shields.
 
 `WeaponBlocksTest` covers the amounts and the arc; `WeaponBlockGameTests` raises the test greatsword at a zombie's
@@ -1398,7 +1402,7 @@ Its name and description are translation keys from C3b, the description's number
   damage number counts the player's passives. Mobs know no spells, so passives give them nothing. A passive's `procs`
   (RLM-540: Frostbite, Taste for Blood, Deep Wounds) reach the proc engine through `Passives#procs`, at the rank, each with
   its internal cooldown per target ([12](#12-talents)). The first are
-  Improved Frostbolt, Frostbite, Shatter and Two-Handed Weapon Specialization (Attack Damage +4/8/12 % with
+  Improved Frostbolt, Frostbite, Shatter and Two-Handed Specialization (Attack Damage +4/8/12 % with
   `#realmforge:two_handed_weapons` in hand, as the Human's Sword Specialization gives its +10 %), which the M1 spell
   trees teach (the Frost Mage's kit by its rows since RLM-542, [11.7](#117-class-spells-and-stances); the Arms
   Warrior's with RLM-543).
@@ -1422,14 +1426,17 @@ Its name and description are translation keys from C3b, the description's number
   assistance and the tooltip's range line by rank use). A cost may name **extra** resource (`SpellCost.Extra`, Execute's
   up to 30 more rage): a player's cast spends as much of it as they have after the cost, and its damage effects are
   multiplied by 1 + the share a point times the points spent (the `EffectContext`'s damage scale); and a **refund for a
-  kill** from a rank on (`SpellCost.KillRefund`, RLM-543: Execute's 10 rage at rank 3), which `DamageEffect` gives a
-  player whose hit killed its target. A damage effect may deal more against a target with a status effect
+  kill**, growing per rank and from a rank on (`SpellCost.KillRefund`, RLM-543: Execute's 5/10/15 rage; Matěj,
+  2026-11-03), which `DamageEffect` gives a player whose hit killed its target. A damage effect may deal more against a target with a status effect
   (`against_effect`, growing per rank: Ice Lance's × 2 to × 3 against Frozen, RLM-542).
 - **The Arms tree's effects** (RLM-543): `realmforge:charge` (`spell/ChargeEffect`) rushes the caster at its enemy at
-  its speed; `spell/Charges` steers it on the server every tick, setting its horizontal velocity toward the target (at
-  most the gap left) and marking it hurt, so a player's client receives it as it receives a knockback, and lands it once
-  the boxes are a quarter block apart, the target is gone, or the time its distance needs plus half a second is up (a
-  wall); the landing runs the charge's effects on every enemy within its landing radius (Charge's stun), and the caster
+  its speed toward its landing point, the near side of the target's box on the line the charge came on, a quarter block
+  short of touching (`Charges#landingPoint`; Matěj's playtest of 2026-11-03: from behind, it stops at the target's back,
+  never through it). `spell/Charges` steers it on the server every tick, setting its horizontal velocity toward that
+  point (at most the distance left) and marking it hurt, so a player's client receives it as it receives a knockback,
+  and lands it once it is within 0.1 block of the point or past it, the target is gone, or the time its distance needs
+  plus half a second is up (a wall); a player's client runs ahead of the server, so an arrived landing also puts the
+  caster on the point when its box fits there, and stops it. The landing runs the charge's effects on every enemy within its landing radius (Charge's stun), and the caster
   takes no fall damage meanwhile. `realmforge:gain_resource` gives a player caster some of a resource (Charge's rage).
   A heal may add a share of the healed entity's max health and heal the caster instead of the target (`on_caster`,
   Victory Rush).
@@ -1480,7 +1487,12 @@ gray) those opened by `kill`, and a passive's proc any spell's (`Proc.OpenWindow
 time it closes, in the `combat` attachment (transient, synced to the owner); `SpellCaster` refuses a player's spell
 whose window is closed (`CastFailure.NO_WINDOW`) and a cast closes it. The spell bar greys out a closed window's slot
 and draws an open one with a glow and its seconds left (`SpellBarView.Slot#windowTicks`, `client/hud/SpellSlots`).
-`WindowsAndProcsGameTests` covers both openers, a gray kill, and Execute's condition and extra rage.
+A spell with a target health condition and no window (Execute) lights up the same way, without seconds (Matěj's
+playtest of 2026-11-03): every 5 ticks `Windows#checkTargetHealth` opens its entry for 2 s, renewed while the player's
+current target (`CombatState#currentTarget`: the enemy they last hit or aimed a spell at, within combat's 10 s) is below
+the share, and closes it once it is not; a cast leaves that entry alone and still checks the health of the target it
+aims at. `WindowsAndProcsGameTests` covers both openers, a gray kill, and Execute's condition and extra rage;
+`ArmsTreeGameTests` Execute's lit slot.
 
 **In code (RLM-399): swings.** An instant spell may play out over an animation (`SpellCast#animationTicks`, Slam's
 0.5 s swing): it starts at once, paying its cost and starting the global and its own cooldown, but `Casting` keeps it as
@@ -1738,8 +1750,9 @@ type only for genuinely new behaviour.
   Projectile" and "Spell Area", come from `content/texts/entity.yaml` (RLM-259) and show where the game prints an
   entity's own name (F3, `/data`).
 - **The other effect types:** `apply_effect` (a status effect from the caster, one of ours from `content/effects/`
-  or a vanilla one, remembering who applied it ([11.4](#114-status-effects)), at most a minute:
-  research SP-8, never an instant one, which vanilla applies on every tick of its duration: the validation refuses
+  or a vanilla one, remembering who applied it ([11.4](#114-status-effects)), at most 10 minutes, as a buff may last
+  long (Matěj, 2026-11-03: Battle Shout's), while combat effects keep a short time scale (research SP-8); never an
+  instant one, which vanilla applies on every tick of its duration: the validation refuses
   them, RLM-260) and `remove_effect` act on an entity; `teleport` moves the caster to the target's position (a ground
   point, the end of a direction's ray with its feet where its eyes would be, an entity's feet), stepping back toward
   the caster until its box is free, or not at all; `dash` throws the caster toward the target, or along a direction,
@@ -1806,9 +1819,9 @@ evoker fangs already loosed. A stunned attacker's own melee hit deals nothing, a
 attack; the spell engine refuses a stunned caster's spells and interrupts the cast in progress (`CastEnd.STUNNED`),
 but for a spell `castable_while_stunned`. Ordinary mobs have no stun immunity or diminishing returns (Matěj,
 2026-10-24, RLM-392). `apply_effect` grows with the spell's rank: `duration_per_level_seconds` adds to its duration
-for every rank above 1 (at most a minute) and `stronger_at_levels` lists the ranks that raise its amplifier by one
+for every rank above 1 (at most 10 minutes) and `stronger_at_levels` lists the ranks that raise its amplifier by one
 (Frostbolt's Slowness II at rank 5). An effect's modifier may grow by a fixed step per amplifier level instead of
-vanilla's multiplying by the level (`per_amplifier`, NeoForge's attribute curve: Battle Shout's 10, 15 and 20 %).
+vanilla's multiplying by the level (`per_amplifier`, NeoForge's attribute curve).
 `realmforge:cleanse` (`spell/CleanseEffect`, Will To Survive) removes every harmful effect from the caster or an ally,
 a stun included. **Frozen** (`realmforge:frozen`, RLM-541, RLM-539) is a root: -100 % movement speed and jump strength,
 but no `stun`, so its holder still attacks and casts; Shatter's crit chance and Ice Lance's bonus read it, Frostbite's
@@ -1923,10 +1936,10 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
 - **Learning and placing:** `Spells#learn` puts a newly learned spell into the bar's first empty slot, unless it is a
   mob's. Learning a known spell again, at any level (a class level, C4, or a specialization point, C5), leaves the bar
   as the player arranged it, so a spell taken off stays off (RLM-374). The spellbook (`client/screen/SpellbookScreen`;
-  a scrollbar beside its Known Spells while they do not fit, `client/screen/ScrollBar`, RLM-542) moves a known spell
-  into a slot, swapping with
-  the one there, or empties one, through `SetSpellBarSlotPayload` and `Spells#placeOnBar`, which refuses another slot
-  or an unknown spell.
+  a scrollbar beside its Known Spells while they do not fit, `client/screen/ScrollBar`, RLM-542; a name too long for
+  its row wraps onto a second line, Matěj's playtest of 2026-11-03) moves a known spell into a slot, swapping with the
+  one there, or empties one, through `SetSpellBarSlotPayload` and `Spells#placeOnBar`, which refuses another slot or an
+  unknown spell.
 - **Casting** (Matěj, 2026-10-19): `client/spell/CastQueue` decides every client tick, from the presses and the held
   keys and the client options `Queue Spell Casts` (off) and `Spells Queue Size` (1 to 3; `client/ClientConfig`, edited
   in the Realmforge config screen, `client/screen/RealmforgeConfigScreen` ([18](#18-client-code-rendering-gui-input)),
@@ -2004,7 +2017,9 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
   `RageGameTests` reads the same view on the server. Hidden without a character or with a maximum below 1.
 - **Texts:** a spell's description names its numbers through placeholders (`{damage}`, `{heal}`, `{duration}`,
   `{periodic}`, `{periodic_total}`, `{interval}`, `{radius}`; C4 added `{armor_shred}`, `{penetration}`,
-  `{crit_chance}` and `{bonus}`, the one attribute modifier of the applied effect), which `spell/SpellText` fills with
+  `{crit_chance}` and `{bonus}`, the one attribute modifier of the applied effect, or `{bonus_<attribute>}` for an
+  effect with several, its modifier on that attribute by the id's path, RLM-543: Battle Shout's `{bonus_attack_damage}`
+  and `{bonus_attack_speed}`), which `spell/SpellText` fills with
   the spell's data at the player's level (an effect's duration and strength at the rank too) and their stats as they
   are now, as the effects would land before the target's resistance and a crit; `schema/spell.py` and validation make
   sure each has the effect it reads. A damage number shows its school
@@ -2177,7 +2192,8 @@ Missiles leave the M1 kit and come back with their trees in M3 (RLM-218).
   Frozen at their top ranks (5 s and 10 s; the lower ranks scaled by Claude, Frostbite 3 s, Frost Nova × 2.5), every
   cost per rank and Frozen's break on damage; Astone died too fast with little effort, and a separate ticket of his
   balances the spells.
-- **The target** (RLM-503): an L18 Mage in good M1 gear kills Astone (about 3,000 health) in about 40 casts, 2.5 to
+- **The target** (RLM-503): an L18 Mage in good M1 gear kills Astone (about 3,000 health in RLM-503's balance; 1,500
+  since RLM-580) in about 40 casts, 2.5 to
   3 minutes; at 60 or more, Astone is nerfed rather than the spells buffed.
 - `FrostTreeGameTests` covers every active's damage at rank 1 and its highest rank, Ice Lance against Frozen,
   Frostbite's chance and cooldown, Frozen breaking on about half the hits, the cone, the nova, Blizzard's waves, the
@@ -2192,40 +2208,41 @@ with their trees in M3. Taste for Blood needs Rend in the tree, which C5 checks;
 | Row (level) | Left | Middle | Right |
 | --- | --- | --- | --- |
 | 1 | Charge (2) | Slam (5) | Deep Wounds (passive, 3) |
-| 6 | Rend (3) | Battle Shout (3) | Two-Handed Weapon Specialization (passive, 3) |
+| 6 | Rend (3) | Battle Shout (2) | Two-Handed Specialization (passive, 3) |
 | 12 | Taste for Blood (passive, 2) | Overpower (5) | Victory Rush (3) |
 | 18 | Execute (3) | | |
 
 - **The loop:** Charge in for rage, Rend to bleed and Slam on cooldown; blocks and Taste for Blood's procs on Rend's
   ticks open Overpower, crits bleed through Deep Wounds, kills open Victory Rush, and Execute finishes, refunding rage
-  for a kill at rank 3.
-- **Numbers** (rank 1 to the highest, AD = Attack Damage): **Charge** a rush at an enemy 3 to 10 blocks away (12 at
-  rank 2) at 24 blocks a second that stuns every enemy within 1.5 blocks of the landing for 1 s, 15/20 rage, 15 s.
-  **Rend** 2/3/4 + 30/40/50 % AD, then Bleeding of 4/6/8 + 60/80/100 % AD over 6 s, 10 rage, 6 s. **Overpower**
-  5/5.5/6/6.5/7 + 100 to 140 % AD with +10 to 30 % crit chance, for 5 s after a block, 5 rage, 5 s. **Victory Rush**
-  3/4/5 + 70/80/90 % AD and a heal of 10/15/20 % of max health, for 20 s after a kill that is not gray, free, no
-  cooldown. **Execute** below 20 % health, 8/10/12 + 150/175/200 % AD, 15 rage and up to 30 more for 3 % more damage
-  each, 10 rage back for a kill at rank 3, no cooldown. **Deep Wounds** a crit bleeds for 20/40/60 % of its damage over
-  6 s. **Taste for Blood** a 15/30 % chance on a tick of Rend's Bleeding to open Overpower, once every 6 s on each
-  target. Slam, Battle Shout and Two-Handed Weapon Specialization keep their numbers (below and
-  [11.1](#111-model)).
+  for a kill.
+- **Numbers** (rank 1 to the highest, AD = Attack Damage; the costs, cooldowns and Victory Rush from Matěj's comments of
+  2026-11-03 on the Warrior design page): **Charge** a rush at an enemy 3 to 10 blocks away (12 at rank 2) at 24 blocks
+  a second that stuns every enemy within 1.5 blocks of the landing for 1/2 s, 10/20 rage, 10 s. **Rend** 2/3/4 +
+  30/40/50 % AD, then Bleeding of 4/6/8 + 60/80/100 % AD over 6 s, 10/20/30 rage, 6 s. **Overpower** 5/5.5/6/6.5/7 +
+  100 to 140 % AD with +10 to 30 % crit chance (above 100 %, crit damage), for 5 s after a block, 10 rage, 4 s.
+  **Victory Rush** 5/6/7 + 80/90/100 % AD and a heal of 10/15/20 % of max health, for 20 s after a kill that is not
+  gray, free, no cooldown. **Execute** below 20 % health, 8/10/12 + 150/175/200 % AD, 15/20/25 rage and up to 30 more
+  for 3 % more damage each, 5/10/15 rage back for a kill, no cooldown. **Deep Wounds** a crit bleeds for 20/40/60 % of
+  its damage over 6 s. **Taste for Blood** a 15/30 % chance on a tick of Rend's Bleeding to open Overpower, once every
+  6 s on each target. Slam, Battle Shout and Two-Handed Specialization: below and [11.1](#111-model).
 - **The target** (RLM-503): about 35 damage a second before armor at level 18, against the Frost Mage's about 40, so
-  both kill Astone (about 3,000 health) in 2.5 to 3 minutes.
+  both kill Astone (about 3,000 health in RLM-503's balance; 1,500 since RLM-580) in 2.5 to 3 minutes.
 - `ArmsTreeGameTests` covers every active's damage at rank 1 and its highest rank, Rend's bleed, Overpower only after
-  a block, Victory Rush only after a kill that is not gray and its heal, Execute's condition, extra rage and refund,
-  Charge's rush, landing stun and distance by rank, Deep Wounds' share, Taste for Blood's proc, the tooltips' next
-  rank, the kit by rows and the handoff's setup line.
+  a block, Victory Rush only after a kill that is not gray and its heal, Execute's condition, extra rage, refund and lit
+  slot, Charge's rush to the near side (from either side), landing stun and distance by rank, Deep Wounds' share, Taste
+  for Blood's proc, the tooltips' next rank, the kit by rows and the handoff's setup line.
 
-- **Slam:** 4 + 1.5 per rank + 120 % of attack damage, 30 rage, 6 s, needs a melee weapon (RLM-499); armor shred
+- **Slam:** 4 + 1.5 per rank + 120 % of attack damage, 30 rage, 4 s, needs a melee weapon (RLM-499); armor shred
   5 % per rank. **Reckless Strike:** 2 + 1 per rank + 100 % of attack damage, 20 rage, 4 s, a melee weapon; crit
   chance +10 % and 5 % more per rank. **Shield Bash:** 1 + 0.5 per rank + 60 % of attack damage, 15 rage, 6 s, a
   shield; Stunned 0.5 s and 0.25 s more per rank.
 - **Frostbolt:** 8/9/10/11/12 + 100 to 200 % SP (system C, RLM-534), 10 mana; Slowness 3 s and 0.5 s more per rank,
   II from rank 5. **Fireball** (out of the M1 kit since RLM-542): 8 + 2 per rank, 12 mana; Burning (0.75 fire every 0.5 s, many small ticks, RLM-518) 4 s and 0.5 s more per rank, II from
   rank 5. **Arcane Missiles:** 3 × (5 + 1 per rank), 12 mana a second.
-- **The self-buffs**, max rank 3 (Matěj, 2026-10-30): the Warrior's **Battle Shout** (10 rage, 1 minute: +10 / 15 /
-  20 % attack damage for the Warrior and the allies within 10 blocks for 10 / 15 / 20 s) and the Mage's **Ice
-  Barrier** (25 mana, 1 minute: +10 / 20 / 30 Magic Shield for 10 / 20 / 30 s, filled at once; the Mage survives
+- **The self-buffs** (Matěj, 2026-10-30): the Warrior's **Battle Shout** (max rank 2, 15/30 rage, 1 minute: +5/10 %
+  attack damage and +10/20 % attack speed for the Warrior and the allies within 10 blocks for 10 minutes; Matěj,
+  2026-11-03) and the Mage's **Ice Barrier** (max rank 3, 25 mana, 1 minute: +10 / 20 / 30 Magic Shield for 10 / 20 /
+  30 s, filled at once; the Mage survives
   through shields, not heals, Matěj, 2026-10-22). Spell power raises neither, Cooldown Reduction shortens both, and a
   second cast refreshes the effect instead of stacking it.
 - **Will To Survive** (the Human's racial): free, 1 minute, cast while stunned, of no school.
@@ -2755,7 +2772,11 @@ of radius 20, a white bar, the default 3 s phase change. Matěj's playtest of 20
 the boulder formed in her hands, a Quake that slams, grey rings) and passed her with placeholders: her own art (her
 texture from Undervault's final stone, her particles and spell visuals, stones breaking off her in the fight) waits for
 RLM-502, and her balance against level-18 characters with the finished stats, spells and gear for RLM-503, so her
-numbers stay proposals.
+numbers stay proposals. Until then she is buffed for the M1 class checks (RLM-580; Matěj, 2026-11-03, after both
+level-18 classes found her far too weak): 1,500 health at level 18 (it was 800), three times her damage (attack damage
+21, her spells' amounts tripled), and her fists ignore 15 % of a player's armor and drain 15 % more of a magic shield
+(`armor_shred_percent` and `magic_shield_damage_percent` in her mob data), her spells 30 % (15 % of their own on
+hers).
 
 | Phase | Enters | `on_enter` | Abilities |
 | --- | --- | --- | --- |
@@ -2769,8 +2790,10 @@ with their realms. The altar, her summoning item and the arena dungeon are W6 (R
 `/summon realmforge:astone`. `AstoneGameTests` cover each phase change (the bar's title, the shockwave's push, the
 cracks), each ability cast through the spell engine at a husk (the boulder formed in her hands, Quake only with its
 target inside and hitting slam after slam, Rockfall where its target stood, dodged by a husk that left the ring,
-Cracked Stone again as an ability), her three drops on three kills, and the playtest's commands (`/summon`,
-`/qa boss phase`, `/qa boss reset`, `/kill`); `BossPhaseMachineTest` walks her definition through all three phases.
+Cracked Stone again as an ability), her buff's health, damage, armor shred and magic shield drain (a shield loses
+1.15 times her fist's hit and 1.3 times her boulder's), her three drops on three kills, and the playtest's commands
+(`/summon`, `/qa boss phase`, `/qa boss reset`, `/kill`); `BossPhaseMachineTest` walks her definition through all three
+phases.
 
 ## 15. Dimensions and dungeons
 
@@ -3925,7 +3948,7 @@ changes. Once they settle they can move into content.
 
 Last resort, only where no event or API exists. Each one sits in `mixin/` (or the access transformer file) with a
 comment saying why, and gets a test. A mod lists its mixins in `<modid>.mixins.json`, which `neoforge.mods.toml`
-names under `[[mixins]]`. The core mod has eight: `RangedAttributeAccessor`, which raises attribute caps
+names under `[[mixins]]`. The core mod has nine: `RangedAttributeAccessor`, which raises attribute caps
 ([8.4](#84-caps)) and caps two of Apothic Attributes' down ([19.4](#194-optional-integrations)),
 `PlayerBlockActionMixin`, which lets Adventure mode break the allowlist inside instances ([15.5](#155-instances)),
 `PlayerExhaustionMixin`, which lowers a player's food exhaustion by their Stamina ([8.1](#81-the-attribute-set);
@@ -3938,7 +3961,10 @@ stunned mob's AI step, as vanilla skips an immobile one's, so goals without cont
 ([13](#13-items-gear-and-loot), RLM-537; `MagicProtectionGameTests`): `EnchantmentSelectionMixin` after vanilla's
 `EnchantmentHelper#filterCompatibleEnchantments`, and `ApothicTableSelectionMixin` after Apothic Enchanting's
 `ApothEnchantmentHelper#pickEnchantment` with `ArcanaEnchantmentDataAccessor` for its candidates' package-private
-enchantment, the last two `@Pseudo` as above. The QA mod has two, for dev runs only: `GameTestServerMixin` gives the
+enchantment, the last two `@Pseudo` as above. `ApothicBleedStackingMixin` redirects the effect reads and updates in
+`applyEffect` of Apotheosis's `MobEffectAffix` and `MobEffectBonus`, so a Bleeding they stack raises our stack instead
+([19.4](#194-optional-integrations), RLM-579; `ApothicBleedGameTests`); `@Pseudo` and required like
+`InventorySortingStacksMixin`. The QA mod has two, for dev runs only: `GameTestServerMixin` gives the
 GameTest world the data pack dimensions, which vanilla leaves out ([20](#20-tests-per-layer)), and
 `MinecraftProfileLookupMixin`, a client mixin (the config's `client` list), retries the dev client's one profile
 lookup at startup up to three times, 1 s and then 2 s apart (`ProfileLookupRetry`, RLM-570;
@@ -4100,6 +4126,20 @@ attributes up by id, so the core mod has no compile-time dependency on it:
   random float against the dodge chance, which at 0 dodges only on a float of exactly 0 (once in 2^24 rolls). Since
   RLM-272 Apotheosis's own data grants our crit and dodge instead (below); the caps stay, as they cost nothing and
   guard against another mod's data or a later Apotheosis release that grants Apothic Attributes' again.
+
+**Its Bleeding is ours** (RLM-579; Matěj's playtest of 2026-11-03: a Bloodletting sword and Rend showed two Bleedings
+on one target). Apotheosis's Bloodletting and Devilish affixes and its Tyrannical gem give
+`apothic_attributes:bleeding`, 1 + its level every 2 s through armor. `compat/apothic_attributes/ApothicBleeds` turns
+every application of it into a stack of our `realmforge:bleeding` ([11.4](#114-status-effects)) with the same damage, a
+quarter of 1 + its level every half second: `MobEffectEvent.Applicable` refuses the effect (`DO_NOT_APPLY`) and gives
+the target's last attacker's stack instead, its spell and proc origin `realmforge:apothic_bleeding` (one stack per
+attacker for these sources, beside Rend's and Deep Wounds', and no proc from its ticks). A source that stacks on
+reapply reads the target's effect to raise it; `mixin/ApothicBleedStackingMixin` ([19.3](#193-mixins-and-access-transformers))
+hands it a stand-in at the stack's level and remaining time, so Apotheosis's own step, limit (Bloodletting's Bleeding
+IV) and longer duration decide the raise, which goes to the stack. Nothing else reads the effect: Apothic Attributes'
+`DetonationEffect` uses only its damage type of the same name. `ApothicBleedGameTests` hit with a Bloodletting sword up
+to its limit, within its cooldown too, tick its stack through armor beside Rend's and convert a bleed of any other
+source.
 
 The pack's config (`pack/config/apotheosis/`) sets its protection and armor formulas to vanilla's and turns its
 attributes panel off; Apothic Enchanting's inlined enchantment descriptions are on, because it replaces the

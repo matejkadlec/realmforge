@@ -110,7 +110,7 @@ public final class GeneratedSpellExpectations {
                     false,
                     List.of(
                             new EffectExpectation("realmforge:projectile", Map.of("lifetime_ticks", 40.0, "size", 1.2, "speed", 16.0), Map.of("spares", "realmforge:stone_creatures"), List.of(
-                                    new EffectExpectation("realmforge:damage", Map.of("amount", 2.0, "attack_damage", 1.0, "attack_damage_per_level", 0.0, "per_level", 0.0, "spell_power", 0.0, "spell_power_per_level", 0.0), Map.of(), List.of()),
+                                    new EffectExpectation("realmforge:damage", Map.of("amount", 6.0, "armor_shred", 0.15, "attack_damage", 1.0, "attack_damage_per_level", 0.0, "magic_shield_damage", 0.15, "per_level", 0.0, "spell_power", 0.0, "spell_power_per_level", 0.0), Map.of(), List.of()),
                                     new EffectExpectation("realmforge:knockback", Map.of("strength", 0.8), Map.of(), List.of()))))),
             new SpellExpectation(
                     "realmforge:astone_cracked_stone",
@@ -180,7 +180,7 @@ public final class GeneratedSpellExpectations {
                     false,
                     List.of(
                             new EffectExpectation("realmforge:area", Map.of("duration_ticks", 10.0, "interval_ticks", 10.0, "radius", 5.0), Map.of("affects", "enemies", "ring_color", "#8C8C8C"), List.of(
-                                    new EffectExpectation("realmforge:damage", Map.of("amount", 1.0, "attack_damage", 0.3, "attack_damage_per_level", 0.0, "per_level", 0.0, "spell_power", 0.0, "spell_power_per_level", 0.0), Map.of(), List.of()),
+                                    new EffectExpectation("realmforge:damage", Map.of("amount", 3.0, "armor_shred", 0.15, "attack_damage", 0.3, "attack_damage_per_level", 0.0, "magic_shield_damage", 0.15, "per_level", 0.0, "spell_power", 0.0, "spell_power_per_level", 0.0), Map.of(), List.of()),
                                     new EffectExpectation("realmforge:apply_effect", Map.of("amplifier", 0.0, "duration_ticks", 30.0), Map.of("effect", "minecraft:slowness"), List.of()))))),
             new SpellExpectation(
                     "realmforge:astone_rockfall",
@@ -216,7 +216,7 @@ public final class GeneratedSpellExpectations {
                     false,
                     List.of(
                             new EffectExpectation("realmforge:area", Map.of("duration_ticks", 10.0, "interval_ticks", 10.0, "radius", 3.0), Map.of("affects", "enemies", "ring_color", "#8C8C8C"), List.of(
-                                    new EffectExpectation("realmforge:damage", Map.of("amount", 5.0, "attack_damage", 0.75, "attack_damage_per_level", 0.0, "per_level", 0.0, "spell_power", 0.0, "spell_power_per_level", 0.0), Map.of(), List.of()))))),
+                                    new EffectExpectation("realmforge:damage", Map.of("amount", 15.0, "armor_shred", 0.15, "attack_damage", 0.75, "attack_damage_per_level", 0.0, "magic_shield_damage", 0.15, "per_level", 0.0, "spell_power", 0.0, "spell_power_per_level", 0.0), Map.of(), List.of()))))),
             new SpellExpectation(
                     "realmforge:astone_shockwave",
                     "spell.realmforge.astone_shockwave.name",
@@ -271,11 +271,11 @@ public final class GeneratedSpellExpectations {
                     false,
                     "raise",
                     Optional.of("realmforge:rage"),
-                    10.0,
-                    0.0,
+                    15.0,
+                    15.0,
                     1200,
                     10,
-                    3,
+                    2,
                     true,
                     Optional.empty(),
                     0.0,
@@ -286,7 +286,7 @@ public final class GeneratedSpellExpectations {
                     false,
                     List.of(
                             new EffectExpectation("realmforge:area", Map.of("duration_ticks", 10.0, "interval_ticks", 10.0, "radius", 10.0), Map.of("affects", "allies", "ring_color", "#F5241B"), List.of(
-                                    new EffectExpectation("realmforge:apply_effect", Map.of("amplifier", 0.0, "duration_per_level_ticks", 100.0, "duration_ticks", 200.0), Map.of("effect", "realmforge:battle_shout", "stronger_at_levels", "2,3"), List.of()))))),
+                                    new EffectExpectation("realmforge:apply_effect", Map.of("amplifier", 0.0, "duration_ticks", 12000.0), Map.of("effect", "realmforge:battle_shout", "stronger_at_levels", "2"), List.of()))))),
             new SpellExpectation(
                     "realmforge:blizzard",
                     "spell.realmforge.blizzard.name",
@@ -344,7 +344,7 @@ public final class GeneratedSpellExpectations {
                     Optional.empty(),
                     0.0,
                     0.0,
-                    300,
+                    200,
                     10,
                     2,
                     true,
@@ -357,8 +357,8 @@ public final class GeneratedSpellExpectations {
                     false,
                     List.of(
                             new EffectExpectation("realmforge:charge", Map.of("landing_radius", 1.5, "speed", 24.0), Map.of(), List.of(
-                                    new EffectExpectation("realmforge:apply_effect", Map.of("amplifier", 0.0, "duration_ticks", 20.0), Map.of("effect", "realmforge:stunned"), List.of()))),
-                            new EffectExpectation("realmforge:gain_resource", Map.of("amount", 15.0, "per_level", 5.0), Map.of("resource", "realmforge:rage"), List.of()))),
+                                    new EffectExpectation("realmforge:apply_effect", Map.of("amplifier", 0.0, "duration_per_level_ticks", 20.0, "duration_ticks", 20.0), Map.of("effect", "realmforge:stunned"), List.of()))),
+                            new EffectExpectation("realmforge:gain_resource", Map.of("amount", 10.0, "per_level", 10.0), Map.of("resource", "realmforge:rage"), List.of()))),
             new SpellExpectation(
                     "realmforge:cone_of_cold",
                     "spell.realmforge.cone_of_cold.name",
@@ -448,7 +448,7 @@ public final class GeneratedSpellExpectations {
                     "raise",
                     Optional.of("realmforge:rage"),
                     15.0,
-                    0.0,
+                    5.0,
                     0,
                     10,
                     3,
@@ -724,9 +724,9 @@ public final class GeneratedSpellExpectations {
                     false,
                     "raise",
                     Optional.of("realmforge:rage"),
-                    5.0,
+                    10.0,
                     0.0,
-                    100,
+                    80,
                     10,
                     5,
                     true,
@@ -794,7 +794,7 @@ public final class GeneratedSpellExpectations {
                     "raise",
                     Optional.of("realmforge:rage"),
                     10.0,
-                    0.0,
+                    10.0,
                     120,
                     10,
                     3,
@@ -899,7 +899,7 @@ public final class GeneratedSpellExpectations {
                     Optional.of("realmforge:rage"),
                     30.0,
                     0.0,
-                    120,
+                    80,
                     10,
                     5,
                     true,
@@ -2247,7 +2247,7 @@ public final class GeneratedSpellExpectations {
                     "realmforge:two_handed_weapon_specialization",
                     "spell.realmforge.two_handed_weapon_specialization.name",
                     "spell.realmforge.two_handed_weapon_specialization.description",
-                    Optional.empty(),
+                    Optional.of("realmforge:physical"),
                     "spell_power",
                     "realmforge:self",
                     0.0,
@@ -2309,7 +2309,7 @@ public final class GeneratedSpellExpectations {
                     false,
                     false,
                     List.of(
-                            new EffectExpectation("realmforge:damage", Map.of("amount", 3.0, "attack_damage", 0.7, "attack_damage_per_level", 0.1, "per_level", 1.0, "spell_power", 0.0, "spell_power_per_level", 0.0), Map.of(), List.of()),
+                            new EffectExpectation("realmforge:damage", Map.of("amount", 5.0, "attack_damage", 0.8, "attack_damage_per_level", 0.1, "per_level", 1.0, "spell_power", 0.0, "spell_power_per_level", 0.0), Map.of(), List.of()),
                             new EffectExpectation("realmforge:heal", Map.of("amount", 0.0, "attack_damage", 0.0, "attack_damage_per_level", 0.0, "max_health", 0.1, "max_health_per_level", 0.05, "per_level", 0.0, "spell_power", 0.0, "spell_power_per_level", 0.0), Map.of(), List.of()))),
             new SpellExpectation(
                     "realmforge:will_to_survive",

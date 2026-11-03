@@ -29,7 +29,8 @@ public final class GeneratedEffects {
     public static final DeferredHolder<MobEffect, MobEffect> BATTLE_SHOUT =
             EFFECTS.register("battle_shout", () -> new StatusEffect(MobEffectCategory.BENEFICIAL, 0xF5241B,
                     Optional.empty())
-                    .modifier("minecraft:attack_damage", "realmforge:effect.battle_shout.minecraft.attack_damage", 0.1, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL, 0.05));
+                    .modifier("minecraft:attack_damage", "realmforge:effect.battle_shout.minecraft.attack_damage", 0.05, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)
+                    .modifier("minecraft:attack_speed", "realmforge:effect.battle_shout.minecraft.attack_speed", 0.1, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
 
     /** {@code realmforge:bleeding} from {@code content/effects/bleeding.yaml}: harmful, "Bleeding". */
     public static final DeferredHolder<MobEffect, MobEffect> BLEEDING =

@@ -265,6 +265,47 @@ def test_execute_placeholders(repo: RepoPaths) -> None:
     assert_problem(repo, "{refund_rank} reads cost.refund_on_kill, and the spell has none")
 
 
+def test_a_refund_may_grow_by_rank(repo: RepoPaths) -> None:
+    # Matěj, 2026-11-03: Execute refunds 5/10/15 rage.
+    body = EXECUTE.replace("{amount: 10, from_level: 3}", "{amount: 5, per_level: 5}")
+    spell(repo, "test_finish", described("A kill refunds {refund} rage.", body))
+    data = spell_data(repo, "test_finish")
+    assert data["cost"]["refund_on_kill"] == {"amount": 5, "per_level": 5, "from_level": 1}
+    spell(repo, "test_finish", body.replace("max_level: 3\n", "max_level: 1\n"))
+    assert_problem(repo, "cost.refund_on_kill")
+
+
+# Long buffs and their bonuses
+
+
+def test_a_status_effect_may_last_ten_minutes(repo: RepoPaths) -> None:
+    shout = repo.content / "spells" / "battle_shout.yaml"
+    text = shout.read_text(encoding="utf-8")
+    assert "duration_seconds: 600" in text
+    shout.write_text(text.replace("duration_seconds: 600", "duration_seconds: 601"), encoding="utf-8")
+    assert_problem(repo, "duration_seconds is more than 0 and at most 600")
+
+
+def test_bonus_placeholders_read_one_modifier_each(repo: RepoPaths) -> None:
+    shout = repo.content / "spells" / "battle_shout.yaml"
+    text = shout.read_text(encoding="utf-8")
+    shout.write_text(text.replace("{bonus_attack_speed}", "{bonus_armor}"), encoding="utf-8")
+    assert_problem(repo, "{bonus_armor} reads realmforge:battle_shout's one modifier on armor, and it has 0")
+    shout.write_text(text.replace("{bonus_attack_damage}", "{bonus}"), encoding="utf-8")
+    assert_problem(repo, "{bonus} reads realmforge:battle_shout's one modifier, and it has 2")
+
+
+# A hit that drains more of a magic shield (RLM-580)
+
+
+def test_a_hit_may_drain_more_of_a_magic_shield(repo: RepoPaths) -> None:
+    more = "attack_damage_percent: 150, magic_shield_damage_percent: 30}"
+    spell(repo, "test_finish", EXECUTE.replace("attack_damage_percent: 150}", more))
+    assert spell_data(repo, "test_finish")["effects"][0]["magic_shield_damage"] == 0.3
+    spell(repo, "test_finish", EXECUTE.replace("attack_damage_percent: 150}", more.replace("30}", "0}")))
+    assert_problem(repo, "magic_shield_damage_percent")
+
+
 # A proc's damage over time
 
 
@@ -337,7 +378,7 @@ def test_the_warrior_learns_the_bloodletter_tree_by_its_rows() -> None:
         "charge": 2,
         "deep_wounds": 3,
         "rend": 3,
-        "battle_shout": 3,
+        "battle_shout": 2,
         "two_handed_weapon_specialization": 3,
         "taste_for_blood": 2,
         "overpower": 5,
@@ -364,7 +405,7 @@ def test_the_trees_numbers_follow_the_table() -> None:
     ]
     assert [overpower.crit.bonus_chance_at(r) for r in (1, 5)] == [10, 30]
     rush_hit, rush_heal = spells["victory_rush"].effects
-    assert [(rush_hit.amount_at(r), rush_hit.attack_damage_at(r)) for r in (1, 3)] == [(3, 70), (5, 90)]
+    assert [(rush_hit.amount_at(r), rush_hit.attack_damage_at(r)) for r in (1, 3)] == [(5, 80), (7, 100)]
     assert [rush_heal.max_health_at(r) for r in (1, 3)] == [10, 20]
     execute = spells["execute"]
     assert [(execute.effects[0].amount_at(r), execute.effects[0].attack_damage_at(r)) for r in (1, 3)] == [
@@ -374,7 +415,18 @@ def test_the_trees_numbers_follow_the_table() -> None:
     charge = spells["charge"]
     assert charge.target_distance is not None
     assert [charge.target_distance.max_at(r) for r in (1, 2)] == [10, 12]
-    assert [charge.effects[1].amount_at(r) for r in (1, 2)] == [15, 20]
+    assert [charge.effects[1].amount_at(r) for r in (1, 2)] == [10, 20]
+    assert [charge.effects[0].effects[0].duration_at(r) for r in (1, 2)] == [1, 2]
+    # Costs and cooldowns (Matěj, 2026-11-03, RLM-543's Confluence comments).
+    assert [spells["slam"].cooldown_seconds, charge.cooldown_seconds, overpower.cooldown_seconds] == [
+        4,
+        10,
+        4,
+    ]
+    assert [spells["rend"].cost.amount_at(r) for r in (1, 2, 3)] == [10, 20, 30]
+    assert overpower.cost.amount_at(5) == 10
+    assert [execute.cost.amount_at(r) for r in (1, 3)] == [15, 25]
+    assert [execute.cost.refund_on_kill.amount_at(r) for r in (1, 2, 3)] == [5, 10, 15]
     wounds = spells["deep_wounds"].passive.procs[0].damage_over_time
     assert [wounds.damage_at(r) for r in (1, 3)] == [20, 60]
     taste = spells["taste_for_blood"].passive.procs[0]

@@ -38,17 +38,27 @@ public record SpellCost(Holder<ResourceType> resource, double amount, double per
         this(resource, amount, perLevel, extra, Optional.empty());
     }
 
-    /** {@code amount} of the resource back for each kill, from rank {@code fromLevel} on (Execute: 10 at rank 3). */
-    public record KillRefund(double amount, int fromLevel) {
+    /**
+     * The resource back for each kill: {@code amount} at rank 1 and {@code perLevel} more for every rank above it, from
+     * rank {@code fromLevel} on (Execute: 5/10/15 rage, Matěj, 2026-11-03).
+     */
+    public record KillRefund(double amount, double perLevel, int fromLevel) {
         public static final Codec<KillRefund> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                         Codec.doubleRange(0, Double.MAX_VALUE).fieldOf("amount").forGetter(KillRefund::amount),
+                        Codec.doubleRange(0, Double.MAX_VALUE).optionalFieldOf("per_level", 0.0)
+                                .forGetter(KillRefund::perLevel),
                         ExtraCodecs.POSITIVE_INT.optionalFieldOf("from_level", 1).forGetter(KillRefund::fromLevel))
                 .apply(instance, KillRefund::new));
+
+        /** What a kill refunds at rank {@code level}: nothing below {@link #fromLevel}. */
+        public double amountAt(int level) {
+            return level >= fromLevel ? SpellScaling.atLevel(amount, perLevel, level) : 0;
+        }
     }
 
-    /** What a kill at rank {@code level} gives back: its refund from its rank on, 0 before it or without one. */
+    /** What a kill at rank {@code level} gives back: its refund at the rank, 0 before its rank or without one. */
     public double refundAt(int level) {
-        return refundOnKill.filter(refund -> level >= refund.fromLevel()).map(KillRefund::amount).orElse(0.0);
+        return refundOnKill.map(refund -> refund.amountAt(level)).orElse(0.0);
     }
 
     /**

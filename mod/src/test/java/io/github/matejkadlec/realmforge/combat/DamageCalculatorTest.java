@@ -213,6 +213,19 @@ class DamageCalculatorTest {
         assertEquals(0, DamageCalculator.shieldAbsorbs(0, 10), "nothing left after absorption hearts");
     }
 
+    @Test
+    void aHitThatDrainsMoreOfTheShieldTakesLessOfTheHitWithIt() {
+        // RLM-580: Astone's fists drain 15 % more, her spells 30 %.
+        assertEquals(11.5, DamageCalculator.shieldDrained(10, 100, 0.15), EPSILON);
+        assertEquals(10, DamageCalculator.shieldAbsorbs(10, 100, 0.15), EPSILON, "a full shield takes the whole hit");
+        assertEquals(13, DamageCalculator.shieldDrained(10, 100, 0.3), EPSILON);
+        assertEquals(26, DamageCalculator.shieldDrained(30, 26, 0.3), EPSILON, "at most its points");
+        assertEquals(20, DamageCalculator.shieldAbsorbs(30, 26, 0.3), EPSILON, "26 points take 20 of the hit");
+        assertEquals(DamageCalculator.shieldAbsorbs(14, 10), DamageCalculator.shieldAbsorbs(14, 10, 0), EPSILON,
+                "no bonus is the plain shield");
+        assertEquals(0, DamageCalculator.shieldDrained(6, 0, 0.3), "an empty shield loses nothing");
+    }
+
     private static RandomSource random() {
         return RandomSource.create(42);
     }

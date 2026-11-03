@@ -2,6 +2,7 @@ package io.github.matejkadlec.realmforge.combat;
 
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -15,7 +16,8 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
  * empty the player begin to lose health; mainly for casters"): a pool of up to {@code realmforge:magic_shield} points
  * that takes a hit's damage after absorption hearts and before health, and refills to full
  * {@value #REFILL_DELAY_TICKS} ticks after the last damage the player took. Logical server only; the HUD bar reads
- * the synced {@link CombatAttachments#MAGIC_SHIELD}.
+ * the synced {@link CombatAttachments#MAGIC_SHIELD}. A hit may drain more of it than it takes from the hit (RLM-580,
+ * {@link #drainBonus}): the shield loses the hit × (1 + the bonus), and only what is left of the hit reaches health.
  *
  * <p>The pool takes its share through NeoForge's absorption reduction, which vanilla applies after
  * {@code LivingDamageEvent.Pre}: the hit's inflicted damage, which the hurt cooldown measures the next hit against
@@ -53,10 +55,24 @@ public final class MagicShields {
             return absorbed;
         }
         MagicShield shield = defender.getData(CombatAttachments.MAGIC_SHIELD);
-        float taken = (float) DamageCalculator.shieldAbsorbs(damage - absorbed, shield.points());
+        double bonus = drainBonus(container.getSource());
+        float rest = damage - absorbed;
+        float drained = (float) DamageCalculator.shieldDrained(rest, shield.points(), bonus);
+        float taken = (float) DamageCalculator.shieldAbsorbs(rest, shield.points(), bonus);
         defender.setData(CombatAttachments.MAGIC_SHIELD,
-                new MagicShield(shield.points() - taken, defender.tickCount + REFILL_DELAY_TICKS));
+                new MagicShield(shield.points() - drained, defender.tickCount + REFILL_DELAY_TICKS));
         return absorbed + taken;
+    }
+
+    /**
+     * How much more of a magic shield a hit drains (RLM-580): its attacker's {@code realmforge:magic_shield_damage}
+     * (Astone's 15 % on her melee) plus its spell's own share ({@link HitBonus#magicShieldDamage}, 15 % more on her
+     * spells).
+     */
+    static double drainBonus(DamageSource source) {
+        double own = source.getEntity() instanceof LivingEntity attacker
+                ? DamagePipeline.stat(attacker, GeneratedStats.MAGIC_SHIELD_DAMAGE) : 0;
+        return own + SchoolDamageSource.bonusOf(source).magicShieldDamage();
     }
 
     /**

@@ -123,7 +123,7 @@ public final class ClassKitGameTests {
      * A level teaches its class spells into the bar's next empty slots, its passive spells never; one taken off the bar
      * stays off. A login catches up on spells a character does not know yet (a character from before its class taught
      * them). The Warrior's kit is the Arms tree's (RLM-543): Slam and Charge on the bar at level 1 with Deep Wounds
-     * known, Rend and Battle Shout at 6 with Two-Handed Weapon Specialization known.
+     * known, Rend and Battle Shout at 6 with Two-Handed Specialization known.
      */
     @QaGameTest
     public static void levelsAndLoginsTeachTheClassSpells(GameTestHelper helper) {
@@ -435,32 +435,37 @@ public final class ClassKitGameTests {
     }
 
     /**
-     * Battle Shout raises the attack damage of its caster and of the allies within 10 blocks by 10 % for 10 s at rank
-     * 1 and by 20 % for 20 s at rank 3, on a minute's cooldown; a second shout refreshes the effect instead of stacking
-     * it.
+     * Battle Shout raises the attack damage and attack speed of its caster and of the allies within 10 blocks by 5 % and
+     * 10 % at rank 1 and by 10 % and 20 % at rank 2, its highest, for 10 minutes, for 15/30 rage on a minute's
+     * cooldown; a second shout refreshes the effect instead of stacking it.
      */
     @QaGameTest
     public static void battleShoutRaisesAlliesAttackDamage(GameTestHelper helper) {
         ServerPlayer player = character(helper, "qa-kit-shout", "warrior");
         ServerPlayer ally = QaPlayers.loginOnPlatform(helper, "qa-kit-shout-ally", new Vec3(4.5, 1, 4.5));
         double before = ally.getAttributeValue(Attributes.ATTACK_DAMAGE);
-        for (int rank : new int[] {1, 3, 3}) {
+        double speedBefore = ally.getAttributeValue(Attributes.ATTACK_SPEED);
+        for (int rank : new int[] {1, 2, 2}) {
             learn(helper, player, GeneratedSpells.BATTLE_SHOUT, rank);
             Spells.resetCooldowns(player);
             Resources.set(player, ResourceTypes.RAGE, 100);
             shout(helper, player);
-            helper.assertTrue(close(Resources.amount(player, ResourceTypes.RAGE), 90), "for 10 rage");
+            helper.assertTrue(close(Resources.amount(player, ResourceTypes.RAGE), 100 - 15 * rank),
+                    "for " + 15 * rank + " rage");
             helper.assertValueEqual(player.getData(SpellAttachments.COMBAT).cooldowns()
                     .get(GeneratedSpells.BATTLE_SHOUT), helper.getLevel().getGameTime() + 1200, "a minute's cooldown");
             for (ServerPlayer shouted : List.of(player, ally)) {
                 MobEffectInstance effect = shouted.getEffect(GeneratedEffects.BATTLE_SHOUT);
-                helper.assertTrue(effect != null && effect.getDuration() == (rank == 1 ? 200 : 400)
-                        && effect.getAmplifier() == rank - 1, shouted.getPlainTextName() + " has Battle Shout at rank "
-                                + rank + ": " + effect);
+                helper.assertTrue(effect != null && effect.getDuration() == 12000 && effect.getAmplifier() == rank - 1,
+                        shouted.getPlainTextName() + " has Battle Shout at rank " + rank + " for 10 minutes: "
+                                + effect);
             }
-            helper.assertTrue(close(ally.getAttributeValue(Attributes.ATTACK_DAMAGE),
-                    before * (rank == 1 ? 1.1 : 1.2)), "rank " + rank + " raised the ally's attack damage: "
+            helper.assertTrue(close(ally.getAttributeValue(Attributes.ATTACK_DAMAGE), before * (1 + 0.05 * rank)),
+                    "rank " + rank + " raised the ally's attack damage: "
                             + ally.getAttributeValue(Attributes.ATTACK_DAMAGE));
+            helper.assertTrue(close(ally.getAttributeValue(Attributes.ATTACK_SPEED), speedBefore * (1 + 0.1 * rank)),
+                    "rank " + rank + " raised the ally's attack speed: "
+                            + ally.getAttributeValue(Attributes.ATTACK_SPEED));
         }
         logout(player);
         logout(ally);
@@ -538,10 +543,11 @@ public final class ClassKitGameTests {
         assertText(helper, player, GeneratedSpells.ICE_BARRIER, 1, "bonus", "10");
         assertText(helper, player, GeneratedSpells.ICE_BARRIER, 3, "bonus", "30");
         assertText(helper, player, GeneratedSpells.ICE_BARRIER, 3, "duration", "30");
-        assertText(helper, player, GeneratedSpells.BATTLE_SHOUT, 1, "bonus", "10");
-        assertText(helper, player, GeneratedSpells.BATTLE_SHOUT, 2, "bonus", "15");
-        assertText(helper, player, GeneratedSpells.BATTLE_SHOUT, 3, "bonus", "20");
-        assertText(helper, player, GeneratedSpells.BATTLE_SHOUT, 3, "duration", "20");
+        assertText(helper, player, GeneratedSpells.BATTLE_SHOUT, 1, "bonus_attack_damage", "5");
+        assertText(helper, player, GeneratedSpells.BATTLE_SHOUT, 1, "bonus_attack_speed", "10");
+        assertText(helper, player, GeneratedSpells.BATTLE_SHOUT, 2, "bonus_attack_damage", "10");
+        assertText(helper, player, GeneratedSpells.BATTLE_SHOUT, 2, "bonus_attack_speed", "20");
+        assertText(helper, player, GeneratedSpells.BATTLE_SHOUT, 2, "duration", "600");
         assertText(helper, player, GeneratedSpells.SHIELD_BASH, 5, "duration", "1.5");
         assertText(helper, player, GeneratedSpells.FIREBALL, 5, "periodic", "1");
         assertText(helper, player, GeneratedSpells.FIREBALL, 5, "periodic_total", "12");

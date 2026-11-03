@@ -35,10 +35,12 @@
       "affects": "enemies",
       "effects": [
         {
-          "amount": 5.0,
+          "amount": 15.0,
           "per_level": 0,
           "attack_damage": 0.75,
-          "type": "realmforge:damage"
+          "type": "realmforge:damage",
+          "armor_shred": 0.15,
+          "magic_shield_damage": 0.15
         }
       ],
       "ring_color": "#8C8C8C"

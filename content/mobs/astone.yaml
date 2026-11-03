@@ -5,19 +5,24 @@
 # slow and heavy, she cannot be pushed, and her slow hits throw the target up. Her fight is content/bosses/astone.yaml.
 # She falls apart into rubble and drops, at 100 % on every kill, the Stone Heart and the twins' shards (Matěj,
 # 2026-10-25 and 2026-10-27, RLM-432). Her arms are twice as thick as a golem's (8 pixels; Matěj's playtest,
-# 2026-10-29: 4 looked tiny on her). The numbers are proposals for Matěj's playtest. Placeholder model and texture until
-# A2 (RLM-48).
+# 2026-10-29: 4 looked tiny on her). Placeholder model and texture until A2 (RLM-48).
+# Her buff for the M1 class checks (RLM-580; Matěj, 2026-11-03, after both level-18 classes found her far too weak):
+# 1,500 health at her level 18 (468.75 × the level curve's 3.2; it was 800), three times her damage (attack damage
+# 21, her spells' amounts tripled too), and her regular attacks ignore 15 % of a player's armor and drain 15 % more of a
+# magic shield; her spells add 15 % of each, so they ignore 30 % and drain 30 % more. Her final balance is RLM-503.
 id: astone
 name: {en_us: "Astone, the Unbroken"}
 archetype: boss
 size: {width: 2.0, height: 5.0}
 attributes:
-  max_health: 250
-  attack_damage: 7
+  max_health: 468.75
+  attack_damage: 21
   armor: 8
   movement_speed: 0.24
   follow_range: 32
   knockback_resistance_percent: 100
+  armor_shred_percent: 15
+  magic_shield_damage_percent: 15
 melee: {attack_interval_seconds: 2, knock_up_blocks: 0.6}
 sounds:
   ambient: realmforge:entity.astone.ambient

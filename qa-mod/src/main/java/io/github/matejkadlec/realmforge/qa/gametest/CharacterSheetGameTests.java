@@ -81,9 +81,10 @@ public final class CharacterSheetGameTests {
         helper.assertTrue(view.character().identity().parts().isEmpty(), "no character: no race or class");
         helper.assertTrue(view.character().xp().isEmpty(), "no character: no XP bar");
 
-        // Every stat of ours shows once, the mob-only resistances never, and the damage type resistances in the
-        // Resistances rows instead of their own; no row shows twice (Matěj, 2026-10-31).
-        Set<String> hidden = new HashSet<>(Set.of(GeneratedStats.SPELL_RESISTANCE.value().getDescriptionId()));
+        // Every stat of ours shows once, the mob-only resistances and Magic Shield Damage (RLM-580) never, and the
+        // damage type resistances in the Resistances rows instead of their own; no row shows twice (Matěj, 2026-10-31).
+        Set<String> hidden = new HashSet<>(Set.of(GeneratedStats.SPELL_RESISTANCE.value().getDescriptionId(),
+                GeneratedStats.MAGIC_SHIELD_DAMAGE.value().getDescriptionId()));
         server.registryAccess().lookupOrThrow(CombatRegistries.SPELL_SCHOOL).listElements().forEach(school ->
                 school.value().resistance().ifPresent(stat -> hidden.add(stat.value().getDescriptionId())));
         GeneratedStats.DAMAGE_RESISTANCES.forEach(resistance -> hidden.add(resistance.stat().value()

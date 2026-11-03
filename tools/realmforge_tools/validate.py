@@ -95,6 +95,7 @@ from realmforge_tools.schema.spell import (
     ALLY,
     APPLY_EFFECT,
     AREA,
+    ATTRIBUTE_BONUS,
     CHARGE,
     CLEANSE,
     CONE,
@@ -1380,37 +1381,49 @@ def _check_bonus_placeholder(
     source: str, spell: SpellDef, content: Content, universe: IdUniverse
 ) -> list[Problem]:
     """{bonus} reads the attribute modifier of the first applied status effect: one of ours must have exactly one (the
-    game keeps an effect's modifiers unordered), and it must read as a number, in percent for a multiplied operation or
-    in the attribute's points (not add_value on one of our shares, which the description could not tell from
-    points)."""
-    if spell.is_passive or "bonus" not in spell.placeholders():
+    game keeps an effect's modifiers unordered), and {bonus_<attribute>} its one modifier on that attribute (by the
+    id's path, RLM-543: Battle Shout's attack damage and attack speed). Each must read as a number, in percent for a
+    multiplied operation or in the attribute's points (not add_value on one of our shares, which the description could
+    not tell from points)."""
+    names = [name for name in spell.placeholders() if name == "bonus" or ATTRIBUTE_BONUS.fullmatch(name)]
+    if spell.is_passive or not names:
         return []
     applied = spell.first_effect(APPLY_EFFECT)
     ours = {effect_id(entry.model.id): entry.model for entry in content.effects}
     effect = ours.get(applied.effect)
     if effect is None:
         return []
-    if len(effect.modifiers) != 1:
-        return [
-            Problem(
-                source,
-                "description",
-                f"{{bonus}} reads {applied.effect}'s one modifier, and it has {len(effect.modifiers)}",
-            )
-        ]
-    first = effect.modifiers[0]
     stats = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.stats}
-    stat = stats.get(first.attribute)
-    if first.operation == "add_value" and stat is not None and stat.percent:
-        return [
-            Problem(
-                source,
-                "description",
-                f"{{bonus}} reads {applied.effect}'s first modifier, add_value on the share {first.attribute}: "
-                "give it a multiplied operation or describe the number another way",
+    problems: list[Problem] = []
+    for name in names:
+        attribute = ATTRIBUTE_BONUS.fullmatch(name)
+        modifiers = (
+            effect.modifiers
+            if attribute is None
+            else [m for m in effect.modifiers if m.attribute.split(":", 1)[1] == attribute.group(1)]
+        )
+        if len(modifiers) != 1:
+            what = "one modifier" if attribute is None else f"one modifier on {attribute.group(1)}"
+            problems.append(
+                Problem(
+                    source,
+                    "description",
+                    f"{{{name}}} reads {applied.effect}'s {what}, and it has {len(modifiers)}",
+                )
             )
-        ]
-    return []
+            continue
+        first = modifiers[0]
+        stat = stats.get(first.attribute)
+        if first.operation == "add_value" and stat is not None and stat.percent:
+            problems.append(
+                Problem(
+                    source,
+                    "description",
+                    f"{{{name}}} reads {applied.effect}'s modifier, add_value on the share {first.attribute}: "
+                    "give it a multiplied operation or describe the number another way",
+                )
+            )
+    return problems
 
 
 def _check_projectile(

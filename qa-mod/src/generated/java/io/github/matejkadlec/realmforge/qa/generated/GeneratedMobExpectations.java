@@ -42,7 +42,7 @@ public final class GeneratedMobExpectations {
                     "entity.realmforge.astone",
                     "boss",
                     2.0F, 5.0F,
-                    250.0, 7.0, 8.0,
+                    468.75, 21.0, 8.0,
                     0.24, 32.0, 1.0,
                     "guard",
                     40, 0.6,

@@ -29,7 +29,7 @@ import org.slf4j.Logger;
  * with no list to keep: ours (from their Better Combat weapon files), other mods' (their own files, or Better Combat's
  * fallback by item id) and vanilla's. A weapon whose right click already does something stays out, because its use
  * animation is not {@code NONE}: a spear keeps its charge (Matěj, 2026-10-22), a bow its draw. Every two-handed weapon,
- * spears included, also goes into {@link #TWO_HANDED_WEAPONS}, the weapons of Two-Handed Weapon Specialization
+ * spears included, also goes into {@link #TWO_HANDED_WEAPONS}, the weapons of Two-Handed Specialization
  * (RLM-541), bound the same way.
  *
  * <p>Better Combat decides what is two-handed at run time, after the tags have loaded, so the tag cannot be data: the
@@ -48,7 +48,7 @@ import org.slf4j.Logger;
 public final class TwoHandedWeapons {
     public static final String MOD_ID = "bettercombat";
     /**
-     * Every weapon Better Combat calls two-handed, spears included (RLM-541): Two-Handed Weapon Specialization applies
+     * Every weapon Better Combat calls two-handed, spears included (RLM-541): Two-Handed Specialization applies
      * while one is in the main hand. Bound with {@link WeaponBlocks#RAISABLE}, the same way; the core mod's data
      * writes it empty.
      */
@@ -114,7 +114,7 @@ public final class TwoHandedWeapons {
         return members.stream().map(holder -> holder.key().identifier()).sorted().toList();
     }
 
-    /** Whether Better Combat calls the item two-handed (RLM-541: Two-Handed Weapon Specialization's weapons). */
+    /** Whether Better Combat calls the item two-handed (RLM-541: Two-Handed Specialization's weapons). */
     public static boolean twoHanded(Item item) {
         ItemStack stack = new ItemStack(item);
         if (stack.isEmpty()) {

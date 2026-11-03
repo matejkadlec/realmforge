@@ -142,8 +142,8 @@ public final class SwingAndSplashGameTests {
     }
 
     /**
-     * A stun before Slam's hit moment stops it: nothing lands, and half its 30 rage and half its 6 s cooldown come back
-     * (Matěj, 2026-10-29). Melee is blocked while it plays out.
+     * A stun before Slam's hit moment stops it: nothing lands, and half its 30 rage and half its 4 s cooldown come back
+     * (Matěj, 2026-10-29; 4 s since 2026-11-03). Melee is blocked while it plays out.
      */
     @QaGameTest(template = QaGameTests.PLATFORM_9X9)
     public static void aStunBeforeTheHitMomentRefundsHalf(GameTestHelper helper) {
@@ -161,7 +161,7 @@ public final class SwingAndSplashGameTests {
             helper.assertTrue(close(Resources.amount(player, ResourceTypes.RAGE), 85), "half the rage came back: "
                     + Resources.amount(player, ResourceTypes.RAGE));
             helper.assertValueEqual(player.getData(SpellAttachments.COMBAT).cooldowns().get(GeneratedSpells.SLAM),
-                    start + 60, "half the cooldown came back");
+                    start + 40, "half the cooldown came back");
             helper.assertFalse(player.entityTags().contains(CombatState.BETTER_COMBAT_DISABLED_TAG), "melee is back");
             logout(player);
             helper.succeed();

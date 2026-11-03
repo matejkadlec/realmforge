@@ -196,6 +196,17 @@ def test_a_mob_may_walk_silently(repo: RepoPaths) -> None:
     assert "Optional.empty(), true)," in registrations
 
 
+def test_a_mob_may_ignore_armor_and_drain_magic_shields(repo: RepoPaths) -> None:
+    # RLM-580: Astone's hits ignore 15 % of a player's armor and drain 15 % more of a magic shield.
+    stats = "movement_speed: 0.2, armor_shred_percent: 25, magic_shield_damage_percent: 40}"
+    mob(repo, "hewn_brute", MELEE.replace("movement_speed: 0.2}", stats))
+    registrations = generate(repo)[REGISTRATIONS].decode()
+    assert ".add(GeneratedStats.ARMOR_SHRED, 0.25)" in registrations
+    assert ".add(GeneratedStats.MAGIC_SHIELD_DAMAGE, 0.4)" in registrations
+    mob(repo, "hewn_brute", MELEE.replace("movement_speed: 0.2}", stats.replace("25,", "120,")))
+    assert_problem(repo, "armor_shred_percent")
+
+
 def test_death_particles_name_a_block(repo: RepoPaths) -> None:
     mob(repo, "hewn_brute", MELEE + "death_particles: realmforge:vaultstones\n")
     assert_problem(repo, "death_particles: unknown id 'realmforge:vaultstones'")

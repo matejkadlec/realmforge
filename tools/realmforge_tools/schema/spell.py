@@ -47,6 +47,8 @@ SCALING_OF_KIND: dict[str, str] = {"magic": "spell_power", "physical": "attack_d
 
 # Combat effects keep their own short time scale (research SP-8: most last 4-10 s, none beyond 30 s in CTE2).
 MAX_EFFECT_SECONDS = 60.0
+# A status effect a spell applies may be a long buff (Matěj, 2026-11-03: Battle Shout's 600 s): at most 10 minutes.
+MAX_APPLY_EFFECT_SECONDS = 600.0
 MAX_AMPLIFIER = 9
 MAX_PROJECTILE_SPEED = 100.0
 MAX_PROJECTILE_SIZE = 4.0
@@ -110,7 +112,8 @@ NPC_TARGETING: tuple[str, ...] = (CURRENT_TARGET, RANDOM_PLAYER, FARTHEST_PLAYER
 # - armor_shred, penetration: the first damage effect's extra armor shred and spell penetration, in percent;
 # - crit_chance: the spell's bonus crit chance, in percent;
 # - bonus: the one attribute modifier of the first apply_effect's status effect at its strength, in percent for a
-#   multiplied operation and in the attribute's points otherwise;
+#   multiplied operation and in the attribute's points otherwise; bonus_<attribute>, e.g. {bonus_attack_speed}, its
+#   modifier on that attribute (by the id's path) when it has several (RLM-543: Battle Shout's two);
 # - dot_damage, dot_duration: the first damage_over_time's damage over its whole duration, raised by the school's
 #   power as its ticks are, and its duration in seconds (RLM-543: Rend's bleed);
 # - max_health_heal: the first heal's share of max health, in percent (RLM-543: Victory Rush);
@@ -147,6 +150,8 @@ PLACEHOLDERS: tuple[str, ...] = (
     "refund_rank",
 )
 PERIODIC_PLACEHOLDERS: frozenset[str] = frozenset({"periodic", "periodic_total", "interval"})
+# {bonus_<attribute>}: the first applied status effect's modifier on the attribute with that path (RLM-543).
+ATTRIBUTE_BONUS = re.compile(r"bonus_([a-z_]+)")
 # The placeholders a passive spell's description may name (RLM-541), each at the player's rank; the next rank's tooltip
 # line reads them at that rank:
 # - bonus: the passive's first modifier, in percent for a multiplied operation, in the attribute's unit otherwise;
@@ -273,6 +278,11 @@ class DamageEffectDef(_ScaledAmount):
         description="More damage against a target with a status effect (RLM-540), e.g. "
         "{effect: realmforge:frozen, damage_percent: 200} triples it against a Frozen target.",
     )
+    magic_shield_damage_percent: Annotated[float, Field(gt=0, le=1000, allow_inf_nan=False)] | None = Field(
+        default=None,
+        description="How much more of a magic shield the hit drains, in percent, added to the caster's own "
+        "(realmforge:magic_shield_damage; RLM-580: Astone's spells, 15 on her own 15).",
+    )
 
     @model_validator(mode="after")
     def _per_level_needs_base(self) -> DamageEffectDef:
@@ -359,13 +369,14 @@ class DamageOverTimeEffectDef(_ScaledAmount):
 
 
 class ApplyEffectEffectDef(StrictModel):
-    """Gives each target a status effect: a vanilla one (``minecraft:slowness``) until our own come with C3c
-    (RLM-26). Combat effects keep their own short time scale (research SP-8), so at most 60 seconds."""
+    """Gives each target a status effect: a vanilla one (``minecraft:slowness``) or our own (C3c). Combat effects keep
+    their own short time scale (research SP-8), but a buff may last long (Matěj, 2026-11-03: Battle Shout's 10
+    minutes), so at most 600 seconds."""
 
     type: Literal["realmforge:apply_effect"]
     effect: ResourceId = Field(description="The status effect, e.g. minecraft:slowness.")
     duration_seconds: Seconds = Field(
-        description="How long it lasts at spell level 1; more than 0, at most 60."
+        description="How long it lasts at spell level 1; more than 0, at most 600."
     )
     duration_per_level_seconds: Seconds | None = Field(
         default=None,
@@ -385,10 +396,8 @@ class ApplyEffectEffectDef(StrictModel):
 
     @model_validator(mode="after")
     def _duration(self) -> ApplyEffectEffectDef:
-        if not 0 < self.duration_seconds <= MAX_EFFECT_SECONDS:
-            raise ValueError(
-                f"duration_seconds is more than 0 and at most {MAX_EFFECT_SECONDS:g} (research SP-8)"
-            )
+        if not 0 < self.duration_seconds <= MAX_APPLY_EFFECT_SECONDS:
+            raise ValueError(f"duration_seconds is more than 0 and at most {MAX_APPLY_EFFECT_SECONDS:g}")
         if self.stronger_at_levels != sorted(set(self.stronger_at_levels)) or any(
             level < 2 for level in self.stronger_at_levels
         ):
@@ -922,15 +931,22 @@ class ExtraCostDef(StrictModel):
 
 
 class KillRefundDef(StrictModel):
-    """Resource a player's cast gets back for each enemy its hits kill, from a rank on (RLM-543: Execute refunds 10
-    rage at rank 3)."""
+    """Resource a player's cast gets back for each enemy its hits kill, growing per rank, from a rank on (RLM-543:
+    Execute refunds 5/10/15 rage, Matěj, 2026-11-03)."""
 
     amount: Annotated[float, Field(gt=0, allow_inf_nan=False)] = Field(
-        description="How much comes back, e.g. 10."
+        description="How much comes back at rank 1, e.g. 5."
+    )
+    per_level: NonNegative | None = Field(
+        default=None, description="Added for every rank above 1, if it grows."
     )
     from_level: int = Field(
         default=1, ge=1, le=MAX_SPELL_LEVEL, description="The rank from which a kill refunds it."
     )
+
+    def amount_at(self, level: int) -> float:
+        """What a kill refunds at rank ``level``: nothing below from_level."""
+        return self.amount + (self.per_level or 0) * (level - 1) if level >= self.from_level else 0
 
 
 class CostDef(_LeveledAmount):
@@ -944,7 +960,7 @@ class CostDef(_LeveledAmount):
     refund_on_kill: KillRefundDef | None = Field(
         default=None,
         description="Resource that comes back for each enemy the spell's hits kill, from a rank on (RLM-543: "
-        "Execute's {amount: 10, from_level: 3}).",
+        "Execute's {amount: 5, per_level: 5}).",
     )
 
     @model_validator(mode="after")
@@ -1083,7 +1099,7 @@ class CritChanceDef(StrictModel):
 
 class BlockCooldownDef(StrictModel):
     """A raised two-handed weapon's cooldown after a block or after lowering it (architecture 9.3), shorter from a rank
-    on (RLM-541: Two-Handed Weapon Specialization's 0.25 s at rank 3)."""
+    on (RLM-541: Two-Handed Specialization's 0.25 s at rank 3)."""
 
     reduction_seconds: Seconds = Field(description="How much shorter, in seconds; more than 0, at most 10.")
     from_level: int = Field(
@@ -1523,11 +1539,8 @@ class SpellDef(StrictModel):
                 leveled.append("passive")
             if self.cost is not None and self.cost.per_level != 0:
                 leveled.append("cost")
-            if (
-                self.cost is not None
-                and self.cost.refund_on_kill is not None
-                and self.cost.refund_on_kill.from_level > 1
-            ):
+            refund = self.cost.refund_on_kill if self.cost is not None else None
+            if refund is not None and (refund.from_level > 1 or refund.per_level):
                 leveled.append("cost.refund_on_kill")
             if self.crit.bonus_chance_per_level_percent is not None:
                 leveled.append("crit")
@@ -1566,10 +1579,10 @@ class SpellDef(StrictModel):
                     f"{path}.against_effect: stays at most 1000 % more damage at max_level {top}"
                 )
             if effect.type == APPLY_EFFECT:
-                if effect.duration_at(top) > MAX_EFFECT_SECONDS:
+                if effect.duration_at(top) > MAX_APPLY_EFFECT_SECONDS:
                     raise ValueError(
                         f"{path}: lasts {effect.duration_at(top):g} s at max_level {top}, more than "
-                        f"{MAX_EFFECT_SECONDS:g} (research SP-8)"
+                        f"{MAX_APPLY_EFFECT_SECONDS:g}"
                     )
                 if any(level > top for level in effect.stronger_at_levels):
                     raise ValueError(
@@ -1686,9 +1699,16 @@ class SpellDef(StrictModel):
             self._passive_placeholders()
             return self
         for name in self.placeholders():
+            if ATTRIBUTE_BONUS.fullmatch(name):
+                if self.first_effect(APPLY_EFFECT) is None:
+                    raise ValueError(
+                        f"description: {{{name}}} needs a {APPLY_EFFECT} effect, and the spell has none"
+                    )
+                continue
             if name not in PLACEHOLDERS:
                 raise ValueError(
-                    f"description: unknown placeholder {{{name}}}; known: {', '.join(PLACEHOLDERS)}"
+                    f"description: unknown placeholder {{{name}}}; known: {', '.join(PLACEHOLDERS)} and "
+                    "bonus_<attribute>"
                 )
             if name == "crit_chance":
                 if self.crit.bonus_chance_at(self.max_level) == 0:

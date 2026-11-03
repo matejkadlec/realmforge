@@ -47,7 +47,7 @@ public final class GeneratedEffectExpectations {
                     "effect.realmforge.battle_shout",
                     "beneficial",
                     0xF5241B,
-                    List.of(new ModifierExpectation("minecraft:attack_damage", "realmforge:effect.battle_shout.minecraft.attack_damage", 0.1, "add_multiplied_total", 0.15000000000000002)),
+                    List.of(new ModifierExpectation("minecraft:attack_damage", "realmforge:effect.battle_shout.minecraft.attack_damage", 0.05, "add_multiplied_total", 0.1), new ModifierExpectation("minecraft:attack_speed", "realmforge:effect.battle_shout.minecraft.attack_speed", 0.1, "add_multiplied_total", 0.2)),
                     Optional.empty(),
                     Optional.empty(),
                     false,

@@ -165,7 +165,9 @@ Rules:
   default, vanilla's) and `knock_up_blocks`, how high each hit throws its target; a caster names its `spells` (each one
   that targets an enemy and reaches farther than one kiting step) and its `kiting` (`step_blocks`, `speed_percent` of
   its walking speed: the quick step it takes between casts) under `caster`. `attributes` are its numbers at level 1,
-  which its level scales like every hostile mob's; `idle` is `stroll` (the default: wanders as vanilla's mobs do, at the
+  which its level scales like every hostile mob's, and may add `armor_shred_percent` (the share of a player's armor
+  its hits ignore) and `magic_shield_damage_percent` (how much more of a magic shield they drain; both RLM-580,
+  Astone's 15, which her spells add their own to); `idle` is `stroll` (the default: wanders as vanilla's mobs do, at the
   Zombified Piglin's speed, so its `movement_speed` is how fast it fights) or `guard` (stands at the spot where it first
   stood and walks back to it); `sounds` name sound events, ours from `sounds/` (`realmforge:entity.<mob>.<name>`) or
   vanilla's, and `step: silent` walks without a sound; `death_particles` names the block it breaks apart into when it
@@ -385,8 +387,7 @@ Rules:
   `name`, a `category` (`beneficial`, `harmful` or `neutral`), a particle `color` (`"#RRGGBB"`), `modifiers` (an
   `attribute`, an `operation` and the first level's `amount`, or `amount_percent` for a multiplied operation or one of
   our shares, as for races and classes; one per attribute; each amplifier level multiplies it, as vanilla does,
-  unless `per_amplifier` or `per_amplifier_percent` gives the step each level above the first adds instead: Battle
-  Shout's 10, 15 and 20 %) and
+  unless `per_amplifier` or `per_amplifier_percent` gives the step each level above the first adds instead) and
   `periodic` damage or healing (`type: damage` or `heal`, a `school`, the `amount` of a tick at the first level,
   `spell_power_percent`, the share of the caster's Spell Power a tick adds (a magic school only; scaling system C,
   RLM-534: a damage over time splits its spell's coefficient over its ticks), both of which each amplifier level adds
@@ -410,7 +411,8 @@ Rules:
   no area the first cone's range), `{against_damage}` the first damage effect's damage against a target with its
   `against_effect`'s status effect, `{armor_shred}` and `{penetration}` the first damage effect's, `{crit_chance}` the
   crit block's bonus chance and `{bonus}` the one modifier of the first applied effect (in percent for a multiplied
-  operation); RLM-543 adds `{dot_damage}` and `{dot_duration}` (the first `damage_over_time`'s damage and seconds),
+  operation), or `{bonus_<attribute>}` its modifier on that attribute, by the id's path, for an effect with several
+  (Battle Shout's `{bonus_attack_damage}` and `{bonus_attack_speed}`); RLM-543 adds `{dot_damage}` and `{dot_duration}` (the first `damage_over_time`'s damage and seconds),
   `{max_health_heal}` (the first heal's share of max health), `{resource_gain}` (the first `gain_resource`'s amount),
   `{min_range}` and `{range}` (the `target_distance`, or a targeted spell's range), `{window}` (its seconds),
   `{health_below}`, `{extra_cost}` and `{extra_damage}`, and `{refund}` and `{refund_rank}`, and `{radius}` reads a
@@ -465,7 +467,7 @@ Rules:
   enemy that near or far, measured as a range is; the targeting's `range` is the farthest at `max_level`: Charge's 3 to
   10, 12 at rank 2); a `cost` may add `extra` (`max` more of the resource spent when the player has it,
   `damage_per_point_percent` more damage for each) and `refund_on_kill` (RLM-543: `amount` back for each enemy the
-  spell's hits kill, from rank `from_level`: Execute's 10 at rank 3); an `instant` cast may play out over `animation_seconds` (RLM-399: a
+  spell's hits kill, `per_level` more for every rank above 1, from rank `from_level`: Execute's 5/10/15); an `instant` cast may play out over `animation_seconds` (RLM-399: a
   Warrior's swing, its effects at `hit_at_percent` of it, 50 by default; a player's only); and the
   `effects`, in order: `realmforge:damage` (a hit of the school on an enemy) and `realmforge:heal`
   (on the caster or an ally; with `on_caster: true`, among the spell's own effects, on the caster whatever the spell
@@ -476,7 +478,9 @@ Rules:
   damage spell, where its damage effects need one, or `spell_power_percent` (the share of the caster's Spell Power,
   points, added) on a spell power spell, each with a `_per_level_percent` for every rank above 1 (Frostbolt's 100 % +
   25 % a rank, 200 % at rank 5); a spell names only its own power's; a damage
-  effect may add `armor_shred_percent` (that share of the target's armor ignored by this hit) and
+  effect may add `armor_shred_percent` (that share of the target's armor ignored by this hit),
+  `magic_shield_damage_percent` (RLM-580: that much more of a magic shield drained by this hit, on the attacker's
+  own `magic_shield_damage`: Astone's spells' 15) and
   `penetration_percent` (that share of its resistance to the school ignored), each with a `_per_level_percent` for
   every rank above 1, at most 100 % at `max_level`, and `against_effect` (`effect`, `damage_percent` with
   `damage_per_level_percent`: more damage against a target with that status effect, Ice Lance's 100 to 200 against
@@ -486,7 +490,8 @@ Rules:
   `realmforge:apply_effect` (`effect`, a status effect id: one of ours from `effects/`, or a vanilla one such as
   `minecraft:slowness`, never an instant one such as
   `minecraft:instant_health`, which would apply every tick: use `realmforge:heal` or `realmforge:damage`;
-  `duration_seconds` up to 60, `amplifier`, and for a spell of several ranks `duration_per_level_seconds` (added
+  `duration_seconds` up to 600, a long buff's 10 minutes (Battle Shout), `amplifier`, and for a spell of several
+  ranks `duration_per_level_seconds` (added
   for every rank above 1) and `stronger_at_levels` (the ranks from which the amplifier is one higher); an area or a
   channel applies one of our effects with `periodic` again
   at every interval, which resets its duration, so validation refuses an area or channel whose interval is shorter
@@ -515,7 +520,8 @@ Rules:
   caster's feet, an enemy's or a ground point; `realmforge:teleport` (the caster to a ground
   point, or along a direction as far as its range and blocks allow); `realmforge:dash` (`strength`, a burst of
   speed in blocks per tick toward an enemy, a ground point or along a direction); `realmforge:charge` (RLM-543, at an
-  enemy: the caster rushes at it at `speed` blocks a second, at most 60, until it stands in front of it, then its own
+  enemy: the caster rushes at it at `speed` blocks a second, at most 60, until it stands against the side of it the
+  charge came from, never through it, then its own
   `effects` run on every enemy within `landing_radius` of where it lands: Charge's stun); and
   `realmforge:gain_resource` (RLM-543: `resource`, `amount` and `per_level` the caster gains, whatever the spell targets;
   players only; a class's spell gains the class's resource). The effects of a projectile or an
@@ -549,7 +555,7 @@ Rules:
   tooltip, at the next: `{bonus}` (the first modifier), `{spell_damage}`, `{crit_chance}`, `{block_cooldown}` and
   `{block_cooldown_rank}`, `{splash_radius}` and `{splash_radius_rank}`, and the first proc's `{proc_chance}`,
   `{proc_duration}`, `{proc_cooldown}` and `{proc_damage}`. It never goes onto the spell bar and is never cast. Improved Frostbolt,
-  Frostbite, Shatter and Two-Handed Weapon Specialization are the first, of the M1 trees: the Frost Mage's "Shatter"
+  Frostbite, Shatter and Two-Handed Specialization are the first, of the M1 trees: the Frost Mage's "Shatter"
   (RLM-542) and the Arms Warrior's "Bloodletter" (RLM-543, with Deep Wounds and Taste for Blood).
 - `worldgen/` is the one exception to YAML: Minecraft's own worldgen JSON (`dimension/`, `dimension_type/`,
   `biome/`, `noise_settings/`, ...), validated (location, id, JSON, dimension types, no clash with the core mod's

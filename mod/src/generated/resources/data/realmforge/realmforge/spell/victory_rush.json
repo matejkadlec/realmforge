@@ -30,9 +30,9 @@
   },
   "effects": [
     {
-      "amount": 3.0,
+      "amount": 5.0,
       "per_level": 1.0,
-      "attack_damage": 0.7,
+      "attack_damage": 0.8,
       "attack_damage_per_level": 0.1,
       "type": "realmforge:damage"
     },

@@ -236,6 +236,16 @@ public final class GeneratedStatExpectations {
                     0.0,
                     null),
             new StatExpectation(
+                    "realmforge:magic_shield_damage",
+                    "attribute.realmforge.magic_shield_damage",
+                    false,
+                    true,
+                    0.0,
+                    10.0,
+                    0.0,
+                    0.0,
+                    null),
+            new StatExpectation(
                     "realmforge:mana_regeneration",
                     "attribute.realmforge.mana_regeneration",
                     false,

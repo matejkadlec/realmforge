@@ -4,9 +4,11 @@
 # +4/8/12 % damage while a two-handed weapon (realmforge:two_handed_weapons, Better Combat's two-handed weapons) is in
 # the main hand, as Attack Damage the way the Human's Sword Specialization gives it, so melee hits and the Warrior's
 # spells both grow; at rank 3 a two-handed block's cooldown is 0.25 s shorter (architecture 9.3). The Warrior's kit
-# teaches it at level 6 (RLM-543).
+# teaches it at level 6 (RLM-543). Named "Two-Handed Specialization" (Matěj, 2026-11-03); the id stays, as players'
+# spellbooks keep it. Physical, so its frame is the physical school's, as Taste for Blood's is.
 id: two_handed_weapon_specialization
-name: {en_us: Two-Handed Weapon Specialization}
+name: {en_us: Two-Handed Specialization}
+school: realmforge:physical
 description:
   en_us: >-
     +{bonus}% damage with a two-handed weapon in your main hand. From rank {block_cooldown_rank}, its block cooldown is

@@ -192,7 +192,7 @@ public final class SpellCaster {
         double extra = payExtra(caster, value, state);
         double damageScale = value.cost().flatMap(SpellCost::extra).map(more -> more.damageFactor(extra)).orElse(1.0);
         wearWand(caster);
-        if (caster instanceof Player) {
+        if (caster instanceof Player && value.conditions().window().isPresent()) {
             state.closeWindow(spell.key());
         }
         if (value.cast().type() == SpellCast.Type.CAST_TIME) {

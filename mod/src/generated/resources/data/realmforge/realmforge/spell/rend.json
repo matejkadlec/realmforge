@@ -12,7 +12,7 @@
   },
   "cost": {
     "amount": 10.0,
-    "per_level": 0,
+    "per_level": 10.0,
     "resource": "realmforge:rage"
   },
   "cooldown_ticks": 120,

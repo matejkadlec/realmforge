@@ -65,7 +65,7 @@
     },
     "ApplyEffectEffectDef": {
       "additionalProperties": false,
-      "description": "Gives each target a status effect: a vanilla one (``minecraft:slowness``) until our own come with C3c\n(RLM-26). Combat effects keep their own short time scale (research SP-8), so at most 60 seconds.",
+      "description": "Gives each target a status effect: a vanilla one (``minecraft:slowness``) or our own (C3c). Combat effects keep\ntheir own short time scale (research SP-8), but a buff may last long (Matěj, 2026-11-03: Battle Shout's 10\nminutes), so at most 600 seconds.",
       "properties": {
         "amplifier": {
           "default": 0,
@@ -90,7 +90,7 @@
           "title": "Duration Per Level Seconds"
         },
         "duration_seconds": {
-          "description": "How long it lasts at spell level 1; more than 0, at most 60.",
+          "description": "How long it lasts at spell level 1; more than 0, at most 600.",
           "minimum": 0,
           "title": "Duration Seconds",
           "type": "number"
@@ -232,7 +232,7 @@
     },
     "BlockCooldownDef": {
       "additionalProperties": false,
-      "description": "A raised two-handed weapon's cooldown after a block or after lowering it (architecture 9.3), shorter from a rank\non (RLM-541: Two-Handed Weapon Specialization's 0.25 s at rank 3).",
+      "description": "A raised two-handed weapon's cooldown after a block or after lowering it (architecture 9.3), shorter from a rank\non (RLM-541: Two-Handed Specialization's 0.25 s at rank 3).",
       "properties": {
         "from_level": {
           "default": 1,
@@ -679,7 +679,7 @@
             }
           ],
           "default": null,
-          "description": "Resource that comes back for each enemy the spell's hits kill, from a rank on (RLM-543: Execute's {amount: 10, from_level: 3})."
+          "description": "Resource that comes back for each enemy the spell's hits kill, from a rank on (RLM-543: Execute's {amount: 5, per_level: 5})."
         },
         "resource": {
           "description": "The resource the cast costs.",
@@ -892,6 +892,21 @@
           "default": null,
           "description": "Share of the caster's attack damage added to the amount at spell level 1 (100 adds all of it). Required for the damage of spells that scale with attack_damage, refused for spells that scale with spell_power.",
           "title": "Attack Damage Percent"
+        },
+        "magic_shield_damage_percent": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 1000,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "How much more of a magic shield the hit drains, in percent, added to the caster's own (realmforge:magic_shield_damage; RLM-580: Astone's spells, 15 on her own 15).",
+          "title": "Magic Shield Damage Percent"
         },
         "penetration_per_level_percent": {
           "anyOf": [
@@ -1466,10 +1481,10 @@
     },
     "KillRefundDef": {
       "additionalProperties": false,
-      "description": "Resource a player's cast gets back for each enemy its hits kill, from a rank on (RLM-543: Execute refunds 10\nrage at rank 3).",
+      "description": "Resource a player's cast gets back for each enemy its hits kill, growing per rank, from a rank on (RLM-543:\nExecute refunds 5/10/15 rage, Matěj, 2026-11-03).",
       "properties": {
         "amount": {
-          "description": "How much comes back, e.g. 10.",
+          "description": "How much comes back at rank 1, e.g. 5.",
           "exclusiveMinimum": 0,
           "title": "Amount",
           "type": "number"
@@ -1481,6 +1496,20 @@
           "minimum": 1,
           "title": "From Level",
           "type": "integer"
+        },
+        "per_level": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Added for every rank above 1, if it grows.",
+          "title": "Per Level"
         }
       },
       "required": [

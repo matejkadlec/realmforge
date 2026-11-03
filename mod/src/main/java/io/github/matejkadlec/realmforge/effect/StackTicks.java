@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import javax.annotation.Nullable;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -42,17 +43,30 @@ public final class StackTicks {
     public static boolean apply(LivingEntity target, Holder<MobEffect> effect, LivingEntity caster, EffectSource source,
             double total, int durationTicks) {
         Optional<StackedDamage> damage = stacked(effect);
+        if (damage.isEmpty() || durationTicks < 1) {
+            return false;
+        }
+        return applyPerTick(target, effect, caster, source, Math.max(0, total) / damage.get().tickCount(durationTicks),
+                durationTicks);
+    }
+
+    /**
+     * Gives {@code target} {@code caster}'s stack of {@code effect}, dealing {@code perTick} at each of its ticks for
+     * {@code durationTicks} (RLM-579: Apothic Attributes' Bleeding keeps its damage a tick); {@code caster} may be null
+     * when no entity is known, and {@code source} names it then. Returns whether it took hold.
+     */
+    public static boolean applyPerTick(LivingEntity target, Holder<MobEffect> effect, @Nullable LivingEntity caster,
+            EffectSource source, double perTick, int durationTicks) {
         Optional<ResourceKey<MobEffect>> key = effect.unwrapKey();
-        if (damage.isEmpty() || key.isEmpty() || durationTicks < 1) {
+        if (stacked(effect).isEmpty() || key.isEmpty() || durationTicks < 1) {
             return false;
         }
         Effects.apply(target, new MobEffectInstance(effect, durationTicks), caster, source);
         if (!target.hasEffect(effect)) {
             return false;
         }
-        double perTick = Math.max(0, total) / damage.get().tickCount(durationTicks);
         target.getData(EffectAttachments.STACKS).add(key.get(), new EffectStacks.Stack(source.caster(),
-                source.spell(), source.procOrigin(), perTick, durationTicks));
+                source.spell(), source.procOrigin(), Math.max(0, perTick), durationTicks));
         return true;
     }
 

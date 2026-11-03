@@ -33,10 +33,11 @@ import net.minecraft.world.entity.player.Player;
  * @param penetrationPerLevel added to the penetration for every spell level above 1
  * @param againstEffect more damage against a target with a status effect (RLM-540: Ice Lance against Frozen), growing
  *                      per rank (RLM-542), if any
+ * @param magicShieldDamage how much more of a magic shield the hit drains, a share (RLM-580: Astone's spells)
  */
 public record DamageEffect(double amount, double perLevel, Coefficient coefficient, double armorShred,
-        double armorShredPerLevel, double penetration, double penetrationPerLevel, Optional<AgainstEffect> againstEffect)
-        implements EntityEffect {
+        double armorShredPerLevel, double penetration, double penetrationPerLevel, Optional<AgainstEffect> againstEffect,
+        double magicShieldDamage) implements EntityEffect {
     public static final MapCodec<DamageEffect> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                     Codec.doubleRange(0, Double.MAX_VALUE).fieldOf("amount").forGetter(DamageEffect::amount),
                     Codec.doubleRange(0, Double.MAX_VALUE).optionalFieldOf("per_level", 0.0)
@@ -48,19 +49,29 @@ public record DamageEffect(double amount, double perLevel, Coefficient coefficie
                     Codec.doubleRange(0, 1).optionalFieldOf("penetration", 0.0).forGetter(DamageEffect::penetration),
                     Codec.doubleRange(0, 1).optionalFieldOf("penetration_per_level", 0.0)
                             .forGetter(DamageEffect::penetrationPerLevel),
-                    AgainstEffect.CODEC.optionalFieldOf("against_effect").forGetter(DamageEffect::againstEffect))
+                    AgainstEffect.CODEC.optionalFieldOf("against_effect").forGetter(DamageEffect::againstEffect),
+                    Codec.doubleRange(0, 10).optionalFieldOf("magic_shield_damage", 0.0)
+                            .forGetter(DamageEffect::magicShieldDamage))
             .apply(instance, DamageEffect::new));
 
     /** A hit without armor shred or spell penetration. */
     public DamageEffect(double amount, double perLevel, Coefficient coefficient) {
-        this(amount, perLevel, coefficient, 0, 0, 0, 0, Optional.empty());
+        this(amount, perLevel, coefficient, 0, 0, 0, 0, Optional.empty(), 0);
     }
 
     /** A hit with armor shred and spell penetration, and no bonus against an effect. */
     public DamageEffect(double amount, double perLevel, Coefficient coefficient, double armorShred,
             double armorShredPerLevel, double penetration, double penetrationPerLevel) {
         this(amount, perLevel, coefficient, armorShred, armorShredPerLevel, penetration, penetrationPerLevel,
-                Optional.empty());
+                Optional.empty(), 0);
+    }
+
+    /** A hit with a bonus against an effect, and no magic shield bonus. */
+    public DamageEffect(double amount, double perLevel, Coefficient coefficient, double armorShred,
+            double armorShredPerLevel, double penetration, double penetrationPerLevel,
+            Optional<AgainstEffect> againstEffect) {
+        this(amount, perLevel, coefficient, armorShred, armorShredPerLevel, penetration, penetrationPerLevel,
+                againstEffect, 0);
     }
 
     /**
@@ -109,7 +120,7 @@ public record DamageEffect(double amount, double perLevel, Coefficient coefficie
     /** What the hit adds to the caster's armor shred and spell penetration at spell level {@code level}, at most 1. */
     public HitBonus bonusAt(int level) {
         return new HitBonus(Math.min(1, armorShred + armorShredPerLevel * (level - 1)),
-                Math.min(1, penetration + penetrationPerLevel * (level - 1)));
+                Math.min(1, penetration + penetrationPerLevel * (level - 1)), 0, magicShieldDamage);
     }
 
     @Override
