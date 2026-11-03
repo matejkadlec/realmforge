@@ -99,6 +99,16 @@ consumable decisions of 11–12 October 2026.
   with Quick Casting and Thrift as options. Sized against a level-18 Frostbolt under scaling system C and against the
   wand gems (RLM-547) and affixes (RLM-562), with five questions for Matěj. **Proposed, not decided.**
 
+## Apotheosis gems (2026-10-30 to 2026-11-03, RLM-536)
+
+- **[apotheosis-gems.md](apotheosis-gems.md)**: all 21 gems of Apotheosis 9.1.0 from the pinned snapshot, each bonus
+  per gear category and purity with our stat remaps applied; how gems, categories and extra bonuses work; the findings
+  (wands were melee weapons and robes armor to Apotheosis, the five Nether and End gems never drop, which bonuses read
+  the physical and magic damage tags, an overlapping extra bonus fails with a WARN only); what data covers and what
+  needs code. **Decided (Matěj, 2026-10-30):** wands and four robe categories take gems through extra bonuses with
+  caster stats, the robes with swaps to Magic Shield and Spell Power, no gem gives a spell or school resistance, and
+  the Nether and End gems move to Ashfire and Unmade Isles (RLM-546 to RLM-550).
+
 ## Coins, merchant trades and trade display (2026-10-19, RLM-222)
 
 - **[coins-and-trades.md](coins-and-trades.md)**: coin, trade-editing and villager mods on NeoForge 26.1.2 (Modrinth
