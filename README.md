@@ -84,7 +84,10 @@ powershell -ExecutionPolicy Bypass -File .\git_clean_worktrees.ps1 --rewritten-p
 
 The two scripts are kept in step: a change to one goes into the other, and the safety regression suite runs
 against both (`bash tests/test_git_clean_worktrees.sh git_clean_worktrees.ps1` tests the port and needs `pwsh`,
-PowerShell 7, which CI's runner has).
+PowerShell 7, which CI's runner has). What only Windows can show (5.1's command line quoting, paths compared
+without case, a junction in residue) is in `tests/test_git_clean_worktrees_windows.ps1`, which CI runs under both
+PowerShells on a Windows runner; `powershell -ExecutionPolicy Bypass -File
+tests\test_git_clean_worktrees_windows.ps1 -Edition Desktop` runs it in the Windows clone.
 
 - A branch whose commits were rewritten before they merged (a playtest branch that `qa1` rebased, a commit a
   later review fix in the same pull request changed) is no ancestor of `origin/master` although its work is

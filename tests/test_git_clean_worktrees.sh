@@ -349,6 +349,53 @@ test_generated_only_orphan_residue_cleanup_is_scoped() {
   assert_path_exists "$sibling_generated_residue"
 }
 
+# Both scripts delete a link inside residue and never what it points at: the
+# bash script through `find -xdev -depth -delete`, the port through its own
+# Remove-TreeEntry. Windows' junctions are in test_git_clean_worktrees_windows.ps1.
+test_link_in_orphan_residue_is_not_followed() {
+  local repo
+  local outside
+  local generated_residue
+  local stale_residue
+  local branch_name=claude/stale-with-link
+  local metadata_path
+  local merged_head
+
+  repo="$(new_fixture link-in-residue)"
+  outside="$TEST_ROOT/link-in-residue/outside"
+  mkdir -p "$outside/nested"
+  printf 'keep me\n' > "$outside/nested/keep.txt"
+
+  generated_residue="$(session_home "$repo")/generated-with-link"
+  mkdir -p "$generated_residue/build"
+  printf 'generated\n' > "$generated_residue/build/output.txt"
+  ln -s "$outside" "$generated_residue/build/link"
+
+  stale_residue="$(session_home "$repo")/stale-with-link"
+  git -C "$repo" checkout -b "$branch_name" >/dev/null
+  printf 'merged work\n' > "$repo/merged-work.txt"
+  git -C "$repo" add merged-work.txt
+  git -C "$repo" commit -m "Merged worktree content" >/dev/null
+  merged_head="$(git -C "$repo" rev-parse HEAD)"
+  git -C "$repo" checkout master >/dev/null
+  git -C "$repo" merge --ff-only "$branch_name" >/dev/null
+  git -C "$repo" push origin master >/dev/null
+  git -C "$repo" worktree add "$stale_residue" "$branch_name" >/dev/null 2>&1
+  metadata_path="$(sed -n 's/^gitdir: //p' "$stale_residue/.git")"
+  find "$metadata_path" -xdev -depth -delete
+  git -C "$repo" branch -D "$branch_name" >/dev/null
+  mkdir -p "$stale_residue/build"
+  ln -s "$outside" "$stale_residue/build/link"
+
+  env PATH="$repo/fake-bin:$PATH" FAKE_GH_MODE=merged \
+    FAKE_GH_HEAD_NAME="$branch_name" FAKE_GH_HEAD_OID="$merged_head" \
+    "$repo/git_clean_worktrees.sh" >/dev/null
+
+  assert_path_missing "$generated_residue"
+  assert_path_missing "$stale_residue"
+  assert_path_exists "$outside/nested/keep.txt"
+}
+
 # A primary worktree path cut at its newline would name a different checkout,
 # whose .claude/worktrees/ directory must not be scanned.
 test_primary_worktree_path_with_newline_keeps_unrelated_worktree_home() {
@@ -1390,6 +1437,7 @@ test_worktree_with_run_or_local_files_is_kept
 test_uninspectable_merged_worktree_is_reported_as_an_error
 test_worktree_path_with_trailing_newline_is_not_truncated
 test_generated_only_orphan_residue_cleanup_is_scoped
+test_link_in_orphan_residue_is_not_followed
 test_primary_worktree_path_with_newline_keeps_unrelated_worktree_home
 test_primary_worktree_parent_with_trailing_newline_keeps_other_directory
 test_directory_holding_a_registered_worktree_is_untouched

@@ -164,6 +164,22 @@ jobs:
           packwiz refresh
           git diff --exit-code .
 
+  # The PowerShell port's Windows paths, which the content job's Linux runner cannot reach (RLM-239).
+  worktree-cleanup-windows:
+    name: Worktree cleanup on Windows (PowerShell 5.1 and 7)
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Smoke test under Windows PowerShell 5.1
+        shell: powershell
+        run: .\tests\test_git_clean_worktrees_windows.ps1 -Edition Desktop
+
+      - name: Smoke test under PowerShell 7
+        shell: pwsh
+        run: .\tests\test_git_clean_worktrees_windows.ps1 -Edition Core
+
   # Spike 6 (ADR 0018): the whole pack plus our jars, installed the way players and server owners install it, must
   # boot without errors. `uv run rf pack-boot` runs the same locally.
   pack-boot:
