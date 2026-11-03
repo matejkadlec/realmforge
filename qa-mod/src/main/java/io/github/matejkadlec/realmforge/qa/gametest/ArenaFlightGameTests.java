@@ -6,18 +6,23 @@ import io.github.matejkadlec.realmforge.generated.GeneratedMobs;
 import io.github.matejkadlec.realmforge.generated.GeneratedTexts;
 import java.util.List;
 import java.util.Set;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.NeoForgeMod;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 /**
  * RLM-559: creative flight is off in a boss's arena (Matěj, 2026-10-16 and 2026-10-29, RLM-232), here the test titan's
@@ -34,6 +39,10 @@ public final class ArenaFlightGameTests {
     private static final double ABOVE = 40;
     private static final Identifier UNBOUND = Identifier.fromNamespaceAndPath("realmforge_qa", "unbound");
     private static final int CHECK = ArenaFlight.CHECK_INTERVAL + 1;
+    private static final ResourceKey<Level> UNDERVAULT =
+            ResourceKey.create(Registries.DIMENSION, Identifier.parse("realmforge:stone"));
+    /** Where in Undervault the player lands, far from the other realm tests' spots. */
+    private static final Vec3 IN_UNDERVAULT = new Vec3(-2000.5, 64, -2000.5);
 
     private ArenaFlightGameTests() {
     }
@@ -115,26 +124,35 @@ public final class ArenaFlightGameTests {
     /**
      * PR review of RLM-559: a held player who leaves for another dimension (a realm portal, Waystones, /tp) gets flight
      * back from their own tick. The boss's check never runs for them there, and a boss stops ticking once nobody is
-     * near. A boss removed without dying (a discard; its chunk unloading goes the same way) lets go too.
+     * near. A boss removed without dying (a discard; its chunk unloading goes the same way) lets go too. RLM-575: the
+     * other dimension is Undervault, since the pack removes the Nether (ADR 0025), and the player's side runs through
+     * the real {@code PlayerTickEvent.Post} listener and its tick gate, not {@link ArenaFlight#recheck} directly.
      */
     @QaGameTest(template = QaGameTests.PLATFORM_17X17, timeoutTicks = 200)
     public static void flightReturnsInAnotherDimensionAndWhenTheBossIsRemoved(GameTestHelper helper) {
         BossMob titan = titan(helper);
         ServerPlayer player = flyer(helper, "qa-arena-away");
-        ServerLevel nether = helper.getLevel().getServer().getLevel(Level.NETHER);
+        ServerLevel undervault = helper.getLevel().getServer().getLevel(UNDERVAULT);
         helper.startSequence()
                 .thenWaitUntil(() -> helper.assertTrue(titan.home().isPresent(), "the titan took its home"))
                 .thenExecute(() -> QaPlayers.onPlatform(helper, player, INSIDE))
                 .thenExecuteAfter(CHECK, () -> {
                     helper.assertTrue(ArenaFlight.isHeldBy(player, titan), "the titan's arena holds the player");
-                    helper.assertTrue(nether != null, "the GameTest server has the Nether");
-                    player.teleportTo(nether, 0.5, 200, 0.5, Set.of(), 0.0F, 0.0F, true);
-                    // What the player's tick runs every 5 ticks (PlayerTickEvent.Post), before the titan's next check
-                    // could run. A fake player's tick count only advances in the level's entity loop, so ticking it
-                    // here would never reach that multiple.
-                    ArenaFlight.recheck(player);
+                    helper.assertTrue(undervault != null, "the GameTest server has Undervault");
+                    RealmGameTests.award(helper, player, "realmforge:realm/stone");
+                    undervault.getChunk(Mth.floor(IN_UNDERVAULT.x) >> 4, Mth.floor(IN_UNDERVAULT.z) >> 4);
+                    helper.assertTrue(player.teleportTo(undervault, IN_UNDERVAULT.x, IN_UNDERVAULT.y, IN_UNDERVAULT.z,
+                            Set.of(), 0.0F, 0.0F, true), "the unlocked player enters Undervault");
+                    // The player's own tick, before the titan's next check could run: a fake player's tick count only
+                    // advances in the level's entity loop, so the test sets it to the gate's multiple and posts the
+                    // event the server's player tick posts. Off the multiple, the listener does nothing.
+                    player.tickCount = ArenaFlight.CHECK_INTERVAL + 1;
+                    NeoForge.EVENT_BUS.post(new PlayerTickEvent.Post(player));
+                    helper.assertTrue(ArenaFlight.isHeldBy(player, titan), "off the tick gate the player stays held");
+                    player.tickCount = ArenaFlight.CHECK_INTERVAL;
+                    NeoForge.EVENT_BUS.post(new PlayerTickEvent.Post(player));
                     helper.assertFalse(ArenaFlight.isHeldBy(player, titan),
-                            "the player's side lets go of a boss in another dimension");
+                            "the player's tick lets go of a boss in another dimension");
                     assertFlightFollowsTheHolds(helper, player);
                     Vec3 back = helper.absoluteVec(INSIDE);
                     player.teleportTo(helper.getLevel(), back.x, back.y, back.z, Set.of(), 0.0F, 0.0F, true);
