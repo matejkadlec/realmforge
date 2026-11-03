@@ -129,10 +129,17 @@ jobs:
           path: .cache/vanilla
           key: vanilla-server-${{ hashFiles('tools/realmforge_tools/project.py') }}
 
+      - uses: actions/cache@v6
+        with:
+          path: .cache/apotheosis
+          key: apotheosis-jar-${{ hashFiles('pack/mods/apotheosis.pw.toml') }}
+
+      # Both snapshots: `rf gen` copies whole entries from Apotheosis's, so only this finds a hand edit to it.
       - name: Re-extract and compare
         run: |
           uv sync --locked
           uv run rf ids vanilla
+          uv run rf ids apotheosis
           git diff --exit-code tools/id_universe
 
   pack:
@@ -156,6 +163,22 @@ jobs:
         run: |
           packwiz refresh
           git diff --exit-code .
+
+  # The PowerShell port's Windows paths, which the content job's Linux runner cannot reach (RLM-239).
+  worktree-cleanup-windows:
+    name: Worktree cleanup on Windows (PowerShell 5.1 and 7)
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Smoke test under Windows PowerShell 5.1
+        shell: powershell
+        run: .\tests\test_git_clean_worktrees_windows.ps1 -Edition Desktop
+
+      - name: Smoke test under PowerShell 7
+        shell: pwsh
+        run: .\tests\test_git_clean_worktrees_windows.ps1 -Edition Core
 
   # Spike 6 (ADR 0018): the whole pack plus our jars, installed the way players and server owners install it, must
   # boot without errors. `uv run rf pack-boot` runs the same locally.

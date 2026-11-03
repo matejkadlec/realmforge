@@ -45,7 +45,8 @@ Generated directories (owned by `rf gen`, never edit by hand): `mod/src/generate
 `content/quests/` has a quest). When `rf gen` changes files in `pack/`, it runs `packwiz refresh` in `pack/`; without
 `packwiz` on the `PATH` it exits with 1 and asks for it. `tools/id_universe/` is written by `rf ids vanilla` and `rf ids apotheosis`, never by hand: after an Apotheosis update
 in the pack, set `SOURCE_COMMIT` in `realmforge_tools/apotheosis.py` to the release's commit and run
-`rf ids apotheosis` (a pytest fails while the snapshot names another jar).
+`rf ids apotheosis` (a pytest fails while the snapshot names another jar). CI re-extracts both snapshots and fails on
+any difference, so a hand edit to either fails its "Vanilla ID universe is reproducible" job.
 
 ## Pack boot
 

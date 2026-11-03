@@ -202,6 +202,7 @@ cd pack && packwiz refresh                # after changing anything in pack/
 ./git_clean_worktrees.sh                  # Matěj only: merged branches, their worktrees, worktree residue (README)
 bash tests/test_git_clean_worktrees.sh    # its safety regression suite (CI runs it in the content job)
 bash tests/test_git_clean_worktrees.sh git_clean_worktrees.ps1  # the same suite against the PowerShell port (pwsh)
+                                          # the port's Windows paths: tests/test_git_clean_worktrees_windows.ps1 (CI, README)
 bash tests/test_gradle_queue.sh           # the Gradle queue's cloud warm-up suite (CI runs it in the content job)
 ```
 
@@ -226,7 +227,7 @@ bash tests/test_gradle_queue.sh           # the Gradle queue's cloud warm-up sui
 | `.github/workflows/ci.yml` | CI | yes |
 | `git_clean_worktrees.sh` | Matěj's cleanup of merged branches, their worktrees and worktree residue ([README](README.md#git-worktree-cleanup)) | yes |
 | `git_clean_worktrees.ps1` | its PowerShell port for the Windows clone: same rules, options and messages; change both together | yes |
-| `tests/` | shell test suites: the worktree cleanup's safety regression suite, the Gradle queue's warm-up suite | yes |
+| `tests/` | shell test suites: the worktree cleanup's safety regression suite and its Windows smoke test, the Gradle queue's warm-up suite | yes |
 | `.claude/` | Claude Code settings, content validation hook, cloud warm-up hook, Gradle queue script, flow skills (`flow1`, `flow2`, `qa1`, `qa2`), PR skill `finalize-pr` (`fix-pr` and `monitor-pr` disabled: `SKILL.md.disabled`), `pr-reviewer` agent | yes |
 | `.mcp.json` | MCP servers for Claude Code: `atlassian` (Jira) | yes |
 | `.local/` | owner's private inputs; gitignored, **never commit** | - |
@@ -517,9 +518,9 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
    playtest opens no PR before his `qa1`: push the branch and hand it off instead
    ([flow: Playtest handoff](docs/ai-development-flow.md#playtest-handoff)). CI (`.github/workflows/ci.yml`)
    runs: content pipeline + generated-files check + the worktree cleanup and Gradle queue suites, Gradle build +
-   JUnit + GameTests, vanilla ID universe reproducibility, packwiz index (these four are the required checks on
-   `master`), and the full pack boot on a dedicated server and on a client
-   ([ADR 0018](docs/decisions/0018-pack-boot-tests.md)).
+   JUnit + GameTests, reproducibility of the vanilla and Apotheosis snapshots, packwiz index (these four are the
+   required checks on `master`), the worktree cleanup port's smoke test on Windows, and the full pack boot on a
+   dedicated server and on a client ([ADR 0018](docs/decisions/0018-pack-boot-tests.md)).
 6. `finalize-pr` merges once an independent `pr-reviewer` review of the exact head leaves no P1 or P2 open (or
    Matěj approves that head after a capped or disputed review), every review thread is resolved and the
    required checks are green, unless a fix after Matěj's playtest changed gameplay: then he retests and answers
