@@ -41,10 +41,14 @@ public final class TargetHighlight {
         NeoForge.EVENT_BUS.addListener(ServerStoppedEvent.class, event -> ON.clear());
     }
 
-    /** {@code player}'s client says the highlight went on ({@code on}) or off; going on picks at once. */
+    /**
+     * {@code player}'s client says the highlight went on ({@code on}) or off. Going on picks at once and always sends
+     * the pick, "no mob" included (RLM-521): an answer to an earlier "on" can arrive after the client switched the
+     * highlight off, and only a fresh answer, which payload order delivers after it, replaces it.
+     */
     public static void setOn(ServerPlayer player, boolean on) {
         if (on) {
-            ON.putIfAbsent(player.getUUID(), NONE);
+            ON.remove(player.getUUID());
             highlight(player);
         } else {
             ON.remove(player.getUUID());

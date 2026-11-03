@@ -95,8 +95,14 @@ public final class TargetCircle {
         target = payload.target();
     }
 
+    /**
+     * The server's pick for the highlight. One that arrives while the highlight is off answers an earlier "on" and is
+     * dropped (RLM-521); the server answers the next "on" with a fresh pick.
+     */
     public static void highlighted(HighlightedTargetPayload payload) {
-        highlighted = payload.target();
+        if (highlightOn) {
+            highlighted = payload.target();
+        }
     }
 
     /** The local player's cast ended: its circle goes with it. */
