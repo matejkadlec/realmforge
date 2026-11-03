@@ -21,15 +21,16 @@
   Sweeping Edge): on a wand they would boost its weak melee poke and nothing else. They get spell twins instead.
 - **Proposed new enchantments, all data** (vanilla's `minecraft:attributes` effect on the main hand, our stats as
   the attributes): **Potency** (flat Spell Power, Sharpness's twin), **Frost, Fire and Arcane Focus** (a school's
-  power, Smite's twins), **Spell Breach** (Spell Penetration, Breach's twin; needs RLM-535), **Quick Casting** (Cast
-  Time Reduction, Quick Charge's twin) and **Swift Recovery** (Cooldown Reduction). **Thrift** (mana cost) is an
-  option that needs a new stat.
+  power, Smite's twins), **Spell Breach** (Spell Penetration, Breach's twin; needs RLM-535) and **Swift Recovery**
+  (Cooldown Reduction). **Quick Casting** (Cast Time Reduction, Quick Charge's twin) and **Thrift** (mana cost, a new
+  stat) are options.
 - **Numbers:** Potency copies Sharpness's own curve in Spell Power points (+3 at V, +5 at IX), which adds about 12 %
   (V) to 20 % (IX) to a level-18 Frostbolt, where Sharpness V to IX adds about 20 % to 33 % to a Warrior's melee
-  hit but nothing to his spells. The percent enchantments stop at V and stay at or below a Flawed gem's value. Cast
-  Time and Cooldown Reduction already reach their caps late without the enchantments (stats, the Netherite set,
-  gems and affixes), so Quick Casting and Swift Recovery matter early and mid game, and Quick Casting is the
-  strongest of them at level 18.
+  hit but nothing to his spells. The percent enchantments stop at V and stay at or below a Flawed gem's value.
+  Intellect is the Mage's own Cast Time Reduction: a level-18 Mage with Astone's expected gear already stands at the
+  0.5 s global cooldown's wall, so Quick Casting gives nothing there and a lot on a wand without such rolls, which is
+  why it is only an option. Cooldown Reduction reaches its cap late without Swift Recovery, so that one matters early
+  and mid game.
 - **Gems:** every wand gem bonus adds to the same stat as an enchantment, so nothing multiplies. The Earth gem, which
   RLM-536 left without a wand bonus "until wand enchantments", gets one: +1 to +4 levels of Potency, as it adds
   Sharpness levels to a sword.
@@ -155,7 +156,7 @@ players expect. Names are working names for Matěj.
 | **Potency** | Spell Power, flat (`add_value`) | Sharpness's curve: 1, then +0.5 a level (V: +3, IX: +5) | V / IX | Sharpness (10; min 1 + 11 a level) | wand power |
 | **Frost Focus**, **Fire Focus**, **Arcane Focus** | that school's power | +3 % (V: 15 %, IX: 27 %) | V / IX | Smite (5; min 5 + 8) | wand power |
 | **Spell Breach** | Spell Penetration (RLM-535) | +4 % (V: 20 %) | V / V | Breach (2; min 15 + 9) | none |
-| **Quick Casting** | Cast Time Reduction | +2 % (V: 10 %) | V / V | Quick Charge (5; min 12 + 20) | none |
+| *option:* **Quick Casting** | Cast Time Reduction | +2 % (V: 10 %) | V / V | Quick Charge (5; min 12 + 20) | none |
 | **Swift Recovery** | Cooldown Reduction | +2 % (V: 10 %) | V / V | Quick Charge (5; min 12 + 20) | none |
 | *option:* **Thrift** | mana cost reduction, a new stat | +3 % (V: 15 %) | V / V | Unbreaking (5; min 5 + 8) | none |
 
@@ -170,6 +171,10 @@ players expect. Names are working names for Matěj.
   (Intellect, Dexterity and their 25-point milestones), the Netherite set's 20 % Cooldown Reduction, the wand, and
   Legendary affixes and Perfect gems. Potency and the Focuses extend like Sharpness and Smite, because a flat Spell
   Power bonus shrinks as Spell Power grows with level.
+- **Quick Casting is an option, not a recommendation:** Intellect, the caster's main stat, already gives 2 % Cast Time
+  Reduction a point, so the wall at 66.7 % comes early ([numbers](#numbers-against-a-level-18-frostbolt)), and below
+  it Quick Casting is the strongest of these enchantments (+23 % casts a second at level 18 on a wand without Cast
+  Time Reduction rolls). Either way it adds little to Intellect's own path.
 - **Thrift** is the one that needs code: there is no mana cost stat, so a `realmforge:mana_cost_reduction` stat (in
   `content/stats/`, applied where `SpellCaster` pays the cost, including a channel's each second) comes first. Mana
   regeneration is not proposed: the Flowing affix and Slipstream's wand gem already give it.
@@ -182,9 +187,12 @@ players expect. Names are working names for Matěj.
 ### Numbers against a level-18 Frostbolt
 
 RLM-503's level-18 model: Spell Power about 19 with the Netherite set and wand, Frostbolt at rank 5 = 12 + 200 % of
-Spell Power ≈ 50 a cast, 1.5 s cast. A Human Mage starts with 6 Intellect (class 5, race 1) and 2 Dexterity, so at
-least 27 % Cast Time Reduction (Intellect 12 %, wand 15 %) and 38 % Cooldown Reduction (wand 15 %, the Netherite set
-5 % a piece, Dexterity 1.5 % a point for a caster) before any stat point is spent. The Warrior's comparison: Attack
+Spell Power ≈ 50 a cast, 1.5 s cast. A Human Mage starts with 6 Intellect (class 5, race 1) and 2 Dexterity and
+gets a stat point a level from level 2, 17 by level 18 (architecture 10.2). The Spell Power of 19 is 14 from gear and
+starting Intellect (the wand 5, the robes 6, Intellect 3) plus 10 points in Intellect at 0.5 each, so the model's
+Mage has 16 Intellect: 47 % Cast Time Reduction (Intellect 32 %, the wand 15 %) before any affix or gem. Cooldown
+Reduction is 38 % (the wand 15 %, the Netherite set 5 % a piece, Dexterity 1.5 % a point for a caster) with no
+points in Dexterity. The Warrior's comparison: Attack
 Damage about 15 with a netherite sword; Sharpness adds to his melee hits only, never to Slam, Rend or Overpower,
 which scale with the Attack Damage stat.
 
@@ -195,14 +203,14 @@ which scale with the Attack Damage stat.
 | Frost Focus V (+15 % frost power) | +7.5 (+15 %), Frost spells only | Smite V: +12.5 against undead only |
 | Frost Focus IX (+27 %) | +13.5 (+27 %) | Smite X: +25 against undead |
 | Spell Breach V (20 %) | +20 % against a target with 50 % resistance, nothing against none | Breach (mace only) |
-| Quick Casting V (10 %) | 27 → 37 %: a Frostbolt takes 0.945 s instead of 1.095 s, +16 % casts a second | none |
+| Quick Casting V (10 %) | on a wand without Cast Time Reduction rolls 47 → 57 %: a Frostbolt takes 0.645 s instead of 0.795 s, +23 % casts a second; with Astone's expected Rare affix (Hastened 6–10 %) and Flawed gem (Brawler's 10 %) the Mage is at 63–67 %, the wall, and it adds at most 4 points | none |
 | Swift Recovery V (10 %) | 38 → 48 %: Ice Lance, Frost Nova and Cone of Cold are ready 19 % more often | none |
 
-- At Astone's expected gear (gear.md: "level V for every enchantment") a wand with Potency V, Quick Casting V and
-  Swift Recovery V gives the Mage roughly +12 % per cast and +16 % casts a second, about +30 % Frostbolt damage a
-  second; a sword with Sharpness V gives the Warrior +20 % on melee hits, which are most of his damage. The Mage is
-  ahead on paper, mostly through Quick Casting: +1 % a level for it, or leaving it out, is the lever if the
-  playtest agrees ([question 4](#questions-for-matěj)).
+- At Astone's expected gear (gear.md: "level V for every enchantment") a wand with Potency V and Swift Recovery V
+  gives the Mage +12 % a Frostbolt and the cooldown spells 19 % more often; a sword with Sharpness V gives the
+  Warrior +20 % on melee hits, which are most of his damage. That is about par. Quick Casting on top adds nothing at
+  the wall, but up to +23 % casts a second on a wand that rolled no Cast Time Reduction, which would put the Mage
+  well ahead: the reason it is only an option ([question 2](#questions-for-matěj)).
 - At level 60 (Spell Power about 60) Potency IX's +5 is a tenth of Frostbolt's Spell Power share, and the percent
   enchantments have been overtaken by gems and affixes.
 - Toward RLM-503's "about 40 casts": Potency V or a Focus V takes 12–15 % off a guardian's cast count on its own
@@ -253,20 +261,21 @@ piece). Nothing multiplies another source except Spell Power's percent modifiers
 | Spell Power, flat | Intellect 3, the robes 6 | 5 | Potency +3 (IX: +5); Earth +1 / +4 levels | Sorcerous 3–5 / 5–8 | Ballast +3.5 / +10 | none |
 | Spell Power, % of flat | – | – | – | – | Combatant +15 / +30 % | none |
 | A school's power | – | – | Focus +15 % (IX: 27 %) | Fiery, Frozen, Arcane-Touched 6–10 / 12–20 % | Lunar, Solar, Tyrannical +15 / +40 % | 1000 % |
-| Cast Time Reduction | Intellect 12 % | 15 % | Quick Casting 10 % | Hastened 6–10 / 10–18 % | Brawler's 10 / 20 % | 75 % (wall at 66.7 %) |
+| Cast Time Reduction | Intellect 12 %, 32 % with 10 points | 15 % | (option) Quick Casting 10 % | Hastened 6–10 / 10–18 % | Brawler's 10 / 20 % | 75 % (wall at 66.7 %) |
 | Cooldown Reduction | Netherite set 20 %, Dexterity 3 % | 15 % | Swift Recovery 10 % | Timeless 6–10 / 10–18 % | Lightning 10 / 20 % | 75 % |
 | Spell Penetration | – | – | Spell Breach 20 % | Spellbreaking 6–10 / 10–15 % | Breach 15 / 30 %, Molten Breach 15 / 30 %, Verdant Ruin 20 / 50 % (with −5 / −20 % Magic Shield) | 50 % proposed (RLM-535) |
 
 - **No enchantment exceeds a Flawed gem** of the same stat, and none is a new kind of bonus: the enchantment is the
   reliable, chosen part; gems and affixes are the rolled part on top.
-- **Cast Time Reduction** at Legendary: Intellect 12 % (more with every point spent) + wand 15 + affix 18 + gem 20 =
-  65 % without Quick Casting, so the wall at 66.7 % binds a late caster with one more Intellect point, and Quick
-  Casting adds nothing then. At level 18 (27 % plus a Rare affix and a Flawed gem, about 45 %) it still counts.
+- **Cast Time Reduction** at level 18 with 10 points in Intellect: 32 + wand 15 + Rare affix 6–10 + Flawed gem 10 =
+  63–67 %, already at the wall at 66.7 %. Late, the starting 12 % alone + 15 + 18 + 20 = 65 %. Quick Casting only
+  counts on a wand that rolled no Cast Time Reduction, or for a Mage who skips Intellect.
 - **Cooldown Reduction** at Legendary: the Netherite set 20 % + Dexterity 3 % + wand 15 + affix 18 + gem 20 = 76 %,
   over the 75 % cap without Swift Recovery, before the 25-point milestones (+25 % for Intellect, +20 % for
-  Dexterity). At level 18 (38 % plus a Rare affix and a Flawed gem, about 55 %) it still counts.
-- So both are early and mid game enchantments that become a dead slot on a late wand, while Potency or a Focus stays
-  useful; that is why neither should extend past V.
+  Dexterity). At level 18 (38 % plus a Rare affix 6–10 % and a Flawed gem 10 %, 54–58 %) it still counts.
+- So Swift Recovery is an early and mid game enchantment that becomes a dead slot on a late wand, and Quick Casting
+  is one already at level 18 for an Intellect Mage, while Potency or a Focus stays useful; that is why neither
+  extends past V.
 - **Spell Penetration** already passes 50 % with gems and Spellbreaking alone late (RLM-562 says so). Spell Breach
   matters early, when one source is all a player has; whether the cap stays 50 % is Matěj's call on RLM-535.
 - **A school's power** is the one that grows large: a Legendary Frost wand with Frozen 20 %, a Perfect Lunar gem
@@ -284,14 +293,14 @@ RLM-606.
 1. **Shared enchantments:** Looting and Apothic Enchanting's Scavenger on wands, counting for spell kills
    (recommended), plus Knowledge of the Ages (option, as on swords)? Unbreaking, Mending, Life Mending and Vanishing
    already apply.
-2. **The new enchantments:** Potency, the three Focuses, Spell Breach, Quick Casting and Swift Recovery
-   (recommended), and Thrift with its mana cost stat (option, more code)? Names are working names.
+2. **The new enchantments:** Potency, the three Focuses, Spell Breach and Swift Recovery (recommended); Quick
+   Casting (option: nothing at the wall, which Intellect reaches by level 18, and the Mage well ahead of the Warrior
+   below it); Thrift with its mana cost stat (option, more code)? Names are working names.
 3. **Exclusivity:** Potency and the Focuses exclude each other, vanilla's Sharpness-or-Smite rule (recommended), or
    they combine, as Apothic Enchanting lets Sharpness combine with Smite?
 4. **Numbers:** Potency on Sharpness's curve (+3 at V, +5 at IX) (recommended), or +1 a level (+5 at V, +9 at IX,
    the same share of a Frostbolt as Sharpness's of a melee hit); Focus +3 % a level to IX; the percent ones +2 % or
-   +4 % a level and stopping at V? Quick Casting is the one that puts the Mage ahead of Sharpness at level 18: +1 % a
-   level for it is the lower option.
+   +4 % a level and stopping at V? If Quick Casting is picked, +1 % a level keeps it closer to par.
 5. **The Earth gem on wands:** +1 to +4 Potency levels, like its Sharpness levels on swords (recommended)?
 
 ### Implementation tickets after the pick
