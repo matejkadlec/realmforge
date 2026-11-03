@@ -43,6 +43,8 @@ Rules:
   `id_universe.NEOFORGE_ATTRIBUTES`, [ADR 0064](../docs/decisions/0064-neoforges-attributes-join-the-id-universe.md))
   plus our own content. Lists of ids must not repeat
   an entry (e.g. the same creative tab twice crashes the game).
+- Colours are `"#RRGGBB"` in either case. Validation holds them in uppercase, so every generated file gets them that
+  way, which the content GameTests rely on: they compare a loaded colour formatted as `#%06X` (RLM-507).
 - Player-facing texts are `LocalizedText` with one locale, `en_us`, which is required: Realmforge is English
   only (Matěj, 2026-10-13), so any other locale key (`cs_cz`, ...) is an error. In lore and texts the in-game
   world is always called **Realmforge**, and every text follows the [lore style guide](../docs/lore/style.md).
