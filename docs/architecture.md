@@ -568,7 +568,9 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
   secondary stat of its own, below) and intellect (INT). They are attributes, so gear, buffs
   and talents modify them like anything else. They start at 0: race, class, the stat points a player spends, talents
   and gear raise them (C1 and later; levels give stat points, not stats: RLM-196). Luck and defense stay out (D5).
-- **Secondary stats (ours):** crit chance (5 % to start with), crit damage (+50 %: a crit deals 150 % for melee,
+- **Secondary stats (ours):** crit chance (5 % to start with; a player's is a pseudo-random chance, so long runs
+  without a crit never happen while the rate stays the stat, RLM-526, [9.1](#91-damage-pipeline)), crit damage
+  (+50 %: a crit deals 150 % for melee,
   ranged and spell hits alike, Matěj, 2026-10-19, who first meant it for spells only), dodge chance (Vitality gives it
   to ranged classes only, and M1 has none: [8.3](#83-derived-stats-and-milestones)), Spell Power (points since
   RLM-534, Matěj, 2026-10-30: gear, Intellect and buffs give it flat or in percent, and a magic spell adds its
@@ -828,6 +830,19 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
      into crit damage 1:1, every 1 % above 100 % adding 1 % crit damage (`DamageCalculator#critMultiplier`), for
      melee, ranged and school hits alike. Talents act through those attributes or are already part of
      the spell's damage ([11.5](#115-resources-cooldowns-modifiers)).
+   - **A player's crit is pseudo-random** (Matěj, 2026-10-30, RLM-526): bad-luck protection by Dota 2's
+     pseudo-random distribution (`combat/CritDistribution`). The N-th roll since the player's last crit succeeds with
+     C × N, a crit starts the count again, and C is worked out from the crit chance P by bisection on the long-run
+     rate, so the rate stays P (C is cached per 0.1 % of chance): at 30 % (C = 0.1189) the 9th roll always crits,
+     and 7 misses in a row fall from 8.2 % to 0.44 %. Why: with plain rolls Matěj missed 7 crits in a row at 30 %,
+     which happens about once in 12 such streaks; League of Legends hides its own version, Dota's is documented.
+     Each player has two counts (`combat/CritCounters`, the transient attachment `realmforge:crit_counters`), one
+     for weapon attacks (the melee crit of step 2, the ranged crit) and one for spells (school hits and heals), not
+     one per target. A login or a respawn starts both again (the attachment is neither saved nor copied), a changed
+     crit chance keeps the count and uses its own C, and a roll at 0 % (a hit that cannot crit, a damage-over-time
+     tick) counts nothing. Mobs roll plain chance: a spell's hit or heal takes how to roll
+     (`DamageCalculator.CritRoll`). Nothing else rolls a crit for a player: vanilla's jump crit and crit arrow are
+     replaced (step 2), and Apothic Attributes' crit never fires ([19.4](#194-optional-integrations)).
    - **The armor formula is vanilla's** (`CombatRules.getDamageAfterAbsorb`, Matěj, 2026-10-16, RLM-223), applied
      after our armor pierce through `addReductionModifier(DamageContainer.Reduction.ARMOR, ...)`. The armor a hit
      meets is the defender's armor (whole points, as vanilla's `getArmorValue`) less the attacker's flat armor
@@ -1361,7 +1376,8 @@ Its name and description are translation keys from C3b, the description's number
 - **Crits** (Matěj, 2026-10-15): every spell can crit, heals too, on the caster's crit chance for 1 + the caster's
   crit damage (150 % with the base 50 %), crit damage being shared with melee. A spell's `crit` data may switch
   crits off, add a bonus chance, or set its own multiplier (`combat/CritRule`); talents (postponed, RLM-28) will change
-  all three.
+  all three. A player's spell crits are pseudo-random on their own counter, apart from weapon attacks
+  ([9.1](#91-damage-pipeline), RLM-526).
 
 - **What a cast needs in hand** (C4, RLM-499): `requires` lists `melee_weapon` (an item of
   `#realmforge:melee_weapons`: swords, axes, maces, spears, tridents and their like, never a wand) in the main hand
@@ -1736,8 +1752,14 @@ sources and a proc's damage over time.
 
 **In code (C4, RLM-27): stuns, ranks and cleanses.** An effect marked `stun` (Stunned, Shield Bash's) gives -100 %
 movement speed and jump strength (the pipeline requires both modifiers), and `effect/Stuns` does the rest while it
-lasts: a stunned mob's goals lose their move, look and jump controls before it ticks (vanilla's `Mob#tick` sets them
-from the goals every few ticks), a stunned attacker's own melee hit deals nothing, and a stunned player cannot
+lasts: a stunned mob's AI waits (RLM-532). Before it ticks, its running goals stop (an evoker's spell warm-up and a
+skeleton's draw start over afterwards, a creeper's swelling goes back down), its brain's running behaviors stop (a
+piglin's crossbow charge), and its path ends; then `mixin/MobStunMixin` skips its whole AI step (`Mob#serverAiStep`:
+goals, brain, navigation, controls), as vanilla skips an immobile mob's (a ravager's own stun), so nothing starts
+again, the goals without control flags included (an evoker's or illusioner's spells, a ghast's fireballs) and every
+brain-driven attack (a piglin's crossbow, a breeze's wind charges). Its target goals keep their target, so it fights
+on afterwards. What a mob does outside its AI goes on: a boss's phase clock, a fuse already lit, a projectile or
+evoker fangs already loosed. A stunned attacker's own melee hit deals nothing, and a stunned player cannot
 attack; the spell engine refuses a stunned caster's spells and interrupts the cast in progress (`CastEnd.STUNNED`),
 but for a spell `castable_while_stunned`. Ordinary mobs have no stun immunity or diminishing returns (Matěj,
 2026-10-24, RLM-392). `apply_effect` grows with the spell's rank: `duration_per_level_seconds` adds to its duration
@@ -3593,7 +3615,9 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
     camera (`client/hud/CombatTextScale`: 1.75 times the font at 4 blocks, by the square root of the distance ratio,
     within 0.65 and 2.5, so it keeps shrinking up to about 29 blocks; Matěj's playtest, 2026-10-14: RLM-185). Texts
     spread at random around the entity in the world, up to 0.35 blocks sideways across the view and 0.25 upward, so
-    hits close together do not cover each other. Every text is bold. A magic school's hit takes the school's colour;
+    hits close together do not cover each other. Every text is bold. A magic school's hit takes the school's colour,
+    and its crit the school's darker crit colour (RLM-553: `crit_color` in `content/spell_schools/`, or else the
+    combat text colour at 65 %, `SpellSchool#combatTextCritColor`), so a crit stands out as a melee crit does;
     every other hit (melee, ranged, the Physical school) takes the Physical school's orange, red on a crit; a tick of
     a damaging effect takes the effect's colour, dark green for poison (`combat/CombatText` picks it). A crit's
     number ends with "!", a heal reads "+4" in green, a dodged hit reads "Miss!" in yellow, and the player's own
@@ -3777,14 +3801,16 @@ changes. Once they settle they can move into content.
 
 Last resort, only where no event or API exists. Each one sits in `mixin/` (or the access transformer file) with a
 comment saying why, and gets a test. A mod lists its mixins in `<modid>.mixins.json`, which `neoforge.mods.toml`
-names under `[[mixins]]`. The core mod has four: `RangedAttributeAccessor`, which raises attribute caps
+names under `[[mixins]]`. The core mod has five: `RangedAttributeAccessor`, which raises attribute caps
 ([8.4](#84-caps)) and caps two of Apothic Attributes' down ([19.4](#194-optional-integrations)),
 `PlayerBlockActionMixin`, which lets Adventure mode break the allowlist inside instances ([15.5](#155-instances)),
 `PlayerExhaustionMixin`, which lowers a player's food exhaustion by their Stamina ([8.1](#81-the-attribute-set);
 `StaminaGameTests`), and `InventorySortingStacksMixin`, which keeps a stack that Inventory Sorting's sort would only
 replace with an identical copy, so an open backpack stays open ([19.4](#194-optional-integrations), RLM-519;
 `InventorySortingGameTests`). It targets another mod's class by name and is `@Pseudo`, so the core mod loads without
-Inventory Sorting; with it, its injector is required, so a changed target fails at load. The QA mod has two, for
+Inventory Sorting; with it, its injector is required, so a changed target fails at load. `MobStunMixin` skips a
+stunned mob's AI step, as vanilla skips an immobile one's, so goals without control flags and brains wait too
+([11.4](#114-status-effects), RLM-532; `StunGameTests`). The QA mod has two, for
 dev runs only: `GameTestServerMixin` gives the GameTest world the data pack dimensions, which vanilla leaves out
 ([20](#20-tests-per-layer)), and `MinecraftProfileLookupMixin`, a client mixin (the config's `client` list), retries
 the dev client's one profile lookup at startup up to three times, 1 s and then 2 s apart (`ProfileLookupRetry`,
@@ -4133,14 +4159,22 @@ that agents can read. So far:
   to 1 and empties the spellbook (the stats recomputed, health capped at the new maximum); a character created after a
   reset gets no starting kit, which comes with the player's first character only (`realmforge:starting_kit`,
   [10.1](#101-races-and-classes)); create applies the same rules as the screen;
-- `/qa dummy [<armor>]` (F5): a training dummy three blocks ahead, a pillager without a crossbow that stands still
-  and never dies. A pillager is not undead, so poison and harming hurt it, healing heals it, and daylight does not
-  burn it: it takes damage and healing the way a player does (RLM-187). Neat's card above it is its only display
-  (RLM-339; Matěj, 2026-10-20): its level and name with the DPS of the current session (`Lv. 1 Training Dummy | 19
-  DPS`, its custom name; a session ends after 5 s without a hit) and Neat's armor. Its own name tag stays hidden,
-  and a dummy from an older world loses the text display that labelled it before. The hitter sees each hit on the
-  action bar, `/qa dummy reset|remove`. Pillagers carry our stats in the dev game, so
-  `/attribute @n[type=pillager] realmforge:dodge_chance base set 0.5` sets a dummy's dodge chance or resistances;
+- `/qa dummy [<armor>]` (F5): a training dummy three blocks ahead that stands still and never dies, the QA mod's own
+  mob `realmforge_qa:training_dummy` (RLM-528; a pillager before), drawn as a pillager. A fresh dummy is a clean
+  target (Matěj, 2026-10-30): 100 health at every level, 0 armor and toughness (Apotheosis's world tier augments,
+  which gave a pillager dummy the armor of the player's tier, skip it), no creature type (it is in no entity type tag,
+  so no undead or illager rules and no icon in Neat's card), silent, named `Training Dummy`. It is not undead, so
+  poison and harming hurt it and healing heals it: it takes damage and healing the way a player does (RLM-187).
+  Neat's card above it is its only display (RLM-339): `Lv. 1 Training Dummy` and Neat's armor; the hitter sees each
+  hit and the session's DPS on the action bar (a session ends after 5 s without a hit), `/qa dummy reset|remove`. Its
+  defenses and effects (RLM-528), on the dummy the player looks at within 32 blocks or else the nearest:
+  `armor|toughness|shield <points>` (the magic shield refills 5 s after the dummy's last damage, half a player's
+  delay), `dodge <percent>`, `resistance <percent>` (Spell Resistance) and `resistance <school> <percent>` (the
+  school's resistance stat, Physical Resistance for the Physical school), `effect <effect> [<strength>] [<seconds>]`
+  (strength 1 is level I, for ever without seconds; a strength above the effect's maximum, 5 for Resistance and 256
+  otherwise, fails with the range). Creature types and their `type` subcommand come with RLM-353. The dummy carries
+  every stat of ours, so `/attribute @n[type=realmforge_qa:training_dummy] realmforge:lifesteal base set 0.1` reaches
+  the rest; pillagers carry them too, for GameTests that use them as targets;
 - `/summon realmforge_qa:test_boss` (RLM-173): the test boss, a zombie half again as big with 200 health at level 1,
   in `c:bosses`, that carries the core mod's boss bar ([14.3](#143-bosses)) without a fight of its own. It is always
   an adult on foot and never a zombie leader, it neither burns in daylight nor turns into a drowned, and it never

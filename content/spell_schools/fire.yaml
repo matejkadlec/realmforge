@@ -5,6 +5,8 @@ id: fire
 name: {en_us: Fire}
 kind: magic
 color: "#FF7F1F"
+# A crit in combat text: a burnt orange, darker than the hit's colour and still readable at night (RLM-553).
+crit_color: "#CC5500"
 power: realmforge:fire_power
 resistance: realmforge:fire_resistance
 death_message: {en_us: "%1$s burned to ashes"}

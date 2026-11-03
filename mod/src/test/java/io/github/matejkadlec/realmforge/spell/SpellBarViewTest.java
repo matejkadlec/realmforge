@@ -19,7 +19,7 @@ class SpellBarViewTest {
     private static final ResourceKey<Spell> BOLT = ResourceKey.create(SpellRegistries.SPELL, Realmforge.id("bolt"));
     private static final ResourceKey<Spell> WARD = ResourceKey.create(SpellRegistries.SPELL, Realmforge.id("ward"));
     private static final SpellSchool FIRE = new SpellSchool("spell_school.realmforge.fire.name",
-            SpellSchool.Kind.MAGIC, 0xFF7F1F, 0xFF7F1F,
+            SpellSchool.Kind.MAGIC, 0xFF7F1F, 0xFF7F1F, Optional.empty(),
             ResourceKey.create(Registries.DAMAGE_TYPE, Realmforge.id("fire")), Optional.empty(), Optional.empty());
 
     /**

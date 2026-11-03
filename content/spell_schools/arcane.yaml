@@ -5,6 +5,8 @@ id: arcane
 name: {en_us: Arcane}
 kind: magic
 color: "#C77DFF"
+# A crit in combat text: a deep violet, darker than the hit's colour and still readable at night (RLM-553).
+crit_color: "#9333EA"
 power: realmforge:arcane_power
 resistance: realmforge:arcane_resistance
 death_message: {en_us: "%1$s was torn apart by arcane power"}

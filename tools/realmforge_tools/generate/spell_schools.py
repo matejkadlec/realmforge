@@ -85,6 +85,8 @@ def _entry(school: SpellSchoolDef) -> dict[str, Any]:
         "combat_text_color": _combat_text_color(school).upper(),
         "damage_type": school.damage_type,
     }
+    if school.crit_color is not None:
+        entry["crit_color"] = school.crit_color.upper()
     if school.power is not None:
         entry["power"] = school.power
     if school.resistance is not None:
@@ -145,6 +147,10 @@ def _optional(value: str | None) -> str:
     return f"Optional.of({string_literal(value)})" if value is not None else "Optional.empty()"
 
 
+def _optional_color(value: str | None) -> str:
+    return f"Optional.of(0xFF{value[1:].upper()})" if value is not None else "Optional.empty()"
+
+
 def _expectations(content: Content) -> bytes:
     rows = []
     for entry in content.spell_schools:
@@ -156,6 +162,7 @@ def _expectations(content: Content) -> bytes:
             f"                    {'true' if school.kind == 'magic' else 'false'},\n"
             f"                    0xFF{school.color[1:].upper()},\n"
             f"                    0xFF{_combat_text_color(school)[1:].upper()},\n"
+            f"                    {_optional_color(school.crit_color)},\n"
             f"                    {string_literal(school.damage_type)},\n"
             f"                    {string_literal(school.message_id)},\n"
             f"                    {_optional(school.power)},\n"
@@ -175,8 +182,8 @@ def _expectations(content: Content) -> bytes:
         '     * opaque ARGB, as the school\'s codec reads {@code "#RRGGBB"}.\n'
         "     */\n"
         "    public record SpellSchoolExpectation(String id, String nameKey, boolean magic, int color,\n"
-        "            int combatTextColor, String damageType, String messageId, Optional<String> power,\n"
-        "            Optional<String> resistance) {\n"
+        "            int combatTextColor, Optional<Integer> critColor, String damageType, String messageId,\n"
+        "            Optional<String> power, Optional<String> resistance) {\n"
         "    }\n"
         "\n"
         f"    public static final List<SpellSchoolExpectation> SPELL_SCHOOLS = {schools};\n"

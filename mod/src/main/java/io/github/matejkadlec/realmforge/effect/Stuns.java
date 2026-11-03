@@ -10,7 +10,8 @@ import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.entity.ai.Brain;
+import net.minecraft.world.entity.ai.goal.WrappedGoal;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
@@ -23,9 +24,13 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
  * class does the rest, on the logical server:
  *
  * <ul>
- *   <li>a stunned mob's AI stands still: before it ticks, its goals lose their move, look and jump controls (vanilla's
- *   {@code Mob#updateControlFlags} gives them back every 5 ticks, after the goals ran) and its path ends, so its
- *   melee, ranged and swelling goals stop;</li>
+ *   <li>a stunned mob's AI waits (RLM-532): before it ticks, its running goals stop (an evoker's spell warm-up and a
+ *   skeleton's draw start over afterwards, a creeper's swelling goes back down), its brain's running behaviors stop (a
+ *   piglin's crossbow charge, a breeze's shot), and its path ends; then {@code mixin/MobStunMixin} skips its whole AI
+ *   step ({@link #holdStill}), so no goal or behavior starts again, flagless ones (an evoker's or illusioner's
+ *   spells, a ghast's fireballs) included. Its target goals keep their target, so it fights on afterwards. What
+ *   a mob does outside its AI goes on: a boss's phase clock, a fuse already lit, a projectile or evoker fangs
+ *   already loosed;</li>
  *   <li>a stunned attacker's melee hit deals nothing (a slime's touch, a player's swing), and a stunned player cannot
  *   start an attack;</li>
  *   <li>the spell engine refuses a stunned caster's spells and interrupts the cast in progress
@@ -64,13 +69,40 @@ public final class Stuns {
         return false;
     }
 
+    /**
+     * Before a stunned mob ticks: stops its running goals (not its target goals, which keep its target) and its
+     * brain's running behaviors, and ends its path.
+     */
     private static void onEntityTick(EntityTickEvent.Pre event) {
-        if (event.getEntity() instanceof Mob mob && mob.level() instanceof ServerLevel && isStunned(mob)) {
-            mob.goalSelector.disableControlFlag(Goal.Flag.MOVE);
-            mob.goalSelector.disableControlFlag(Goal.Flag.LOOK);
-            mob.goalSelector.disableControlFlag(Goal.Flag.JUMP);
+        if (event.getEntity() instanceof Mob mob && mob.level() instanceof ServerLevel level && isStunned(mob)) {
+            for (WrappedGoal goal : mob.goalSelector.getAvailableGoals()) {
+                if (goal.isRunning()) {
+                    goal.stop();
+                }
+            }
+            stopBrain(level, mob);
             mob.getNavigation().stop();
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void stopBrain(ServerLevel level, Mob mob) {
+        ((Brain<Mob>) mob.getBrain()).stopAll(level, mob);
+    }
+
+    /**
+     * Whether a mob's AI step waits this tick, for {@code mixin/MobStunMixin}: while it is stunned, which also clears
+     * the walking and jumping its controls asked for, as vanilla does for an immobile mob.
+     */
+    public static boolean holdStill(Mob mob) {
+        if (!isStunned(mob)) {
+            return false;
+        }
+        mob.setXxa(0);
+        mob.setYya(0);
+        mob.setZza(0);
+        mob.setJumping(false);
+        return true;
     }
 
     /**

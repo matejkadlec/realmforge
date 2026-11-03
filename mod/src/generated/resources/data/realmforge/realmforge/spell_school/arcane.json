@@ -4,6 +4,7 @@
   "color": "#C77DFF",
   "combat_text_color": "#C77DFF",
   "damage_type": "realmforge:arcane",
+  "crit_color": "#9333EA",
   "power": "realmforge:arcane_power",
   "resistance": "realmforge:arcane_resistance"
 }

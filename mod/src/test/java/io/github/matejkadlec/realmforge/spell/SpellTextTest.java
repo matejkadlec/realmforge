@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 class SpellTextTest {
     private static final ResourceKey<SpellSchool> FIRE_KEY = ResourceKey.create(CombatRegistries.SPELL_SCHOOL,
             Realmforge.id("fire"));
-    private static final SpellSchool FIRE = new SpellSchool("Fire", SpellSchool.Kind.MAGIC, 0xFF7F1F, 0xFF7F1F,
+    private static final SpellSchool FIRE = new SpellSchool("Fire", SpellSchool.Kind.MAGIC, 0xFF7F1F, 0xFF7F1F, Optional.empty(),
             ResourceKey.create(Registries.DAMAGE_TYPE, Realmforge.id("fire")), Optional.empty(), Optional.empty());
     private static final Function<ResourceKey<SpellSchool>, Optional<SpellSchool>> SCHOOLS =
             key -> key.equals(FIRE_KEY) ? Optional.of(FIRE) : Optional.empty();

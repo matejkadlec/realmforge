@@ -4,6 +4,8 @@ import io.github.matejkadlec.realmforge.combat.net.CombatTextPayload;
 import io.github.matejkadlec.realmforge.combat.net.HitDirectionPayload;
 import io.github.matejkadlec.realmforge.generated.GeneratedSpellSchools;
 import java.util.Optional;
+import java.util.function.IntSupplier;
+import javax.annotation.Nullable;
 import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
@@ -15,8 +17,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 /**
  * Sends the floating combat text of a hit, a dodge or a heal, and the hit direction (architecture 9.1, 17.2; Matěj,
  * 2026-10-13). A hit's number and a miss go to the player who dealt it, shown over the entity: a magic school's hit in
- * the school's colour, every other hit (melee, ranged, the Physical school) in the Physical school's orange, red on a
- * crit. The player who was attacked sees no number, the health bar shows the damage, but an arc points at the
+ * the school's colour, its crit in the school's darker crit colour (RLM-553), every other hit (melee, ranged, the
+ * Physical school) in the Physical school's orange, red on a crit ({@link #color}). The player who was attacked sees no number, the health bar shows the damage, but an arc points at the
  * attacker, and a dodge shows "Miss!" beside the crosshair. A tick of a damaging effect (poison, wither) has no
  * attacker: it goes to the player who applied the effect, in the effect's colour ({@link DamageOverTime}). A heal
  * shows in green over the healed entity, to the players near it. Hits between mobs send nothing.
@@ -47,12 +49,22 @@ final class CombatText {
             }
             return;
         }
-        SpellSchool hitSchool = school.map(Holder::value).orElse(null);
-        int color = hitSchool != null && hitSchool.magic() ? hitSchool.combatTextColor()
-                : crit ? CRIT : physical(defender);
+        int color = color(school.map(Holder::value).orElse(null), crit, () -> physical(defender));
         toAttacker(defender, source, new CombatTextPayload(defender.getId(), amount, color,
                 crit ? CombatTextPayload.CRIT : 0));
         hitDirection(defender, source);
+    }
+
+    /**
+     * The colour of a hit's number: a magic school's combat text colour, or its crit colour on a crit; for any other hit
+     * (melee, ranged, the Physical school, {@code school} null for a hit of no school) {@code physical}'s orange, or
+     * {@link #CRIT} red on a crit.
+     */
+    static int color(@Nullable SpellSchool school, boolean crit, IntSupplier physical) {
+        if (school != null && school.magic()) {
+            return crit ? school.combatTextCritColor() : school.combatTextColor();
+        }
+        return crit ? CRIT : physical.getAsInt();
     }
 
     static void dodge(LivingEntity defender, DamageSource source) {

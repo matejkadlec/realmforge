@@ -4,6 +4,7 @@
   "color": "#FF7F1F",
   "combat_text_color": "#FF7F1F",
   "damage_type": "realmforge:fire",
+  "crit_color": "#CC5500",
   "power": "realmforge:fire_power",
   "resistance": "realmforge:fire_resistance"
 }

@@ -4,6 +4,7 @@
   "color": "#7FD4FF",
   "combat_text_color": "#7FD4FF",
   "damage_type": "realmforge:frost",
+  "crit_color": "#2D7DFF",
   "power": "realmforge:frost_power",
   "resistance": "realmforge:frost_resistance"
 }
