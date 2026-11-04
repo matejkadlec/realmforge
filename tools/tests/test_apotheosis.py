@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
+from realmforge_tools import apotheosis
 from realmforge_tools.apotheosis import DISABLED, build_snapshot, load_snapshot, pack_jar
 from realmforge_tools.generate import generate_all
 from realmforge_tools.problems import ValidationFailed
@@ -67,6 +68,50 @@ def files() -> dict[str, bytes]:
 
 
 # The snapshot
+
+
+def test_both_downloads_give_up_after_a_timeout(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """RLM-584: the jar and the license text are fetched with a timeout, so a host that accepts the connection and then
+    stalls fails ``rf ids apotheosis`` instead of holding CI's required job until its own timeout."""
+    jar = b"a jar"
+    monkeypatch.setattr(
+        apotheosis,
+        "pack_jar",
+        lambda _: {
+            "file": "apotheosis.jar",
+            "url": "https://jar.example/apotheosis.jar",
+            "sha512": apotheosis._sha512(jar),
+        },
+    )
+    calls: list[tuple[str, float | None]] = []
+
+    class Stalled(Exception):
+        pass
+
+    class Response:
+        def __enter__(self) -> Response:
+            return self
+
+        def __exit__(self, *_: object) -> None:
+            return None
+
+        def read(self) -> bytes:
+            return jar
+
+    def urlopen(url: str, timeout: float | None = None) -> Response:
+        calls.append((url, timeout))
+        if url == apotheosis.LICENSE_URL:
+            raise Stalled  # stops before the snapshot is built from the fake jar
+        return Response()
+
+    monkeypatch.setattr(apotheosis.urllib.request, "urlopen", urlopen)
+    with pytest.raises(Stalled):
+        apotheosis.extract(RepoPaths(tmp_path))
+    assert calls == [
+        ("https://jar.example/apotheosis.jar", apotheosis.DOWNLOAD_TIMEOUT_S),
+        (apotheosis.LICENSE_URL, apotheosis.DOWNLOAD_TIMEOUT_S),
+    ]
+    assert apotheosis.DOWNLOAD_TIMEOUT_S == 120
 
 
 def test_the_snapshot_is_of_the_jar_the_pack_installs() -> None:

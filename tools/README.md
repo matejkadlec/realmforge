@@ -18,7 +18,7 @@ uv run rf rooms gallery [DIR]  # render the rooms below DIR (default content/roo
 uv run rf rooms review DIR     # merge decisions pasted from the gallery (stdin or --from) into DIR/review.yaml
 uv run rf set-pieces report [MASK...] [--game]  # spots of the jig's masks in every room (the design's mask report)
 uv run rf set-pieces import FILE --id ID        # a workshop jig save -> content/set_pieces/ID (or --from-world WORLD)
-uv run pytest             # tests
+uv run pytest             # tests, on one worker per CPU (pytest-xdist, at most 8); -n 0 runs them serially
 uv run ruff check && uv run ruff format --check
 ```
 

@@ -61,6 +61,9 @@ SOURCE = "https://github.com/Shadows-of-Fire/Apotheosis"
 SOURCE_COMMIT = "f2e7686"
 LICENSE_URL = f"https://raw.githubusercontent.com/Shadows-of-Fire/Apotheosis/{SOURCE_COMMIT}/LICENSE"
 LICENSE_SPDX = "MIT"
+# Seconds a download may stall before `rf ids apotheosis` fails, as in vanilla.py and packboot.py: the required CI job
+# "Vanilla ID universe is reproducible" runs it on every pull request (RLM-584).
+DOWNLOAD_TIMEOUT_S = 120
 
 # What a switched-off entry or a removed recipe becomes: NeoForge skips a file whose conditions fail.
 DISABLED: dict[str, Any] = {"neoforge:conditions": [{"type": "neoforge:never"}]}
@@ -129,13 +132,13 @@ def extract(paths: RepoPaths) -> Path:
     jar = pack_jar(paths)
     cached = paths.cache / "apotheosis" / jar["file"]
     if not cached.exists() or _sha512(cached.read_bytes()) != jar["sha512"]:
-        with urllib.request.urlopen(jar["url"]) as response:
+        with urllib.request.urlopen(jar["url"], timeout=DOWNLOAD_TIMEOUT_S) as response:
             data = response.read()
         if _sha512(data) != jar["sha512"]:
             raise RuntimeError(f"{jar['file']}: sha512 mismatch against {PACK_METAFILE}")
         cached.parent.mkdir(parents=True, exist_ok=True)
         cached.write_bytes(data)
-    with urllib.request.urlopen(LICENSE_URL) as response:
+    with urllib.request.urlopen(LICENSE_URL, timeout=DOWNLOAD_TIMEOUT_S) as response:
         license_text = response.read().decode("utf-8")
     snapshot = build_snapshot(cached, jar, license_text)
     for old in snapshot_files(paths):
