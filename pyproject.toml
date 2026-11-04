@@ -19,6 +19,7 @@ rf = "realmforge_tools.cli:main"
 [dependency-groups]
 dev = [
     "pytest>=8.4",
+    "pytest-xdist>=3.8.0",
     "ruff>=0.14",
 ]
 
@@ -32,7 +33,9 @@ module-root = "tools"
 
 [tool.pytest.ini_options]
 testpaths = ["tools/tests"]
-addopts = "-ra --strict-markers"
+# pytest-xdist runs the tests on one worker per CPU (four on GitHub's runners), at most eight, so CI's content job stays
+# well under its timeout (RLM-605). `-n 0` runs them in this process, for a debugger or `-s` output.
+addopts = "-ra --strict-markers -n auto --maxprocesses=8"
 
 [tool.ruff]
 line-length = 110
