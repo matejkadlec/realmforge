@@ -11,7 +11,7 @@ WorldEdit stays out for players and serves Matěj's building in the dev client a
 amended by [0058](0058-player-systems-before-world-content.md) (M1 is the character to level 18 with the gear mods,
 M2 the world of chapters 1 and 2 with Lootr), 2026-10-29; amended by
 [0066](0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md) (the hold on Artifacts ends,
-Immersive Armors is rejected), 2026-10-31
+Immersive Armors is rejected), 2026-10-31; "no talents as of v1.0.0" noted 2026-11-03 (RLM-586)
 
 ## Context
 
@@ -33,6 +33,9 @@ answered the open questions the same night (RLM-264). The candidates and every p
     in-game guide; realms and instanced dungeons.
   - **Talents stay dropped for now:** classes and specializations only, talents may come later (Matěj, 2026-10-16,
     RLM-28; confirmed 2026-10-18). Glyphs are postponed too.
+    - 2026-11-03 (RLM-28, RLM-586): Matěj made it explicit: no talents as of v1.0.0; they could be added later, but
+      they are not planned. Spell trees with ranks and passive spells (RLM-333) take their place, and pets have no
+      talents either (2026-11-04, RLM-624).
   - **Third-party allowed:** world-generated dungeons and their mobs, including other mods' dungeons placed into our
     realms with swapped blocks (Lithostitched processors, Structurify), and boss-like mobs if they are lightweight.
     Full boss fights stay ours.

@@ -47,14 +47,16 @@ weakens a test or check.
   - `Gradle build, JUnit, GameTests` (timeout 45 minutes)
   - `Vanilla ID universe is reproducible` (timeout 15 minutes)
   - `Modpack index is up to date` (timeout 15 minutes)
+  - `Full pack boots on a dedicated server` and `Full pack boots on a client` (timeout 30 minutes each), required
+    since 2026-11-04 ([ADR 0071](../../../docs/decisions/0071-the-pack-boots-are-required-checks.md)), once Matěj
+    adds them to the ruleset
 - CI (`.github/workflows/ci.yml`) runs on `pull_request` and on push to `master`, on GitHub-hosted
   `ubuntu-latest` runners, except one job on `windows-latest`: `Worktree cleanup on Windows (PowerShell 5.1 and 7)`
   (timeout 15 minutes), the PowerShell port's smoke test `tests/test_git_clean_worktrees_windows.ps1` under both
-  editions. It and the two pack boot jobs (`Full pack boots on a dedicated server`, `Full pack boots on a client`)
-  are not required checks, but "Green" (under "Checks" in "Signals") counts every check on the head, so a red one
-  holds the merge like a required one. A full run usually takes about 2 minutes (1m40s–2m20s in October 2026); the
-  Gradle job is the longest. Runs are cancelled per ref when a newer push arrives. On failure the Gradle job uploads
-  the artifact `gradle-logs-and-reports` (game logs, crash reports, test reports).
+  editions. It is not a required check, but "Green" (under "Checks" in "Signals") counts every check on the head,
+  so a red one holds the merge like a required one. A full run usually takes about 2 minutes (1m40s–2m20s in October
+  2026); the Gradle job is the longest. Runs are cancelled per ref when a newer push arrives. On failure the Gradle job
+  uploads the artifact `gradle-logs-and-reports` (game logs, crash reports, test reports).
 - No workflow deploys. After a merge, only CI on `master` runs.
 - `deleteBranchOnMerge` decides whether GitHub deletes the head branch at merge. In October 2026 it was off.
 - The reviewer is `.claude/agents/pr-reviewer.md` (tools: Read, Grep, Glob).
@@ -393,7 +395,7 @@ Read each signal fresh from GitHub at every step, and never trust an earlier rea
 - **Checks.** The latest attempt of every check on the head SHA:
   `gh api --paginate "repos/matejkadlec/realmforge/commits/<sha>/check-runs?filter=latest"` (never
   `filter=all`, which adds obsolete attempts that a re-run replaced).
-  - Green means each of those completed with `success`, `neutral` or `skipped`, and all four required checks
+  - Green means each of those completed with `success`, `neutral` or `skipped`, and all six required checks
     (listed under "Repository facts") are among them.
   - Behind them are the workflow runs (`gh api "repos/matejkadlec/realmforge/actions/runs?head_sha=<sha>"`)
     and their jobs (`gh api repos/matejkadlec/realmforge/actions/runs/<id>/jobs`, with `status`,
@@ -433,7 +435,8 @@ the first of steps 2–8 that applies. If none applies yet, wait under step 1.
    - In a cloud session, subscribe once to the pull request's activity (`subscribe_pr_activity`) and arm one
      `send_later` check-in.
 
-2. **Conflict: resolve it.** On `dirty` or `behind`, bring `master` in before anything else.
+2. **Conflict: resolve it.** On `dirty` or `behind`, or when `master` changed a generated file this pull request
+   also changes (check 7 of "Merge"), bring `master` in before anything else.
 
    - Rebase a branch this session created onto `origin/master`, and push with
      `--force-with-lease=<branch>:<remote head before the rebase>`. Merge `origin/master` into anyone else's
@@ -443,6 +446,12 @@ the first of steps 2–8 that applies. If none applies yet, wait under step 1.
    - Regenerate generated files with the project's own tooling, never by hand: `uv run rf gen` for
      `mod/src/generated/`, `qa-mod/src/generated/` and `tools/schemas/`; `uv lock` for `uv.lock`;
      `cd pack && packwiz refresh` for `pack/index.toml`; `uv run rf ids vanilla` for `tools/id_universe/`.
+   - **The second merge regenerates.** Batches may regenerate the same generated file in parallel
+     ([ADR 0070](../../../docs/decisions/0070-batches-may-share-generated-files.md)), and the required checks are
+     not strict, so a pull request that merges after another one changed the same generated file can merge without
+     a textual conflict and still leave the file out of date on `master`. This pull request is then the second:
+     run the tooling above after bringing `master` in even where git merged the file cleanly, and commit what it
+     changes. `uv run rf gen --check` passing is the evidence.
    - Run the checks that the conflicted files need (step 4 of "Review pass").
    - Ask the user only when both sides changed the same behavior and keeping either one loses the other.
    - The new head needs a review pass unless the exception in "Which head is reviewed" keeps the earlier one.
@@ -583,7 +592,13 @@ Check all of these on one fresh reading, in order:
    that change nothing a player sees (docs, tests, a refactor its tests cover, a merge of `master` whose conflict
    resolutions touch nothing a player sees) need no new playtest. A change to `docs/roadmap.md` is no hold
    ([ADR 0021](../../../docs/decisions/0021-status-overview-and-plan-changes.md)).
-7. The head you checked is still the head.
+7. No generated file is stale: after `git fetch origin master`, no generated file this pull request changes
+   (`gh api "repos/matejkadlec/realmforge/pulls/<n>/files?per_page=100" --paginate --jq '.[].filename'`, the paths
+   step 2 of "Loop" regenerates) is among those `master` changed since the head's merge base
+   (`git diff --name-only $(git merge-base <sha> origin/master) origin/master`). A shared one sends the run to
+   step 2 of "Loop": the new head needs its checks, and a review pass unless "Which head is reviewed" keeps the
+   earlier one.
+8. The head you checked is still the head.
 
 Then merge:
 

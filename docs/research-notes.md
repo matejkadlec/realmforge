@@ -164,7 +164,7 @@ All have NeoForge 26.1.2 builds. The pack only references them, nothing is forke
 | Mob level by location | AutoLeveling | fixed boss levels |
 | Stats, milestones (10 STR = +10% dmg), crit, dodge, spell power | Apothic Attributes (MIT), Spell Power | own attributes via the NeoForge API |
 | Spells, skills, spell schools | Spell Engine (best data format), Iron's Spells | spell type in Java, parameters in data |
-| Talents and glyphs | WoW talents, Pufferfish's Skills, Passive Skill Tree | WoW-style GUI, not a node web. **Postponed indefinitely** (Matěj, 2026-10-16, RLM-28): specialization spell trees instead (RLM-218) |
+| Talents and glyphs | WoW talents, Pufferfish's Skills, Passive Skill Tree | WoW-style GUI, not a node web. **No talents as of v1.0.0**, could be added later, not planned (Matěj, 2026-11-03, RLM-586; postponed indefinitely on 2026-10-16, RLM-28): specialization spell trees instead (RLM-218); glyphs stay postponed |
 | Status effects | Iron's Spells (Oakskin), WoW | boss buffs and debuffs |
 | Gear: RNG item chests | Apotheosis (code MIT, assets ARR) | items that roll a loot table. **Superseded:** rarity, affixes, gems and reforging come from Apotheosis itself ([ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md)) |
 | Enchanting with less RNG | Apothic Enchanting | **Superseded:** Apothic Enchanting itself is in the pack ([ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md)) |

@@ -34,8 +34,9 @@ rest by normal priority.
    Next -> In Progress move; do not make it here, or the claim's "still in Next" precondition is false on every
    run.
 5. Inspect in-flight ownership, conflicts and dependencies before implementing, exactly as `flow1` steps 1 and 2
-   do, including the conflict domains, the generated files, the pending-batch slots and the playtest limit. Pull
-   unfinished dependencies into the batch under _Dependencies_.
+   do, including the conflict domains, the pending-batch slots and the playtest limit (generated files shared with
+   an in-flight batch hold nothing back: the batch that merges second regenerates them). Pull unfinished
+   dependencies into the batch under _Dependencies_.
 6. Claim every ticket you will implement through the atomic intake claim before writing any implementation, as
    `flow1` step 5 requires. A ticket this run just created is claimed the same way; creating it grants no
    ownership. A `cloud` run claims no local-only ticket: it leaves each in Next with a comment that it waits for a

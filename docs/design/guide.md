@@ -15,8 +15,8 @@
 - **Our own screen, not GuideME.** GuideME (AE2's guidebook library) was evaluated on 2026-10-12 and dropped:
   locking chapters per player would need its internal API, and its layout is fixed.
 - **About the world and the systems:** realms, dungeons, bosses and what they reward, and a Character and a Basics
-  tab that explain what a stat, class, race, talent or spell does and how the other systems work (Matěj: "I 100% want
-  it there").
+  tab that explain what a stat, class, race, specialization or spell does and how the other systems work (Matěj: "I
+  100% want it there").
 - **It replaces EMI Loot and EMI Ores**, which the 26.1.2 port removed (EMI has no newer build): realm entries list
   their ores, dungeon entries their notable loot, boss entries their full loot table ([Loot and ores](#loot-and-ores)).
 - **Separate from the quest book.** FTB Quests keeps its own screen
@@ -55,8 +55,7 @@ The Character tab opens its sub-tabs as a second row:
 +---------------------------+
 | Realms Dungeons Bosses    |
 | Character Basics          |
-|  Classes Races Talents    |
-|  Stats                    |
+|  Classes Races Stats      |
 +---------------------------+
 | Chapter 1                 |
 | > Warrior                 |
@@ -65,13 +64,14 @@ The Character tab opens its sub-tabs as a second row:
 ```
 
 - **Tabs nest:** a tier-1 tab can hold tier-2 sub-tabs. The tier-1 tabs are Realms, Dungeons, Bosses, Character
-  (sub-tabs Classes, Races, Talents and Stats) and Basics, for the remaining systems (leveling and the level cap,
+  (sub-tabs Classes, Races and Stats) and Basics, for the remaining systems (leveling and the level cap,
   chapters, dungeon instances, later professions and enchanting).
 - **Spells sit with what grants them:** a class entry lists its spells and a race entry its innate spells (every
   race's racial passive and active, [architecture 10.1](../architecture.md#101-races-and-classes)), each with its
   icon and a tooltip (school, cost, cast time, cooldown, the level that unlocks it), generated from the class or race
-  data. A talent-tree entry lists the spells its nodes grant (`grant_spell`,
-  [architecture 11.1](../architecture.md#111-model)), with the same tooltips. A spell that another system grants,
+  data; a class entry shows each specialization's spell tree by row, with the same tooltips. There is no Talents
+  sub-tab: no talents as of v1.0.0; they could be added later, but they are not planned (Matěj, 2026-11-03,
+  RLM-586). A spell that another system grants,
   such as summoning a mount (M4), appears in that system's Basics entry. An item that grants a spell (an item
   component) shows it in the item's own tooltip, so it appears wherever an entry lists that item (a dungeon's
   notable loot, a boss's loot table); items have no entries of their own. A Spells sub-tab would repeat these
@@ -122,9 +122,9 @@ Guide entries are content like everything else
 ```yaml
 # content/guide/catacombs.yaml (sketch; names are examples)
 id: catacombs
-category: dungeon                 # realm | dungeon | boss | class | race | talent | stat | basics
+category: dungeon                 # realm | dungeon | boss | class | race | stat | basics
 chapter: realmforge:chapter_2     # the realmforge:chapter whose players can read it
-subject: realmforge:catacombs     # optional: the dungeon type, boss, dimension, class, race, talent tree or stat
+subject: realmforge:catacombs     # optional: the dungeon type, boss, dimension, class, race or stat
 title: {en_us: Catacombs}
 summary: {en_us: "Dungeon in Undervault, levels {level_min}-{level_max}"}
 text:
@@ -135,13 +135,14 @@ keywords: {en_us: [crypt, undead]}
 requires: []                      # optional extra unlocks, same types as dimension access
 ```
 
-- **Categories map to tabs:** `class`, `race`, `talent` and `stat` are the Character tab's sub-tabs; the others are
+- **Categories map to tabs:** `class`, `race` and `stat` are the Character tab's sub-tabs; the others are
   tier-1 tabs.
 - **Facts come from the subject, never from prose** ([architecture 6.3](../architecture.md#63-conventions)): the
   generator fills the facts block and placeholders such as `{level_min}` from the dungeon type, boss, dimension
-  rules, class, race, talent tree or stat rules the entry describes (level range, where it is, how to enter, its
+  rules, class, race or stat rules the entry describes (level range, where it is, how to enter, its
   bosses and their levels, its ores or loot; a class's resource and spells, a race's bonuses and innate spells,
-  what a stat point gives, the spells a talent tree's nodes grant). An item icon's tooltip lists the spells it grants.
+  what a stat point gives, the spells of a class's specialization trees). An item icon's tooltip lists the spells it
+  grants.
   A changed boss level changes the guide with it.
 - **One source for quests and the guide (PR-2):** a quest names a guide entry (`guide: realmforge:catacombs`) and
   its FTB Quests description gets the entry's summary and a "see the guide" line, generated from the same text.
@@ -152,9 +153,9 @@ requires: []                      # optional extra unlocks, same types as dimens
   `lang/en_us.json`.
 - **Validation** (Python): the chapter, subject, related entries and requirements exist; the subject fits the
   category; `requires` uses only requirement types the server recomputes on ([Unlock rule](#unlock-rule)); every
-  placeholder resolves; every loot chance can be computed; every realm, dungeon type, boss, class, race, talent tree
-  and stat has a guide entry once the guide ships, and every spell a class, race, talent tree or other system grants
-  appears in one. Item-granted spells are left out of that rule: they show in their item's tooltip, and an item
+  placeholder resolves; every loot chance can be computed; every realm, dungeon type, boss, class, race and stat
+  has a guide entry once the guide ships, and every spell a class (its specialization trees), race or other system
+  grants appears in one. Item-granted spells are left out of that rule: they show in their item's tooltip, and an item
   that comes from crafting, a quest or a trade may appear in no entry.
 
 ## Unlock rule
@@ -220,7 +221,8 @@ Matěj's answers of 2026-10-13 (RLM-116); none is open.
 
 1. **The design is approved**, with nested tabs and the new Character tab (Classes, Races, Talents, Stats) beside
    Realms, Dungeons, Bosses and Basics. Where spells go was left to the design: with what grants them, a class, a
-   race or another system ([Screen](#screen)).
+   race or another system ([Screen](#screen)). The Talents sub-tab dropped out on 2026-11-03: no talents as of
+   v1.0.0 (RLM-586).
 2. **Milestone:** M4.
 3. **Default key:** `J`, unless a mod in the pack already uses it (checked when it is built; RLM-42's Night Vision key
    takes `N`).

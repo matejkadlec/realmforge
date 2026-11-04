@@ -120,7 +120,7 @@ Melee armor, melee weapons, bows, tools, shields and tridents keep Apotheosis's 
 
 ### Melee: armor and weapons
 
-Apotheosis's affixes as RLM-232 sets them (68 kept, 31 off, Executing and Runed among them; [the affix set](apotheosis.md#the-affix-set)), remapped to our stats by RLM-272:
+Apotheosis's affixes as RLM-232 sets them (66 kept, 33 off, Executing, Runed, Bloodletting and Devilish among them; [the affix set](apotheosis.md#the-affix-set)), remapped to our stats by RLM-272:
 crit chance (Intricate), crit damage (Lacerating), armor pierce (Piercing), lifesteal (Vampiric), overheal
 (Berserking), cooldown reduction (Timekeeping), and vanilla's attack damage, attack speed, armor and toughness as
 they are. Warrior spells scale with attack damage, so Violent and Murderous are the Warrior's spell power too.
@@ -187,6 +187,10 @@ Apotheosis's `breaker` and `shears` affixes as RLM-232 sets them (Omnetic off, i
 and Super-Massive checked against the dungeons' protected blocks). Tools take no affix of ours.
 
 ### Curios
+
+**Not in M1 or M2:** Artifacts, and Curios with it, moves to M3 or later (Matěj, 2026-11-04, RLM-625, split from
+RLM-314), so the first two chapters ship without curios; our curio slots' loot categories follow it (RLM-556). The
+rules below stand for when they come.
 
 Stat affixes only and attribute gem bonuses, no special affixes (Matěj, 2026-10-16, RLM-205). Four slots: two
 rings, one necklace, one bracelet (Matěj, 2026-10-17). A curio's affix is about half of an armor piece's, since the

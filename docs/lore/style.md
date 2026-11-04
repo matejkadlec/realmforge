@@ -103,8 +103,8 @@ for the story around it.
   has neither ([ADR 0025](../decisions/0025-remove-the-nether-and-end.md)), so no text sends a player there:
   netherite comes from Undervault's forge-stock, and the Ancient merchants still sell the Nether's stone.
 - **Tone, not the real world:** no politics, modern slang, memes or emoji. A modern word may stay only as a
-  deliberate reference inside the world, when Matěj gives it that reason: "Hella tough" in "The Right Tool" is a nod
-  to the Nether (2026-10-27, [practices](practices.md#3-story-rules)).
+  deliberate reference inside the world, when Matěj gives it that reason: "Hella tough" in "Tools of the Undervault" is
+  a nod to the Nether (2026-10-27, [practices](practices.md#3-story-rules)).
 - **No quoted text from other games,** WoW included, and no in-jokes, even as a nod. Names from other games are a
   matter of [recommendation](#name-rules), not a rule.
 

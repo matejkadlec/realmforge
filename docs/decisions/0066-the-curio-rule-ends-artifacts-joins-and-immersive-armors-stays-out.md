@@ -5,7 +5,8 @@ Date: 2026-10-31
 Status: Accepted (amends [0025](0025-remove-the-nether-and-end.md)'s curio rule,
 [0044](0044-third-party-mods-by-milestone.md)'s hold on Artifacts and its Immersive Armors pick, and
 [0058](0058-player-systems-before-world-content.md)'s "Artifacts and Immersive Armors as Matěj picks them"); "option C"
-and the world-sources consequence clarified 2026-11-03 (RLM-569)
+and the world-sources consequence clarified 2026-11-03 (RLM-569); the milestone moved to M3 or later, noted
+2026-11-04 (RLM-624)
 
 ## Context
 
@@ -43,6 +44,8 @@ RLM-313), and Matěj decided on 2026-10-30:
 3. **Immersive Armors is rejected** and moves to 0044's rejected mods. RLM-314 no longer adds it.
 4. **The milestone stays M1** for Artifacts, as [0058](0058-player-systems-before-world-content.md) set it; no other ADR
    is needed for that move.
+   - 2026-11-04 (RLM-624, RLM-625): Matěj moved Artifacts, and Curios with it, to M3 or later; M1 and M2 ship without
+     curios. Decisions 1 to 3 and the placement stand.
 
 ## Consequences
 
