@@ -723,8 +723,9 @@ generated files and GameTests each one changes (read a branch's diff with
 `git diff --name-only origin/master...<branch>`, a local worktree's with `git -C <worktree> status --porcelain`,
 and predict a claimed ticket's from its description). In-flight ownership is every [in-flight](#in-flight)
 ticket with its batch's branch and worktree, and every open pull request. Do not select work that overlaps it
-unless it directly continues the same branch. If no safe non-conflicting work exists, stop and report the
-conflict instead of forcing a risky batch.
+unless it directly continues the same branch; an overlap only in generated files is no overlap
+([Conflict domains](#conflict-domains)). If no safe non-conflicting work exists, stop and report the conflict
+instead of forcing a risky batch.
 
 ### Conflict domains
 
@@ -750,26 +751,29 @@ uses.
 at most one gate-critical batch is in flight in the whole repository. A change to `mod/build.gradle` or
 `qa-mod/build.gradle` (a new dependency, say) is an ordinary file overlap the conflict map already refuses.
 
-**Generated files** are the main merge-conflict risk here. Every batch lists the generated files it will
+**Generated files** never hold a batch back (Matěj, 2026-11-04, RLM-623,
+[ADR 0070](decisions/0070-batches-may-share-generated-files.md)). Every batch lists the generated files it will
 regenerate: everything under `mod/src/generated/`, `qa-mod/src/generated/`, `tools/schemas/` and
 `tools/id_universe/`, plus `pack/index.toml` and `uv.lock`. Predict them from the content types and generators
 the batch touches (`tools/realmforge_tools/generate/`; every player-facing text lands in the generated
-`lang/en_us.json`), and confirm with the diff after `uv run rf gen`. Never select a batch
-that regenerates a file an in-flight batch also regenerates, until that batch has merged. In practice this lets
-one batch with new player-facing content run at a time. When implementation shows the batch must regenerate such
-a file after all, that is scope growth (next paragraph): the overlapping part waits or is split out, and the batch
-is not published while the other batch owns the file. A conflict in a generated file is resolved by rebasing and
-regenerating (`finalize-pr`, step 2 of its loop), never by hand-merging it.
+`lang/en_us.json`), and confirm with the diff after `uv run rf gen`. Two in-flight batches may regenerate the same
+file: an overlap only in generated files is no overlap, and a batch that finds during implementation that it
+regenerates another batch's file goes on. The list tells the batch that merges second what it must redo: it
+brings `origin/master` in and reruns `uv run rf gen` (`finalize-pr`, step 2 of its loop and check 7 of its
+merge), and commits the regenerated output. A generated file is never hand-merged, and a textual conflict in one
+is resolved the same way. The sources that generate it (a YAML file, a generator) are ordinary files: an overlap
+there is one the conflict map refuses.
 
 Decide the domains, gate-critical files and generated files before the claim; the claim comment states them, so
-peers can count the batch. If the scope later grows into another domain, a shared-root file, a gate-critical file
-or a generated file, add a scope comment with the new values to each ticket, re-check the caps in
-[Concurrency and run boundaries](#concurrency-and-run-boundaries) as in [Slot race](#slot-race). If the grown
-batch no longer fits, the grown part does not go ahead: split it into its own ticket for a later batch, or keep
-the batch In Progress on its branch, unpublished, until the cap has room. An AI-only batch whose scope turns
-into a gameplay change needs a free playtest slot first: add a QA-mode comment naming Playtest to each of its
-tickets and re-count as in [Slot race](#slot-race); without a slot, split the gameplay part into its own ticket,
-or keep the batch In Progress on its branch until a slot frees.
+peers can count the batch and the second merge knows what to regenerate. If the scope later grows into another
+domain, a shared-root file or a gate-critical file, add a scope comment with the new values to each ticket and
+re-check the caps in [Concurrency and run boundaries](#concurrency-and-run-boundaries) as in
+[Slot race](#slot-race); a generated file the batch newly regenerates only goes into a scope comment, which
+re-checks nothing. If the grown batch no longer fits, the grown part does not go ahead: split it into its own
+ticket for a later batch, or keep the batch In Progress on its branch, unpublished, until the cap has room. An
+AI-only batch whose scope turns into a gameplay change needs a free playtest slot first: add a QA-mode comment
+naming Playtest to each of its tickets and re-count as in [Slot race](#slot-race); without a slot, split the
+gameplay part into its own ticket, or keep the batch In Progress on its branch until a slot frees.
 
 ### Atomic intake claim
 
@@ -862,16 +866,15 @@ the collision on the ticket, keep the local branch for Matěj, and ask him in th
 #### Slot race
 
 The claim arbitrates one ticket, so runs that each saw room under a shared cap can claim different tickets for
-its last place: the last slot of a domain, the last of the six, the one gate-critical place, the last playtest
-slot, or the same generated file. A new batch therefore re-counts at its first ticket's step 4: after its own
-claim comment is recorded, it counts every in-flight batch again from one fresh search read to its end (the
-in-flight tickets, grouped by the branch their winning claim comments name, with the QA mode, domains,
-gate-critical flag and generated files those comments and later scope or QA-mode comments state), each group
-merged with the open pull request whose head is its branch, plus the other open pull requests. It keeps its place
-only if, besides itself, every cap of
-[Concurrency and run boundaries](#concurrency-and-run-boundaries) it needs still has room and no in-flight batch
-regenerates one of its generated files. Otherwise it stands down: it creates no branch, adds a claim-release
-comment to every ticket it claimed for the batch, returns each to Next, and selects other work or ends the run.
+its last place: the last slot of a domain, the last of the six, the one gate-critical place or the last playtest
+slot. A new batch therefore re-counts at its first ticket's step 4: after its own claim comment is recorded, it
+counts every in-flight batch again from one fresh search read to its end (the in-flight tickets, grouped by the
+branch their winning claim comments name, with the QA mode, domains and gate-critical flag those comments and later
+scope or QA-mode comments state), each group merged with the open pull request whose head is its branch, plus the
+other open pull requests. It keeps its place only if, besides itself, every cap of
+[Concurrency and run boundaries](#concurrency-and-run-boundaries) it needs still has room. Otherwise it stands
+down: it creates no branch, adds a claim-release comment to every ticket it claimed for the batch, returns each to
+Next, and selects other work or ends the run.
 Two contenders that see each other both stand down, which keeps the cap and leaves the place to the next
 selection. Jira search can lag behind a write, so claims inside that lag can still overshoot a cap by the number
 of agents running at once; later selections see the overshoot and wait.
@@ -1073,8 +1076,8 @@ the open pull request whose head is that branch as one batch.
   A batch holds a slot in each of its domains from its claim for as long as it is [in flight](#in-flight). A
   shared-root batch holds one in every domain.
 - **Gate-critical:** at most one gate-critical batch in flight in the whole repository.
-- **Generated files:** no two in-flight batches regenerate the same generated file
-  ([Conflict domains](#conflict-domains)).
+- **Generated files cap nothing:** in-flight batches may regenerate the same generated file, and the one that
+  merges second regenerates it ([Conflict domains](#conflict-domains)).
 - **Playtest slots:** at most three playtest batches hold a playtest slot. The limit caps the branches waiting on
   Matěj's playtest, not the number of agents: branches beyond what he can play only go stale. A playtest batch
   holds its slot from its claim until `qa1` publishes it or the batch is otherwise resolved, through every `qa2`
@@ -1096,8 +1099,8 @@ A run delivers one batch. It ends, with the [status overview](../CLAUDE.md#statu
 - a playtest batch: its [playtest handoff](#playtest-handoff) is given. Matěj's `qa1` starts the run that
   publishes the batch and carries it to its merge; his `qa2` starts a revision that ends at the next handoff;
 - the caps leave no startable batch: the overall limit is reached, every domain with safe work left is full, a
-  gate-critical batch is in flight and only gate-critical work remains, every remaining candidate regenerates a
-  file an in-flight batch owns, or every playtest slot is taken and only playtest work remains;
+  gate-critical batch is in flight and only gate-critical work remains, or every playtest slot is taken and only
+  playtest work remains;
 - no safe active-sprint ticket remains after the conflict, dependency and ownership checks;
 - a `cloud` run: no startable cloud-capable ticket remains in Next or To Do ([Run location](#run-location)).
 

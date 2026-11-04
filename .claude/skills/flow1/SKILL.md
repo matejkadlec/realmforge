@@ -27,8 +27,9 @@ Name the mode in the batch announcement.
    follow _Intake and conflict control_: inspect the active sprint (Next before To Do), the in-flight tickets,
    open pull requests, branches, worktrees and the main checkout; read every candidate, comments included, with
    the candidate field set from _Reading a ticket_; set aside every ticket under _Tickets waiting on Matěj_; skip
-   work that overlaps in-flight ownership or regenerates a generated file an in-flight batch regenerates; and
-   check each batch's _Conflict domains_ against the caps in _Concurrency and run boundaries_ before selecting.
+   work that overlaps in-flight ownership (an overlap only in generated files is none: the batch that merges
+   second regenerates them, _Conflict domains_); and check each batch's _Conflict domains_ against the caps in
+   _Concurrency and run boundaries_ before selecting.
 2. **Dependencies:** resolve every candidate's unfinished dependencies under _Dependencies_: pull each one from
    To Do, Next or the backlog into the batch, defer a ticket whose dependency is in flight elsewhere, and defer one
    whose dependency waits on Matěj or is an M2 task while M1's definition of done does not hold, without listing the

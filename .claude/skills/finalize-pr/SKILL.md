@@ -433,7 +433,8 @@ the first of steps 2–8 that applies. If none applies yet, wait under step 1.
    - In a cloud session, subscribe once to the pull request's activity (`subscribe_pr_activity`) and arm one
      `send_later` check-in.
 
-2. **Conflict: resolve it.** On `dirty` or `behind`, bring `master` in before anything else.
+2. **Conflict: resolve it.** On `dirty` or `behind`, or when `master` changed a generated file this pull request
+   also changes (check 7 of "Merge"), bring `master` in before anything else.
 
    - Rebase a branch this session created onto `origin/master`, and push with
      `--force-with-lease=<branch>:<remote head before the rebase>`. Merge `origin/master` into anyone else's
@@ -443,6 +444,12 @@ the first of steps 2–8 that applies. If none applies yet, wait under step 1.
    - Regenerate generated files with the project's own tooling, never by hand: `uv run rf gen` for
      `mod/src/generated/`, `qa-mod/src/generated/` and `tools/schemas/`; `uv lock` for `uv.lock`;
      `cd pack && packwiz refresh` for `pack/index.toml`; `uv run rf ids vanilla` for `tools/id_universe/`.
+   - **The second merge regenerates.** Batches may regenerate the same generated file in parallel
+     ([ADR 0070](../../../docs/decisions/0070-batches-may-share-generated-files.md)), and the required checks are
+     not strict, so a pull request that merges after another one changed the same generated file can merge without
+     a textual conflict and still leave the file out of date on `master`. This pull request is then the second:
+     run the tooling above after bringing `master` in even where git merged the file cleanly, and commit what it
+     changes. `uv run rf gen --check` passing is the evidence.
    - Run the checks that the conflicted files need (step 4 of "Review pass").
    - Ask the user only when both sides changed the same behavior and keeping either one loses the other.
    - The new head needs a review pass unless the exception in "Which head is reviewed" keeps the earlier one.
@@ -583,7 +590,13 @@ Check all of these on one fresh reading, in order:
    that change nothing a player sees (docs, tests, a refactor its tests cover, a merge of `master` whose conflict
    resolutions touch nothing a player sees) need no new playtest. A change to `docs/roadmap.md` is no hold
    ([ADR 0021](../../../docs/decisions/0021-status-overview-and-plan-changes.md)).
-7. The head you checked is still the head.
+7. No generated file is stale: after `git fetch origin master`, no generated file this pull request changes
+   (`gh api "repos/matejkadlec/realmforge/pulls/<n>/files?per_page=100" --paginate --jq '.[].filename'`, the paths
+   step 2 of "Loop" regenerates) is among those `master` changed since the head's merge base
+   (`git diff --name-only $(git merge-base <sha> origin/master) origin/master`). A shared one sends the run to
+   step 2 of "Loop": the new head needs its checks, and a review pass unless "Which head is reviewed" keeps the
+   earlier one.
+8. The head you checked is still the head.
 
 Then merge:
 
