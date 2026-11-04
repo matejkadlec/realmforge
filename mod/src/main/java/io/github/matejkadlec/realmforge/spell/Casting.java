@@ -1,20 +1,25 @@
 package io.github.matejkadlec.realmforge.spell;
 
 import io.github.matejkadlec.realmforge.Realmforge;
+import io.github.matejkadlec.realmforge.combat.CombatConfig;
 import io.github.matejkadlec.realmforge.combat.DamagePipeline;
 import io.github.matejkadlec.realmforge.effect.Effects;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.spell.CombatState.Cast;
 import io.github.matejkadlec.realmforge.spell.net.CastEndedPayload;
+import io.github.matejkadlec.realmforge.spell.net.CastRefusedPayload;
 import io.github.matejkadlec.realmforge.spell.net.CastStartedPayload;
 import io.github.matejkadlec.realmforge.spell.net.CastTargetPayload;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
+import javax.annotation.Nullable;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -42,7 +47,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
  *   the owner's client sees it and a second cast is refused; this system keeps what only the server needs (the target,
  *   the spell level, where the cast began, the ticks run).</li>
  *   <li><b>Cast Time Reduction</b> shortens a cast time, and a channel's interval, so a channel keeps its tick
- *   count.</li>
+ *   count; a channel whose ticks it multiplies keeps its duration and runs round(ticks × (1 + reduction)) ticks in it
+ *   instead, spread evenly (RLM-572: Blizzard's waves).</li>
  *   <li><b>Interrupts:</b> a spell's knockback (unless the spell may be cast while moving), death, a dimension change,
  *   logging out, the caster's removal and a cancel ({@link #cancel}) end it without more effects.</li>
  *   <li><b>Moving slows, it never interrupts</b> (RLM-261, ADR 0039): a cast of a spell that may not be cast while
@@ -57,9 +63,10 @@ import net.neoforged.neoforge.network.PacketDistributor;
  *   target is checked again ({@link SpellCaster#recheck}), and a failed check ends it like an interrupt, without the
  *   cooldown or the effects; the cost stays paid. Otherwise it starts its cooldown and runs its effects.</li>
  *   <li><b>Its sound:</b> a spell with a cast sound plays it from the caster when the cast begins.</li>
- *   <li><b>A channel</b> paid for its first second when it began, and pays its cost again as each later second begins
- *   (Matěj, 2026-10-24: as in WoW), its seconds shortened by Cast Time Reduction as its interval is, so the number of
- *   payments stays; a pool that falls short ends it ({@link CastEnd#NOT_ENOUGH_RESOURCE}). It runs its effects at the
+ *   <li><b>A channel</b> paid for its first second when it began, with its cost up front if it has one (RLM-572), and
+ *   pays its cost again as each later second begins (Matěj, 2026-10-24: as in WoW), its seconds shortened by Cast Time
+ *   Reduction as its interval is, so the number of payments stays (whole seconds for a channel that keeps its
+ *   duration); a pool that falls short ends it ({@link CastEnd#NOT_ENOUGH_RESOURCE}). It runs its effects at the
  *   end of every interval, checking the target first; a failed check or an interrupt ends it, and the ticks already
  *   run stay applied.</li>
  *   <li><b>Clients</b> learn of a cast from {@link CastStartedPayload} (the caster and every tracking player, and a
@@ -70,6 +77,12 @@ import net.neoforged.neoforge.network.PacketDistributor;
  *   a cast bar, a cast animation or the slow: its caster moves freely. Its effects run once, at its hit moment; a new
  *   spell cuts it, and damage lands only if the hit moment had passed. A stun or death before the hit moment gives
  *   half its cost and half its cooldown back; Attack Speed shortens neither.</li>
+ *   <li><b>A cast nearly done finishes</b> (Matěj, 2026-10-29, RLM-517): a spell the spell bar asks for while the cast
+ *   in progress has less than {@link CombatConfig#finishCastTicks} left (a quarter of a second) passes every check
+ *   now but waits ({@link #queueAfter}): the cast finishes, and the spell is cast right after it, its checks and cost
+ *   again then, even with Queue Spell Casts off. With that much left or more, it cancels the cast as before. A swing
+ *   is always cut. A newer press replaces the waiting spell; a cast that ends otherwise than by a cancel, a death, a
+ *   dimension change or a logout still lets it go, and a refusal then reaches the player as any refusal does.</li>
  *   <li><b>No melee while casting</b> (ADR 0020, architecture 9.2): a casting player's {@code AttackEntityEvent} is
  *   cancelled, and the cast sets Better Combat's tag {@value CombatState#BETTER_COMBAT_DISABLED_TAG}, which stops its
  *   swings, unless the player already had it. The {@code combat} attachment records that the cast set it, so the end
@@ -90,6 +103,11 @@ public final class Casting {
 
     /** Every cast in progress, by caster. Server thread only. */
     private static final Map<LivingEntity, Running> RUNNING = new HashMap<>();
+    /**
+     * The spells whose casts ended while they waited for them (RLM-517), by caster, in the order the casts ended: cast at
+     * the end of the server tick, after the ended casts' effects. Server thread only.
+     */
+    private static final Map<LivingEntity, Queued> STARTING = new LinkedHashMap<>();
 
     private Casting() {
     }
@@ -103,7 +121,10 @@ public final class Casting {
         NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerChangedDimensionEvent.class,
                 event -> end(event.getEntity(), CastEnd.CHANGED_DIMENSION));
         NeoForge.EVENT_BUS.addListener(PlayerEvent.StartTracking.class, Casting::onStartTracking);
-        NeoForge.EVENT_BUS.addListener(ServerStoppedEvent.class, event -> RUNNING.clear());
+        NeoForge.EVENT_BUS.addListener(ServerStoppedEvent.class, event -> {
+            RUNNING.clear();
+            STARTING.clear();
+        });
         NeoForge.EVENT_BUS.addListener(MobEffectEvent.Added.class, Casting::onEffectAdded);
     }
 
@@ -117,10 +138,11 @@ public final class Casting {
         SpellCast spellCast = spell.value().cast();
         double reduction = DamagePipeline.stat(caster, GeneratedStats.CAST_TIME_REDUCTION);
         boolean channel = spellCast.type() == SpellCast.Type.CHANNEL;
-        int interval = channel ? SpellScaling.castTicks(spellCast.intervalTicks(), reduction) : 0;
-        int duration = channel ? interval * spellCast.tickCount()
-                : SpellScaling.castTicks(spellCast.durationTicks(), reduction);
-        int second = channel ? SpellScaling.castTicks(TICKS_PER_SECOND, reduction) : 0;
+        // RLM-572: a channel whose ticks the reduction multiplies keeps its duration, and so its seconds.
+        boolean addsTicks = channel && spellCast.castTimeReduction() == SpellCast.Haste.ADDS_TICKS;
+        int duration = spellCast.durationFor(reduction);
+        int ticks = channel ? spellCast.tickCountFor(reduction) : 0;
+        int second = !channel ? 0 : addsTicks ? TICKS_PER_SECOND : SpellScaling.castTicks(TICKS_PER_SECOND, reduction);
         int payments = channel ? Math.ceilDiv(spellCast.durationTicks(), TICKS_PER_SECOND) : 0;
         Cast cast = new Cast(spell.key(), now, duration, channel);
 
@@ -137,7 +159,7 @@ public final class Casting {
                 speed.addOrUpdateTransientModifier(CAST_SLOW);
             }
         }
-        Running running = new Running(caster, spell, level, target, (ServerLevel) caster.level(), cast, interval,
+        Running running = new Running(caster, spell, level, target, (ServerLevel) caster.level(), cast, ticks,
                 second, payments, damageScale, 0);
         RUNNING.put(caster, running);
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new CastStartedPayload(caster.getId(), cast));
@@ -175,6 +197,33 @@ public final class Casting {
         if (running != null && !running.spell().value().cast().castableWhileMoving()) {
             end(caster, CastEnd.KNOCKED_BACK);
         }
+    }
+
+    /**
+     * Whether {@code caster}'s cast in progress finishes before a new spell at game time {@code now} (RLM-517): it has
+     * less than {@link CombatConfig#finishCastTicks} left, and it is a cast time or a channel, never a swing, which a
+     * new spell always cuts.
+     */
+    static boolean finishesFirst(LivingEntity caster, long now) {
+        Running running = RUNNING.get(caster);
+        return running != null && !running.cast().swing()
+                && running.cast().endGameTime() - now < CombatConfig.finishCastTicks();
+    }
+
+    /**
+     * {@code spell} at {@code level} waits for {@code caster}'s cast in progress and is cast at {@code aim} right after
+     * it ends (RLM-517), replacing a spell that waited before. Nothing happens without a cast in progress.
+     */
+    static void queueAfter(LivingEntity caster, Holder.Reference<Spell> spell, int level, SpellAim aim) {
+        Running running = RUNNING.get(caster);
+        if (running != null) {
+            running.next = new Queued(spell, level, aim);
+        }
+    }
+
+    /** The spell waiting for {@code caster}'s cast in progress to end (RLM-517), if any. */
+    public static Optional<ResourceKey<Spell>> queued(LivingEntity caster) {
+        return Optional.ofNullable(RUNNING.get(caster)).map(running -> running.next).map(next -> next.spell().key());
     }
 
     /** {@code caster}'s cast in progress, if any: what its client and the cast bar see. */
@@ -235,13 +284,32 @@ public final class Casting {
     }
 
     private static void onServerTick(ServerTickEvent.Post event) {
-        if (RUNNING.isEmpty()) {
-            return;
-        }
         for (Running running : List.copyOf(RUNNING.values())) {
             // An earlier cast's effects can end this one (a kill), so only casts still running go on.
             if (RUNNING.get(running.caster()) == running) {
                 tick(running);
+            }
+        }
+        startQueued();
+    }
+
+    /**
+     * Casts every spell that waited for a cast that ended (RLM-517), after that cast's effects: through every check
+     * again, with its cost paid now. A player hears of a refusal as of any refusal from the bar.
+     */
+    private static void startQueued() {
+        while (!STARTING.isEmpty()) {
+            Map.Entry<LivingEntity, Queued> first = STARTING.entrySet().iterator().next();
+            STARTING.remove(first.getKey());
+            LivingEntity caster = first.getKey();
+            Queued queued = first.getValue();
+            if (caster.isRemoved()) {
+                continue;
+            }
+            CastResult result = SpellCaster.castQueued(caster, queued.spell(), queued.level(), queued.aim());
+            if (caster instanceof ServerPlayer player) {
+                result.failure().ifPresent(failure -> PacketDistributor.sendToPlayer(player,
+                        new CastRefusedPayload(queued.spell().key(), failure)));
             }
         }
     }
@@ -270,8 +338,8 @@ public final class Casting {
         }
         showCircle(running);
         if (running.cast().channel()) {
-            while (running.ticksRun < spell.cast().tickCount()
-                    && now >= running.cast().startGameTime() + (long) (running.ticksRun + 1) * running.interval()) {
+            while (running.ticksRun < running.ticks() && now >= running.cast().startGameTime()
+                    + SpellScaling.channelTickAt(running.ticksRun + 1, running.ticks(), running.cast().durationTicks())) {
                 Optional<CastFailure> failed = SpellCaster.recheck(caster, spell, running.target());
                 if (failed.isPresent()) {
                     end(caster, CastEnd.of(failed.get()));
@@ -284,7 +352,7 @@ public final class Casting {
                     return;
                 }
             }
-            if (running.ticksRun >= spell.cast().tickCount()) {
+            if (running.ticksRun >= running.ticks()) {
                 end(caster, CastEnd.COMPLETED);
                 return;
             }
@@ -299,7 +367,8 @@ public final class Casting {
             end(caster, CastEnd.of(failed.get()));
             return;
         }
-        SpellCaster.startCooldown(caster, spell, running.spell().key(), caster.getData(SpellAttachments.COMBAT), now);
+        SpellCaster.startCooldown(caster, spell, running.spell().key(), running.spellLevel(),
+                caster.getData(SpellAttachments.COMBAT), now);
         end(caster, CastEnd.COMPLETED);
         SpellCaster.runEffects(running.level(), caster, running.spell(), running.spellLevel(),
                 running.target().now(caster, spell.targeting()), Optional.empty(), running.damageScale());
@@ -335,7 +404,7 @@ public final class Casting {
         SpellCaster.refund(caster, spell, running.paid() / 2, state);
         Long cooldownEnd = state.cooldowns().get(running.spell().key());
         if (cooldownEnd != null) {
-            int cooldown = SpellScaling.cooldownTicks(spell.cooldownTicks(),
+            int cooldown = SpellScaling.cooldownTicks(spell.cooldownTicksAt(running.spellLevel()),
                     DamagePipeline.stat(caster, GeneratedStats.COOLDOWN_REDUCTION));
             state.setCooldownEnd(running.spell().key(),
                     Math.max(running.level().getGameTime(), cooldownEnd - cooldown / 2));
@@ -486,6 +555,10 @@ public final class Casting {
             SpellCaster.wentOff(caster, running.spell());
         }
         NeoForge.EVENT_BUS.post(new CastEndedEvent(caster, running.spell(), end));
+        if (running.next != null && end != CastEnd.CANCELLED && end != CastEnd.DIED
+                && end != CastEnd.CHANGED_DIMENSION && end != CastEnd.LOGGED_OUT) {
+            STARTING.put(caster, running.next);
+        }
         return true;
     }
 
@@ -551,7 +624,7 @@ public final class Casting {
         private final SpellTarget target;
         private final ServerLevel level;
         private final Cast cast;
-        private final int interval;
+        private final int ticks;
         private final int second;
         private final int payments;
         private final double damageScale;
@@ -564,9 +637,12 @@ public final class Casting {
         private int paymentsMade = 1;
         /** The entity id a casting player's client was last told the target circle is under. */
         private int circle = NO_CIRCLE;
+        /** The spell that waits for this cast to end (RLM-517), if any. */
+        @Nullable
+        private Queued next;
 
         private Running(LivingEntity caster, Holder.Reference<Spell> spell, int spellLevel, SpellTarget target,
-                ServerLevel level, Cast cast, int interval, int second, int payments, double damageScale,
+                ServerLevel level, Cast cast, int ticks, int second, int payments, double damageScale,
                 double paid) {
             this.caster = caster;
             this.spell = spell;
@@ -574,7 +650,7 @@ public final class Casting {
             this.target = target;
             this.level = level;
             this.cast = cast;
-            this.interval = interval;
+            this.ticks = ticks;
             this.second = second;
             this.payments = payments;
             this.damageScale = damageScale;
@@ -616,12 +692,18 @@ public final class Casting {
             return cast;
         }
 
-        /** A channel's ticks between two runs of its effects; 0 for a cast time. */
-        int interval() {
-            return interval;
+        /**
+         * How often a channel runs its effects, spread evenly over its duration ({@link SpellCast#tickCountFor}: more
+         * with Cast Time Reduction for a channel whose ticks it multiplies, RLM-572); 0 for a cast time.
+         */
+        int ticks() {
+            return ticks;
         }
 
-        /** A channel's second after Cast Time Reduction, in ticks: how often it pays; 0 for a cast time. */
+        /**
+         * A channel's second in ticks, how often it pays: shortened by Cast Time Reduction as its interval is, a whole
+         * second for a channel that keeps its duration (RLM-572); 0 for a cast time.
+         */
         int second() {
             return second;
         }
@@ -630,5 +712,9 @@ public final class Casting {
         int payments() {
             return payments;
         }
+    }
+
+    /** A spell that waits for a cast in progress to end (RLM-517): cast at {@code level} at {@code aim} then. */
+    private record Queued(Holder.Reference<Spell> spell, int level, SpellAim aim) {
     }
 }

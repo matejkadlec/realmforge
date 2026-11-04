@@ -117,16 +117,21 @@ public class StatusEffect extends MobEffect {
                 .orElseThrow(() -> new IllegalStateException("No attribute " + attribute + " for a status effect"));
     }
 
-    /** A stacked effect counts its stacks down every tick; a periodic one ticks at the end of every interval. */
+    /**
+     * A stacked effect counts its stacks down every tick; a periodic one counts its age every tick ({@link
+     * EffectAges}), and {@link #applyEffectTick} ticks it at the end of every interval since its first application.
+     * The remaining duration vanilla passes here would restart its pace at every application (RLM-487).
+     */
     @Override
     public boolean shouldApplyEffectTickThisTick(int tickCount, int amplification) {
-        return stacks.isPresent() || periodic.isPresent() && periodic.get().ticksAt(tickCount);
+        return stacks.isPresent() || periodic.isPresent();
     }
 
     @Override
     public boolean applyEffectTick(ServerLevel level, LivingEntity mob, int amplification) {
         Holder<MobEffect> holder = BuiltInRegistries.MOB_EFFECT.wrapAsHolder(this);
-        periodic.ifPresent(ticks -> EffectTicks.tick(level, mob, holder, ticks, amplification));
+        periodic.filter(ticks -> ticks.ticksAtAge(EffectAges.advance(mob, holder)))
+                .ifPresent(ticks -> EffectTicks.tick(level, mob, holder, ticks, amplification));
         stacks.ifPresent(damage -> StackTicks.tick(level, mob, holder, damage));
         return true;
     }

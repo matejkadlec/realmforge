@@ -1,10 +1,11 @@
 # yaml-language-server: $schema=../../tools/schemas/spells.schema.json
 # The Frost Mage's tree, row 2 (level 6), left (RLM-542; Matěj, 2026-10-30, "Spell Trees to Level 18", chosen for M1,
-# version 1): one of the two spells the tree revolves around, so 5 ranks. An instant shard of ice for 3/3.5/4/4.5/5 +
-# 40/45/50/55/60 % of Spell Power, × 2/2.25/2.5/2.75/3 against a Frozen target (Frost Nova and Frostbite freeze them,
-# and Shatter adds crit chance against them): slow, freeze, then lance. A 4 s cooldown, 15/25/35/45/55 mana (Matěj's
-# playtest of 2026-11-01). It flies where the
-# crosshair points, as Frostbolt does, homing on an enemy near it (RLM-345). Placeholder look until RLM-544.
+# version 1): one of the two spells the tree revolves around, so 5 ranks. An instant shard of ice, many times stronger
+# against a Frozen target (Frost Nova and Frostbite freeze them, and Shatter adds crit chance against them): slow,
+# freeze, then lance. Matěj's rebalance of 2026-11-01 (RLM-572): 4/5/6/7/8 + 45/50/55/60/65 % of Spell Power,
+# × 2/2.5/3/3.5/4 against a Frozen target, 15/25/35/45/55 mana and no cooldown (it was 4 s): only the global cooldown
+# and the mana pace it. It flies where the crosshair points, as Frostbolt does, homing on an enemy near it (RLM-345).
+# Placeholder look until RLM-544.
 id: ice_lance
 name: {en_us: Ice Lance}
 description:
@@ -14,7 +15,6 @@ scales_with: spell_power
 targeting: {type: realmforge:direction, range: 40}
 cast: {type: instant}
 cost: {resource: realmforge:mana, amount: 15, per_level: 10}
-cooldown_seconds: 4
 max_level: 5
 effects:
   - type: realmforge:projectile
@@ -24,11 +24,11 @@ effects:
     appearance: {model: orb, color: "#D6F4FF"}
     effects:
       - type: realmforge:damage
-        amount: 3
-        per_level: 0.5
-        spell_power_percent: 40
+        amount: 4
+        per_level: 1
+        spell_power_percent: 45
         spell_power_per_level_percent: 5
         against_effect:
           effect: realmforge:frozen
           damage_percent: 100
-          damage_per_level_percent: 25
+          damage_per_level_percent: 50

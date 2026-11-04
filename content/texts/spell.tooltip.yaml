@@ -12,6 +12,10 @@ texts:
   # A channel's cost, paid as each second of it begins: "15 Mana per sec".
   cost_per_second:
     en_us: "%1$s %2$s per sec"
+  # A channel's cost with an amount up front (RLM-572: Blizzard), paid when it begins with its first second's: "40 Mana,
+  # then 15 per sec" (%1$s up front, %2$s each second, %3$s the resource's name).
+  cost_up_front:
+    en_us: "%1$s %3$s, then %2$s per sec"
   # %1$s in blocks.
   range:
     en_us: "%1$s block range"

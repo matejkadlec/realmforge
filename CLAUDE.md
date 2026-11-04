@@ -85,11 +85,15 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   heal of a share of max health, a refund for a kill, a crit's bleed and Execute lit while the current target is low, and
   Apotheosis's Bleeding turned into a stack of ours that shows its level (RLM-579);
   and the Mage's, the Frost Mage's "Shatter" tree (RLM-542: Improved Frostbolt, Frostbolt, Cone of Cold; Ice Lance,
-  Frost Nova, Frostbite; Shatter, Ice Barrier; Blizzard), with a cone along the look, Ice Lance's × 2 to × 3 against
+  Frost Nova, Frostbite; Shatter, Ice Barrier; Blizzard), with a cone along the look, Ice Lance's × 2 to × 4 against
   Frozen and Frostbite's freeze on a Slowness; the first spells of rank 5, and the Human's Will To Survive in the
   racial slot and Sword Specialization; melee spells need a melee weapon in the main hand and
-  Shield Bash a shield (RLM-499), stuns stop mobs and casts, crit chance above 100 % turns into crit damage, and a
-  player's channel ticks every 0.5 s (RLM-518). Slam, Reckless Strike and Shield Bash are swings with hit shapes in
+  Shield Bash a shield (RLM-499), stuns stop mobs and casts, crit chance above 100 % turns into crit damage, a
+  player's channel ticks every 0.5 s (RLM-518) but Blizzard's waves come a second apart and Cast Time Reduction adds
+  waves to it (RLM-572: Matěj's Frost numbers, cooldowns and costs by rank, a channel's cost up front), a cast with less
+  than 0.25 s left finishes before the next spell (RLM-517), and an effect over time keeps the pace of its first
+  application however often it is applied again (RLM-487).
+  Slam, Reckless Strike and Shield Bash are swings with hit shapes in
   front of the player (Better Combat's sword swing, the default, and its stab, at the player's melee reach, so they grow
   with it), counted down on the cast bar, that hit every enemy in them at their hit moment, never through walls, and the
   Mage's bolts splash half their damage within a block (RLM-399); Frozen roots and shows ice (any damage ends it at

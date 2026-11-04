@@ -6,9 +6,10 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 
 /**
  * Combat's common options, in {@code config/realmforge-common.toml}: the rules of blocking with a two-handed weapon
- * ({@link WeaponBlocks}, RLM-297) and how long a hit keeps both sides in combat ({@link InCombat}, RLM-348), which
- * Matěj tunes in playtests (architecture 19.2). NeoForge reloads the file when it changes, so a running game picks up
- * a new value at once.
+ * ({@link WeaponBlocks}, RLM-297), how long a hit keeps both sides in combat ({@link InCombat}, RLM-348) and how little
+ * of a cast must be left for a spell pressed during it to wait for it (RLM-517, the spell engine's {@code Casting}),
+ * which Matěj tunes in playtests (architecture 19.2). NeoForge reloads the file when it changes, so a running game
+ * picks up a new value at once.
  */
 public final class CombatConfig {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder()
@@ -44,6 +45,18 @@ public final class CombatConfig {
                     + "one (dodged and blocked hits included; falls, fire, lava and drowning never count).")
             .defineInRange("inCombatSeconds", 10.0, 1.0, 600.0);
 
+    /**
+     * How little of a cast may be left for it to finish before a spell pressed during it (Matěj, 2026-10-29, RLM-517:
+     * less than a quarter of a second), instead of the new spell cancelling it.
+     */
+    public static final ModConfigSpec.DoubleValue FINISH_CAST_SECONDS = BUILDER.pop()
+            .comment("Casting from the spell bar.")
+            .push("casting")
+            .comment("A spell pressed while the cast in progress has less than this many seconds left waits for it "
+                    + "to finish and is cast right after it, even with queueSpellCasts off; with this much left or "
+                    + "more it cancels the cast. 0 lets every new spell cancel the cast in progress.")
+            .defineInRange("finishCastSeconds", 0.25, 0.0, 2.0);
+
     public static final ModConfigSpec SPEC = BUILDER.pop().build();
 
     private CombatConfig() {
@@ -58,6 +71,14 @@ public final class CombatConfig {
     public static WeaponBlocks.Rules blockingRules() {
         return new WeaponBlocks.Rules(seconds(FULL_BLOCK_SECONDS.get()), BLOCKED_SHARE.get(),
                 seconds(COOLDOWN_SECONDS.get()), ARC_DEGREES.get());
+    }
+
+    /**
+     * How many game ticks must be left of a cast for a new spell to cancel it (RLM-517): with fewer left, the cast
+     * finishes and the new spell follows it.
+     */
+    public static int finishCastTicks() {
+        return seconds(FINISH_CAST_SECONDS.get());
     }
 
     /** How many game ticks a hit keeps both sides in combat. */

@@ -581,6 +581,9 @@ public final class GeneratedTexts {
     /** {@code spell.tooltip.realmforge.cost_per_second} from {@code content/texts/spell.tooltip.yaml}: "%1$s %2$s per sec" */
     public static final String SPELL_TOOLTIP_COST_PER_SECOND = "spell.tooltip.realmforge.cost_per_second";
 
+    /** {@code spell.tooltip.realmforge.cost_up_front} from {@code content/texts/spell.tooltip.yaml}: "%1$s %3$s, then %2$s per sec" */
+    public static final String SPELL_TOOLTIP_COST_UP_FRONT = "spell.tooltip.realmforge.cost_up_front";
+
     /** {@code spell.tooltip.realmforge.empty_slot} from {@code content/texts/spell.tooltip.yaml}: "Empty slot" */
     public static final String SPELL_TOOLTIP_EMPTY_SLOT = "spell.tooltip.realmforge.empty_slot";
 

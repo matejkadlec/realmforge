@@ -40,16 +40,16 @@
           "amount": 8.0,
           "per_level": 1.0,
           "spell_power": 1.0,
-          "spell_power_per_level": 0.25,
+          "spell_power_per_level": 0.15,
           "type": "realmforge:damage"
         },
         {
           "type": "realmforge:apply_effect",
           "effect": "minecraft:slowness",
-          "duration_ticks": 60,
-          "duration_per_level_ticks": 10,
+          "duration_ticks": 80,
           "amplifier": 0,
           "stronger_at_levels": [
+            3,
             5
           ]
         }

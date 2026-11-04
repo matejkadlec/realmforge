@@ -67,13 +67,15 @@ public record Periodic(Kind kind, ResourceKey<SpellSchool> school, double amount
     }
 
     /**
-     * Whether an effect with {@code remainingTicks} left ticks now ({@code MobEffect#shouldApplyEffectTickThisTick}
-     * gets the remaining duration, which counts down to 1 before the effect ends). It ticks at the end of every
-     * interval since it was applied, the last time on its last tick: an effect of 80 ticks with an interval of 20 ticks
-     * at 61, 41, 21 and 1 left, 4 times, the first a whole interval after it began.
+     * Whether an effect that has run for {@code age} server ticks since it was first applied ticks now ({@link
+     * EffectAges}: 1 on its first server tick). It ticks at the end of every interval since its first application: an
+     * effect of 80 ticks with an interval of 20 ticks at ages 20, 40, 60 and 80, 4 times, the first a whole interval
+     * after it began and the last on its last tick. An application while it lasts lengthens it without moving its
+     * ticks (RLM-487): applied again at age 15 for 80 ticks, it lasts until age 95 and ticks at 20, 40, 60 and 80, so it
+     * loses only the partial interval after its last tick, as in Classic. Never at an age of 0 or less.
      */
-    public boolean ticksAt(int remainingTicks) {
-        return remainingTicks % intervalTicks == 1 % intervalTicks;
+    public boolean ticksAtAge(int age) {
+        return age > 0 && age % intervalTicks == 0;
     }
 
     /** How often an effect of {@code durationTicks} ticks: whole intervals only. */

@@ -141,6 +141,7 @@ def _expectation(spell: SpellDef) -> str:
     effects = ",\n".join(_effect(effect, "                            ") for effect in spell.effects)
     effect_list = f"List.of(\n{effects})" if effects else "List.of()"
     cost = spell.cost
+    up_front = cost.up_front if cost is not None else None
     crit = spell.crit
     multiplier = crit.multiplier_percent / 100 if crit.multiplier_percent is not None else None
     cast = spell.cast
@@ -165,10 +166,14 @@ def _expectation(spell: SpellDef) -> str:
         f"                    {_optional_string(getattr(cast, 'sound', None))},\n"
         f"                    {_bool(getattr(cast, 'forms_projectile', False))},\n"
         f"                    {string_literal(getattr(cast, 'animation', None) or 'raise')},\n"
+        f"                    {string_literal(getattr(cast, 'cast_time_reduction', None) or 'shortens')},\n"
         f"                    {_optional_string(cost.resource if cost is not None else None)},\n"
         f"                    {_double(cost.amount if cost is not None else 0.0)},\n"
         f"                    {_double(cost.per_level if cost is not None else 0.0)},\n"
+        f"                    {_double(up_front.amount if up_front is not None else 0.0)},\n"
+        f"                    {_double(up_front.per_level if up_front is not None else 0.0)},\n"
         f"                    {seconds_to_ticks(spell.cooldown_seconds)},\n"
+        f"                    {seconds_to_ticks(spell.cooldown_per_level_seconds or 0)},\n"
         f"                    {seconds_to_ticks(spell.global_cooldown_seconds)},\n"
         f"                    {spell.max_level},\n"
         f"                    {_bool(crit.can_crit)},\n"
@@ -212,6 +217,9 @@ def _expectations(content: Content) -> bytes:
         "     * cost's amounts are 0 for a free spell, and the cast's duration and interval are 0 where its type has none;\n"
         "     * {@code keepRange} is the share of the cast that keeps the target in range;\n"
         "     * {@code castAnimation} is how a mob moves while it casts, {@code raise} unless the data says otherwise;\n"
+        "     * {@code castTimeReduction} is what Cast Time Reduction does to a channel ({@code shortens} or\n"
+        "     * {@code adds_ticks}, RLM-572), {@code shortens} for every other cast; the up-front cost is a channel's\n"
+        "     * cost when it begins, 0 without one; {@code cooldownPerLevelTicks} is added for every rank above 1;\n"
         "     * {@code requires} names what a player's cast needs in hand ({@code melee_weapon}, {@code shield});\n"
         "     * {@code passive} marks a passive spell (RLM-541), which has no effects and the defaults of its cast.\n"
         "     */\n"
@@ -220,8 +228,10 @@ def _expectations(content: Content) -> bytes:
         "            String targeting, double range,\n"
         "            String cast, int castDurationTicks, int castIntervalTicks, boolean castableWhileMoving, boolean lockOn,\n"
         "            boolean keepSight, Optional<Double> keepRange, Optional<String> castSound, boolean formsProjectile,\n"
-        "            String castAnimation, Optional<String> costResource, double costAmount, double costPerLevel,\n"
-        "            int cooldownTicks, int globalCooldownTicks, int maxLevel, boolean canCrit, Optional<Double> critMultiplier,\n"
+        "            String castAnimation, String castTimeReduction, Optional<String> costResource, double costAmount,\n"
+        "            double costPerLevel, double costUpFront, double costUpFrontPerLevel, int cooldownTicks,\n"
+        "            int cooldownPerLevelTicks, int globalCooldownTicks, int maxLevel, boolean canCrit,\n"
+        "            Optional<Double> critMultiplier,\n"
         "            double critBonusChance, double critBonusChancePerLevel, boolean npcOnly, List<String> requires,\n"
         "            boolean castableWhileStunned, boolean passive, List<EffectExpectation> effects) {\n"
         "    }\n"

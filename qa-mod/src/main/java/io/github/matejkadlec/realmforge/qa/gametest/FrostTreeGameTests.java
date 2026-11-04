@@ -15,6 +15,7 @@ import io.github.matejkadlec.realmforge.spell.CastResult;
 import io.github.matejkadlec.realmforge.spell.ConeEffect;
 import io.github.matejkadlec.realmforge.spell.DamageEffect;
 import io.github.matejkadlec.realmforge.spell.EffectContext;
+import io.github.matejkadlec.realmforge.spell.Passive;
 import io.github.matejkadlec.realmforge.spell.Passives;
 import io.github.matejkadlec.realmforge.spell.ProjectileEffect;
 import io.github.matejkadlec.realmforge.spell.Procs;
@@ -60,11 +61,13 @@ import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * The Frost Mage's "Shatter" tree (RLM-542; Matěj, 2026-10-30, "Spell Trees to Level 18"): every active spell's damage
- * at rank 1 and at its highest rank at a fixed Spell Power (system C, RLM-534), Ice Lance's bonus only against a Frozen
- * target, Frostbite's chance, its longer Frozen at rank 3 and its internal cooldown, Cone of Cold's cone, Frost Nova's
- * freeze round the caster, Blizzard's twelve waves at a ground spot, Improved Frostbolt's wider splash at rank 3, the
- * tooltip's next rank, and the Mage learning the tree by its rows (1, 6, 12, 18).
+ * The Frost Mage's "Shatter" tree (RLM-542; Matěj, 2026-10-30, "Spell Trees to Level 18"), at the numbers of Matěj's
+ * rebalance of 2026-11-01 (RLM-572): every active spell's damage, mana and cooldown at rank 1 and at its highest rank at
+ * a fixed Spell Power (system C, RLM-534), Ice Lance's bonus only against a Frozen target, Frostbite's chance, its
+ * Frozen of 4/6/8 s and its internal cooldown, Cone of Cold's cone, Frost Nova's freeze round the caster, Blizzard's
+ * eight waves at a ground spot with their mana up front and per second, and more waves with Cast Time Reduction,
+ * Improved Frostbolt's wider splash at rank 3, the tooltips (the next rank, Blizzard's waves and cost, Shatter's
+ * overflow), and the Mage learning the tree by its rows (1, 6, 12, 18).
  */
 public final class FrostTreeGameTests {
     private static final double HEALTH = SpellGameTests.HEALTH;
@@ -77,13 +80,15 @@ public final class FrostTreeGameTests {
     /** The protection and durability every Netherite caster piece gets for the Astone check: level V (gear.md). */
     private static final String LEVEL_V = "[enchantments={\"minecraft:protection\":5,\"minecraft:unbreaking\":5}]";
     /**
-     * The playtest's setup line against Astone (RLM-542, RLM-503; gear.md's expected gear for Astone, RLM-551): a new
-     * Human Mage, chapter 1's raised cap, level 18, the tree at a 17-point build on top of the kit's rank 1 (Frostbolt 5,
+     * The playtest's setup line against Astone (RLM-542, RLM-503; gear.md's expected gear for Astone, RLM-551): every
+     * stat back to its default (RLM-577: no value from an earlier {@code /qa stats set} leaks in), a new Human Mage,
+     * chapter 1's raised cap, level 18, the tree at a 17-point build on top of the kit's rank 1 (Frostbolt 5,
      * Ice Lance 5, Improved Frostbolt, Frostbite, Shatter and Frost Nova 3, Cone of Cold 2, Ice Barrier and Blizzard 1),
      * and the Netherite caster set and wand at level V. The handoff gives it to Matěj as
      * {@code execute as @p at @p run} and this line.
      */
-    static final String ASTONE_SETUP = "qa run qa character reset; qa character create realmforge:human realmforge:mage; "
+    static final String ASTONE_SETUP = "qa run qa stats reset; qa character reset; "
+            + "qa character create realmforge:human realmforge:mage; "
             + "advancement grant @s only realmforge:chapter/chapter_1; qa level 18; "
             + "qa spell learn realmforge:frostbolt 5; qa spell learn realmforge:ice_lance 5; "
             + "qa spell learn realmforge:improved_frostbolt 3; qa spell learn realmforge:frostbite 3; "
@@ -98,20 +103,20 @@ public final class FrostTreeGameTests {
 
     /**
      * Each active spell's first damage effect at rank 1 and at its highest rank, at 10 Spell Power, no crit and no
-     * school power: the table's amount plus its coefficient of 10 (Frostbolt 8 + 100 % and 12 + 200 %, Cone of Cold
-     * 5 + 60 % and 7 + 80 %, Ice Lance 3 + 40 % and 5 + 60 %, Frost Nova 3 + 30 % and 5 + 40 %, Blizzard's wave 2 + 20 %
-     * and 3 + 30 %), on a husk without armor that is not Frozen.
+     * school power: the table's amount plus its coefficient of 10 (RLM-572: Frostbolt 8 + 100 % and 12 + 160 %, Cone of
+     * Cold 5 + 80 % and 7 + 100 %, Ice Lance 4 + 45 % and 8 + 65 %, Frost Nova 3 + 40 % and 5 + 60 %, Blizzard's wave
+     * 4 + 40 % and 8 + 80 %), on a husk without armor that is not Frozen.
      */
     @QaGameTest
     public static void everyActiveDealsItsRanksDamage(GameTestHelper helper) {
         ServerPlayer player = scholar(helper, "qa-frost-ranks", QaPlayers.PLATFORM_MIDDLE);
         Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 4));
         Map<ResourceKey<Spell>, double[]> table = Map.of(
-                GeneratedSpells.FROSTBOLT, new double[] {1, 18, 5, 32},
-                GeneratedSpells.CONE_OF_COLD, new double[] {1, 11, 3, 15},
-                GeneratedSpells.ICE_LANCE, new double[] {1, 7, 5, 11},
-                GeneratedSpells.FROST_NOVA, new double[] {1, 6, 3, 9},
-                GeneratedSpells.BLIZZARD, new double[] {1, 4, 3, 6});
+                GeneratedSpells.FROSTBOLT, new double[] {1, 18, 5, 28},
+                GeneratedSpells.CONE_OF_COLD, new double[] {1, 13, 3, 17},
+                GeneratedSpells.ICE_LANCE, new double[] {1, 8.5, 5, 14.5},
+                GeneratedSpells.FROST_NOVA, new double[] {1, 7, 3, 11},
+                GeneratedSpells.BLIZZARD, new double[] {1, 8, 3, 16});
         table.forEach((key, checks) -> {
             Holder.Reference<Spell> spell = spell(helper, key);
             helper.assertValueEqual(spell.value().maxLevel(), (int) checks[2], key.identifier() + "'s highest rank");
@@ -129,7 +134,52 @@ public final class FrostTreeGameTests {
         helper.succeed();
     }
 
-    /** Ice Lance deals × 2 at rank 1 and × 3 at rank 5 against a Frozen target, and its plain damage otherwise. */
+    /**
+     * Each active spell's mana and own cooldown at rank 1 and at its highest rank (RLM-572): Frostbolt 10 and 30 mana
+     * without a cooldown, Cone of Cold 30 and 50 on 10 s, Ice Lance 15 and 55 without a cooldown, Frost Nova 30 and 50 on
+     * 20 and 10 s, Ice Barrier 25 and 45 on 60 and 30 s, Blizzard 40 and 80 up front, then 15 and 25 a second, without a
+     * cooldown; and a cast starts its rank's cooldown (Frost Nova at rank 3, 10 s; Ice Lance at rank 5, none).
+     */
+    @QaGameTest
+    public static void everyActiveCostsItsRanksManaAndCooldown(GameTestHelper helper) {
+        // {rank 1 cost, top cost, rank 1 cost up front, top's, rank 1 cooldown, top's}, costs a second for Blizzard.
+        Map<ResourceKey<Spell>, double[]> table = Map.of(
+                GeneratedSpells.FROSTBOLT, new double[] {10, 30, 0, 0, 0, 0},
+                GeneratedSpells.CONE_OF_COLD, new double[] {30, 50, 0, 0, 200, 200},
+                GeneratedSpells.ICE_LANCE, new double[] {15, 55, 0, 0, 0, 0},
+                GeneratedSpells.FROST_NOVA, new double[] {30, 50, 0, 0, 400, 200},
+                GeneratedSpells.ICE_BARRIER, new double[] {25, 45, 0, 0, 1200, 600},
+                GeneratedSpells.BLIZZARD, new double[] {15, 25, 40, 80, 0, 0});
+        table.forEach((key, row) -> {
+            Spell spell = spell(helper, key).value();
+            int top = spell.maxLevel();
+            helper.assertTrue(close(spell.costAt(1), row[0]) && close(spell.costAt(top), row[1]),
+                    key.identifier() + "'s mana: " + spell.costAt(1) + " and " + spell.costAt(top));
+            helper.assertTrue(close(spell.startCostAt(1) - spell.costAt(1), row[2])
+                    && close(spell.startCostAt(top) - spell.costAt(top), row[3]), key.identifier() + "'s mana up front");
+            helper.assertValueEqual(spell.cooldownTicksAt(1), (int) row[4], key.identifier() + "'s cooldown at rank 1");
+            helper.assertValueEqual(spell.cooldownTicksAt(top), (int) row[5], key.identifier() + "'s cooldown at rank "
+                    + top);
+        });
+        ServerPlayer player = scholar(helper, "qa-frost-cooldowns", QaPlayers.PLATFORM_MIDDLE);
+        StatsCommands.setBase(player, GeneratedStats.MAX_MANA, 300);
+        Resources.tick(player);
+        learn(helper, player, GeneratedSpells.FROST_NOVA, 3);
+        learn(helper, player, GeneratedSpells.ICE_LANCE, 5);
+        long now = helper.getLevel().getGameTime();
+        assertCast(helper, player, GeneratedSpells.FROST_NOVA, SpellAim.at((LivingEntity) null));
+        helper.assertValueEqual(Optional.ofNullable(player.getData(SpellAttachments.COMBAT).cooldowns()
+                .get(GeneratedSpells.FROST_NOVA)), Optional.of(now + 200), "Frost Nova at rank 3: 10 s");
+        helper.runAfterDelay(Spell.DEFAULT_GLOBAL_COOLDOWN_TICKS + 1, () -> {
+            assertCast(helper, player, GeneratedSpells.ICE_LANCE, SpellAim.at((LivingEntity) null));
+            helper.assertFalse(player.getData(SpellAttachments.COMBAT).cooldowns()
+                    .containsKey(GeneratedSpells.ICE_LANCE), "Ice Lance has no cooldown of its own");
+            logout(player);
+            helper.succeed();
+        });
+    }
+
+    /** Ice Lance deals × 2 at rank 1 and × 4 at rank 5 against a Frozen target (RLM-572), its plain damage otherwise. */
     @QaGameTest
     public static void iceLanceMultipliesOnlyAgainstFrozenTargets(GameTestHelper helper) {
         ServerPlayer player = scholar(helper, "qa-frost-lance", QaPlayers.PLATFORM_MIDDLE);
@@ -137,7 +187,7 @@ public final class FrostTreeGameTests {
         Husk plain = SpellGameTests.husk(helper, new BlockPos(3, 1, 4));
         Holder.Reference<Spell> lance = spell(helper, GeneratedSpells.ICE_LANCE);
         DamageEffect damage = firstDamage(lance.value().effects()).orElseThrow();
-        for (double[] check : new double[][] {{1, 7, 14}, {5, 11, 33}}) {
+        for (double[] check : new double[][] {{1, 8.5, 17}, {5, 14.5, 58}}) {
             int rank = (int) check[0];
             for (Husk husk : List.of(frozen, plain)) {
                 if (husk == frozen) {
@@ -189,8 +239,8 @@ public final class FrostTreeGameTests {
     }
 
     /**
-     * Frostbite at rank 3: the player's Slowness Freezes its target at its 15 % chance, for 5 s (3 s below rank 3),
-     * then never on that target for 5 s, and again once the 5 s are over.
+     * Frostbite at rank 3: the player's Slowness Freezes its target at its 15 % chance, for 8 s (4 s at rank 1 and 6 s at
+     * rank 2, RLM-572), then never on that target for 5 s, and again once the 5 s are over.
      */
     @QaGameTest(timeoutTicks = 200)
     public static void frostbiteFreezesAtItsChanceOncePerCooldown(GameTestHelper helper) {
@@ -201,16 +251,16 @@ public final class FrostTreeGameTests {
         SpellEffect slow = ((ConeEffect) cone.value().effects().getFirst()).effects().get(1);
         helper.assertTrue(slowUntilFrozen(helper, player, husk, cone, slow), "Frostbite never froze the husk in "
                 + PROC_TRIES + " Slownesses");
-        helper.assertValueEqual(husk.getEffect(GeneratedEffects.FROZEN).getDuration(), 100, "5 s at rank 3");
+        helper.assertValueEqual(husk.getEffect(GeneratedEffects.FROZEN).getDuration(), 160, "8 s at rank 3");
         Identifier proc = Passives.procId(GeneratedSpells.FROSTBITE.identifier(), 0);
         helper.assertTrue(Procs.isOnCooldown(player, proc, husk), "the proc waits on the husk");
         husk.removeEffect(GeneratedEffects.FROZEN);
         helper.assertFalse(slowUntilFrozen(helper, player, husk, cone, slow),
                 "Frostbite froze the husk again within its 5 s");
-        Map<String, String> rankOne = SpellText.passiveValues(spell(helper, GeneratedSpells.FROSTBITE).value()
-                .passive().orElseThrow(), 1);
-        helper.assertValueEqual(rankOne, Map.of("proc_chance", "5", "proc_duration", "3", "proc_cooldown", "5"),
-                "rank 1: 5 %, 3 s, once every 5 s");
+        Passive frostbite = spell(helper, GeneratedSpells.FROSTBITE).value().passive().orElseThrow();
+        helper.assertValueEqual(SpellText.passiveValues(frostbite, 1), Map.of("proc_chance", "5", "proc_duration", "4",
+                "proc_cooldown", "5"), "rank 1: 5 %, 4 s, once every 5 s");
+        helper.assertValueEqual(SpellText.passiveValues(frostbite, 2).get("proc_duration"), "6", "rank 2: 6 s");
         helper.runAfterDelay(101, () -> {
             helper.assertFalse(Procs.isOnCooldown(player, proc, husk), "the 5 s are over");
             helper.assertTrue(slowUntilFrozen(helper, player, husk, cone, slow), "Frostbite froze the husk after 5 s");
@@ -220,8 +270,8 @@ public final class FrostTreeGameTests {
     }
 
     /**
-     * Cone of Cold hits the husk in front within 5 blocks, for its damage and Slowness II for 3 s, and spares the husks
-     * behind the Mage, 45° to its side and beyond 5 blocks.
+     * Cone of Cold hits the husk in front within 5 blocks, for its damage and Slowness II for 4 s (RLM-572), and spares
+     * the husks behind the Mage, 45° to its side and beyond 5 blocks.
      */
     @QaGameTest(template = QaGameTests.PLATFORM_17X17)
     public static void coneOfColdHitsOnlyTheConeInFront(GameTestHelper helper) {
@@ -232,12 +282,12 @@ public final class FrostTreeGameTests {
         Husk aside = husk(helper, new Vec3(12.5, 1, 10.0));
         Husk behind = husk(helper, new Vec3(8.5, 1, 3.5));
         assertCast(helper, player, GeneratedSpells.CONE_OF_COLD, SpellAim.at((LivingEntity) null));
-        double expected = 5 + 0.6 * spellPower(player);
+        double expected = 5 + 0.8 * spellPower(player);
         helper.assertTrue(close(HEALTH - inFront.getHealth(), expected), "the husk in front took "
                 + (HEALTH - inFront.getHealth()) + ", " + expected + " expected");
         MobEffectInstance slow = inFront.getEffect(MobEffects.SLOWNESS);
-        helper.assertTrue(slow != null && slow.getAmplifier() == 1 && slow.getDuration() == 60,
-                "Slowness II for 3 s: " + slow);
+        helper.assertTrue(slow != null && slow.getAmplifier() == 1 && slow.getDuration() == 80,
+                "Slowness II for 4 s: " + slow);
         for (Husk spared : List.of(farAhead, aside, behind)) {
             helper.assertTrue(close(spared.getHealth(), HEALTH), "a husk outside the cone was hit at "
                     + spared.position());
@@ -246,7 +296,7 @@ public final class FrostTreeGameTests {
         helper.succeed();
     }
 
-    /** Frost Nova hits and Freezes every enemy within 4 blocks for 5 s at rank 1, and none farther. */
+    /** Frost Nova hits and Freezes every enemy within 4 blocks for 6 s at rank 1 (RLM-572), and none farther. */
     @QaGameTest(template = QaGameTests.PLATFORM_17X17)
     public static void frostNovaFreezesTheEnemiesAround(GameTestHelper helper) {
         ServerPlayer player = mage(helper, "qa-frost-nova", new Vec3(8.5, 1, 8.5));
@@ -256,12 +306,12 @@ public final class FrostTreeGameTests {
         Husk far = husk(helper, new Vec3(8.5, 1, 15.5));
         assertCast(helper, player, GeneratedSpells.FROST_NOVA, SpellAim.at((LivingEntity) null));
         helper.runAfterDelay(2, () -> {
-            double expected = 3 + 0.3 * spellPower(player);
+            double expected = 3 + 0.4 * spellPower(player);
             for (Husk hit : List.of(near, behind)) {
                 helper.assertTrue(close(HEALTH - hit.getHealth(), expected), "a husk within 4 blocks took "
                         + (HEALTH - hit.getHealth()) + ", " + expected + " expected");
                 MobEffectInstance frozen = hit.getEffect(GeneratedEffects.FROZEN);
-                helper.assertTrue(frozen != null && frozen.getDuration() > 90, "Frozen for 5 s: " + frozen);
+                helper.assertTrue(frozen != null && frozen.getDuration() > 110, "Frozen for 6 s: " + frozen);
             }
             helper.assertTrue(close(far.getHealth(), HEALTH) && !far.hasEffect(GeneratedEffects.FROZEN),
                     "the husk 7 blocks away was hit");
@@ -271,28 +321,64 @@ public final class FrostTreeGameTests {
     }
 
     /**
-     * Blizzard channels 6 s at a ground spot (Matěj's playtest of 2026-11-01): twelve waves, each hitting every enemy
-     * within 4 blocks of it (3.5 blocks off is inside) and slowing them, and none farther; it costs 13 mana for each
-     * of its six seconds at rank 1.
+     * Blizzard channels 8 s at a ground spot (Matěj's rebalance of 2026-11-01, RLM-572): eight waves, one a second, each
+     * hitting every enemy within 4 blocks of it (3.5 blocks off is inside) and slowing them, and none farther; at rank 1
+     * it costs 40 mana up front and 15 for each of its eight seconds, 160 in all.
      */
-    @QaGameTest(template = QaGameTests.PLATFORM_17X17, timeoutTicks = 180)
-    public static void blizzardChannelsTwelveWavesAtTheSpot(GameTestHelper helper) {
-        ServerPlayer player = mage(helper, "qa-frost-blizzard", NORTH_EDGE);
-        StatsCommands.setBase(player, GeneratedStats.MANA_REGENERATION, 0);
-        learn(helper, player, GeneratedSpells.BLIZZARD, 1);
+    @QaGameTest(template = QaGameTests.PLATFORM_17X17, timeoutTicks = 220)
+    public static void blizzardChannelsEightWavesAtTheSpot(GameTestHelper helper) {
+        ServerPlayer player = blizzardMage(helper, "qa-frost-blizzard", NORTH_EDGE, 0);
         Husk inside = husk(helper, new Vec3(12.0, 1, 9.5));
         Husk outside = husk(helper, new Vec3(13.5, 1, 9.5));
         double mana = Resources.amount(player, ResourceTypes.MANA);
         assertCast(helper, player, GeneratedSpells.BLIZZARD, SpellAim.at(helper.absoluteVec(new Vec3(8.5, 1, 9.5))));
-        double wave = 2 + 0.2 * spellPower(player);
-        helper.runAfterDelay(130, () -> {
-            helper.assertTrue(close(HEALTH - inside.getHealth(), 12 * wave), "twelve waves of " + wave + " expected, "
+        helper.assertTrue(close(mana - Resources.amount(player, ResourceTypes.MANA), 55),
+                "40 up front and the first second's 15 as it begins");
+        double wave = 4 + 0.4 * spellPower(player);
+        helper.runAfterDelay(90, () -> helper.assertTrue(close(HEALTH - inside.getHealth(), 4 * wave),
+                "four waves of " + wave + " after four seconds, the husk took " + (HEALTH - inside.getHealth())));
+        helper.runAfterDelay(175, () -> {
+            helper.assertTrue(close(HEALTH - inside.getHealth(), 8 * wave), "eight waves of " + wave + " expected, "
                     + "the husk 3.5 blocks off took " + (HEALTH - inside.getHealth()));
             helper.assertTrue(inside.hasEffect(MobEffects.SLOWNESS), "the husk inside is slowed");
             helper.assertTrue(close(outside.getHealth(), HEALTH), "the husk 5 blocks away was hit");
             double spent = mana - Resources.amount(player, ResourceTypes.MANA);
-            helper.assertTrue(close(spent, 78), "6 payments of 13 mana: " + spent + " spent");
+            helper.assertTrue(close(spent, 160), "40 up front and 8 seconds of 15: " + spent + " spent");
             logout(player);
+            helper.succeed();
+        });
+    }
+
+    /**
+     * Cast Time Reduction adds Blizzard's waves instead of shortening it (RLM-572): round(8 × (1 + CTR)), halves up,
+     * in the same 8 s, so 10 waves with 25 % and with 20 % (9.6), for the same 160 mana; the tooltip counts them.
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_17X17, timeoutTicks = 220)
+    public static void castTimeReductionAddsBlizzardsWaves(GameTestHelper helper) {
+        ServerPlayer quarter = blizzardMage(helper, "qa-frost-blizzard-25", new Vec3(4.5, 1, 1.5), 0.25);
+        ServerPlayer fifth = blizzardMage(helper, "qa-frost-blizzard-20", new Vec3(12.5, 1, 1.5), 0.2);
+        Husk underQuarter = husk(helper, new Vec3(4.5, 1, 9.5));
+        Husk underFifth = husk(helper, new Vec3(12.5, 1, 9.5));
+        Spell blizzard = spell(helper, GeneratedSpells.BLIZZARD).value();
+        helper.assertValueEqual(blizzard.cast().tickCountFor(0.25), 10, "10 waves with 25 %");
+        helper.assertValueEqual(blizzard.cast().tickCountFor(0.2), 10, "9.6 rounds to 10 with 20 %");
+        helper.assertValueEqual(blizzard.cast().tickCountFor(0.1875), 10, "9.5 rounds up");
+        helper.assertValueEqual(blizzard.cast().tickCountFor(0.18625), 9, "9.49 rounds down");
+        double mana = Resources.amount(quarter, ResourceTypes.MANA);
+        assertCast(helper, quarter, GeneratedSpells.BLIZZARD, SpellAim.at(helper.absoluteVec(new Vec3(4.5, 1, 9.5))));
+        assertCast(helper, fifth, GeneratedSpells.BLIZZARD, SpellAim.at(helper.absoluteVec(new Vec3(12.5, 1, 9.5))));
+        helper.assertValueEqual(Spells.currentCast(quarter).map(cast -> cast.durationTicks()), Optional.of(160),
+                "the channel keeps its 8 s");
+        double wave = 4 + 0.4 * spellPower(quarter);
+        helper.runAfterDelay(175, () -> {
+            for (Husk husk : List.of(underQuarter, underFifth)) {
+                helper.assertTrue(close(HEALTH - husk.getHealth(), 10 * wave), "ten waves of " + wave
+                        + " expected, the husk took " + (HEALTH - husk.getHealth()));
+            }
+            double spent = mana - Resources.amount(quarter, ResourceTypes.MANA);
+            helper.assertTrue(close(spent, 160), "the same 160 mana for its 8 s: " + spent + " spent");
+            logout(quarter);
+            logout(fifth);
             helper.succeed();
         });
     }
@@ -337,11 +423,39 @@ public final class FrostTreeGameTests {
         Spell lance = spell(helper, GeneratedSpells.ICE_LANCE).value();
         List<String> first = tooltip(helper, player, lance, 1);
         helper.assertValueEqual(first.subList(first.size() - 3, first.size()), List.of(
-                "Throws a shard of ice for Frost 3 damage, Frost 6 damage against a Frozen target.", "Next rank:",
-                "Throws a shard of ice for Frost 3.5 damage, Frost 7.9 damage against a Frozen target."),
+                "Throws a shard of ice for Frost 4 damage, Frost 8 damage against a Frozen target.", "Next rank:",
+                "Throws a shard of ice for Frost 5 damage, Frost 12.5 damage against a Frozen target."),
                 "rank 1 and rank 2; as plain text the school's icon reads as its name");
         List<String> top = tooltip(helper, player, lance, 5);
         helper.assertFalse(top.contains("Next rank:"), "no next rank at rank 5: " + top);
+        logout(player);
+        helper.succeed();
+    }
+
+    /**
+     * RLM-572's tooltips: Blizzard's cost up front and per second, its 8 s whatever the Cast Time Reduction, and its
+     * wave count with it (8, 10 with 25 %); Frost Nova's cooldown by rank; Shatter's line on crit chance above 100 %.
+     */
+    @QaGameTest
+    public static void tooltipsShowRanksCostsAndWaves(GameTestHelper helper) {
+        ServerPlayer player = scholar(helper, "qa-frost-tooltip-waves", QaPlayers.PLATFORM_MIDDLE);
+        StatsCommands.setBase(player, GeneratedStats.SPELL_POWER, 0);
+        Spell blizzard = spell(helper, GeneratedSpells.BLIZZARD).value();
+        List<String> plain = tooltip(helper, player, blizzard, 1);
+        helper.assertTrue(plain.contains("40 Mana, then 15 per sec"), "the cost up front, then per second: " + plain);
+        helper.assertTrue(plain.contains("Channeled (8 sec)"), "8 s: " + plain);
+        helper.assertTrue(plain.get(plain.size() - 3).startsWith("Calls down 8 waves of ice"), "8 waves: " + plain);
+        StatsCommands.setBase(player, GeneratedStats.CAST_TIME_REDUCTION, 0.25);
+        List<String> hasted = tooltip(helper, player, blizzard, 1);
+        helper.assertTrue(hasted.contains("Channeled (8 sec)"), "still 8 s with 25 %: " + hasted);
+        helper.assertTrue(hasted.get(hasted.size() - 3).startsWith("Calls down 10 waves of ice"),
+                "10 waves with 25 %: " + hasted);
+        Spell nova = spell(helper, GeneratedSpells.FROST_NOVA).value();
+        helper.assertTrue(tooltip(helper, player, nova, 1).contains("20 sec cooldown"), "Frost Nova: 20 s at rank 1");
+        helper.assertTrue(tooltip(helper, player, nova, 3).contains("10 sec cooldown"), "and 10 s at rank 3");
+        List<String> shatter = tooltip(helper, player, spell(helper, GeneratedSpells.SHATTER).value(), 3);
+        helper.assertTrue(shatter.contains("Your spells have 30% more chance to crit against Frozen targets. Crit "
+                + "chance above 100% turns into bonus crit damage."), "Shatter's overflow line: " + shatter);
         logout(player);
         helper.succeed();
     }
@@ -388,8 +502,11 @@ public final class FrostTreeGameTests {
     public static void theAstoneSetupLineReachesItsState(GameTestHelper helper) {
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-frost-astone");
         player.connection.markClientLoaded();
+        StatsCommands.setBase(player, GeneratedStats.CAST_TIME_REDUCTION, 0.25);
         CommandSourceStack source = player.createCommandSourceStack().withPermission(PermissionSet.ALL_PERMISSIONS);
         helper.getLevel().getServer().getCommands().performPrefixedCommand(source, ASTONE_SETUP);
+        helper.assertTrue(close(player.getAttributeBaseValue(GeneratedStats.CAST_TIME_REDUCTION), 0),
+                "an earlier Cast Time Reduction is reset");
         helper.assertValueEqual(Characters.mainClass(player).map(entry -> entry.key().identifier().getPath()),
                 Optional.of("mage"), "a Mage");
         helper.assertValueEqual(Characters.level(player), 18, "at level 18");
@@ -490,6 +607,20 @@ public final class FrostTreeGameTests {
         StatsCommands.setBase(player, GeneratedStats.CRIT_CHANCE, 0);
         StatsCommands.setBase(player, GeneratedStats.DODGE_CHANCE, 0);
         StatsCommands.setBase(player, GeneratedStats.SPELL_POWER, SPELL_POWER);
+        return player;
+    }
+
+    /**
+     * {@link #scholar} with a full pool of 300 mana that does not regenerate, Blizzard at rank 1 and
+     * {@code castTimeReduction}, for Blizzard's 160 mana a cast (RLM-572).
+     */
+    private static ServerPlayer blizzardMage(GameTestHelper helper, String name, Vec3 where, double castTimeReduction) {
+        ServerPlayer player = scholar(helper, name, where);
+        StatsCommands.setBase(player, GeneratedStats.MAX_MANA, 300);
+        StatsCommands.setBase(player, GeneratedStats.MANA_REGENERATION, 0);
+        StatsCommands.setBase(player, GeneratedStats.CAST_TIME_REDUCTION, castTimeReduction);
+        Resources.tick(player);
+        learn(helper, player, GeneratedSpells.BLIZZARD, 1);
         return player;
     }
 

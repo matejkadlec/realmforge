@@ -122,6 +122,9 @@ public final class GeneratedSpells {
     /** {@code realmforge:test_drain} from {@code content/spells/test_drain.yaml}: arcane, enemy, damage. */
     public static final ResourceKey<Spell> TEST_DRAIN = key("test_drain");
 
+    /** {@code realmforge:test_ember_field} from {@code content/spells/test_ember_field.yaml}: fire, ground_point, area. */
+    public static final ResourceKey<Spell> TEST_EMBER_FIELD = key("test_ember_field");
+
     /** {@code realmforge:test_execute} from {@code content/spells/test_execute.yaml}: physical, enemy, damage. */
     public static final ResourceKey<Spell> TEST_EXECUTE = key("test_execute");
 
@@ -139,6 +142,9 @@ public final class GeneratedSpells {
 
     /** {@code realmforge:test_ignite} from {@code content/spells/test_ignite.yaml}: fire, enemy, apply_effect. */
     public static final ResourceKey<Spell> TEST_IGNITE = key("test_ignite");
+
+    /** {@code realmforge:test_kindle} from {@code content/spells/test_kindle.yaml}: fire, enemy, apply_effect. */
+    public static final ResourceKey<Spell> TEST_KINDLE = key("test_kindle");
 
     /** {@code realmforge:test_lacerate} from {@code content/spells/test_lacerate.yaml}: physical, enemy, damage_over_time. */
     public static final ResourceKey<Spell> TEST_LACERATE = key("test_lacerate");
@@ -216,7 +222,7 @@ public final class GeneratedSpells {
     public static final ResourceKey<Spell> WILL_TO_SURVIVE = key("will_to_survive");
 
     /** Every key above, in id order. */
-    public static final List<ResourceKey<Spell>> ALL = List.of(ARCANE_MISSILES, ASTONE_BOULDER, ASTONE_CRACKED_STONE, ASTONE_QUAKE, ASTONE_ROCKFALL, ASTONE_SHOCKWAVE, BATTLE_SHOUT, BLIZZARD, BLOODTHIRST, CHARGE, CONE_OF_COLD, DEEP_WOUNDS, EXECUTE, FIREBALL, FROST_NOVA, FROSTBITE, FROSTBOLT, ICE_BARRIER, ICE_LANCE, IMPROVED_FROSTBOLT, OVERPOWER, RECKLESS_STRIKE, REND, SHATTER, SHIELD_BASH, SLAM, STONEFORM, TEST_BLINK, TEST_BLOODTHIRST, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_CLEAVE, TEST_DEEP_WOUND, TEST_DEEP_WOUNDS, TEST_DRAIN, TEST_EXECUTE, TEST_FORWARD_MISSILE, TEST_FROSTBITE, TEST_HOMING_BOLT, TEST_ICE_LANCE, TEST_IGNITE, TEST_LACERATE, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_OVERPOWER, TEST_PROC_SPARK, TEST_REGROW, TEST_REND, TEST_SAP, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT, TEST_TARGETED_MISSILE, TEST_TITAN_HARDEN, TEST_VICTORY_RUSH, TWO_HANDED_WEAPON_SPECIALIZATION, VICTORY_RUSH, WILL_TO_SURVIVE);
+    public static final List<ResourceKey<Spell>> ALL = List.of(ARCANE_MISSILES, ASTONE_BOULDER, ASTONE_CRACKED_STONE, ASTONE_QUAKE, ASTONE_ROCKFALL, ASTONE_SHOCKWAVE, BATTLE_SHOUT, BLIZZARD, BLOODTHIRST, CHARGE, CONE_OF_COLD, DEEP_WOUNDS, EXECUTE, FIREBALL, FROST_NOVA, FROSTBITE, FROSTBOLT, ICE_BARRIER, ICE_LANCE, IMPROVED_FROSTBOLT, OVERPOWER, RECKLESS_STRIKE, REND, SHATTER, SHIELD_BASH, SLAM, STONEFORM, TEST_BLINK, TEST_BLOODTHIRST, TEST_BOLT, TEST_CHARGE, TEST_CHILL, TEST_CLEANSE, TEST_CLEAVE, TEST_DEEP_WOUND, TEST_DEEP_WOUNDS, TEST_DRAIN, TEST_EMBER_FIELD, TEST_EXECUTE, TEST_FORWARD_MISSILE, TEST_FROSTBITE, TEST_HOMING_BOLT, TEST_ICE_LANCE, TEST_IGNITE, TEST_KINDLE, TEST_LACERATE, TEST_MEND, TEST_MENDING_RING, TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_OVERPOWER, TEST_PROC_SPARK, TEST_REGROW, TEST_REND, TEST_SAP, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, TEST_SLOW_MISSILE, TEST_STRIKE, TEST_SURE_CRIT, TEST_TARGETED_MISSILE, TEST_TITAN_HARDEN, TEST_VICTORY_RUSH, TWO_HANDED_WEAPON_SPECIALIZATION, VICTORY_RUSH, WILL_TO_SURVIVE);
 
     private GeneratedSpells() {
     }

@@ -155,6 +155,9 @@ def test_repository_spells_are_the_class_kits_engine_tests_stoneform_and_astones
         "test_rend",
         "test_bloodthirst",
         "test_victory_rush",
+        # A periodic effect applied again by a hasted channel and by a channel's overlapping areas (RLM-487).
+        "test_kindle",
+        "test_ember_field",
     }
     assert universe.contains("realmforge:spell", "realmforge:test_bolt")
 
@@ -467,8 +470,9 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
         "FROSTBITE, FROSTBOLT, ICE_BARRIER, ICE_LANCE, IMPROVED_FROSTBOLT, OVERPOWER, RECKLESS_STRIKE, REND, "
         "SHATTER, SHIELD_BASH, SLAM, STONEFORM, TEST_BLINK, TEST_BLOODTHIRST, TEST_BOLT, TEST_CHARGE, TEST_CHILL, "
         "TEST_CLEANSE, "
-        "TEST_CLEAVE, TEST_DEEP_WOUND, TEST_DEEP_WOUNDS, TEST_DRAIN, TEST_EXECUTE, TEST_FORWARD_MISSILE, "
-        "TEST_FROSTBITE, TEST_HOMING_BOLT, TEST_ICE_LANCE, TEST_IGNITE, TEST_LACERATE, TEST_MEND, TEST_MENDING_RING, "
+        "TEST_CLEAVE, TEST_DEEP_WOUND, TEST_DEEP_WOUNDS, TEST_DRAIN, TEST_EMBER_FIELD, TEST_EXECUTE, "
+        "TEST_FORWARD_MISSILE, TEST_FROSTBITE, TEST_HOMING_BOLT, TEST_ICE_LANCE, TEST_IGNITE, TEST_KINDLE, "
+        "TEST_LACERATE, TEST_MEND, TEST_MENDING_RING, "
         "TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_OVERPOWER, "
         "TEST_PROC_SPARK, TEST_REGROW, TEST_REND, TEST_SAP, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, TEST_SLOW_MISSILE, "
         "TEST_STRIKE, TEST_SURE_CRIT, TEST_TARGETED_MISSILE, TEST_TITAN_HARDEN, TEST_VICTORY_RUSH, "
@@ -494,10 +498,14 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
         "                    Optional.empty(),\n"
         "                    false,\n"
         '                    "raise",\n'
+        '                    "shortens",\n'
         '                    Optional.of("realmforge:mana"),\n'
         "                    10.0,\n"
         "                    5.0,\n"
+        "                    0.0,\n"
+        "                    0.0,\n"
         "                    60,\n"
+        "                    0,\n"
         "                    10,\n"
         "                    3,\n"
         "                    true,\n"
@@ -1083,55 +1091,25 @@ def reapplying_spell(repo: RepoPaths, cast: str, effect: str) -> None:
 
 
 @pytest.mark.parametrize(
-    ("cast", "effect", "path", "what", "interval"),
+    ("cast", "effect"),
     [
+        # RLM-487: our periodic effects tick at the pace of their first application, so an area or a channel may apply
+        # one again at any interval, sooner than it ticks too (RLM-376 refused that while every application reset it).
         (
             "{type: instant}",
             "{type: realmforge:area, radius: 3, duration_seconds: 4, interval_seconds: 0.5, "
             f"effects: [{BURNING_4S}]}}",
-            "effects.0.effects.0.effect",
-            "the area",
-            "0.5",
         ),
-        (
-            "{type: channel, duration_seconds: 3, interval_seconds: 0.5}",
-            BURNING_4S,
-            "effects.0.effect",
-            "the channel",
-            "0.5",
-        ),
+        ("{type: channel, duration_seconds: 3, interval_seconds: 0.5}", BURNING_4S),
         (
             "{type: channel, duration_seconds: 3, interval_seconds: 0.5}",
             f"{{type: realmforge:projectile, speed: 20, effects: [{BURNING_4S}]}}",
-            "effects.0.effects.0.effect",
-            "the channel",
-            "0.5",
         ),
         (
             "{type: channel, duration_seconds: 2, interval_seconds: 0.25}",
             "{type: realmforge:area, radius: 3, duration_seconds: 4, interval_seconds: 1, "
             f"effects: [{BURNING_4S}]}}",
-            "effects.0.effects.0.effect",
-            "the channel",
-            "0.25",
         ),
-    ],
-)
-def test_an_area_or_channel_does_not_reapply_an_effect_faster_than_it_ticks(
-    repo: RepoPaths, cast: str, effect: str, path: str, what: str, interval: str
-) -> None:
-    reapplying_spell(repo, cast, effect)
-    assert_problem(
-        repo,
-        f"{path}: realmforge:test_burning ticks every 1 s and {what} applies it again every {interval} s: each "
-        f"application resets its duration before it ticks, so it never ticks while {what} keeps applying it; give "
-        f"{what} an interval of at least 1 s",
-    )
-
-
-@pytest.mark.parametrize(
-    ("cast", "effect"),
-    [
         (
             "{type: instant}",
             f"{{type: realmforge:area, radius: 3, duration_seconds: 4, interval_seconds: 1, effects: [{BURNING_4S}]}}",
@@ -1146,7 +1124,6 @@ def test_an_area_or_channel_does_not_reapply_an_effect_faster_than_it_ticks(
             "{type: channel, duration_seconds: 3, interval_seconds: 1}",
             f"{{type: realmforge:projectile, speed: 20, effects: [{BURNING_4S}]}}",
         ),
-        # A projectile of a spell that is not a channel applies it once, and a vanilla effect has no ticks of ours.
         ("{type: instant}", f"{{type: realmforge:projectile, speed: 20, effects: [{BURNING_4S}]}}"),
         (
             "{type: channel, duration_seconds: 3, interval_seconds: 0.5}",
@@ -1154,7 +1131,7 @@ def test_an_area_or_channel_does_not_reapply_an_effect_faster_than_it_ticks(
         ),
     ],
 )
-def test_an_area_or_channel_may_reapply_an_effect_as_often_as_it_ticks(
+def test_an_area_or_channel_may_reapply_an_effect_at_any_interval(
     repo: RepoPaths, cast: str, effect: str
 ) -> None:
     reapplying_spell(repo, cast, effect)
@@ -1607,3 +1584,98 @@ def test_a_proc_opens_only_a_spells_window(repo: RepoPaths) -> None:
         ),
     )
     assert_problem(repo, "realmforge:test_bolt has no window to open")
+
+
+# RLM-572: Matěj's Frost rebalance needs cooldowns by rank, a channel's cost up front, a channel whose ticks Cast Time
+# Reduction multiplies, the {ticks} placeholder, and a proc's effect that lasts longer per rank.
+
+
+def test_a_cooldown_may_change_per_rank() -> None:
+    nova = spell_model(max_level=3, cooldown_seconds=20, cooldown_per_level_seconds=-5)
+    assert [nova.cooldown_at(rank) for rank in (1, 2, 3)] == [20, 15, 10]
+
+
+def test_a_cooldown_stays_at_least_zero_at_the_top_rank() -> None:
+    with pytest.raises(
+        pydantic.ValidationError, match="the cooldown is -5 s at max_level 3; it stays 0 or more"
+    ):
+        spell_model(max_level=3, cooldown_seconds=5, cooldown_per_level_seconds=-5)
+
+
+def test_a_cooldown_per_rank_needs_ranks() -> None:
+    with pytest.raises(
+        pydantic.ValidationError, match=r"nothing grows with the level at max_level 1 \(cooldown_"
+    ):
+        spell_model(cooldown_seconds=20, cooldown_per_level_seconds=-5)
+
+
+CHANNEL = {
+    "type": "channel",
+    "duration_seconds": 8,
+    "interval_seconds": 1,
+    "cast_time_reduction": "adds_ticks",
+}
+
+
+def test_a_channel_that_adds_ticks_keeps_its_own_interval() -> None:
+    blizzard = spell_model(
+        targeting={"type": "realmforge:ground_point", "range": 30},
+        cast=CHANNEL,
+        cost={"resource": "realmforge:mana", "amount": 15, "up_front": {"amount": 40, "per_level": 20}},
+        max_level=3,
+        description={"en_us": "Calls down {ticks} waves for {damage} damage."},
+    )
+    assert blizzard.cast.cast_time_reduction == "adds_ticks"
+    assert blizzard.cost is not None and blizzard.cost.up_front is not None
+    assert blizzard.cost.up_front.amount_at(3) == 80
+
+
+def test_a_shortened_player_channel_still_ticks_every_half_second() -> None:
+    with pytest.raises(pydantic.ValidationError, match=r"a player's channel ticks every 0\.5 s"):
+        spell_model(cast={**CHANNEL, "cast_time_reduction": "shortens"})
+    with pytest.raises(pydantic.ValidationError, match=r"a player's channel ticks every 0\.5 s"):
+        spell_model(cast={key: value for key, value in CHANNEL.items() if key != "cast_time_reduction"})
+
+
+def test_only_a_channel_costs_up_front() -> None:
+    with pytest.raises(
+        pydantic.ValidationError, match=r"cost\.up_front is what a channel costs when it begins"
+    ):
+        spell_model(cost={"resource": "realmforge:mana", "amount": 10, "up_front": {"amount": 40}})
+
+
+def test_ticks_reads_a_channel() -> None:
+    with pytest.raises(
+        pydantic.ValidationError, match=r"\{ticks\} reads a channel's ticks, and the spell has none"
+    ):
+        spell_model(description={"en_us": "Hits {ticks} times."})
+
+
+def test_a_procs_effect_may_last_longer_per_rank() -> None:
+    frostbite = SpellDef.model_validate(
+        {
+            "id": "frostbite",
+            "name": {"en_us": "Frostbite"},
+            "description": {"en_us": "Freezes for {proc_duration} sec."},
+            "school": "realmforge:frost",
+            "max_level": 3,
+            "passive": {
+                "procs": [
+                    {
+                        "trigger": "applies_effect",
+                        "effect": "minecraft:slowness",
+                        "chance_percent": 5,
+                        "apply_effect": {
+                            "effect": "realmforge:frozen",
+                            "duration_seconds": 4,
+                            "duration_per_level_seconds": 2,
+                        },
+                    }
+                ]
+            },
+        }
+    )
+    assert frostbite.passive is not None
+    proc = frostbite.passive.procs[0].apply_effect
+    assert proc is not None
+    assert [proc.duration_at(rank) for rank in (1, 2, 3)] == [4, 6, 8]

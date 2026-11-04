@@ -13,7 +13,8 @@ import net.minecraft.util.Mth;
  *   spell's heals get × (1 + the school's power) here.</li>
  *   <li><b>Cooldowns:</b> Cooldown Reduction shortens a spell's own cooldown, never the global cooldown.</li>
  *   <li><b>Cast times:</b> Cast Time Reduction shortens a cast time, and a channel's interval, so the channel keeps its
- *   number of ticks.</li>
+ *   number of ticks; or for a channel whose ticks it multiplies (RLM-572), the channel keeps its duration and runs more
+ *   ticks in it.</li>
  *   <li><b>Resource pools:</b> every second a pool regains its regeneration, within 0 and its maximum.</li>
  * </ul>
  */
@@ -70,6 +71,25 @@ public final class SpellScaling {
             throw new IllegalArgumentException("A cast time lasts a tick or more: " + ticks);
         }
         return Math.max(1, (int) Math.round(ticks * (1 - Mth.clamp(castTimeReduction, 0, 1))));
+    }
+
+    /**
+     * How many ticks a channel whose ticks Cast Time Reduction multiplies runs (RLM-572: Blizzard): {@code ticks} × (1
+     * + reduction), rounded to the nearest, halves up (9.5 → 10, 9.49 → 9), at least one. The reduction counts between
+     * 0 and 1, as for {@link #castTicks}.
+     */
+    public static int moreTicks(int ticks, double castTimeReduction) {
+        double more = ticks * (1 + Mth.clamp(castTimeReduction, 0, 1));
+        // A whisker above the half, so a product that floating point puts just below it (8 × 1.0625) still rounds up.
+        return Math.max(1, (int) Math.floor(more + 0.5 + 1e-9));
+    }
+
+    /**
+     * When a channel of {@code durationTicks} that runs {@code ticks} ticks runs its {@code tick}-th (from 1), in ticks
+     * after it began: its ticks spread evenly over it, the last at its end, each at the nearest whole tick.
+     */
+    public static int channelTickAt(int tick, int ticks, int durationTicks) {
+        return (int) Math.round((double) durationTicks * tick / ticks);
     }
 
     /**

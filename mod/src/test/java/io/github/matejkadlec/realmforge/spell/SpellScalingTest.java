@@ -98,4 +98,22 @@ class SpellScalingTest {
         assertEquals(40, SpellScaling.regenerate(40, 5, 0), EPSILON,
                 "no maximum yet (stats not applied): the pool stays as it is");
     }
+
+    /** RLM-572: Blizzard's waves, round(8 × (1 + CTR)) with halves up, spread evenly over its 8 s. */
+    @Test
+    void aChannelThatAddsTicksSpreadsThemOverItsDuration() {
+        assertEquals(8, SpellScaling.moreTicks(8, 0));
+        assertEquals(10, SpellScaling.moreTicks(8, 0.25));
+        assertEquals(10, SpellScaling.moreTicks(8, 0.2));
+        assertEquals(9, SpellScaling.moreTicks(8, 0.1));
+        assertEquals(14, SpellScaling.moreTicks(8, 0.75), "at Cast Time Reduction's cap");
+        assertEquals(16, SpellScaling.moreTicks(8, 2), "a reduction counts at most 100 %");
+        assertEquals(1, SpellScaling.moreTicks(0, 0.5), "at least one");
+        assertEquals(20, SpellScaling.channelTickAt(1, 8, 160));
+        assertEquals(160, SpellScaling.channelTickAt(8, 8, 160));
+        assertEquals(16, SpellScaling.channelTickAt(1, 10, 160));
+        assertEquals(18, SpellScaling.channelTickAt(1, 9, 160), "17.8 to the nearest tick");
+        assertEquals(160, SpellScaling.channelTickAt(9, 9, 160), "the last at its end");
+        assertEquals(30, SpellScaling.channelTickAt(3, 3, 30), "a shortened channel: its interval times the tick");
+    }
 }

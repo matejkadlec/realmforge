@@ -1,22 +1,23 @@
 # yaml-language-server: $schema=../../tools/schemas/spells.schema.json
 # The Frost Mage's tree, row 4 (level 18) (RLM-542; Matěj, 2026-10-30, "Spell Trees to Level 18", chosen for M1): a
 # channel at a spot on the ground within 30 blocks (placed when the channel begins and kept, as every ground spell is,
-# architecture 11.2), a wave of ice every 0.5 s as every player channel (RLM-518), each hitting every enemy within its
-# radius for 2/2.5/3 + 20/25/30 % of Spell Power (a channel splits its coefficient over its ticks, architecture 11.1) and
-# slowing them: Slowness I, Slowness II at rank 3. Matěj's playtest of 2026-11-01: twice as long, 6 s and 12 waves for
-# twice the damage, a third wider, 4 blocks instead of 3, and 13/18/23 mana for each second, paid as it begins (RLM-403):
-# 78/108/138 a cast. Placeholder rings until the Frost visuals (RLM-544).
+# architecture 11.2), waves of ice that each hit every enemy within 4 blocks (a channel splits its coefficient over its
+# ticks, architecture 11.1) and slow them: Slowness I, Slowness II at rank 3. Matěj's rebalance of 2026-11-01 (RLM-572):
+# an 8 s channel of eight waves, one a second, each for 4/6/8 + 40/60/80 % of Spell Power; 40/60/80 mana up front, then
+# 15/20/25 for each second as it begins (RLM-403): 160/220/280 a cast; no cooldown. Cast Time Reduction does not shorten
+# it but adds waves: round(8 × (1 + CTR)), halves up, spread over the 8 s (10 with 20 or 25 %), and the tooltip shows the
+# count. Placeholder rings until the Frost visuals (RLM-544).
 id: blizzard
 name: {en_us: Blizzard}
 description:
   en_us: >-
-    Calls down waves of ice on the ground while you channel, each dealing {damage} damage to every enemy within
-    {radius} blocks and slowing them.
+    Calls down {ticks} waves of ice on the ground while you channel, each dealing {damage} damage to every enemy
+    within {radius} blocks and slowing them.
 school: realmforge:frost
 scales_with: spell_power
 targeting: {type: realmforge:ground_point, range: 30}
-cast: {type: channel, duration_seconds: 6, interval_seconds: 0.5}
-cost: {resource: realmforge:mana, amount: 13, per_level: 5}
+cast: {type: channel, duration_seconds: 8, interval_seconds: 1, cast_time_reduction: adds_ticks}
+cost: {resource: realmforge:mana, amount: 15, per_level: 5, up_front: {amount: 40, per_level: 20}}
 max_level: 3
 effects:
   - type: realmforge:area
@@ -26,10 +27,10 @@ effects:
     ring_color: "#BFEFFF"
     effects:
       - type: realmforge:damage
-        amount: 2
-        per_level: 0.5
-        spell_power_percent: 20
-        spell_power_per_level_percent: 5
+        amount: 4
+        per_level: 2
+        spell_power_percent: 40
+        spell_power_per_level_percent: 20
       - type: realmforge:apply_effect
         effect: minecraft:slowness
         duration_seconds: 1.5

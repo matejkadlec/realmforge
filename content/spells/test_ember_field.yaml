@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Engine test (RLM-487): a channel that kindles the ground at every tick, every half second, each time with an area of
+# 2 s that sets every enemy in it burning (test_burning, a tick every second) as it appears and a second later. The
+# areas pulse on their own ages, out of step, so the burning is applied again every half second; it keeps the pace of
+# its first application and ticks every second. Not gameplay content; the GameTests in the QA mod cast it.
+id: test_ember_field
+name: {en_us: Test Ember Field}
+description:
+  en_us: >-
+    Kindles the ground at every tick of the channel: every enemy within {radius} blocks burns for {periodic} damage
+    every {interval} sec.
+school: realmforge:fire
+scales_with: spell_power
+targeting: {type: realmforge:ground_point, range: 16}
+cast: {type: channel, duration_seconds: 2, interval_seconds: 0.5}
+effects:
+  - type: realmforge:area
+    radius: 2
+    duration_seconds: 2
+    interval_seconds: 1
+    effects:
+      - {type: realmforge:apply_effect, effect: realmforge:test_burning, duration_seconds: 2}

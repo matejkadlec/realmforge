@@ -243,6 +243,8 @@ def test_no_effects_still_compile(repo: RepoPaths) -> None:
         file.unlink()
     for name in (
         "test_ignite",
+        "test_kindle",
+        "test_ember_field",
         "test_regrow",
         "test_sap",
         "astone_cracked_stone",
