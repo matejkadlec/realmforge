@@ -303,9 +303,11 @@ builds them):
   RLM-547 (Matěj's picks on RLM-536, 2026-10-30), the robes' in RLM-548 (the armor gems' bonuses with swaps: Armor and
   Toughness to Magic Shield, Attack Damage % to Spell Power %), the curios' with RLM-556. Curios take attribute bonuses
   only.
-- **The Nether's and the End's gems never drop:** Blood Lord, Inferno and Molten Breach name
-  `minecraft:the_nether` in their `constraints.dimensions`, Endersurge and Mageslayer `minecraft:the_end`, and the
-  pack has neither ([ADR 0025](../decisions/0025-remove-the-nether-and-end.md)). Accepted (Matěj, 2026-10-30, on
+- **The End's gems never drop, the Nether's only until M4:** Endersurge and Mageslayer name `minecraft:the_end` in
+  their `constraints.dimensions`, and the End is unreachable without strongholds
+  ([ADR 0044](../decisions/0044-third-party-mods-by-milestone.md)). Blood Lord, Inferno and Molten Breach name
+  `minecraft:the_nether`, which stays until M4 removes it ([ADR 0025](../decisions/0025-remove-the-nether-and-end.md)),
+  so they drop there from the Ascent tier up. Accepted (Matěj, 2026-10-30, on
   RLM-536): our data moves their constraints to realms of their theme once those realms exist, the Nether's three to
   Ashfire, the End's two to Unmade Isles (RLM-550). The three Overworld gems (Earth, Royalty, Verdant Ruin) stay
   Overworld's.
