@@ -1,7 +1,9 @@
 # yaml-language-server: $schema=../../tools/schemas/apotheosis_rarity_overrides.schema.json
-# The robe category of the feet slot (RLM-546) has no affix to roll until the caster affixes (RLM-557), so every rarity
-# keeps its sockets and durability and drops its affix slots: a robe reforged gets a rarity without an error for each
-# empty slot. RLM-557 replaces this with the robes' own slots.
+# The robe feet skip the ability slot, so Apotheosis logs no empty slot (RLM-557): Unhurried is the boots' one ability,
+# and Apotheosis hard-codes it to its own boots category (AttributeToggleAffix#canApplyTo), which no data can widen.
 id: robe_feet
 category: realmforge:robe_feet
-no_affixes: true
+max_slots:
+  apotheosis:rare: {ability: 0}
+  apotheosis:epic: {ability: 0}
+  apotheosis:mythic: {ability: 0}

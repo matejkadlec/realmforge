@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Nimble (Speed on being hurt) gives no armor, so caster robes roll it too (gear design, RLM-557).
+id: nimble
+affix: apotheosis:armor/mob_effect/nimble
+replace:
+  types:
+    - apotheosis:leggings
+    - apotheosis:boots
+    - realmforge:robe_legs
+    - realmforge:robe_feet

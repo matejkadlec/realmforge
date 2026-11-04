@@ -15,12 +15,17 @@ import dev.shadowsoffire.apotheosis.socket.gem.Purity;
 import dev.shadowsoffire.apotheosis.tiers.GenContext;
 import dev.shadowsoffire.apotheosis.tiers.WorldTier;
 import dev.shadowsoffire.apotheosis.tiers.augments.TierAugmentRegistry;
+import dev.shadowsoffire.placebo.dynreg.DynamicHolder;
 import io.github.matejkadlec.realmforge.compat.apotheosis.ApotheosisCompat;
 import io.github.matejkadlec.realmforge.generated.GeneratedItems;
 import io.github.matejkadlec.realmforge.generated.GeneratedTexts;
 import io.github.matejkadlec.realmforge.spell.SpellCaster;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -67,11 +72,69 @@ final class ApotheosisLoot {
             Items.DIAMOND_SWORD, Items.TRIDENT, Items.BOW, Items.CROSSBOW, Items.DIAMOND_PICKAXE, Items.SHIELD,
             Items.DIAMOND_HELMET, Items.DIAMOND_CHESTPLATE, Items.DIAMOND_LEGGINGS, Items.DIAMOND_BOOTS, Items.SHEARS);
     private static final String[] RARITIES = {"common", "uncommon", "rare", "epic", "mythic"};
+    /** The robes' affixes of ours, on every piece (RLM-557). */
+    private static final Set<String> SCHOOL_AFFIXES = Set.of("realmforge:robe_fiery", "realmforge:robe_frozen",
+            "realmforge:robe_arcane_touched");
+    private static final Set<String> CASTER_AFFIXES = Set.of("realmforge:robe_sorcerous", "realmforge:robe_deep",
+            "realmforge:robe_flowing", "realmforge:robe_warded", "realmforge:robe_fiery", "realmforge:robe_frozen",
+            "realmforge:robe_arcane_touched");
+    private static final String TIMEKEEPING = "apotheosis:armor/attribute/timekeeping";
+    private static final String BLOCKADING = "apotheosis:armor/dmg_reduction/blockading";
+    /** The armor affixes that add armor or toughness, which no robe takes (the caster rule, gear design). */
+    private static final Set<String> ARMOR_AFFIXES = Set.of("apotheosis:armor/attribute/ironforged",
+            "apotheosis:armor/attribute/adamantine", "apotheosis:armor/attribute/steel_touched");
+    private static final List<RobePiece> ROBE_PIECES = List.of(
+            new RobePiece("the robe head", GeneratedItems.NETHERITE_CAP, withCaster(TIMEKEEPING,
+                    "apotheosis:armor/attribute/blessed", "apotheosis:armor/attribute/fortunate",
+                    "apotheosis:armor/attribute/stalwart", "apotheosis:generic/attribute/lucky"),
+                    Set.of("apotheosis:armor/dmg_reduction/deflective"), Set.of(), true),
+            new RobePiece("the robe chest", GeneratedItems.NETHERITE_ROBES, withCaster(TIMEKEEPING,
+                    "apotheosis:armor/attribute/blessed", "apotheosis:armor/attribute/fortunate",
+                    "apotheosis:armor/attribute/gravitational", "apotheosis:armor/attribute/spiritual",
+                    "apotheosis:armor/attribute/stalwart", "apotheosis:armor/attribute/unbound",
+                    "apotheosis:generic/attribute/lucky"),
+                    Set.of("apotheosis:armor/dmg_reduction/blast_forged", "apotheosis:armor/dmg_reduction/deflective",
+                            "apotheosis:armor/mob_effect/bolstering", "apotheosis:armor/mob_effect/bursting",
+                            "apotheosis:armor/mob_effect/revitalizing"),
+                    Set.of(BLOCKADING), true),
+            new RobePiece("the robe legs", GeneratedItems.NETHERITE_PANTS, withCaster(
+                    "apotheosis:armor/attribute/blessed", "apotheosis:armor/attribute/fortunate",
+                    "apotheosis:armor/attribute/spiritual", "apotheosis:armor/attribute/stalwart",
+                    "apotheosis:armor/attribute/windswept", "apotheosis:generic/attribute/lucky"),
+                    Set.of("apotheosis:armor/dmg_reduction/blast_forged", "apotheosis:armor/mob_effect/bolstering",
+                            "apotheosis:armor/mob_effect/bursting", "apotheosis:armor/mob_effect/nimble",
+                            "apotheosis:armor/mob_effect/revitalizing"),
+                    Set.of(BLOCKADING), false),
+            new RobePiece("the robe feet", GeneratedItems.NETHERITE_SANDALS, withCaster(
+                    "apotheosis:armor/attribute/aquatic", "apotheosis:armor/attribute/blessed",
+                    "apotheosis:armor/attribute/fortunate", "apotheosis:armor/attribute/stalwart",
+                    "apotheosis:armor/attribute/windswept", "apotheosis:generic/attribute/lucky"),
+                    Set.of("apotheosis:armor/dmg_reduction/feathery", "apotheosis:armor/mob_effect/nimble"),
+                    Set.of(), false));
     private static final int ROLLS = 20;
     private static final int RARE_SWORD_ROLLS = 200;
     private static final double EPSILON = 1e-4;
 
     private ApotheosisLoot() {
+    }
+
+    private static Set<String> withCaster(String... kept) {
+        Set<String> affixes = new HashSet<>(CASTER_AFFIXES);
+        affixes.addAll(List.of(kept));
+        return affixes;
+    }
+
+    /** One robe piece and what can roll on it at Legendary, by kind (the gear design's table, RLM-557). */
+    private record RobePiece(String name, Supplier<? extends Item> item, Set<String> stats, Set<String> effects,
+            Set<String> abilities, boolean timekeeping) {
+        boolean rolls(String affix) {
+            return stats.contains(affix) || effects.contains(affix) || abilities.contains(affix);
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
     }
 
     /** Done when of RLM-232: the review's affixes are off, the ones it kept are not. */
@@ -187,7 +250,7 @@ final class ApotheosisLoot {
 
     /**
      * Done when of RLM-273: no affix can roll on a wand at any rarity, so never a melee one; a sword still has its
-     * affixes. The wand's own affixes are the caster affixes (RLM-557).
+     * affixes. The wand's own affixes are RLM-562's.
      */
     static void aWandNeverRollsAMeleeAffix(GameTestHelper helper) {
         ItemStack wand = new ItemStack(GeneratedItems.NETHERITE_WAND.get());
@@ -253,28 +316,101 @@ final class ApotheosisLoot {
     }
 
     /**
-     * RLM-546: our categories have no affix to roll yet, and their rarity overrides drop every affix slot, so a robe
-     * or a wand rolled (as the reforging table rolls it) at every rarity and tier gets the rarity and no affix, and
-     * Apotheosis logs no "no affixes available" error (the log check).
+     * RLM-546: the wand has no affix to roll yet (RLM-562), and its rarity override drops every affix slot, so a wand
+     * rolled (as the reforging table rolls it) at every rarity and tier gets the rarity and no affix, and Apotheosis
+     * logs no "no affixes available" error (the log check).
      */
-    static void aRobeOrAWandRollsARarityWithoutAffixes(GameTestHelper helper) {
-        List<Item> items = List.of(GeneratedItems.NETHERITE_CAP.get(), GeneratedItems.NETHERITE_ROBES.get(),
-                GeneratedItems.NETHERITE_PANTS.get(), GeneratedItems.NETHERITE_SANDALS.get(),
-                GeneratedItems.NETHERITE_WAND.get());
+    static void aWandRollsARarityWithoutAffixes(GameTestHelper helper) {
         for (WorldTier tier : new WorldTier[] {WorldTier.HAVEN, WorldTier.PINNACLE}) {
             GenContext context = context(helper, tier, 546);
             for (String id : RARITIES) {
                 LootRarity rarity = rarity(id);
-                for (Item item : items) {
-                    ItemStack rolled = LootController.createLootItem(new ItemStack(item), rarity, context);
-                    String what = BuiltInRegistries.ITEM.getKey(item) + " at " + id;
-                    helper.assertTrue(AffixHelper.getRarity(rolled).isBound()
-                            && AffixHelper.getRarity(rolled).get() == rarity, what + " has the rarity");
-                    helper.assertTrue(AffixHelper.getAffixes(rolled).isEmpty(), what + " rolls no affix");
+                ItemStack rolled = LootController.createLootItem(new ItemStack(GeneratedItems.NETHERITE_WAND.get()),
+                        rarity, context);
+                helper.assertTrue(AffixHelper.getRarity(rolled).isBound()
+                        && AffixHelper.getRarity(rolled).get() == rarity, "the wand at " + id + " has the rarity");
+                helper.assertTrue(AffixHelper.getAffixes(rolled).isEmpty(), "the wand at " + id + " rolls no affix");
+            }
+        }
+        helper.succeed();
+    }
+
+    /**
+     * Done when of RLM-557: what can roll on each robe piece is the gear design's list, exactly: our caster affixes and
+     * Apotheosis's kept armor affixes that give no armor, by the piece's slot. Fiery and its twins start at Uncommon,
+     * Timekeeping at Rare and on the head and chest only, and no piece can take Ironforged, Adamantine or Steel Touched.
+     */
+    static void eachRobePieceOffersTheGearDesignsAffixes(GameTestHelper helper) {
+        for (RobePiece piece : ROBE_PIECES) {
+            ItemStack stack = new ItemStack(piece.item().get());
+            helper.assertValueEqual(available(stack, "mythic", AffixType.STAT), piece.stats(),
+                    piece + "'s stat affixes");
+            helper.assertValueEqual(available(stack, "mythic", AffixType.BASIC_EFFECT), piece.effects(),
+                    piece + "'s basic effects");
+            helper.assertValueEqual(available(stack, "mythic", AffixType.ABILITY), piece.abilities(),
+                    piece + "'s abilities");
+
+            Set<String> common = available(stack, "common", AffixType.STAT);
+            helper.assertTrue(common.contains("realmforge:robe_sorcerous"), piece + " rolls Sorcerous from Common");
+            helper.assertFalse(common.contains("realmforge:robe_fiery"), piece + " rolls no Fiery at Common");
+            helper.assertTrue(available(stack, "uncommon", AffixType.STAT).containsAll(SCHOOL_AFFIXES),
+                    piece + " rolls the school affixes from Uncommon");
+            helper.assertFalse(available(stack, "uncommon", AffixType.STAT).contains(TIMEKEEPING),
+                    piece + " rolls no Timekeeping at Uncommon");
+            helper.assertValueEqual(available(stack, "rare", AffixType.STAT).contains(TIMEKEEPING), piece.timekeeping(),
+                    piece + "'s Timekeeping from Rare");
+        }
+        ItemStack sword = new ItemStack(Items.NETHERITE_SWORD);
+        for (AffixType type : AffixType.values()) {
+            helper.assertFalse(available(sword, "mythic", type).stream().anyMatch(id -> id.startsWith("realmforge:")),
+                    "a sword rolls no affix of ours");
+        }
+        helper.succeed();
+    }
+
+    /**
+     * Done when of RLM-557: a robe rolled (as the reforging table rolls it) at every rarity and tier gets the rarity,
+     * a stat affix for every stat slot and nothing that adds armor, and Apotheosis logs no "no affixes available" error
+     * (the log check): the head and feet skip the slots they have nothing for.
+     */
+    static void aRobeRollsCasterAffixesAndNoArmorAffix(GameTestHelper helper) {
+        Map<String, Integer> statSlots = Map.of("common", 1, "uncommon", 2, "rare", 2, "epic", 3, "mythic", 4);
+        for (WorldTier tier : new WorldTier[] {WorldTier.HAVEN, WorldTier.PINNACLE}) {
+            GenContext context = context(helper, tier, 557);
+            for (String id : RARITIES) {
+                LootRarity rarity = rarity(id);
+                for (RobePiece piece : ROBE_PIECES) {
+                    for (int i = 0; i < ROLLS; i++) {
+                        ItemStack rolled = LootController.createLootItem(new ItemStack(piece.item().get()), rarity,
+                                context);
+                        String what = piece + " at " + id;
+                        helper.assertTrue(AffixHelper.getRarity(rolled).isBound()
+                                && AffixHelper.getRarity(rolled).get() == rarity, what + " has the rarity");
+                        helper.assertTrue(count(rolled, AffixType.STAT) >= statSlots.get(id),
+                                what + " fills its stat slots: " + count(rolled, AffixType.STAT));
+                        for (DynamicHolder<Affix> affix : AffixHelper.getAffixes(rolled).keySet()) {
+                            String rolledId = affix.getId().toString();
+                            helper.assertFalse(ARMOR_AFFIXES.contains(rolledId), what + " rolled armor: " + rolledId);
+                            helper.assertTrue(piece.rolls(rolledId), what + " rolled " + rolledId + ", not on its list");
+                        }
+                        if (piece.abilities().isEmpty()) {
+                            helper.assertValueEqual(count(rolled, AffixType.ABILITY), 0, what + "'s abilities");
+                        }
+                        if (piece.effects().size() == 1) {
+                            helper.assertTrue(count(rolled, AffixType.BASIC_EFFECT) <= 1,
+                                    what + " rolls at most one basic effect");
+                        }
+                    }
                 }
             }
         }
         helper.succeed();
+    }
+
+    private static Set<String> available(ItemStack stack, String rarity, AffixType type) {
+        return LootController.getAvailableAffixes(stack, rarity(rarity), type)
+                .map(holder -> holder.getId().toString())
+                .collect(Collectors.toSet());
     }
 
     private static int count(ItemStack stack, AffixType type) {

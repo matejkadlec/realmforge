@@ -1,6 +1,7 @@
 # yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
 # Apotheosis 9.1.0's Lucky affix without the apotheosis:charm category: Apotheosis registers that one only with
 # Curios, which the pack lacks, and skipped the whole affix (RLM-271). Matěj kept Lucky in his affix review (RLM-232).
+# It gives no armor, so caster robes roll it too (gear design, RLM-557).
 id: lucky
 affix: apotheosis:generic/attribute/lucky
 replace:
@@ -15,3 +16,7 @@ replace:
     - apotheosis:trident
     - apotheosis:melee_weapon
     - apotheosis:shears
+    - realmforge:robe_head
+    - realmforge:robe_chest
+    - realmforge:robe_legs
+    - realmforge:robe_feet

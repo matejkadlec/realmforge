@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Bolstering (Resistance on being hurt) gives no armor, so caster robes roll it too (gear design, RLM-557).
+id: bolstering
+affix: apotheosis:armor/mob_effect/bolstering
+replace:
+  types:
+    - apotheosis:chestplate
+    - apotheosis:leggings
+    - realmforge:robe_chest
+    - realmforge:robe_legs

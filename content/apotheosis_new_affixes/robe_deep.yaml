@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_new_affixes.schema.json
+# Max mana on a robe piece, against the Mage's 100 (gear design, Matěj, 2026-10-30, RLM-511).
+id: robe_deep
+name: {en_us: Deep}
+suffix: {en_us: of the Deep Well}
+stat: realmforge:max_mana
+categories:
+  - realmforge:robe_head
+  - realmforge:robe_chest
+  - realmforge:robe_legs
+  - realmforge:robe_feet
+values:
+  apotheosis:common: {min: 5, max: 10, step: 1}
+  apotheosis:uncommon: {min: 8, max: 12, step: 1}
+  apotheosis:rare: {min: 10, max: 18, step: 1}
+  apotheosis:epic: {min: 15, max: 25, step: 1}
+  apotheosis:mythic: {min: 20, max: 35, step: 1}

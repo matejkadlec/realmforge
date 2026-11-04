@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Windswept (movement speed) gives no armor, so caster robes roll it too (gear design, RLM-557).
+id: windswept
+affix: apotheosis:armor/attribute/windswept
+replace:
+  categories:
+    - apotheosis:leggings
+    - apotheosis:boots
+    - realmforge:robe_legs
+    - realmforge:robe_feet

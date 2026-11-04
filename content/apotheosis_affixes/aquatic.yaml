@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Aquatic (swim speed) gives no armor, so caster robes roll it too (gear design, RLM-557).
+id: aquatic
+affix: apotheosis:armor/attribute/aquatic
+replace:
+  categories:
+    - apotheosis:boots
+    - realmforge:robe_feet

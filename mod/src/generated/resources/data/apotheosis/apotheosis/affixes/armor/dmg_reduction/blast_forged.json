@@ -3,7 +3,9 @@
   "attribute": "realmforge:explosion_resistance",
   "categories": [
     "apotheosis:chestplate",
-    "apotheosis:leggings"
+    "apotheosis:leggings",
+    "realmforge:robe_chest",
+    "realmforge:robe_legs"
   ],
   "definition": {
     "affix_type": "basic_effect",

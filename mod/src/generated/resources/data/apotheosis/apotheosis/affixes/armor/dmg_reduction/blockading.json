@@ -3,7 +3,9 @@
   "attribute": "realmforge:physical_resistance",
   "categories": [
     "apotheosis:chestplate",
-    "apotheosis:leggings"
+    "apotheosis:leggings",
+    "realmforge:robe_chest",
+    "realmforge:robe_legs"
   ],
   "definition": {
     "affix_type": "ability",

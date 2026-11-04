@@ -7,6 +7,7 @@ from pathlib import Path
 from realmforge_tools.content import Content
 from realmforge_tools.formats.jsonfmt import dump_json
 from realmforge_tools.generate import (
+    apotheosis,
     blocks,
     datapack,
     dungeons,
@@ -40,6 +41,7 @@ def collect(content: Content) -> dict[str, dict[str, str]]:
         | stats.translations(content)
         | effects.translations(content)
         | enchantments.translations(content)
+        | apotheosis.translations(content)
         | mobs.translations(content)
         | sounds.translations(content)
         | spell_schools.translations(content)

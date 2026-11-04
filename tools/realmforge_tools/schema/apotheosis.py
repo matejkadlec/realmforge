@@ -11,6 +11,7 @@ from the snapshot of Apotheosis's own data (``tools/id_universe/apotheosis-<vers
 - ``content/apotheosis_affixes/``, ``apotheosis_gems/``, ``apotheosis_tier_augments/``, ``apotheosis_rarities/``: one
   entry switched off (``disabled``) or with some of its top-level fields replaced (``replace``), in Apotheosis's own
   format;
+- ``content/apotheosis_new_affixes/``: an affix of our own, a new entry at ``data/realmforge/apotheosis/affixes/``;
 - ``content/recipe_removals/``: recipes that no longer exist, Apotheosis's or vanilla's.
 
 ``realmforge_tools/apotheosis.py`` applies them; names and units are Apotheosis 9.1.0's. The constants below list what
@@ -23,7 +24,13 @@ from typing import Annotated, ClassVar, Literal, get_args
 
 from pydantic import Field, JsonValue, StringConstraints, model_validator
 
-from realmforge_tools.schema.common import ContentId, ResourceId, StrictModel, UniqueResourceIds
+from realmforge_tools.schema.common import (
+    ContentId,
+    LocalizedText,
+    ResourceId,
+    StrictModel,
+    UniqueResourceIds,
+)
 
 # The loot categories Apotheosis 9.1.0 registers (Apoth.LootCategories), without apotheosis:none.
 LOOT_CATEGORIES = (
@@ -185,6 +192,65 @@ ENTRY_MODELS: tuple[type[ApotheosisEntryDef], ...] = (
 )
 
 
+class AffixValueRange(StrictModel):
+    """What an affix adds at one rarity, by the level it rolled: Placebo's StepFunction in its bounds form. Placebo
+    refuses a range that is not a whole number of steps, and min equal to max: a fixed value is a plain number."""
+
+    min: float = Field(allow_inf_nan=False, description="The value at the lowest roll.")
+    max: float = Field(allow_inf_nan=False, description="The value at the highest roll.")
+    step: float = Field(gt=0, allow_inf_nan=False, description="The values between go up by this much.")
+
+    @model_validator(mode="after")
+    def _whole_steps(self) -> AffixValueRange:
+        if self.min >= self.max:
+            raise ValueError("min must be below max: a fixed value is a plain number")
+        steps = (self.max - self.min) / self.step
+        if abs(steps - round(steps)) > 1e-6:
+            raise ValueError(f"{self.min} to {self.max} is not a whole number of steps of {self.step}")
+        return self
+
+
+class ApotheosisNewAffixDef(StrictModel):
+    """An affix of our own (RLM-557), a new entry where Apotheosis looks for affixes of any namespace: the stat it adds
+    per rarity, the loot categories of ours it rolls on, its name and its suffix. It is an ``apotheosis:attribute``
+    affix of the ``stat`` kind, the one kind Apotheosis's own format covers without code. An item that rolls it is
+    named by it: "Sorcerous Netherite Robes of Winter" (``name`` for one affix, ``suffix`` for another)."""
+
+    id: ContentId
+    name: LocalizedText = Field(description="The word before an item's name, e.g. Sorcerous.")
+    suffix: LocalizedText = Field(description="The words after an item's name, e.g. of Sorcery.")
+    stat: ResourceId = Field(
+        description="The stat it adds, one of ours (content/stats/), e.g. realmforge:spell_power."
+    )
+    categories: Annotated[UniqueResourceIds, Field(min_length=1)] = Field(
+        description="The loot categories it rolls on, each one of ours, e.g. realmforge:robe_chest."
+    )
+    values: Annotated[
+        dict[ResourceId, Annotated[float, Field(allow_inf_nan=False)] | AffixValueRange], Field(min_length=1)
+    ] = Field(
+        description=(
+            "Rarity -> what it adds there, added to the stat as a flat amount (add_value): {min, max, step} or a fixed "
+            "number. A share is a fraction: 3 % is 0.03. It rolls only at the rarities listed."
+        )
+    )
+    weight: int = Field(
+        default=25, gt=0, description="How often it rolls against the others (Apotheosis's stat affixes: 25)."
+    )
+    quality: float = Field(
+        default=0.1,
+        ge=0,
+        allow_inf_nan=False,
+        description="How much a player's luck raises its weight (Apotheosis's stat affixes: 0.1).",
+    )
+
+    @model_validator(mode="after")
+    def _known_rarities(self) -> ApotheosisNewAffixDef:
+        unknown = sorted(set(self.values) - set(RARITIES))
+        if unknown:
+            raise ValueError(f"unknown rarities {', '.join(unknown)}; Apotheosis has {', '.join(RARITIES)}")
+        return self
+
+
 # The kinds of affix slot a rarity's rules hold (Apotheosis's AffixType).
 AffixKind = Literal["stat", "basic_effect", "ability"]
 AFFIX_KINDS: tuple[str, ...] = get_args(AffixKind)
@@ -200,8 +266,7 @@ class ApotheosisRarityOverrideDef(StrictModel):
     for each kind: chanced slots go first, the last first, then plain ones from the end. The other rarities keep what
     they had.
 
-    A category of ours with no affix of its own yet (the wand and the robes until the caster affixes, RLM-557) takes
-    ``no_affixes`` instead: every rarity keeps its other rules (sockets, durability) and drops every affix slot, so
+    A category of ours with no affix of its own yet (the wand until its affixes, RLM-562) takes ``no_affixes`` instead: every rarity keeps its other rules (sockets, durability) and drops every affix slot, so
     reforging rolls a rarity without an error for each empty slot (RLM-546)."""
 
     id: ContentId

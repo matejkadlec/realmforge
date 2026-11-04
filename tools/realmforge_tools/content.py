@@ -29,6 +29,7 @@ from realmforge_tools.schema import (
     WORLDGEN_DIR,
     ApotheosisAffixDef,
     ApotheosisGemDef,
+    ApotheosisNewAffixDef,
     ApotheosisRarityDef,
     ApotheosisRarityOverrideDef,
     ApotheosisStatRemapDef,
@@ -212,6 +213,7 @@ class Content:
     room_themes: tuple[Entry[RoomThemeDef], ...]
     realms: tuple[Entry[RealmDef], ...]
     apotheosis_affixes: tuple[Entry[ApotheosisAffixDef], ...]
+    apotheosis_new_affixes: tuple[Entry[ApotheosisNewAffixDef], ...]
     apotheosis_gems: tuple[Entry[ApotheosisGemDef], ...]
     apotheosis_tier_augments: tuple[Entry[ApotheosisTierAugmentDef], ...]
     apotheosis_rarities: tuple[Entry[ApotheosisRarityDef], ...]
@@ -315,6 +317,7 @@ def load_content(
         room_themes=by_id(loaded["room_themes"]),
         realms=by_id(loaded["realms"]),
         apotheosis_affixes=by_id(loaded["apotheosis_affixes"]),
+        apotheosis_new_affixes=by_id(loaded["apotheosis_new_affixes"]),
         apotheosis_gems=by_id(loaded["apotheosis_gems"]),
         apotheosis_tier_augments=by_id(loaded["apotheosis_tier_augments"]),
         apotheosis_rarities=by_id(loaded["apotheosis_rarities"]),

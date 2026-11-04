@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from realmforge_tools.schema.apotheosis import (
     ApotheosisAffixDef,
     ApotheosisGemDef,
+    ApotheosisNewAffixDef,
     ApotheosisRarityDef,
     ApotheosisRarityOverrideDef,
     ApotheosisStatRemapDef,
@@ -64,6 +65,7 @@ CONTENT_TYPES: dict[str, type] = {
     "room_specs": RoomSpecDef,
     "realms": RealmDef,
     "apotheosis_affixes": ApotheosisAffixDef,
+    "apotheosis_new_affixes": ApotheosisNewAffixDef,
     "apotheosis_gems": ApotheosisGemDef,
     "apotheosis_tier_augments": ApotheosisTierAugmentDef,
     "apotheosis_rarities": ApotheosisRarityDef,

@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Timekeeping (cooldown reduction, our stat since RLM-272) rolls on the robe head and chest too, at Apotheosis's values:
+# from Rare, 1-5 / 5-7.5 / 5-10 % (gear design, Matěj, 2026-10-30, RLM-511).
+id: timekeeping
+affix: apotheosis:armor/attribute/timekeeping
+replace:
+  categories:
+    - apotheosis:helmet
+    - apotheosis:chestplate
+    - apotheosis:shield
+    - realmforge:robe_head
+    - realmforge:robe_chest

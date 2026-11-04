@@ -38,6 +38,7 @@ from realmforge_tools.schema import CONTENT_TYPES, DATAPACK_TYPES, WORLDGEN_DIR
 from realmforge_tools.schema.apotheosis import (
     CURIOS_LOOT_CATEGORIES,
     LOOT_CATEGORIES,
+    OUR_LOOT_CATEGORIES,
     RARITIES,
     ApotheosisEntryDef,
 )
@@ -2882,6 +2883,7 @@ def _check_apotheosis(content: Content, universe: IdUniverse, paths: RepoPaths) 
     for entry in [*content.apotheosis_affixes, *content.apotheosis_gems, *content.apotheosis_tier_augments]:
         problems += _check_replaced_fields(entry, snapshot, attributes)
     stats = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.stats}
+    problems += _check_new_affixes(content, stats)
     for entry in content.apotheosis_affixes:
         target = entry.model.to_attribute
         if target is None:
@@ -2940,6 +2942,62 @@ def _check_apotheosis(content: Content, universe: IdUniverse, paths: RepoPaths) 
     return problems
 
 
+def _check_new_affixes(content: Content, stats: dict[str, StatDef]) -> list[Problem]:
+    """Affixes of our own add a stat of ours on a loot category of ours, a share's values are fractions, and a category
+    that ``no_affixes`` says has no affix has none: its slots are gone, so an affix listing it would never roll."""
+    problems: list[Problem] = []
+    empty = {
+        entry.model.category: entry.source
+        for entry in content.apotheosis_rarity_overrides
+        if entry.model.no_affixes
+    }
+
+    def check_category(source: str, location: str, category: str) -> None:
+        if category in empty:
+            problems.append(
+                Problem(
+                    source,
+                    location,
+                    f"{category} rolls no affix: {empty[category]} says no_affixes, so replace it with the "
+                    "category's slots",
+                )
+            )
+
+    for entry in content.apotheosis_new_affixes:
+        model = entry.model
+        if model.stat not in stats:
+            problems.append(
+                Problem(entry.source, "stat", f"{model.stat} must be one of our stats (content/stats/)")
+            )
+        elif stats[model.stat].percent:
+            for rarity, value in model.values.items():
+                highest = value if isinstance(value, float | int) else value.max
+                if highest > 1:
+                    problems.append(
+                        Problem(
+                            entry.source,
+                            f"values.{rarity}",
+                            f"{model.stat} is a share, so its values are fractions: 3 % is 0.03, not {highest}",
+                        )
+                    )
+        for n, category in enumerate(model.categories):
+            if category not in OUR_LOOT_CATEGORIES:
+                problems.append(
+                    Problem(
+                        entry.source,
+                        f"categories.{n}",
+                        f"{category} is not a loot category of ours; we have {', '.join(OUR_LOOT_CATEGORIES)}",
+                    )
+                )
+            check_category(entry.source, f"categories.{n}", category)
+    for entry in content.apotheosis_affixes:
+        for name in ("categories", "types"):
+            listed = entry.model.replace.get(name)
+            for n, category in enumerate(listed if isinstance(listed, list) else []):
+                check_category(entry.source, f"replace.{name}.{n}", str(category))
+    return problems
+
+
 def _snapshot_attributes(snapshot: Snapshot) -> set[str]:
     """Every attribute Apotheosis's own data names: Apothic Attributes' are not in the ID universe."""
     found: set[str] = set()
@@ -2979,12 +3037,13 @@ def _check_replaced_fields(
                             "whole entry",
                         )
                     )
-                elif category not in LOOT_CATEGORIES:
+                elif category not in LOOT_CATEGORIES and category not in OUR_LOOT_CATEGORIES:
                     problems.append(
                         Problem(
                             entry.source,
                             f"{location}.{n}",
-                            f"unknown loot category {category!r}; Apotheosis has {', '.join(LOOT_CATEGORIES)}",
+                            f"unknown loot category {category!r}; Apotheosis has {', '.join(LOOT_CATEGORIES)}, and we "
+                            f"have {', '.join(OUR_LOOT_CATEGORIES)}",
                         )
                     )
         elif name == "values" and model.KIND == "affixes" and isinstance(value, dict):

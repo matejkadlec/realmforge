@@ -2,6 +2,13 @@
 # Blast-Forged (less damage from explosions): Apotheosis's damage reduction becomes our Explosion Resistance, an
 # attribute the character sheet shows and the damage pipeline applies by damage type tag, to explosions of every mob and
 # mod (Matěj, 2026-10-16, RLM-233). Apotheosis's values, items and rolls stay.
+# It gives no armor, so caster robes roll it too (gear design, RLM-557).
 id: blast_forged
 affix: apotheosis:armor/dmg_reduction/blast_forged
+replace:
+  categories:
+    - apotheosis:chestplate
+    - apotheosis:leggings
+    - realmforge:robe_chest
+    - realmforge:robe_legs
 to_attribute: realmforge:explosion_resistance

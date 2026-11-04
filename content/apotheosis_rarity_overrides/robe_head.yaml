@@ -1,7 +1,10 @@
 # yaml-language-server: $schema=../../tools/schemas/apotheosis_rarity_overrides.schema.json
-# The robe category of the head slot (RLM-546) has no affix to roll until the caster affixes (RLM-557), so every rarity
-# keeps its sockets and durability and drops its affix slots: a robe reforged gets a rarity without an error for each
-# empty slot. RLM-557 replaces this with the robes' own slots.
+# The robe head skips the slots it has nothing for, as a helmet does (helmet.yaml, RLM-232): no ability (Runed, a
+# helmet's only one, is off) and one basic effect (Deflective), so Apotheosis logs no empty slot (RLM-557). The robe
+# chest and legs need no override: Blockading is their ability, and they have basic effects to spare.
 id: robe_head
 category: realmforge:robe_head
-no_affixes: true
+max_slots:
+  apotheosis:rare: {ability: 0, basic_effect: 1}
+  apotheosis:epic: {ability: 0, basic_effect: 1}
+  apotheosis:mythic: {ability: 0, basic_effect: 1}

@@ -4,7 +4,9 @@
   "categories": [
     "apotheosis:helmet",
     "apotheosis:chestplate",
-    "apotheosis:shield"
+    "apotheosis:shield",
+    "realmforge:robe_head",
+    "realmforge:robe_chest"
   ],
   "definition": {
     "affix_type": "stat",

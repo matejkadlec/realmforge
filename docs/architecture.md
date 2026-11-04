@@ -402,6 +402,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | item YAML with a weapon preset | `data/realmforge/weapon_attributes/<item>.json` (Better Combat format) | read by Better Combat |
 | mob YAML | Xaero's Minimap icon files (*verify* format) | read by Xaero's Minimap |
 | `texts/` (exists) | lang keys `<group>.realmforge.<name>`, `GeneratedTexts` constants | translations |
+| `apotheosis_new_affixes/` (exists, RLM-557) | an affix of our own at `data/realmforge/apotheosis/affixes/<id>.json`, its name and suffix in lang (`affix.realmforge:<id>`, `.suffix`) ([19.4](#194-optional-integrations)) | Apotheosis's affix registry, which reads every namespace |
 | `apotheosis_affixes/` (exists, RLM-271), `apotheosis_gems/`, `apotheosis_tier_augments/`, `apotheosis_rarities/`, `apotheosis_stat_remaps/` (exist, RLM-272), `apotheosis_rarity_overrides/` (exists, RLM-232) | each Apotheosis entry they change, from its snapshot, at Apotheosis's own path `data/apotheosis/apotheosis/<kind>/<path>.json`, and Apotheosis's MIT `LICENSE` with our `NOTICE` in `META-INF/third_party/apotheosis/` ([19.4](#194-optional-integrations)) | Apotheosis's affix, gem, tier augment, rarity and rarity override registries |
 | `enchantments/` (exists, RLM-537) | `data/realmforge/enchantment/<id>.json`, the vanilla enchantment tags it joins, its highest level with Apothic Enchanting (`data/apothic_enchanting/data_maps/enchantment/enchantment_info.json`), `#realmforge:protections` and `#minecraft:exclusive_set/armor` without Fire, Blast and Projectile Protection, `GeneratedEnchantments` keys, lang ([13](#13-items-gear-and-loot)) | vanilla's enchantment registry (datapack) |
 | `recipe_removals/` (exists, RLM-272) | `data/<namespace>/recipe/<path>.json` per recipe, a file NeoForge skips (`neoforge:never`) | reloadable vanilla data |
@@ -4199,6 +4200,13 @@ NeoForge stacks the mods' data packs in that order, so a file of ours replaces t
   Physical, Projectile and Fall Resistance, with Apotheosis's reduction shares as `add_value` amounts and its
   categories and slot kinds kept, so they roll on the same items, in the same slots, as often as before; the damage
   pipeline applies them by damage type tag ([9.1](#91-damage-pipeline)). Grounded and Runed are off (RLM-232).
+- **Affixes of our own** (RLM-557): `apotheosis_new_affixes/` writes new entries, not changes, to
+  `data/realmforge/apotheosis/affixes/<id>.json`, where Apotheosis's affix registry finds them as `realmforge:<id>`,
+  since Placebo's data loader reads that folder in every namespace: `apotheosis:attribute` of the `stat` kind, a stat of
+  ours as an `add_value`, loot categories of ours only, values per rarity (`{min, max, step}`, Placebo's bounds form of
+  `StepFunction`, or a fixed number, which is what a range of no width must be: its constructor refuses zero steps).
+  Apotheosis names an affix by `affix.<id>` before an item's name and `affix.<id>.suffix` after it (`Affix#getName`), so
+  both go into our lang. The `basic_effect` and `ability` kinds need Java (RLM-562).
 - **Removed recipes** come from `content/recipe_removals/`: a file at the recipe's own path with the `neoforge:never`
   condition, which NeoForge's recipe loader skips. Apotheosis's potion charms are the first (its crafting recipe and
   Apothic Enchanting's infusion; Matěj dislikes them by design, RLM-205). Apotheosis's client still marks a potion
@@ -4239,7 +4247,7 @@ whose test it passes, unless its data map `apotheosis:loot_category_overrides` n
 5) too, so the wand category takes Apotheosis's default priority, 1000, before `melee_weapon`'s 2000. Its name and
 plural, which gem tooltips and the reforging screens show, are `loot_category.realmforge.wand` and `.plural`
 (`content/texts/loot_category.yaml`). No affix lists it yet, so a wand never rolls a melee affix; its own affixes are
-the caster affixes (RLM-557, RLM-562), and the curios' categories RLM-556's.
+RLM-562's, and the curios' categories RLM-556's.
 
 **The robe categories** (RLM-546; Matěj, 2026-10-30, RLM-536 decision G2): Apotheosis files any item whose
 `EQUIPPABLE` slot is an armor slot as armor, our robes too, so armor affixes and armor gem bonuses (Guardian's armor,
@@ -4249,10 +4257,18 @@ and `robe_feet` take their armor slot's group (`ALObjects.EquipmentSlotGroups.HE
 nothing: the pipeline files every armor piece of ours, all of it the caster's, under its slot's robe category in the
 data map, which NeoForge merges with Apotheosis's own file, so the order of the tests never matters. Their names and
 plurals ("Caster Robes") are in `loot_category.yaml`; sockets come from the rarities' rules, which apply to every
-category, and salvaging goes by rarity, not category. **No empty slots:** no affix lists the wand or the robe
-categories yet, so their rarity overrides (`content/apotheosis_rarity_overrides/`, `no_affixes`) drop every affix slot
-at every rarity: a wand or a robe reforged gets a rarity, sockets and durability, and Apotheosis logs no "no affixes
-available" error, which it did for a wand before. The core mod compiles against the pack's Apotheosis, Apothic
+category, and salvaging goes by rarity, not category. **The robes' affixes** (RLM-557, [the gear
+design](design/gear.md#caster-robes-and-wands)) are data only: seven of ours (Sorcerous, Deep, Flowing, Warded, Fiery,
+Frozen and Arcane-Touched, on all four categories) and every kept armor affix of Apotheosis's that gives no armor, whose
+`categories` or `types` add the robe of each armor slot it lists (`apotheosis_affixes/`), Timekeeping on the head and
+chest; Ironforged, Adamantine and Steel Touched stay off them. An effect affix fires on a robe as on any armor, as
+Apotheosis's being-hurt hook walks the target's equipment whatever its category (`EnchantmentHelperMixin`), and Unbound's
+flight is the attribute that arena flight reads, whichever piece grants it. **No empty slots:** a slot that finds no affix of its kind logs an error
+and rolls nothing, so the robe head skips what a helmet skips (no ability, one basic effect at Rare and above) and the
+robe feet every ability slot: Apotheosis hard-codes Unhurried, the boots' one ability, to its own boots category
+(`AttributeToggleAffix#canApplyTo`). The chest and legs need no override. The wand has no affix yet, so its rarity
+override (`content/apotheosis_rarity_overrides/`, `no_affixes`) drops every affix slot at every rarity: it reforges into
+a rarity, sockets and durability, and Apotheosis logs no "no affixes available" error, which it did before. The core mod compiles against the pack's Apotheosis, Apothic
 Attributes, Placebo and Apothic Enchanting (`compileOnlyApi` in `mod/build.gradle`, which hands them to the QA mod),
 and registers the categories only when Apotheosis is loaded.
 
@@ -4266,8 +4282,10 @@ Apotheosis: the review's affixes are off, its Rare rolls apply (Giant Slaying ad
 value) and Magical stays Epic, about a quarter of Rare swords carry one ability, every loot category of Apotheosis's
 rolls at every rarity at Haven and Pinnacle (the GameTest log then holds no `AffixLootRule` error) with no ability on a
 helmet or a Rare boot and at most one basic effect on a helmet or shears, no tier caps max Eterna, every wand is
-`realmforge:wand` with no affix to roll, every robe piece is its slot's robe category and no armor (a Guardian gem
-fits no robe), and robes and wands roll every rarity at Haven and Pinnacle with no affix and no error.
+`realmforge:wand` with no affix to roll and rolls every rarity at Haven and Pinnacle with no affix and no error, every
+robe piece is its slot's robe category and no armor (a Guardian gem fits no robe), what can roll on each piece is the
+gear design's list, exactly, and robes rolled at every rarity at Haven and Pinnacle fill their stat slots from it with no
+armor affix and no error, while a worn robe's Sorcerous, Fiery and Warded add their stat, and held ones nothing.
 `ApotheosisGemGameTests` (through `ApotheosisGems`) socket gems into a player's chestplate against our school hits
 ([9.1](#91-damage-pipeline)).
 - **Area mining** (RLM-559): Apotheosis's Radial and Super-Massive (`RadialUtil#breakExtraBlocks`) break the blocks

@@ -33,15 +33,17 @@ from typing import Any
 from realmforge_tools.content import Content, Entry
 from realmforge_tools.formats.jsonfmt import dump_json
 from realmforge_tools.problems import Problem
-from realmforge_tools.project import RepoPaths
+from realmforge_tools.project import MOD_ID, RepoPaths
 from realmforge_tools.schema.apotheosis import (
     AFFIX_KINDS,
     CURIOS_LOOT_CATEGORIES,
     LOOT_CATEGORIES,
     OUR_LOOT_CATEGORIES,
     RARITIES,
+    AffixValueRange,
     ApotheosisAffixDef,
     ApotheosisEntryDef,
+    ApotheosisNewAffixDef,
     ApotheosisRarityOverrideDef,
     ApotheosisStatRemapDef,
 )
@@ -261,6 +263,8 @@ def fit(content: Content, snapshot: Snapshot) -> Fitted:
     fitted.problems += _switched_off_exclusions(snapshot, changed, sources)
     for (kind, id_), data in sorted(changed.items()):
         fitted.files[data_path(kind, id_)] = data
+    for entry in content.apotheosis_new_affixes:
+        fitted.files[data_path("affixes", new_affix_id(entry.model))] = _new_affix(entry.model)
     for entry in content.apotheosis_rarity_overrides:
         override = _rarity_override(entry, snapshot, changed, fitted)
         if override is not None:
@@ -290,6 +294,33 @@ def _switched_off_exclusions(
                     )
                 )
     return problems
+
+
+def new_affix_id(model: ApotheosisNewAffixDef) -> str:
+    """The id Apotheosis knows an affix of ours by, which its name's and suffix's lang keys hold too."""
+    return f"{MOD_ID}:{model.id}"
+
+
+def _new_affix(model: ApotheosisNewAffixDef) -> dict[str, Any]:
+    """An affix of ours in Apotheosis's own format (``AttributeAffix#CODEC``), its values lowest rarity first."""
+    return {
+        "type": ATTRIBUTE,
+        "attribute": model.stat,
+        "categories": model.categories,
+        "definition": {
+            "affix_type": "stat",
+            "exclusive_set": [],
+            "weights": {"quality": model.quality, "weight": model.weight},
+        },
+        "operation": ADD_VALUE,
+        "values": {
+            rarity: _new_affix_value(model.values[rarity]) for rarity in RARITIES if rarity in model.values
+        },
+    }
+
+
+def _new_affix_value(value: float | AffixValueRange) -> float | dict[str, float]:
+    return value.model_dump() if isinstance(value, AffixValueRange) else value
 
 
 def override_path(category: str) -> str:
