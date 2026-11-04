@@ -14,11 +14,10 @@ builds a portal (realm portal spec, "Building a portal").
 
 from __future__ import annotations
 
-from typing import Annotated
-
-from pydantic import Field, StringConstraints, model_validator
+from pydantic import Field, model_validator
 
 from realmforge_tools.schema.common import ContentId, LocalizedText, ResourceId, StrictModel
+from realmforge_tools.schema.spell_school import HexColor
 
 OVERWORLD = "minecraft:overworld"
 # Vanilla particle types without options (SimpleParticleType in net.minecraft.core.particles.ParticleTypes, checked
@@ -43,8 +42,6 @@ PORTAL_PARTICLES: tuple[str, ...] = (
     "minecraft:white_smoke",
     "minecraft:cloud",
 )
-# A colour as six hex digits after a #: #7A8FB0.
-HexColour = Annotated[str, StringConstraints(pattern=r"^#[0-9A-Fa-f]{6}$")]
 # The frame a trip builds: the bottom row and five more above it (the opening's four, then the top row).
 FRAME_HEIGHT = 6
 
@@ -149,7 +146,7 @@ class RealmDef(StrictModel):
             "realmforge:undervault_signet. Every realm has its own; Overworld none."
         ),
     )
-    colour: HexColour = Field(
+    colour: HexColor = Field(
         description="The portal's colour while it opens onto the realm, e.g. #7A8FB0; Overworld's: return portals."
     )
     particle: ResourceId | None = Field(
