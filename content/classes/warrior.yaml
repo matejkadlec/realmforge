@@ -16,8 +16,9 @@ role: melee
 resource: realmforge:rage
 # A full-strength hit gives 10 rage, losing half the max health to attackers 25, and 5 s after the last hit dealt or
 # taken the pool loses 2 a second (C3a-4, RLM-212). C4's first balance pass keeps them: a Stone Sword's full-strength
-# hits every 0.625 s give 16 a second, more than Slam, Rend and Overpower cost on cooldown together (5 + 1.7 + 1 a
-# second), so a Warrior who keeps swinging casts all three and banks the rest for Execute; Charge gives 15/20 more.
+# hits every 0.625 s give 16 a second, about what Slam, Rend and Overpower cost on cooldown together (7.5 + 3.3 to 6.7
+# by Rend's rank + 5 a second, RLM-604), so a Warrior who keeps swinging casts all three with little left to bank for
+# Execute; Charge gives 10/20 more.
 rage:
   per_hit_dealt: 10
   per_max_health_taken: 50

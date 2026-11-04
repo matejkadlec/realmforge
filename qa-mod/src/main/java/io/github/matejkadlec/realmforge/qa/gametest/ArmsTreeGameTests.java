@@ -12,6 +12,7 @@ import io.github.matejkadlec.realmforge.qa.combat.QaItems;
 import io.github.matejkadlec.realmforge.qa.command.StatsCommands;
 import io.github.matejkadlec.realmforge.spell.CastFailure;
 import io.github.matejkadlec.realmforge.spell.CastResult;
+import io.github.matejkadlec.realmforge.spell.ChargeMotion;
 import io.github.matejkadlec.realmforge.spell.Charges;
 import io.github.matejkadlec.realmforge.spell.CombatState;
 import io.github.matejkadlec.realmforge.spell.DamageEffect;
@@ -70,8 +71,9 @@ import net.minecraft.world.phys.Vec3;
  * damage at rank 1 and at its highest rank at a fixed Attack Damage (system C, RLM-534), Rend's bleed, Overpower only
  * after a block, Victory Rush only after a kill that is not gray and its heal, Execute only below 20 % with its extra
  * rage, its refund and its lit window, Charge's rush to the near side and stun round the landing and its distance by
- * rank, Deep Wounds' bleed of a share of the crit, Bloodthirst's proc, the tooltips' next rank, the Warrior
- * learning the tree by its rows (1, 6, 12, 18), and the handoff's setup line against Astone.
+ * rank, a player's Charge landing on the server (RLM-602), Deep Wounds' bleed of a share of the crit, Bloodthirst's
+ * proc, the tooltips' next rank, the Warrior learning the tree by its rows (1, 6, 12, 18), the handoff's setup line
+ * against Astone, and the rage and cooldowns of Matěj's rebalance (RLM-604).
  */
 public final class ArmsTreeGameTests {
     private static final double HEALTH = SpellGameTests.HEALTH;
@@ -79,6 +81,10 @@ public final class ArmsTreeGameTests {
     private static final double ATTACK_DAMAGE = 10;
     /** A Bleeding of 6 s ticks every half second: 12 ticks. */
     private static final int BLEED_TICKS = 12;
+    /** Charge's rush: 24 blocks a second is 1.2 blocks a tick. */
+    private static final double CHARGE_PER_TICK = 1.2;
+    /** Charge's landing at a target 7.5 blocks away: 6 ticks of travel for its 6.9 blocks' gap, and the 10 of slack. */
+    private static final int CHARGE_TIMEOUT_TICKS = 16;
     /** The protection and durability every netherite piece gets for the Astone check: level V (gear.md). */
     private static final String ARMOR_V = "[enchantments={\"minecraft:protection\":5,\"minecraft:unbreaking\":5}]";
     /**
@@ -105,21 +111,20 @@ public final class ArmsTreeGameTests {
 
     /**
      * Each active spell's first damage effect at rank 1 and at its highest rank, at 10 Attack Damage, no crit and no
-     * school power: the table's amount plus its coefficient of 10 (Slam 5 + 150 % and 11 + 250 %, Rend 2 + 30 % and
-     * 4 + 50 %, Overpower 5 + 100 % and 7 + 140 %, Victory Rush 5 + 80 % and 7 + 100 %, Execute 8 + 150 % and
-     * 12 + 200 %),
-     * on a husk without armor; Rend's bleed 4 + 60 % and 8 + 100 % over its 6 s.
+     * school power: the table's amount plus its coefficient of 10 (Matěj's rebalance, RLM-604: Slam 5 + 150 % and
+     * 9 + 230 %, Rend 5 + 50 % and 7 + 70 %, Overpower 6 + 120 % and 10 + 180 %, Execute 10 + 190 % and 14 + 230 %;
+     * Victory Rush 5 + 80 % and 7 + 100 %), on a husk without armor; Rend's bleed 8 + 90 % and 12 + 130 % over its 6 s.
      */
     @QaGameTest
     public static void everyActiveDealsItsRanksDamage(GameTestHelper helper) {
         ServerPlayer player = fighter(helper, "qa-arms-ranks", QaPlayers.PLATFORM_MIDDLE);
         Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 4));
         Map<ResourceKey<Spell>, double[]> table = Map.of(
-                GeneratedSpells.SLAM, new double[] {1, 20, 5, 36},
-                GeneratedSpells.REND, new double[] {1, 5, 3, 9},
-                GeneratedSpells.OVERPOWER, new double[] {1, 15, 5, 21},
+                GeneratedSpells.SLAM, new double[] {1, 20, 5, 32},
+                GeneratedSpells.REND, new double[] {1, 10, 3, 14},
+                GeneratedSpells.OVERPOWER, new double[] {1, 18, 5, 28},
                 GeneratedSpells.VICTORY_RUSH, new double[] {1, 13, 3, 17},
-                GeneratedSpells.EXECUTE, new double[] {1, 23, 3, 32});
+                GeneratedSpells.EXECUTE, new double[] {1, 29, 3, 37});
         table.forEach((key, checks) -> {
             Holder.Reference<Spell> spell = spell(helper, key);
             helper.assertValueEqual(spell.value().maxLevel(), (int) checks[2], key.identifier() + "'s highest rank");
@@ -137,7 +142,7 @@ public final class ArmsTreeGameTests {
         });
         Holder.Reference<Spell> rend = spell(helper, GeneratedSpells.REND);
         DamageOverTimeEffect bleed = (DamageOverTimeEffect) rend.value().effects().get(1);
-        for (double[] check : new double[][] {{1, 10}, {3, 18}}) {
+        for (double[] check : new double[][] {{1, 17}, {3, 25}}) {
             Husk bled = SpellGameTests.husk(helper, new BlockPos(check[0] == 1 ? 1 : 3, 1, 2));
             bleed.applyTo(EffectContext.of(helper.getLevel(), player, rend, (int) check[0], Optional.empty()), bled,
                     SpellTarget.of(player, bled));
@@ -153,8 +158,39 @@ public final class ArmsTreeGameTests {
     }
 
     /**
+     * Matěj's rebalance (RLM-604): each changed spell's rage at rank 1 and its highest rank and its own cooldown at both.
+     * Battle Shout has no cost at all, and Victory Rush and Execute no cooldown but the global one, which every spell is
+     * on.
+     */
+    @QaGameTest
+    public static void everyChangedSpellCostsItsRanksRageAndCooldown(GameTestHelper helper) {
+        Map<ResourceKey<Spell>, double[]> table = Map.of(
+                GeneratedSpells.SLAM, new double[] {30, 30, 4},
+                GeneratedSpells.REND, new double[] {20, 40, 6},
+                GeneratedSpells.BATTLE_SHOUT, new double[] {0, 0, 60},
+                GeneratedSpells.VICTORY_RUSH, new double[] {10, 10, 0},
+                GeneratedSpells.OVERPOWER, new double[] {20, 20, 4},
+                GeneratedSpells.EXECUTE, new double[] {10, 30, 0});
+        table.forEach((key, checks) -> {
+            Spell spell = spell(helper, key).value();
+            helper.assertTrue(close(spell.costAt(1), checks[0]), key.identifier() + " costs " + checks[0]
+                    + " at rank 1: " + spell.costAt(1));
+            helper.assertTrue(close(spell.costAt(spell.maxLevel()), checks[1]), key.identifier() + " costs " + checks[1]
+                    + " at its highest rank: " + spell.costAt(spell.maxLevel()));
+            for (int rank : new int[] {1, spell.maxLevel()}) {
+                helper.assertValueEqual(spell.cooldownTicksAt(rank), (int) checks[2] * 20,
+                        key.identifier() + "'s cooldown at rank " + rank);
+            }
+            helper.assertValueEqual(spell.globalCooldownTicks(), Spell.DEFAULT_GLOBAL_COOLDOWN_TICKS,
+                    key.identifier() + "'s global cooldown");
+        });
+        helper.assertTrue(spell(helper, GeneratedSpells.BATTLE_SHOUT).value().cost().isEmpty(), "Battle Shout is free");
+        helper.succeed();
+    }
+
+    /**
      * Overpower is refused while its window is closed; the player's raised greatsword blocking a zombie's hit opens it
-     * for 5 s, a cast uses it for 5 + 100 % of Attack Damage and 10 rage, and the next cast is refused again.
+     * for 5 s, a cast uses it for 6 + 120 % of Attack Damage and 20 rage, and the next cast is refused again.
      */
     @QaGameTest
     public static void overpowerIsUsableOnlyAfterABlock(GameTestHelper helper) {
@@ -178,11 +214,11 @@ public final class ArmsTreeGameTests {
         player.stopUsingItem();
         player.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.STONE_SWORD));
 
-        double expected = 5 + attackDamage(player);
+        double expected = 6 + 1.2 * attackDamage(player);
         assertCast(helper, player, GeneratedSpells.OVERPOWER, husk);
         helper.assertTrue(close(HEALTH - husk.getHealth(), expected), "Overpower hit for " + expected + ": "
                 + (HEALTH - husk.getHealth()));
-        helper.assertTrue(close(Resources.amount(player, ResourceTypes.RAGE), 90), "for 10 rage");
+        helper.assertTrue(close(Resources.amount(player, ResourceTypes.RAGE), 80), "for 20 rage");
         Spells.resetCooldowns(player);
         assertRefused(helper, player, GeneratedSpells.OVERPOWER, husk, CastFailure.NO_WINDOW);
         logout(player);
@@ -191,13 +227,15 @@ public final class ArmsTreeGameTests {
 
     /**
      * Victory Rush is refused without a kill and after a gray one (4 levels below a level 10 player); a kill 3 levels
-     * below opens it, and a cast strikes for 5 + 80 % of Attack Damage and heals the player 10 % of their max health.
+     * below opens it, and a cast strikes for 5 + 80 % of Attack Damage for 10 rage and heals the player 10 % of their
+     * max health. That cast closes the window, so having no cooldown (RLM-604) gives no second strike or heal.
      */
     @QaGameTest
     public static void victoryRushIsUsableOnlyAfterAKillThatIsNotGrayAndHeals(GameTestHelper helper) {
         ServerPlayer player = fighter(helper, "qa-arms-rush", new Vec3(2.5, 1, 0.5));
         player.setData(StatsAttachments.LEVEL, new EntityLevel(10));
         learn(helper, player, GeneratedSpells.VICTORY_RUSH, 1);
+        Resources.set(player, ResourceTypes.RAGE, 100);
         player.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.STONE_SWORD));
         Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 1));
         assertRefused(helper, player, GeneratedSpells.VICTORY_RUSH, husk, CastFailure.NO_WINDOW);
@@ -218,18 +256,23 @@ public final class ArmsTreeGameTests {
                 + (HEALTH - husk.getHealth()));
         helper.assertTrue(close(player.getHealth(), 10 + 0.1 * player.getMaxHealth()), "healed 10 % of max health: "
                 + player.getHealth());
+        helper.assertTrue(close(Resources.amount(player, ResourceTypes.RAGE), 90), "for 10 rage");
         helper.assertValueEqual(values(helper, player, spell(helper, GeneratedSpells.VICTORY_RUSH).value(), 3)
                 .get("max_health_heal"), "20", "20 % at rank 3");
         Spells.resetCooldowns(player);
+        float afterTheStrike = husk.getHealth();
+        float afterTheHeal = player.getHealth();
         assertRefused(helper, player, GeneratedSpells.VICTORY_RUSH, husk, CastFailure.NO_WINDOW);
+        helper.assertTrue(close(husk.getHealth(), afterTheStrike), "no second strike in the window");
+        helper.assertTrue(close(player.getHealth(), afterTheHeal), "no second heal in the window");
         logout(player);
         helper.succeed();
     }
 
     /**
-     * Execute is refused on a target at 20 % health or more; below it, it costs 15 rage at rank 1 and spends up to 30
-     * more, 3 % more damage each (45 rage: × 1.9). A kill refunds 5 rage at rank 1 and 15 at rank 3 (Matěj,
-     * 2026-11-03), where the cast costs 25 and 45 rage leaves 20 extra.
+     * Execute is refused on a target at 20 % health or more; below it, it costs 10 rage at rank 1 and spends up to 30
+     * more, 3 % more damage each (40 rage: × 1.9). A kill refunds 5 rage at rank 1, where 45 rage leaves 5, and 15 at
+     * rank 3, where the cast costs 30 and the other 15 go as extra (Matěj, 2026-11-03, RLM-604).
      */
     @QaGameTest
     public static void executeIsUsableOnlyBelowAFifthAndRefundsAKill(GameTestHelper helper) {
@@ -237,17 +280,17 @@ public final class ArmsTreeGameTests {
         learn(helper, player, GeneratedSpells.EXECUTE, 1);
         player.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.STONE_SWORD));
         Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 1));
-        Resources.set(player, ResourceTypes.RAGE, 45);
+        Resources.set(player, ResourceTypes.RAGE, 40);
         husk.setHealth((float) (HEALTH * 0.2));
         assertRefused(helper, player, GeneratedSpells.EXECUTE, husk, CastFailure.TARGET_HEALTH_TOO_HIGH);
 
         float low = (float) (HEALTH * 0.15);
         husk.setHealth(low);
-        double expected = (8 + 1.5 * attackDamage(player)) * 1.9;
+        double expected = (10 + 1.9 * attackDamage(player)) * 1.9;
         assertCast(helper, player, GeneratedSpells.EXECUTE, husk);
         helper.assertTrue(close(low - husk.getHealth(), expected), "Execute rank 1 with 30 extra rage: " + expected
                 + " expected, dealt " + (low - husk.getHealth()));
-        helper.assertTrue(close(Resources.amount(player, ResourceTypes.RAGE), 0), "15 + 30 more rage spent");
+        helper.assertTrue(close(Resources.amount(player, ResourceTypes.RAGE), 0), "10 + 30 more rage spent");
 
         for (int rank : new int[] {1, 3}) {
             learn(helper, player, GeneratedSpells.EXECUTE, rank);
@@ -259,7 +302,7 @@ public final class ArmsTreeGameTests {
             dying.setHealth(5);
             assertCast(helper, player, GeneratedSpells.EXECUTE, dying);
             helper.assertFalse(dying.isAlive(), "rank " + rank + "'s Execute killed the husk");
-            helper.assertTrue(close(Resources.amount(player, ResourceTypes.RAGE), rank == 3 ? 15 : 5), "rank " + rank
+            helper.assertTrue(close(Resources.amount(player, ResourceTypes.RAGE), rank == 3 ? 15 : 10), "rank " + rank
                     + "'s kill refunded " + (rank == 3 ? 15 : 5) + " rage: "
                     + Resources.amount(player, ResourceTypes.RAGE));
         }
@@ -453,6 +496,85 @@ public final class ArmsTreeGameTests {
     }
 
     /**
+     * A player's Charge lands on the server (RLM-602), whose fake player has no client to run the rush, so the test moves
+     * them as their client would report: more than a tick of travel from the closest point nothing lands, and within one
+     * tick the next server tick stuns every enemy within 1.5 blocks of that point, which reaches the husk beside the
+     * target though it is out of reach of where the player stands.
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_17X17, timeoutTicks = 60)
+    public static void aPlayersChargeLandsWithinATickOfTheClosestPoint(GameTestHelper helper) {
+        ServerPlayer player = fighter(helper, "qa-arms-charge-land", new Vec3(8.5, 1, 1.5));
+        learn(helper, player, GeneratedSpells.CHARGE, 1);
+        Husk target = SpellGameTests.husk(helper, new BlockPos(8, 1, 9));
+        Husk beside = SpellGameTests.husk(helper, new BlockPos(9, 1, 9));
+        Husk aside = SpellGameTests.husk(helper, new BlockPos(12, 1, 9));
+        assertCast(helper, player, GeneratedSpells.CHARGE, target);
+        double closest = target.getZ() - (player.getBbWidth() + target.getBbWidth()) / 2 - ChargeMotion.GAP;
+        player.setPos(target.getX(), player.getY(), closest - CHARGE_PER_TICK - 0.1);
+        helper.runAfterDelay(2, () -> {
+            helper.assertTrue(Charges.isCharging(player), "more than a tick of travel away, the charge goes on");
+            helper.assertFalse(target.hasEffect(GeneratedEffects.STUNNED), "and nothing is stunned yet");
+            player.setPos(target.getX(), player.getY(), closest - CHARGE_PER_TICK + 0.1);
+        });
+        helper.runAfterDelay(3, () -> {
+            helper.assertFalse(Charges.isCharging(player), "within a tick of travel, the charge landed");
+            helper.assertTrue(target.getEffect(GeneratedEffects.STUNNED) != null
+                    && target.getEffect(GeneratedEffects.STUNNED).getDuration() > 40, "the target is stunned for 3 s");
+            helper.assertTrue(beside.hasEffect(GeneratedEffects.STUNNED), "the husk beside it, round the closest point");
+            helper.assertFalse(aside.hasEffect(GeneratedEffects.STUNNED), "not the husk 4 blocks aside");
+            logout(player);
+            helper.succeed();
+        });
+    }
+
+    /**
+     * A player's Charge that never reaches its closest point (their client never moved them: a wall) lands when its time
+     * is up, round where they stand: the husk beside them is stunned, and the target, far away, is not.
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_17X17, timeoutTicks = 60)
+    public static void aPlayersChargeThatNeverArrivesLandsWhereTheyStand(GameTestHelper helper) {
+        ServerPlayer player = fighter(helper, "qa-arms-charge-timeout", new Vec3(8.5, 1, 1.5));
+        learn(helper, player, GeneratedSpells.CHARGE, 1);
+        Husk target = SpellGameTests.husk(helper, new BlockPos(8, 1, 9));
+        Husk near = SpellGameTests.husk(helper, new BlockPos(9, 1, 1));
+        Vec3 start = player.position();
+        assertCast(helper, player, GeneratedSpells.CHARGE, target);
+        helper.runAfterDelay(CHARGE_TIMEOUT_TICKS - 4, () -> {
+            helper.assertTrue(Charges.isCharging(player), "its time is not up yet");
+            helper.assertFalse(near.hasEffect(GeneratedEffects.STUNNED), "and nothing is stunned yet");
+        });
+        helper.runAfterDelay(CHARGE_TIMEOUT_TICKS + 4, () -> {
+            helper.assertFalse(Charges.isCharging(player), "its time is up");
+            helper.assertTrue(near.hasEffect(GeneratedEffects.STUNNED), "the husk beside the player is stunned");
+            helper.assertFalse(target.hasEffect(GeneratedEffects.STUNNED), "the far target is not");
+            helper.assertValueEqual(player.position(), start, "the server never moved the player");
+            logout(player);
+            helper.succeed();
+        });
+    }
+
+    /** A player's Charge whose target is gone lands at once, round where they stand. */
+    @QaGameTest(template = QaGameTests.PLATFORM_17X17, timeoutTicks = 60)
+    public static void aPlayersChargeLandsWhereTheyStandWhenItsTargetIsGone(GameTestHelper helper) {
+        ServerPlayer player = fighter(helper, "qa-arms-charge-lost", new Vec3(8.5, 1, 1.5));
+        learn(helper, player, GeneratedSpells.CHARGE, 1);
+        Husk target = SpellGameTests.husk(helper, new BlockPos(8, 1, 9));
+        Husk near = SpellGameTests.husk(helper, new BlockPos(9, 1, 1));
+        assertCast(helper, player, GeneratedSpells.CHARGE, target);
+        helper.runAfterDelay(2, () -> {
+            helper.assertTrue(Charges.isCharging(player), "the charge goes on while its target is there");
+            helper.assertFalse(near.hasEffect(GeneratedEffects.STUNNED), "and nothing is stunned yet");
+            target.discard();
+        });
+        helper.runAfterDelay(3, () -> {
+            helper.assertFalse(Charges.isCharging(player), "its target is gone");
+            helper.assertTrue(near.hasEffect(GeneratedEffects.STUNNED), "the husk beside the player is stunned");
+            logout(player);
+            helper.succeed();
+        });
+    }
+
+    /**
      * Deep Wounds at rank 3 makes a crit's target bleed for 60 % of the crit's damage over 6 s (Test Sure Crit: 5 × 2),
      * a second crit adds its share to what the bleed had left, and at rank 1 a crit bleeds for 20 %.
      */
@@ -488,13 +610,13 @@ public final class ArmsTreeGameTests {
     }
 
     /**
-     * Bloodthirst's proc at the player's rank: a tick of Rend's Bleeding opens Overpower's window, at 15 % at rank 1
-     * and 30 % at rank 2, at most once every 6 s on each target.
+     * Bloodthirst's proc at the player's rank: a tick of Rend's Bleeding opens Overpower's window, at 10 % at rank 1
+     * and 20 % at rank 2 (RLM-604), at most once every 6 s on each target.
      */
     @QaGameTest
     public static void bloodthirstOpensOverpowerOnRendsTicks(GameTestHelper helper) {
         ServerPlayer player = fighter(helper, "qa-arms-taste", QaPlayers.PLATFORM_MIDDLE);
-        for (double[] check : new double[][] {{1, 0.15}, {2, 0.3}}) {
+        for (double[] check : new double[][] {{1, 0.1}, {2, 0.2}}) {
             learn(helper, player, GeneratedSpells.BLOODTHIRST, (int) check[0]);
             List<Proc> procs = Passives.procs(player);
             helper.assertValueEqual(procs.size(), 1, "one proc at rank " + (int) check[0]);
@@ -531,13 +653,13 @@ public final class ArmsTreeGameTests {
                 .contains("12 block range"), "rank 2 reaches 12 blocks");
         List<String> rend = tooltip(helper, player, spell(helper, GeneratedSpells.REND).value(), 1);
         helper.assertValueEqual(rend.subList(rend.size() - 3, rend.size()), List.of(
-                "Wounds an enemy for Physical 5 damage and makes it bleed for Physical 10 more over 6 sec.",
+                "Wounds an enemy for Physical 10 damage and makes it bleed for Physical 17 more over 6 sec.",
                 "Next rank:",
-                "Wounds an enemy for Physical 7 damage and makes it bleed for Physical 14 more over 6 sec."),
+                "Wounds an enemy for Physical 12 damage and makes it bleed for Physical 21 more over 6 sec."),
                 "Rend at rank 1 and rank 2; as plain text the school's icon reads as its name");
         List<String> execute = tooltip(helper, player, spell(helper, GeneratedSpells.EXECUTE).value(), 2);
         helper.assertValueEqual(execute.getLast(), "Usable only on an enemy below 20% health. Strikes it for Physical "
-                + "32 damage, spending up to 30 more rage for 3% more damage each. A kill refunds 15 rage.",
+                + "37 damage, spending up to 30 more rage for 3% more damage each. A kill refunds 15 rage.",
                 "Execute's next rank, rank 3");
         List<String> wounds = tooltip(helper, player, spell(helper, GeneratedSpells.DEEP_WOUNDS).value(), 1);
         helper.assertValueEqual(wounds.subList(wounds.size() - 3, wounds.size()), List.of(

@@ -535,11 +535,11 @@ def test_the_self_buffs_have_a_minute_cooldown() -> None:
         60,
     )
     # Battle Shout (Matěj, 2026-11-03, RLM-543): +5 % attack damage and +10 % attack speed for 10 minutes, twice that
-    # at rank 2, for 15/30 rage.
+    # at rank 2, for no rage since his rebalance (RLM-604).
     shout_effect = shout.effects[0].effects[0]
     assert [shout_effect.duration_at(rank) for rank in (1, 2)] == [600, 600]
     assert [shout_effect.amplifier_at(rank) for rank in (1, 2)] == [0, 1]
-    assert [shout.cost.amount_at(rank) for rank in (1, 2)] == [15, 30]
+    assert shout.cost is None
     damage, speed = effects["battle_shout"].modifiers
     assert (damage.attribute, speed.attribute) == ("minecraft:attack_damage", "minecraft:attack_speed")
     assert [round(damage.game_amount_at(level), 6) for level in (0, 1)] == [0.05, 0.1]

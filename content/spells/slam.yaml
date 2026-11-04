@@ -1,12 +1,12 @@
 # yaml-language-server: $schema=../../tools/schemas/spells.schema.json
 # The Warrior's first spell (C4; Arms's first spell, RLM-392; decision D4's starting spell "a Slam but AoE"), the Arms
 # Warrior's tree, row 1 (level 1), middle, one of the two spells the tree revolves around, so 5 ranks (RLM-543; Matěj,
-# 2026-10-30, "Spell Trees to Level 18", chosen for M1): a heavy weapon blow, High damage, 5/6.5/8/9.5/11 +
-# 150/175/200/225/250 % AD (Matěj, 2026-11-03, the Warrior page), that ignores 5 % of the target's armor per rank. It needs a melee weapon (RLM-499). An area
-# swing (RLM-399): Better Combat's sword swing at the player's melee reach (Matěj's playtest of 2026-10-31), 120° wide,
-# every enemy in it taking the same damage, with no target needed; it plays out over a 0.5 s swing and hits at its
-# middle. A 4 s cooldown (Matěj, 2026-11-03, RLM-543's Confluence comments; it was 6 s), so 30 / 4 s = 7.5 rage a
-# second. Scaling system C (Matěj, 2026-10-30, RLM-534): 4/5.5/7/8.5/10 + 120/140/160/180/200 % of Attack Damage.
+# 2026-10-30, "Spell Trees to Level 18", chosen for M1): a heavy weapon blow, High damage, 5/6/7/8/9 +
+# 150/170/190/210/230 % AD (Matěj's rebalance of 2026-11-03, RLM-604), that ignores 5 % of the target's armor per rank.
+# It needs a melee weapon (RLM-499). An area swing (RLM-399): Better Combat's sword swing at the player's melee reach
+# (Matěj's playtest of 2026-10-31), 120° wide, every enemy in it taking the same damage, with no target needed; it plays
+# out over a 0.5 s swing and hits at its middle. A 4 s cooldown (Matěj, 2026-11-03, RLM-543's Confluence comments; it
+# was 6 s), so 30 / 4 s = 7.5 rage a second. Scaling system C (Matěj, 2026-10-30, RLM-534).
 id: slam
 name: {en_us: Slam}
 description: {en_us: "Slams every enemy in front of you for {damage} damage, ignoring {armor_shred}% of their armor."}
@@ -24,8 +24,8 @@ effects:
     effects:
       - type: realmforge:damage
         amount: 5
-        per_level: 1.5
+        per_level: 1
         attack_damage_percent: 150
-        attack_damage_per_level_percent: 25
+        attack_damage_per_level_percent: 20
         armor_shred_percent: 5
         armor_shred_per_level_percent: 5

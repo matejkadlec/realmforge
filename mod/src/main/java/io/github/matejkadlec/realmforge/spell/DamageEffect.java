@@ -141,7 +141,7 @@ public record DamageEffect(double amount, double perLevel, Coefficient coefficie
                 // The pipeline makes every spell that deals damage name its school.
                 spell.school().flatMap(Holder::unwrapKey).orElseThrow(), context.direct(), caster, crit, bonus,
                 context.procOrigin()), (float) damage);
-        // A player's kill gives back what the cost refunds at the rank (RLM-543: Execute's 10 rage at rank 3); a
+        // A player's kill gives back what the cost refunds at the rank (RLM-543: Execute's 15 rage at rank 3); a
         // proc's spell cost nothing, so it refunds nothing.
         if (alive && target.isDeadOrDying() && caster instanceof Player && context.procOrigin().isEmpty()) {
             spell.cost().filter(cost -> cost.refundAt(context.spellLevel()) > 0).ifPresent(cost -> Resources.add(

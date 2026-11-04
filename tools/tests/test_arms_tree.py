@@ -391,17 +391,17 @@ def test_the_trees_numbers_follow_the_table() -> None:
     content, _ = load_and_validate(RepoPaths())
     spells = {entry.model.id: entry.model for entry in content.spells}
     slam = spells["slam"].effects[0].effects[0]
-    assert [slam.amount_at(rank) for rank in (1, 5)] == [5, 11]
-    assert [slam.attack_damage_at(rank) for rank in (1, 5)] == [150, 250]
+    assert [slam.amount_at(rank) for rank in (1, 5)] == [5, 9]
+    assert [slam.attack_damage_at(rank) for rank in (1, 5)] == [150, 230]
     rend_hit, rend_bleed = spells["rend"].effects
-    assert [(rend_hit.amount_at(r), rend_hit.attack_damage_at(r)) for r in (1, 3)] == [(2, 30), (4, 50)]
-    assert [(rend_bleed.amount_at(r), rend_bleed.attack_damage_at(r)) for r in (1, 3)] == [(4, 60), (8, 100)]
+    assert [(rend_hit.amount_at(r), rend_hit.attack_damage_at(r)) for r in (1, 3)] == [(5, 50), (7, 70)]
+    assert [(rend_bleed.amount_at(r), rend_bleed.attack_damage_at(r)) for r in (1, 3)] == [(8, 90), (12, 130)]
     overpower = spells["overpower"]
     assert [
         (overpower.effects[0].amount_at(r), overpower.effects[0].attack_damage_at(r)) for r in (1, 5)
     ] == [
-        (5, 100),
-        (7, 140),
+        (6, 120),
+        (10, 180),
     ]
     assert [overpower.crit.bonus_chance_at(r) for r in (1, 5)] == [10, 30]
     rush_hit, rush_heal = spells["victory_rush"].effects
@@ -409,25 +409,29 @@ def test_the_trees_numbers_follow_the_table() -> None:
     assert [rush_heal.max_health_at(r) for r in (1, 3)] == [10, 20]
     execute = spells["execute"]
     assert [(execute.effects[0].amount_at(r), execute.effects[0].attack_damage_at(r)) for r in (1, 3)] == [
-        (8, 150),
-        (12, 200),
+        (10, 190),
+        (14, 230),
     ]
     charge = spells["charge"]
     assert charge.target_distance is not None
     assert [charge.target_distance.max_at(r) for r in (1, 2)] == [10, 12]
     assert [charge.effects[1].amount_at(r) for r in (1, 2)] == [10, 20]
     assert [charge.effects[0].effects[0].duration_at(r) for r in (1, 2)] == [3, 3]
-    # Costs and cooldowns (Matěj, 2026-11-03, RLM-543's Confluence comments).
+    # Costs and cooldowns (Matěj, 2026-11-03, RLM-543's Confluence comments, and his rebalance, RLM-604).
     assert [spells["slam"].cooldown_seconds, charge.cooldown_seconds, overpower.cooldown_seconds] == [
         4,
         10,
         4,
     ]
-    assert [spells["rend"].cost.amount_at(r) for r in (1, 2, 3)] == [10, 20, 30]
-    assert overpower.cost.amount_at(5) == 10
-    assert [execute.cost.amount_at(r) for r in (1, 3)] == [15, 25]
+    assert [spells["rend"].cost.amount_at(r) for r in (1, 2, 3)] == [20, 30, 40]
+    assert [overpower.cost.amount_at(r) for r in (1, 5)] == [20, 20]
+    assert [spells["victory_rush"].cost.amount_at(r) for r in (1, 3)] == [10, 10]
+    assert spells["battle_shout"].cost is None
+    assert [execute.cost.amount_at(r) for r in (1, 2, 3)] == [10, 20, 30]
+    assert execute.cost.extra.max == 30
+    assert [execute.cooldown_seconds, spells["victory_rush"].cooldown_seconds] == [0, 0]
     assert [execute.cost.refund_on_kill.amount_at(r) for r in (1, 2, 3)] == [5, 10, 15]
     wounds = spells["deep_wounds"].passive.procs[0].damage_over_time
     assert [wounds.damage_at(r) for r in (1, 3)] == [20, 60]
     taste = spells["bloodthirst"].passive.procs[0]
-    assert [taste.chance_at(r) for r in (1, 2)] == [15, 30]
+    assert [taste.chance_at(r) for r in (1, 2)] == [10, 20]

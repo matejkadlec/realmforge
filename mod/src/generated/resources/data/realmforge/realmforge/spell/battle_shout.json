@@ -9,11 +9,6 @@
   "cast": {
     "type": "instant"
   },
-  "cost": {
-    "amount": 15.0,
-    "per_level": 15.0,
-    "resource": "realmforge:rage"
-  },
   "cooldown_ticks": 1200,
   "global_cooldown_ticks": 10,
   "max_level": 2,

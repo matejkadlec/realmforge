@@ -321,7 +321,7 @@ public final class ClassKitGameTests {
             Resources.set(player, ResourceTypes.RAGE, 100);
             float before = husk.getHealth();
             swing(helper, player, GeneratedSpells.SLAM);
-            double raw = 5 + 1.5 * (rank - 1) + (1.5 + 0.25 * (rank - 1)) * attackDamage;
+            double raw = 5 + (rank - 1) + (1.5 + 0.2 * (rank - 1)) * attackDamage;
             double shred = 0.05 * rank;
             double expected = raw * (1 - DamageCalculator.armorReduction(raw, 15, 0, 0, shred));
             helper.assertTrue(close(before - husk.getHealth(), expected), "rank " + rank + ": " + expected
@@ -334,7 +334,7 @@ public final class ClassKitGameTests {
     /**
      * Scaling system C (Matěj, 2026-10-30, RLM-534), the ticket's checks: with 5.5 Spell Power Frostbolt rank 1 deals
      * 8 + 100 % of it, 13.5, and with 19 rank 5 deals 12 + 160 % (RLM-572), 42.4; Slam rank 5 with 15 Attack Damage deals
-     * 11 + 250 %, 48.5, before armor (the husk has none). No crit, no school power, a player without a character.
+     * 9 + 230 % (RLM-604), 43.5, before armor (the husk has none). No crit, no school power, a player without a character.
      */
     @QaGameTest
     public static void spellsAddTheirCoefficientOfTheCastersPower(GameTestHelper helper) {
@@ -365,7 +365,7 @@ public final class ClassKitGameTests {
         learn(helper, player, GeneratedSpells.SLAM, 5);
         float before = husk.getHealth();
         swing(helper, player, GeneratedSpells.SLAM);
-        helper.assertTrue(close(before - husk.getHealth(), 48.5), "Slam rank 5 with 15 Attack Damage: 48.5 expected, "
+        helper.assertTrue(close(before - husk.getHealth(), 43.5), "Slam rank 5 with 15 Attack Damage: 43.5 expected, "
                 + "dealt " + (before - husk.getHealth()));
         logout(player);
         helper.succeed();
@@ -437,7 +437,7 @@ public final class ClassKitGameTests {
 
     /**
      * Battle Shout raises the attack damage and attack speed of its caster and of the allies within 10 blocks by 5 % and
-     * 10 % at rank 1 and by 10 % and 20 % at rank 2, its highest, for 10 minutes, for 15/30 rage on a minute's
+     * 10 % at rank 1 and by 10 % and 20 % at rank 2, its highest, for 10 minutes, free (RLM-604) on a minute's
      * cooldown; a second shout refreshes the effect instead of stacking it.
      */
     @QaGameTest
@@ -451,8 +451,7 @@ public final class ClassKitGameTests {
             Spells.resetCooldowns(player);
             Resources.set(player, ResourceTypes.RAGE, 100);
             shout(helper, player);
-            helper.assertTrue(close(Resources.amount(player, ResourceTypes.RAGE), 100 - 15 * rank),
-                    "for " + 15 * rank + " rage");
+            helper.assertTrue(close(Resources.amount(player, ResourceTypes.RAGE), 100), "for no rage");
             helper.assertValueEqual(player.getData(SpellAttachments.COMBAT).cooldowns()
                     .get(GeneratedSpells.BATTLE_SHOUT), helper.getLevel().getGameTime() + 1200, "a minute's cooldown");
             for (ServerPlayer shouted : List.of(player, ally)) {

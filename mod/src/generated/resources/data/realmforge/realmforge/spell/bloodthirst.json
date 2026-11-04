@@ -28,8 +28,8 @@
         "trigger": "tick",
         "effect": "realmforge:bleeding",
         "spell": "realmforge:rend",
-        "chance": 0.15,
-        "chance_per_level": 0.15,
+        "chance": 0.1,
+        "chance_per_level": 0.1,
         "cooldown_ticks": 120,
         "open_window": "realmforge:overpower"
       }

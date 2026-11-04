@@ -8,7 +8,7 @@ import net.minecraft.world.entity.player.Player;
 
 /**
  * {@code realmforge:gain_resource} (RLM-543): gives the caster an amount of a resource, growing per rank, whatever the
- * spell targets (Charge generates 15/20 rage). Players only: mobs and bosses pay no cost, so they gain none, as a
+ * spell targets (Charge generates 10/20 rage). Players only: mobs and bosses pay no cost, so they gain none, as a
  * swing's or a refund's rage goes only to players too.
  *
  * @param resource the resource the caster gains

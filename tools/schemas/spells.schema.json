@@ -463,7 +463,7 @@
     },
     "ChargeEffectDef": {
       "additionalProperties": false,
-      "description": "Rushes the caster at its enemy target (RLM-543: the Arms Warrior's Charge) until it stands in front of it, the\nserver steering it every tick, then runs ``effects`` on every enemy within ``landing_radius`` of where it lands\n(Charge's stun). A charge that cannot get through (a wall) lands where it stopped.",
+      "description": "Rushes the caster at its enemy target (RLM-543: the Arms Warrior's Charge) to the side of the target it came\nfrom, the server moving a mob and a player's own client moving them, then runs ``effects`` on every enemy within\n``landing_radius`` of where it lands (Charge's stun) and hops the caster a block back. A charge that cannot get\nthrough (a wall) lands where it stopped, without the hop.",
       "properties": {
         "effects": {
           "description": "What the landing does to each enemy round it, e.g. a stun.",
@@ -1273,7 +1273,7 @@
     },
     "GainResourceEffectDef": {
       "additionalProperties": false,
-      "description": "Gives the caster an amount of a resource, growing per rank (RLM-543: Charge generates 15/20 rage). Players only,\nas only their casts cost anything.",
+      "description": "Gives the caster an amount of a resource, growing per rank (RLM-543: Charge generates 10/20 rage). Players only,\nas only their casts cost anything.",
       "properties": {
         "amount": {
           "description": "The amount at spell level 1.",
