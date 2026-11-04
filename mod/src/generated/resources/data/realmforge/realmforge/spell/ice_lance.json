@@ -15,7 +15,7 @@
     "per_level": 10.0,
     "resource": "realmforge:mana"
   },
-  "cooldown_ticks": 80,
+  "cooldown_ticks": 0,
   "global_cooldown_ticks": 10,
   "max_level": 5,
   "crit": {
@@ -32,15 +32,15 @@
       "size": 0.3,
       "effects": [
         {
-          "amount": 3.0,
-          "per_level": 0.5,
-          "spell_power": 0.4,
+          "amount": 4.0,
+          "per_level": 1.0,
+          "spell_power": 0.45,
           "spell_power_per_level": 0.05,
           "type": "realmforge:damage",
           "against_effect": {
             "effect": "realmforge:frozen",
             "damage": 1.0,
-            "damage_per_level": 0.25
+            "damage_per_level": 0.5
           }
         }
       ],

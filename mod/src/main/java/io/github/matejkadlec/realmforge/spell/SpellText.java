@@ -68,7 +68,9 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
  *   <li>{@code window}: how long its window stays open, in seconds; {@code health_below}: its target health
  *   condition, in percent;</li>
  *   <li>{@code extra_cost}, {@code extra_damage}: the most extra resource its cost spends and the damage each point
- *   adds, in percent; {@code refund}, {@code refund_rank}: what a kill refunds and from which rank (Execute).</li>
+ *   adds, in percent; {@code refund}, {@code refund_rank}: what a kill refunds and from which rank (Execute);</li>
+ *   <li>{@code ticks}: how often a channel runs its effects for the caster's Cast Time Reduction (RLM-572: Blizzard's
+ *   waves, round(8 × (1 + reduction)) as its ticks are multiplied).</li>
  * </ul>
  *
  * Every number is the one at the player's rank: an effect's duration and strength grow with it (C4). Damage and
@@ -246,6 +248,11 @@ public final class SpellText {
         first(effects, GainResourceEffect.class)
                 .ifPresent(gain -> values.put("resource_gain", decimal(gain.amountAt(level))));
         conditionValues(spell, level, values);
+        if (spell.cast().type() == SpellCast.Type.CHANNEL) {
+            // RLM-572: Blizzard's waves, more with Cast Time Reduction for a channel whose ticks it multiplies.
+            values.put("ticks", Integer.toString(spell.cast().tickCountFor(
+                    stats.applyAsDouble(GeneratedStats.CAST_TIME_REDUCTION))));
+        }
         return values;
     }
 

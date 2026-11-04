@@ -20,11 +20,11 @@ class SpellCastTest {
     /** The Hewn Chanter's Stoneform as {@code rf gen} writes it: every field W3 added, set. */
     private static final SpellCast STONEFORM = new SpellCast(SpellCast.Type.CAST_TIME, 30, 0, false, false, true,
             Optional.of(0.5), Optional.of(Identifier.parse("realmforge:spell.stoneform.form")), true,
-            SpellCast.Animation.RAISE, 0, SpellCast.DEFAULT_HIT_AT);
+            SpellCast.Animation.RAISE, 0, SpellCast.DEFAULT_HIT_AT, SpellCast.Haste.SHORTENS);
     /** Astone's Quake as {@code rf gen} writes it: a channel that slams. */
     private static final SpellCast QUAKE = new SpellCast(SpellCast.Type.CHANNEL, 60, 15, false, false, false,
             Optional.empty(), Optional.of(Identifier.parse("realmforge:spell.astone_quake.rumble")), false,
-            SpellCast.Animation.SLAM, 0, SpellCast.DEFAULT_HIT_AT);
+            SpellCast.Animation.SLAM, 0, SpellCast.DEFAULT_HIT_AT, SpellCast.Haste.SHORTENS);
 
     private static DataResult<SpellCast> parse(String json) {
         return SpellCast.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(json));
@@ -93,5 +93,33 @@ class SpellCastTest {
         assertFalse(SpellCast.castTime(1, false, false).instant());
         assertEquals(1, SpellCast.castTime(40, false, false).tickCount());
         assertEquals(4, SpellCast.channel(80, 20, false, false).tickCount());
+    }
+
+    /**
+     * RLM-572: a channel whose ticks Cast Time Reduction multiplies keeps its duration and runs round(ticks × (1 +
+     * reduction)) ticks, halves up (Blizzard's 8 waves in 8 s: 10 with 25 % and with 20 %, 9.5 rounds up, 9.49 down).
+     */
+    @Test
+    void aChannelThatAddsTicksKeepsItsDuration() {
+        SpellCast blizzard = parse("{\"type\": \"channel\", \"duration_ticks\": 160, \"interval_ticks\": 20, "
+                + "\"cast_time_reduction\": \"adds_ticks\"}").getOrThrow();
+        assertEquals(SpellCast.channel(160, 20, false, false, SpellCast.Haste.ADDS_TICKS), blizzard);
+        assertEquals(8, blizzard.tickCountFor(0));
+        assertEquals(10, blizzard.tickCountFor(0.25));
+        assertEquals(10, blizzard.tickCountFor(0.2), "9.6 rounds to 10");
+        assertEquals(10, blizzard.tickCountFor(0.1875), "9.5, a half, rounds up");
+        assertEquals(9, blizzard.tickCountFor(0.18625), "9.49 rounds down");
+        assertEquals(14, blizzard.tickCountFor(0.75), "Cast Time Reduction's cap");
+        assertEquals(160, blizzard.durationFor(0.25), "its 8 s stay");
+
+        SpellCast missiles = SpellCast.channel(30, 10, false, false);
+        assertEquals(3, missiles.tickCountFor(0.25), "a channel that the reduction shortens keeps its ticks");
+        assertEquals(24, missiles.durationFor(0.25), "and is shorter: 3 intervals of 8 ticks");
+    }
+
+    @Test
+    void onlyAChannelAddsTicks() {
+        assertTrue(parse("{\"type\": \"cast_time\", \"duration_ticks\": 40, \"cast_time_reduction\": "
+                + "\"adds_ticks\"}").isError());
     }
 }

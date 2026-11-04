@@ -38,14 +38,16 @@ import net.minecraft.util.StringRepresentable;
  *                            long, 0 for one that lands at once
  * @param hitAt               when an animated instant spell's effects run: a share of its animation, the middle by
  *                            default
+ * @param castTimeReduction   what Cast Time Reduction does to a channel (RLM-572): shortens it, so it keeps its ticks,
+ *                            or adds ticks to it, so it keeps its duration; {@link Haste#SHORTENS} for every other cast
  */
 public record SpellCast(Type type, int durationTicks, int intervalTicks, boolean castableWhileMoving,
         boolean lockOn, boolean keepSight, Optional<Double> keepRange, Optional<Identifier> sound,
-        boolean formsProjectile, Animation animation, int animationTicks, double hitAt) {
+        boolean formsProjectile, Animation animation, int animationTicks, double hitAt, Haste castTimeReduction) {
     /** When an animated instant spell lands by default: the middle of its swing (Matěj, 2026-10-24). */
     public static final double DEFAULT_HIT_AT = 0.5;
     public static final SpellCast INSTANT = new SpellCast(Type.INSTANT, 0, 0, false, false, false, Optional.empty(),
-            Optional.empty(), false, Animation.RAISE, 0, DEFAULT_HIT_AT);
+            Optional.empty(), false, Animation.RAISE, 0, DEFAULT_HIT_AT, Haste.SHORTENS);
 
     public static final Codec<SpellCast> CODEC = RecordCodecBuilder.<SpellCast>create(instance -> instance.group(
                     Type.CODEC.fieldOf("type").forGetter(SpellCast::type),
@@ -63,26 +65,34 @@ public record SpellCast(Type type, int durationTicks, int intervalTicks, boolean
                     Animation.CODEC.optionalFieldOf("animation", Animation.RAISE).forGetter(SpellCast::animation),
                     ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("animation_ticks", 0)
                             .forGetter(SpellCast::animationTicks),
-                    Codec.doubleRange(0, 1).optionalFieldOf("hit_at", DEFAULT_HIT_AT).forGetter(SpellCast::hitAt))
+                    Codec.doubleRange(0, 1).optionalFieldOf("hit_at", DEFAULT_HIT_AT).forGetter(SpellCast::hitAt),
+                    Haste.CODEC.optionalFieldOf("cast_time_reduction", Haste.SHORTENS)
+                            .forGetter(SpellCast::castTimeReduction))
             .apply(instance, SpellCast::new)).validate(SpellCast::validate);
 
     /** A cast time of {@code ticks} (1 or more). */
     public static SpellCast castTime(int ticks, boolean castableWhileMoving, boolean lockOn) {
         return new SpellCast(Type.CAST_TIME, ticks, 0, castableWhileMoving, lockOn, false, Optional.empty(),
-                Optional.empty(), false, Animation.RAISE, 0, DEFAULT_HIT_AT);
+                Optional.empty(), false, Animation.RAISE, 0, DEFAULT_HIT_AT, Haste.SHORTENS);
     }
 
     /** An instant spell that plays out over {@code animationTicks}, its effects at the {@code hitAt} share of it. */
     public static SpellCast swing(int animationTicks, double hitAt) {
         return new SpellCast(Type.INSTANT, 0, 0, false, false, false, Optional.empty(), Optional.empty(), false,
-                Animation.RAISE, animationTicks, hitAt);
+                Animation.RAISE, animationTicks, hitAt, Haste.SHORTENS);
     }
 
     /** A channel of {@code durationTicks} that ticks every {@code intervalTicks}, which divides the duration. */
     public static SpellCast channel(int durationTicks, int intervalTicks, boolean castableWhileMoving,
             boolean lockOn) {
+        return channel(durationTicks, intervalTicks, castableWhileMoving, lockOn, Haste.SHORTENS);
+    }
+
+    /** A channel as above whose ticks Cast Time Reduction treats as {@code castTimeReduction} says (RLM-572). */
+    public static SpellCast channel(int durationTicks, int intervalTicks, boolean castableWhileMoving,
+            boolean lockOn, Haste castTimeReduction) {
         return new SpellCast(Type.CHANNEL, durationTicks, intervalTicks, castableWhileMoving, lockOn, false,
-                Optional.empty(), Optional.empty(), false, Animation.RAISE, 0, DEFAULT_HIT_AT);
+                Optional.empty(), Optional.empty(), false, Animation.RAISE, 0, DEFAULT_HIT_AT, castTimeReduction);
     }
 
     /** Whether the effects run at once, without a current cast. */
@@ -105,6 +115,30 @@ public record SpellCast(Type type, int durationTicks, int intervalTicks, boolean
         return type == Type.CHANNEL ? durationTicks / intervalTicks : 1;
     }
 
+    /**
+     * How often a channel runs its effects for a caster with {@code castTimeReduction} (0 to 1): its {@link #tickCount}
+     * when the reduction shortens it, round(tickCount × (1 + reduction)), halves up, when it adds ticks (RLM-572:
+     * Blizzard's 8 waves, 10 with 25 % and with 20 %); 1 for the other types.
+     */
+    public int tickCountFor(double castTimeReduction) {
+        return type == Type.CHANNEL && this.castTimeReduction == Haste.ADDS_TICKS
+                ? SpellScaling.moreTicks(tickCount(), castTimeReduction) : tickCount();
+    }
+
+    /**
+     * How long a channel lasts for a caster with {@code castTimeReduction}, in ticks: its interval shortened ({@link
+     * SpellScaling#castTicks}) times its tick count, or its whole duration when the reduction adds ticks instead
+     * (RLM-572). A cast time's shortened duration; 0 for an instant spell.
+     */
+    public int durationFor(double castTimeReduction) {
+        return switch (type) {
+            case INSTANT -> 0;
+            case CAST_TIME -> SpellScaling.castTicks(durationTicks, castTimeReduction);
+            case CHANNEL -> this.castTimeReduction == Haste.ADDS_TICKS ? durationTicks
+                    : SpellScaling.castTicks(intervalTicks, castTimeReduction) * tickCount();
+        };
+    }
+
     private static DataResult<SpellCast> validate(SpellCast cast) {
         if (cast.lockOn && (cast.keepSight || cast.keepRange.isPresent())) {
             return DataResult.error(() -> "A spell that locks on keeps neither sight nor range: " + cast);
@@ -114,6 +148,9 @@ public record SpellCast(Type type, int durationTicks, int intervalTicks, boolean
         }
         if (cast.formsProjectile && cast.type != Type.CAST_TIME) {
             return DataResult.error(() -> "Only a cast time forms a projectile: " + cast);
+        }
+        if (cast.castTimeReduction == Haste.ADDS_TICKS && cast.type != Type.CHANNEL) {
+            return DataResult.error(() -> "Only a channel gets more ticks from Cast Time Reduction: " + cast);
         }
         if (cast.animationTicks > 0 && cast.type != Type.INSTANT || !(cast.hitAt > 0)) {
             return DataResult.error(() -> "Only an instant spell plays out over an animation, its hit moment within "
@@ -134,6 +171,33 @@ public record SpellCast(Type type, int durationTicks, int intervalTicks, boolean
                     ? DataResult.success(cast)
                     : DataResult.error(() -> "A channel lasts a whole number of intervals of a tick or more: " + cast);
         };
+    }
+
+    /**
+     * What Cast Time Reduction does to a channel (RLM-572). Every other cast ignores it: a cast time is always
+     * shortened.
+     */
+    public enum Haste implements StringRepresentable {
+        /** Its interval, and so its duration, are shortened: it keeps its number of ticks (Arcane Missiles). */
+        SHORTENS("shortens"),
+        /**
+         * Its duration stays and it runs more ticks in it, round(ticks × (1 + reduction)), halves up, spread evenly
+         * (Matěj, 2026-11-01: Blizzard's waves).
+         */
+        ADDS_TICKS("adds_ticks");
+
+        public static final Codec<Haste> CODEC = StringRepresentable.fromEnum(Haste::values);
+
+        private final String serializedName;
+
+        Haste(String serializedName) {
+            this.serializedName = serializedName;
+        }
+
+        @Override
+        public String getSerializedName() {
+            return serializedName;
+        }
     }
 
     /**

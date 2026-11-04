@@ -32,11 +32,8 @@
         "cooldown_ticks": 100,
         "apply_effect": {
           "effect": "realmforge:frozen",
-          "duration_ticks": 60,
-          "from_level": {
-            "level": 3,
-            "duration_ticks": 100
-          }
+          "duration_ticks": 80,
+          "duration_per_level_ticks": 40
         }
       }
     ],

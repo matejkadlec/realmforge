@@ -12,7 +12,9 @@ kits (C4, RLM-27) add what a cast needs in hand (``requires``, RLM-499), the per
 and crit chance of a hit, status effects that last longer and grow stronger with the rank, ``cleanse``, spells cast
 while stunned, and the rule that a player's channel ticks every 0.5 s (RLM-518). The Arms Warrior's tree (RLM-543) adds
 ``charge``, ``gain_resource``, a heal of a share of max health on the caster, a refund on a kill, a target distance
-that grows per rank, and a proc's damage over time from the hit that fired it.
+that grows per rank, and a proc's damage over time from the hit that fired it. The Frost Mage's rebalance (RLM-572)
+adds a cooldown per rank, a channel's cost up front, a channel whose waves Cast Time Reduction multiplies instead of
+shortening it, and a proc's effect that lasts longer per rank.
 """
 
 from __future__ import annotations
@@ -25,7 +27,14 @@ from pydantic import BaseModel, Field, model_validator
 
 from realmforge_tools.project import MOD_ID
 from realmforge_tools.schema.character import CharacterModifierDef, ResourceType
-from realmforge_tools.schema.common import ContentId, LocalizedText, ResourceId, Seconds, StrictModel
+from realmforge_tools.schema.common import (
+    ContentId,
+    LocalizedText,
+    ResourceId,
+    Seconds,
+    SignedSeconds,
+    StrictModel,
+)
 from realmforge_tools.schema.spell_school import HexColor
 
 FiniteNumber = Annotated[float, Field(allow_inf_nan=False)]
@@ -57,7 +66,8 @@ MAX_AREA_RADIUS = 16.0
 MAX_AREA_DURATION = 60.0
 MAX_STRENGTH = 5.0
 # Every channel a player casts ticks every half second (Matěj, 2026-10-29, RLM-518: more, smaller hits beat fewer,
-# bigger ones). Mob and boss spells keep their own pace for now (Astone's Quake slams every 0.75 s).
+# bigger ones). Mob and boss spells keep their own pace for now (Astone's Quake slams every 0.75 s), and so does a
+# channel whose waves Cast Time Reduction multiplies (Matěj, 2026-11-01, RLM-572: Blizzard's wave a second).
 PLAYER_CHANNEL_INTERVAL = 0.5
 # A bolt's splash (RLM-399): within about a block of its target, at most 4.
 MAX_SPLASH_RADIUS = 4.0
@@ -121,7 +131,9 @@ NPC_TARGETING: tuple[str, ...] = (CURRENT_TARGET, RANDOM_PLAYER, FARTHEST_PLAYER
 # - min_range, range: the target_distance's nearest and farthest blocks, range a targeted spell's range without one;
 # - window: how long the spell's window stays open, in seconds; health_below: its target health condition, in percent;
 # - extra_cost, extra_damage: the most extra resource the cost spends and the damage each point adds, in percent;
-# - refund, refund_rank: what a kill refunds and from which rank (RLM-543: Execute).
+# - refund, refund_rank: what a kill refunds and from which rank (RLM-543: Execute);
+# - ticks: how many times a channel runs its effects for the player's Cast Time Reduction (RLM-572: Blizzard's waves,
+#   round(8 * (1 + CTR)) for a channel whose waves it multiplies).
 # Every number is the one at the player's spell level (rank).
 PLACEHOLDERS: tuple[str, ...] = (
     "damage",
@@ -148,6 +160,7 @@ PLACEHOLDERS: tuple[str, ...] = (
     "extra_damage",
     "refund",
     "refund_rank",
+    "ticks",
 )
 PERIODIC_PLACEHOLDERS: frozenset[str] = frozenset({"periodic", "periodic_total", "interval"})
 # {bonus_<attribute>}: the first applied status effect's modifier on the attribute with that path (RLM-543).
@@ -894,13 +907,21 @@ class CastTimeCastDef(_TimedCastDef):
 class ChannelCastDef(_TimedCastDef):
     """The spell pays its cost and starts its cooldowns when the channel begins, then runs its effects every
     ``interval_seconds`` for ``duration_seconds``, checking the target before every tick. Cast Time Reduction shortens
-    the interval, so the channel keeps its number of ticks."""
+    the interval, so the channel keeps its number of ticks; or, with ``cast_time_reduction: adds_ticks``, the channel
+    keeps its duration and gets more ticks instead (RLM-572: Blizzard's waves)."""
 
     type: Literal["channel"]
     duration_seconds: Seconds = Field(
         description="How long the channel lasts, before Cast Time Reduction: a whole number of intervals."
     )
     interval_seconds: Seconds = Field(description="The time between two ticks of the effects; more than 0.")
+    cast_time_reduction: Literal["shortens", "adds_ticks"] | None = Field(
+        default=None,
+        description="What Cast Time Reduction does to the channel: shortens (left out) shortens its interval and "
+        "its duration, so it keeps its number of ticks; adds_ticks keeps its duration and runs round(ticks * (1 + "
+        "Cast Time Reduction)) ticks in it, halves up, evenly spread (Matěj, 2026-11-01, RLM-572: Blizzard's 8 waves "
+        "in 8 s become 10 with 25 %).",
+    )
 
     @model_validator(mode="after")
     def _ticks(self) -> ChannelCastDef:
@@ -949,10 +970,27 @@ class KillRefundDef(StrictModel):
         return self.amount + (self.per_level or 0) * (level - 1) if level >= self.from_level else 0
 
 
+class UpFrontCostDef(_LeveledAmount):
+    """What a channel costs when it begins, on top of its first second's cost (RLM-572: Blizzard's 40 mana up front,
+    then 15 a second), growing per spell level."""
+
+    @model_validator(mode="after")
+    def _positive(self) -> UpFrontCostDef:
+        if self.amount == 0 and self.per_level == 0:
+            raise ValueError("an up-front cost of 0 is none: leave up_front out instead")
+        return self
+
+
 class CostDef(_LeveledAmount):
-    """What a cast costs: an amount of a resource (mana or rage), growing per spell level like the effects."""
+    """What a cast costs: an amount of a resource (mana or rage), growing per spell level like the effects; a channel's
+    for each second, and optionally an amount up front when it begins."""
 
     resource: ResourceType = Field(description="The resource the cast costs.")
+    up_front: UpFrontCostDef | None = Field(
+        default=None,
+        description="A channel's cost when it begins, on top of its first second's: {amount: 40, per_level: 20} "
+        "(RLM-572: Blizzard). Channels only.",
+    )
     extra: ExtraCostDef | None = Field(
         default=None,
         description="More of the resource the cast spends when the caster has it, for more damage (RLM-540).",
@@ -1128,7 +1166,11 @@ class ProcApplyEffectDef(StrictModel):
     """A status effect a proc gives the other entity."""
 
     effect: ResourceId = Field(description="The status effect, e.g. realmforge:frozen.")
-    duration_seconds: Seconds = Field(description="How long it lasts; more than 0, at most 60.")
+    duration_seconds: Seconds = Field(description="How long it lasts at rank 1; more than 0, at most 60.")
+    duration_per_level_seconds: Seconds | None = Field(
+        default=None,
+        description="Added to the duration for every rank above 1 (RLM-572: Frostbite's Frozen, 4/6/8 s).",
+    )
     from_level: ProcDurationFromLevelDef | None = Field(
         default=None, description="A longer duration from a rank on, e.g. {level: 3, duration_seconds: 3}."
     )
@@ -1140,13 +1182,17 @@ class ProcApplyEffectDef(StrictModel):
             durations.append(self.from_level.duration_seconds)
         if not all(0 < duration <= MAX_EFFECT_SECONDS for duration in durations):
             raise ValueError(f"duration_seconds is more than 0 and at most {MAX_EFFECT_SECONDS:g}")
+        if self.duration_per_level_seconds is not None and self.duration_per_level_seconds <= 0:
+            raise ValueError("duration_per_level_seconds is more than 0: leave it out for no growth")
+        if self.duration_per_level_seconds is not None and self.from_level is not None:
+            raise ValueError("a proc's effect grows per rank or from a rank, not both")
         return self
 
     def duration_at(self, level: int) -> float:
         """How long it lasts at rank ``level``, in seconds."""
         if self.from_level is not None and level >= self.from_level.level:
             return self.from_level.duration_seconds
-        return self.duration_seconds
+        return self.duration_seconds + (self.duration_per_level_seconds or 0) * (level - 1)
 
 
 class ProcDamageOverTimeDef(StrictModel):
@@ -1384,6 +1430,7 @@ _SPELL_PLACEHOLDERS: dict[str, tuple[str, Callable[[SpellDef], bool]]] = {
         "cost.refund_on_kill",
         lambda spell: spell.cost is not None and spell.cost.refund_on_kill is not None,
     ),
+    "ticks": ("a channel's ticks", lambda spell: spell.cast.type == "channel"),
 }
 
 
@@ -1458,11 +1505,17 @@ class SpellDef(StrictModel):
     )
     cost: CostDef | None = Field(
         default=None,
-        description="What a cast costs, paid when it begins; a channel pays it again as each later second begins. "
-        "Leave out for a free spell.",
+        description="What a cast costs, paid when it begins; a channel pays it again as each later second begins, "
+        "and its up_front when it begins. Leave out for a free spell.",
     )
     cooldown_seconds: Seconds = Field(
-        default=0, description="The spell's own cooldown; Cooldown Reduction shortens it."
+        default=0, description="The spell's own cooldown at rank 1; Cooldown Reduction shortens it."
+    )
+    cooldown_per_level_seconds: SignedSeconds | None = Field(
+        default=None,
+        description="Added to the cooldown for every rank above 1, usually less than 0: cooldowns don't shrink with "
+        "rank as a rule, with exceptions (Matěj, 2026-11-03; RLM-572: Frost Nova's 20/15/10 s is "
+        "{cooldown_seconds: 20, cooldown_per_level_seconds: -5}). The cooldown stays 0 or more at max_level.",
     )
     global_cooldown_seconds: Seconds = Field(
         default=DEFAULT_GLOBAL_COOLDOWN,
@@ -1539,6 +1592,10 @@ class SpellDef(StrictModel):
                 leveled.append("passive")
             if self.cost is not None and self.cost.per_level != 0:
                 leveled.append("cost")
+            if self.cost is not None and self.cost.up_front is not None and self.cost.up_front.per_level != 0:
+                leveled.append("cost.up_front")
+            if self.cooldown_per_level_seconds is not None:
+                leveled.append("cooldown_per_level_seconds")
             refund = self.cost.refund_on_kill if self.cost is not None else None
             if refund is not None and (refund.from_level > 1 or refund.per_level):
                 leveled.append("cost.refund_on_kill")
@@ -1590,6 +1647,11 @@ class SpellDef(StrictModel):
                     )
         if self.crit.bonus_chance_at(top) > 100:
             raise ValueError(f"crit: the bonus chance stays at most 100 % at max_level {top}")
+        if self.cooldown_at(top) < -1e-9:
+            raise ValueError(
+                f"cooldown_per_level_seconds: the cooldown is {self.cooldown_at(top):g} s at max_level {top}; it "
+                "stays 0 or more"
+            )
         refund = self.cost.refund_on_kill if self.cost is not None else None
         if refund is not None and refund.from_level > top:
             raise ValueError(f"cost.refund_on_kill.from_level: a rank above max_level {top} is never reached")
@@ -1606,6 +1668,11 @@ class SpellDef(StrictModel):
                         f"passive.splash_radius.{n}.from_level: a rank above max_level {top} is never reached"
                     )
             for n, proc in enumerate(self.passive.procs):
+                if proc.apply_effect is not None and proc.apply_effect.duration_at(top) > MAX_EFFECT_SECONDS:
+                    raise ValueError(
+                        f"passive.procs.{n}.apply_effect: lasts {proc.apply_effect.duration_at(top):g} s at max_level "
+                        f"{top}, more than {MAX_EFFECT_SECONDS:g}"
+                    )
                 longer = proc.apply_effect.from_level if proc.apply_effect is not None else None
                 if longer is not None and longer.level > top:
                     raise ValueError(
@@ -1628,13 +1695,25 @@ class SpellDef(StrictModel):
         if (
             self.cast.type == "channel"
             and not self.npc_only
+            and self.cast.cast_time_reduction != "adds_ticks"
             and abs(interval - PLAYER_CHANNEL_INTERVAL) > 1e-9
         ):
             raise ValueError(
                 f"a player's channel ticks every {PLAYER_CHANNEL_INTERVAL:g} s (Matěj, 2026-10-29, RLM-518), not "
-                f"every {interval:g} s"
+                f"every {interval:g} s, unless Cast Time Reduction adds to its ticks (cast_time_reduction: "
+                "adds_ticks, RLM-572)"
             )
         return self
+
+    @model_validator(mode="after")
+    def _up_front(self) -> SpellDef:
+        if self.cost is not None and self.cost.up_front is not None and self.cast.type != "channel":
+            raise ValueError("cost.up_front is what a channel costs when it begins: the cast is a channel")
+        return self
+
+    def cooldown_at(self, level: int) -> float:
+        """The spell's own cooldown at rank ``level``, in seconds, before Cooldown Reduction."""
+        return self.cooldown_seconds + (self.cooldown_per_level_seconds or 0) * (level - 1)
 
     @model_validator(mode="after")
     def _formed_projectile(self) -> SpellDef:

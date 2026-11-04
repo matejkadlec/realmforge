@@ -351,7 +351,7 @@
     },
     "ChannelCastDef": {
       "additionalProperties": false,
-      "description": "The spell pays its cost and starts its cooldowns when the channel begins, then runs its effects every\n``interval_seconds`` for ``duration_seconds``, checking the target before every tick. Cast Time Reduction shortens\nthe interval, so the channel keeps its number of ticks.",
+      "description": "The spell pays its cost and starts its cooldowns when the channel begins, then runs its effects every\n``interval_seconds`` for ``duration_seconds``, checking the target before every tick. Cast Time Reduction shortens\nthe interval, so the channel keeps its number of ticks; or, with ``cast_time_reduction: adds_ticks``, the channel\nkeeps its duration and gets more ticks instead (RLM-572: Blizzard's waves).",
       "properties": {
         "animation": {
           "anyOf": [
@@ -369,6 +369,23 @@
           "default": null,
           "description": "How a custom mob or boss moves its arms while it casts (its model's animation): raise (the default) lifts them forward and up, the hands before its forehead; slam beats its fists up and down, one slam every 0.75 s, the time a channel of the same interval ticks at (a quake). Players' casts ignore it.",
           "title": "Animation"
+        },
+        "cast_time_reduction": {
+          "anyOf": [
+            {
+              "enum": [
+                "shortens",
+                "adds_ticks"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "What Cast Time Reduction does to the channel: shortens (left out) shortens its interval and its duration, so it keeps its number of ticks; adds_ticks keeps its duration and runs round(ticks * (1 + Cast Time Reduction)) ticks in it, halves up, evenly spread (Matěj, 2026-11-01, RLM-572: Blizzard's 8 waves in 8 s become 10 with 25 %).",
+          "title": "Cast Time Reduction"
         },
         "castable_while_moving": {
           "default": false,
@@ -642,7 +659,7 @@
     },
     "CostDef": {
       "additionalProperties": false,
-      "description": "What a cast costs: an amount of a resource (mana or rage), growing per spell level like the effects.",
+      "description": "What a cast costs: an amount of a resource (mana or rage), growing per spell level like the effects; a channel's\nfor each second, and optionally an amount up front when it begins.",
       "properties": {
         "amount": {
           "description": "The amount at spell level 1.",
@@ -689,6 +706,18 @@
           ],
           "title": "Resource",
           "type": "string"
+        },
+        "up_front": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UpFrontCostDef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A channel's cost when it begins, on top of its first second's: {amount: 40, per_level: 20} (RLM-572: Blizzard). Channels only."
         }
       },
       "required": [
@@ -1792,8 +1821,22 @@
       "additionalProperties": false,
       "description": "A status effect a proc gives the other entity.",
       "properties": {
+        "duration_per_level_seconds": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Added to the duration for every rank above 1 (RLM-572: Frostbite's Frozen, 4/6/8 s).",
+          "title": "Duration Per Level Seconds"
+        },
         "duration_seconds": {
-          "description": "How long it lasts; more than 0, at most 60.",
+          "description": "How long it lasts at rank 1; more than 0, at most 60.",
           "minimum": 0,
           "title": "Duration Seconds",
           "type": "number"
@@ -2455,6 +2498,30 @@
       "title": "TeleportEffectDef",
       "type": "object"
     },
+    "UpFrontCostDef": {
+      "additionalProperties": false,
+      "description": "What a channel costs when it begins, on top of its first second's cost (RLM-572: Blizzard's 40 mana up front,\nthen 15 a second), growing per spell level.",
+      "properties": {
+        "amount": {
+          "description": "The amount at spell level 1.",
+          "minimum": 0,
+          "title": "Amount",
+          "type": "number"
+        },
+        "per_level": {
+          "default": 0,
+          "description": "Added for every spell level above 1.",
+          "minimum": 0,
+          "title": "Per Level",
+          "type": "number"
+        }
+      },
+      "required": [
+        "amount"
+      ],
+      "title": "UpFrontCostDef",
+      "type": "object"
+    },
     "WindowDef": {
       "additionalProperties": false,
       "description": "How long a spell stays usable after what opens its window (RLM-540). The spell bar shows the open window with a\nglow and the time left; a cast closes it.",
@@ -2518,9 +2585,22 @@
       "title": "Castable While Stunned",
       "type": "boolean"
     },
+    "cooldown_per_level_seconds": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Added to the cooldown for every rank above 1, usually less than 0: cooldowns don't shrink with rank as a rule, with exceptions (Matěj, 2026-11-03; RLM-572: Frost Nova's 20/15/10 s is {cooldown_seconds: 20, cooldown_per_level_seconds: -5}). The cooldown stays 0 or more at max_level.",
+      "title": "Cooldown Per Level Seconds"
+    },
     "cooldown_seconds": {
       "default": 0,
-      "description": "The spell's own cooldown; Cooldown Reduction shortens it.",
+      "description": "The spell's own cooldown at rank 1; Cooldown Reduction shortens it.",
       "minimum": 0,
       "title": "Cooldown Seconds",
       "type": "number"
@@ -2535,7 +2615,7 @@
         }
       ],
       "default": null,
-      "description": "What a cast costs, paid when it begins; a channel pays it again as each later second begins. Leave out for a free spell."
+      "description": "What a cast costs, paid when it begins; a channel pays it again as each later second begins, and its up_front when it begins. Leave out for a free spell."
     },
     "crit": {
       "$ref": "#/$defs/CritDef",

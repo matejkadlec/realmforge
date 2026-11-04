@@ -44,7 +44,8 @@ import net.minecraft.world.item.ItemStack;
  *   <li>a player has less of the spell's resource than it costs.</li>
  * </ol>
  * Otherwise the spell starts the global cooldown, which every spell is on (Matěj, 2026-10-24), and pays its cost at
- * once, whatever its cast (Matěj, 2026-10-24: a cast time pays when it begins). An instant spell then starts its own
+ * once, whatever its cast (Matěj, 2026-10-24: a cast time pays when it begins; a channel its amount up front with its
+ * first second, RLM-572). An instant spell then starts its own
  * cooldown (Cooldown Reduction shortens it, never the global one) and runs every effect on the target ({@link
  * SpellTarget}). A cast-time or channelled spell begins its cast ({@link Casting}): a cast time starts its own cooldown
  * when it completes, a channel when it begins, and a channel pays its cost again every second it lasts. Mobs and bosses
@@ -178,7 +179,7 @@ public final class SpellCaster {
         if (distance.isPresent()) {
             return CastResult.refused(distance.get());
         }
-        if (!canPay(caster, value, level, state)) {
+        if (!canPayStart(caster, value, level, state)) {
             return CastResult.refused(CastFailure.NOT_ENOUGH_RESOURCE);
         }
         if (current.isPresent()) {
@@ -195,7 +196,7 @@ public final class SpellCaster {
             state.setCurrentTarget(aimedAt.getUUID(), now);
         }
         state.setGlobalCooldownEnd(now + value.globalCooldownTicks());
-        payCost(caster, value, level, state);
+        pay(caster, value, startCost(caster, value, level), state);
         double extra = payExtra(caster, value, state);
         double damageScale = value.cost().flatMap(SpellCost::extra).map(more -> more.damageFactor(extra)).orElse(1.0);
         wearWand(caster);
@@ -206,13 +207,13 @@ public final class SpellCaster {
             Casting.begin(caster, spell, level, hit, now, damageScale);
             return CastResult.begun(hit);
         }
-        startCooldown(caster, value, spell.key(), state, now);
+        startCooldown(caster, value, spell.key(), level, state, now);
         if (value.cast().type() == SpellCast.Type.CHANNEL) {
             Casting.begin(caster, spell, level, hit, now, damageScale);
             return CastResult.begun(hit);
         }
         if (value.cast().swing()) {
-            Casting.beginSwing(caster, spell, level, hit, now, damageScale, cost(caster, value, level) + extra);
+            Casting.beginSwing(caster, spell, level, hit, now, damageScale, startCost(caster, value, level) + extra);
             return CastResult.begun(hit);
         }
         caster.syncData(SpellAttachments.COMBAT);
@@ -276,15 +277,33 @@ public final class SpellCaster {
                 .map(SpellRequirement::failure).findFirst();
     }
 
-    /** Whether {@code caster} has enough of the spell's resource for a cast at {@code level}; mobs always do. */
+    /**
+     * Whether {@code caster} has enough of the spell's resource for one more second of a channel at {@code level};
+     * mobs always do.
+     */
     static boolean canPay(LivingEntity caster, Spell spell, int level, CombatState state) {
-        double cost = cost(caster, spell, level);
+        return canPay(spell, cost(caster, spell, level), state);
+    }
+
+    /**
+     * Whether {@code caster} has enough of the spell's resource to begin a cast at {@code level}: its cost, and a
+     * channel's amount up front with it (RLM-572); mobs always do.
+     */
+    static boolean canPayStart(LivingEntity caster, Spell spell, int level, CombatState state) {
+        return canPay(spell, startCost(caster, spell, level), state);
+    }
+
+    /** Pays a channel's cost for one more second, players only. */
+    static void payCost(LivingEntity caster, Spell spell, int level, CombatState state) {
+        pay(caster, spell, cost(caster, spell, level), state);
+    }
+
+    private static boolean canPay(Spell spell, double cost, CombatState state) {
         return cost <= 0 || state.resource(resource(spell)) + COST_TOLERANCE >= cost;
     }
 
-    /** Pays the cost, players only: a cast's, or a channel's for one more second. */
-    static void payCost(LivingEntity caster, Spell spell, int level, CombatState state) {
-        double cost = cost(caster, spell, level);
+    /** Pays {@code cost} of the spell's resource; nothing when it is 0, as for a mob. */
+    private static void pay(LivingEntity caster, Spell spell, double cost, CombatState state) {
         if (cost > 0) {
             ResourceKey<ResourceType> type = resource(spell);
             state.setResource(type, (float) Math.max(0, state.resource(type) - cost));
@@ -327,9 +346,13 @@ public final class SpellCaster {
         }
     }
 
-    /** Starts the spell's own cooldown, after Cooldown Reduction. */
-    static void startCooldown(LivingEntity caster, Spell spell, ResourceKey<Spell> key, CombatState state, long now) {
-        int cooldown = SpellScaling.cooldownTicks(spell.cooldownTicks(),
+    /**
+     * Starts the spell's own cooldown at rank {@code level}, which may change per rank (RLM-572), after Cooldown
+     * Reduction.
+     */
+    static void startCooldown(LivingEntity caster, Spell spell, ResourceKey<Spell> key, int level, CombatState state,
+            long now) {
+        int cooldown = SpellScaling.cooldownTicks(spell.cooldownTicksAt(level),
                 DamagePipeline.stat(caster, GeneratedStats.COOLDOWN_REDUCTION));
         state.clearEndedCooldowns(now);
         if (cooldown > 0) {
@@ -393,8 +416,14 @@ public final class SpellCaster {
         }
     }
 
+    /** What a player's cast costs at {@code level}, a channel's for each second; 0 for a mob. */
     static double cost(LivingEntity caster, Spell spell, int level) {
         return caster instanceof Player ? spell.costAt(level) : 0;
+    }
+
+    /** What a player's cast costs when it begins, a channel's amount up front included (RLM-572); 0 for a mob. */
+    static double startCost(LivingEntity caster, Spell spell, int level) {
+        return caster instanceof Player ? spell.startCostAt(level) : 0;
     }
 
     private static ResourceKey<ResourceType> resource(Spell spell) {

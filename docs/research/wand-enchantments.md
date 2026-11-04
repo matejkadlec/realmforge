@@ -206,7 +206,7 @@ which scale with the Attack Damage stat.
 | Frost Focus IX (+27 %) | +13.5 (+27 %) | Smite X: +25 against undead |
 | Spell Breach V (20 %) | +20 % against a target with 50 % resistance, nothing against none | Breach (mace only) |
 | Quick Casting V (10 %) | on a wand without Cast Time Reduction rolls 47 → 57 %: a Frostbolt takes 0.645 s instead of 0.795 s, +23 % casts a second; with Astone's expected Rare affix (Hastened 6–10 %) and Flawed gem (Brawler's 10 %) the Mage is at 63–67 %, the wall, and it adds at most 4 points | none |
-| Swift Recovery V (10 %) | 38 → 48 %: Ice Lance, Frost Nova and Cone of Cold are ready 19 % more often | none |
+| Swift Recovery V (10 %) | 38 → 48 %: Ice Lance, Frost Nova and Cone of Cold are ready 19 % more often (Ice Lance has had no cooldown since RLM-572) | none |
 
 - At Astone's expected gear (gear.md: "level V for every enchantment") a wand with Potency V and Swift Recovery V
   gives the Mage +12 % a Frostbolt and the cooldown spells 19 % more often; a sword with Sharpness V gives the

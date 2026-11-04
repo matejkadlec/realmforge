@@ -25,6 +25,7 @@ import io.github.matejkadlec.realmforge.spell.ApplyEffectEffect;
 import io.github.matejkadlec.realmforge.spell.CastEnd;
 import io.github.matejkadlec.realmforge.spell.CastFailure;
 import io.github.matejkadlec.realmforge.spell.CastResult;
+import io.github.matejkadlec.realmforge.spell.ConeEffect;
 import io.github.matejkadlec.realmforge.spell.DamageEffect;
 import io.github.matejkadlec.realmforge.spell.EffectContext;
 import io.github.matejkadlec.realmforge.spell.ProjectileEffect;
@@ -332,7 +333,7 @@ public final class ClassKitGameTests {
 
     /**
      * Scaling system C (Matěj, 2026-10-30, RLM-534), the ticket's checks: with 5.5 Spell Power Frostbolt rank 1 deals
-     * 8 + 100 % of it, 13.5, and with 19 rank 5 deals 12 + 200 %, 50; Slam rank 5 with 15 Attack Damage deals
+     * 8 + 100 % of it, 13.5, and with 19 rank 5 deals 12 + 160 % (RLM-572), 42.4; Slam rank 5 with 15 Attack Damage deals
      * 11 + 250 %, 48.5, before armor (the husk has none). No crit, no school power, a player without a character.
      */
     @QaGameTest
@@ -345,7 +346,7 @@ public final class ClassKitGameTests {
                 .orElseThrow();
         DamageEffect bolt = (DamageEffect) ((ProjectileEffect) frostbolt.value().effects().getFirst()).effects()
                 .getFirst();
-        for (double[] check : new double[][] {{1, 5.5, 13.5}, {5, 19, 50}}) {
+        for (double[] check : new double[][] {{1, 5.5, 13.5}, {5, 19, 42.4}}) {
             StatsCommands.setBase(player, GeneratedStats.SPELL_POWER, check[1]);
             float before = husk.getHealth();
             bolt.applyTo(EffectContext.of(helper.getLevel(), player, frostbolt, (int) check[0], Optional.empty()),
@@ -522,24 +523,29 @@ public final class ClassKitGameTests {
     }
 
     /**
-     * A rank makes a status effect last longer and grow stronger (Frostbolt's Slowness II at rank 5), and the
-     * descriptions' new placeholders read each rank's numbers: armor shred, penetration, crit chance, a buff's bonus.
+     * A rank makes a status effect last longer (Cone of Cold's Slowness II, 4/6/8 s) and grow stronger (Frostbolt's
+     * Slowness, II from rank 3 and III at rank 5; RLM-572), and the descriptions' new placeholders read each rank's
+     * numbers: armor shred, penetration, crit chance, a buff's bonus.
      */
     @QaGameTest
     public static void ranksGrowTheEffectsAndTheirTexts(GameTestHelper helper) {
         RegistryAccess registries = helper.getLevel().registryAccess();
         ApplyEffectEffect slow = (ApplyEffectEffect) ((ProjectileEffect) spell(registries, GeneratedSpells.FROSTBOLT)
                 .effects().getFirst()).effects().get(1);
-        helper.assertValueEqual(List.of(slow.durationAt(1), slow.durationAt(5)), List.of(60, 100),
-                "Slowness lasts 3 s, 0.5 s longer a rank");
-        helper.assertValueEqual(List.of(slow.amplifierAt(4), slow.amplifierAt(5)), List.of(0, 1),
-                "Slowness II from rank 5");
+        helper.assertValueEqual(List.of(slow.durationAt(1), slow.durationAt(5)), List.of(80, 80),
+                "Frostbolt's Slowness lasts 4 s at every rank");
+        helper.assertValueEqual(List.of(slow.amplifierAt(2), slow.amplifierAt(3), slow.amplifierAt(4),
+                slow.amplifierAt(5)), List.of(0, 1, 1, 2), "Slowness II from rank 3, III at rank 5");
+        ApplyEffectEffect chill = (ApplyEffectEffect) ((ConeEffect) spell(registries, GeneratedSpells.CONE_OF_COLD)
+                .effects().getFirst()).effects().get(1);
+        helper.assertValueEqual(List.of(chill.durationAt(1), chill.durationAt(2), chill.durationAt(3)),
+                List.of(80, 120, 160), "Cone of Cold's Slowness lasts 4 s, 2 s longer a rank");
 
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-kit-texts");
         assertText(helper, player, GeneratedSpells.SLAM, 3, "armor_shred", "15");
         assertText(helper, player, GeneratedSpells.RECKLESS_STRIKE, 5, "crit_chance", "30");
         assertText(helper, player, GeneratedSpells.ARCANE_MISSILES, 2, "penetration", "10");
-        assertText(helper, player, GeneratedSpells.FROSTBOLT, 5, "duration", "5");
+        assertText(helper, player, GeneratedSpells.FROSTBOLT, 5, "duration", "4");
         assertText(helper, player, GeneratedSpells.ICE_BARRIER, 1, "bonus", "10");
         assertText(helper, player, GeneratedSpells.ICE_BARRIER, 3, "bonus", "30");
         assertText(helper, player, GeneratedSpells.ICE_BARRIER, 3, "duration", "30");

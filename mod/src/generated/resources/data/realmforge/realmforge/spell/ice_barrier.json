@@ -15,6 +15,7 @@
     "resource": "realmforge:mana"
   },
   "cooldown_ticks": 1200,
+  "cooldown_per_level_ticks": -300,
   "global_cooldown_ticks": 10,
   "max_level": 3,
   "crit": {

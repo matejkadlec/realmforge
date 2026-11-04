@@ -225,26 +225,35 @@ public record Passive(Optional<TagKey<Item>> whileWielding, List<Modifier> modif
     }
 
     /**
-     * The status effect a proc gives: its effect and how long it lasts, longer from a rank on if {@code fromLevel} says
-     * so (RLM-542: Frostbite's Frozen, 3 s instead of 2 at rank 3).
+     * The status effect a proc gives: its effect and how long it lasts at rank 1, longer for every rank above it by
+     * {@code durationPerLevelTicks} (RLM-572: Frostbite's Frozen, 4/6/8 s) or from a rank on if {@code fromLevel} says
+     * so (RLM-542).
      */
-    public record ProcEffect(Holder<MobEffect> effect, int durationTicks, Optional<FromLevel> fromLevel) {
+    public record ProcEffect(Holder<MobEffect> effect, int durationTicks, Optional<FromLevel> fromLevel,
+            int durationPerLevelTicks) {
         public static final Codec<ProcEffect> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                         MobEffect.CODEC.fieldOf("effect").forGetter(ProcEffect::effect),
                         Codec.intRange(1, ApplyEffectEffect.MAX_DURATION_TICKS).fieldOf("duration_ticks")
                                 .forGetter(ProcEffect::durationTicks),
-                        FromLevel.CODEC.optionalFieldOf("from_level").forGetter(ProcEffect::fromLevel))
+                        FromLevel.CODEC.optionalFieldOf("from_level").forGetter(ProcEffect::fromLevel),
+                        ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("duration_per_level_ticks", 0)
+                                .forGetter(ProcEffect::durationPerLevelTicks))
                 .apply(instance, ProcEffect::new));
 
         /** An effect that lasts as long at every rank. */
         public ProcEffect(Holder<MobEffect> effect, int durationTicks) {
-            this(effect, durationTicks, Optional.empty());
+            this(effect, durationTicks, Optional.empty(), 0);
+        }
+
+        /** An effect that lasts longer from a rank on. */
+        public ProcEffect(Holder<MobEffect> effect, int durationTicks, Optional<FromLevel> fromLevel) {
+            this(effect, durationTicks, fromLevel, 0);
         }
 
         /** How long it lasts at rank {@code level}, in ticks. */
         public int durationAt(int level) {
             return fromLevel.filter(longer -> level >= longer.level()).map(FromLevel::durationTicks)
-                    .orElse(durationTicks);
+                    .orElse(durationTicks + durationPerLevelTicks * (Math.max(1, level) - 1));
         }
     }
 

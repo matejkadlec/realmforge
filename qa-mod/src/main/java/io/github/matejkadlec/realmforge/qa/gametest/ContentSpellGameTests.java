@@ -27,6 +27,7 @@ import io.github.matejkadlec.realmforge.spell.ProjectileEffect;
 import io.github.matejkadlec.realmforge.spell.RandomPlayerTargeting;
 import io.github.matejkadlec.realmforge.spell.RemoveEffectEffect;
 import io.github.matejkadlec.realmforge.spell.Spell;
+import io.github.matejkadlec.realmforge.spell.SpellCost;
 import io.github.matejkadlec.realmforge.spell.SpellEntities;
 import io.github.matejkadlec.realmforge.spell.SpellEffect;
 import io.github.matejkadlec.realmforge.spell.SpellRegistries;
@@ -93,13 +94,21 @@ public final class ContentSpellGameTests {
                     id + " forms its projectile");
             helper.assertValueEqual(spell.cast().animation().getSerializedName(), expected.castAnimation(),
                     id + " cast animation");
+            helper.assertValueEqual(spell.cast().castTimeReduction().getSerializedName(),
+                    expected.castTimeReduction(), id + " what Cast Time Reduction does to it");
             helper.assertValueEqual(spell.cost().map(cost -> cost.resource().getRegisteredName()),
                     expected.costResource(), id + " cost resource");
             helper.assertValueEqual(spell.cost().map(cost -> cost.amount()).orElse(0.0), expected.costAmount(),
                     id + " cost");
             helper.assertValueEqual(spell.cost().map(cost -> cost.perLevel()).orElse(0.0), expected.costPerLevel(),
                     id + " cost per level");
+            helper.assertValueEqual(spell.cost().flatMap(SpellCost::upFront).map(SpellCost.UpFront::amount)
+                    .orElse(0.0), expected.costUpFront(), id + " cost up front");
+            helper.assertValueEqual(spell.cost().flatMap(SpellCost::upFront).map(SpellCost.UpFront::perLevel)
+                    .orElse(0.0), expected.costUpFrontPerLevel(), id + " cost up front per level");
             helper.assertValueEqual(spell.cooldownTicks(), expected.cooldownTicks(), id + " cooldown");
+            helper.assertValueEqual(spell.cooldownPerLevelTicks(), expected.cooldownPerLevelTicks(),
+                    id + " cooldown per level");
             helper.assertValueEqual(spell.globalCooldownTicks(), expected.globalCooldownTicks(),
                     id + " global cooldown");
             helper.assertValueEqual(spell.maxLevel(), expected.maxLevel(), id + " max level");

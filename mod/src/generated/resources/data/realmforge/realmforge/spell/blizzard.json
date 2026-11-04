@@ -12,13 +12,18 @@
     "lock_on": false,
     "keep_sight": false,
     "type": "channel",
-    "duration_ticks": 120,
-    "interval_ticks": 10
+    "duration_ticks": 160,
+    "interval_ticks": 20,
+    "cast_time_reduction": "adds_ticks"
   },
   "cost": {
-    "amount": 13.0,
+    "amount": 15.0,
     "per_level": 5.0,
-    "resource": "realmforge:mana"
+    "resource": "realmforge:mana",
+    "up_front": {
+      "amount": 40.0,
+      "per_level": 20.0
+    }
   },
   "cooldown_ticks": 0,
   "global_cooldown_ticks": 10,
@@ -39,10 +44,10 @@
       "affects": "enemies",
       "effects": [
         {
-          "amount": 2.0,
-          "per_level": 0.5,
-          "spell_power": 0.2,
-          "spell_power_per_level": 0.05,
+          "amount": 4.0,
+          "per_level": 2.0,
+          "spell_power": 0.4,
+          "spell_power_per_level": 0.2,
           "type": "realmforge:damage"
         },
         {

@@ -1,10 +1,10 @@
 # yaml-language-server: $schema=../../tools/schemas/spells.schema.json
 # The Frost Mage's tree, row 2 (level 6), middle (RLM-542; Matěj, 2026-10-30, "Spell Trees to Level 18", chosen for M1):
-# an instant ring of frost round the Mage that hits every enemy within 4 blocks for 3/4/5 + 30/35/40 % of Spell Power
-# and Freezes them (rooted, RLM-539), so the Mage can step away or Ice Lance them. Matěj's playtest of 2026-11-01: Frozen
-# lasts 10 s at rank 3 instead of 4, so 5/7.5/10 s (every rank × 2.5), and any damage ends it at a 50 % chance
-# (content/effects/frozen.yaml); 30/40/50 mana. Bosses may be immune to Frozen (RLM-539). A 20 s cooldown. Placeholder
-# ring until the Frost visuals (RLM-544).
+# an instant ring of frost round the Mage that hits every enemy within 4 blocks and Freezes them (rooted, RLM-539), so
+# the Mage can step away or Ice Lance them; any damage ends Frozen at a 50 % chance (content/effects/frozen.yaml).
+# Matěj's rebalance of 2026-11-01 (RLM-572): 3/4/5 + 40/50/60 % of Spell Power, Frozen for 6/8/10 s, 30/40/50 mana and a
+# cooldown of 20/15/10 s, one of the cooldowns that shrink with the rank. Bosses may be immune to Frozen (RLM-539).
+# Placeholder ring until the Frost visuals (RLM-544).
 id: frost_nova
 name: {en_us: Frost Nova}
 description:
@@ -17,6 +17,7 @@ targeting: {type: realmforge:self}
 cast: {type: instant}
 cost: {resource: realmforge:mana, amount: 30, per_level: 10}
 cooldown_seconds: 20
+cooldown_per_level_seconds: -5
 max_level: 3
 effects:
   - type: realmforge:area
@@ -30,9 +31,9 @@ effects:
       - type: realmforge:damage
         amount: 3
         per_level: 1
-        spell_power_percent: 30
-        spell_power_per_level_percent: 5
+        spell_power_percent: 40
+        spell_power_per_level_percent: 10
       - type: realmforge:apply_effect
         effect: realmforge:frozen
-        duration_seconds: 5
-        duration_per_level_seconds: 2.5
+        duration_seconds: 6
+        duration_per_level_seconds: 2

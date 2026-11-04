@@ -64,6 +64,8 @@ def _whole_ticks(seconds: float) -> float:
 
 # A duration in YAML. Name the field `<name>_seconds`: generators write it as `<name>_ticks` (architecture 6.3).
 Seconds = Annotated[float, Field(ge=0, allow_inf_nan=False), AfterValidator(_whole_ticks)]
+# A change of a duration that may be less than 0 (RLM-572: a cooldown that shrinks per rank), in whole ticks too.
+SignedSeconds = Annotated[float, Field(allow_inf_nan=False), AfterValidator(_whole_ticks)]
 
 # A share in YAML (5 means 5 %). Name the field `<name>_percent`: generators write the fraction as `<name>`.
 Percent = Annotated[float, Field(allow_inf_nan=False)]

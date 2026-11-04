@@ -417,7 +417,8 @@ Rules:
   `{max_health_heal}` (the first heal's share of max health), `{resource_gain}` (the first `gain_resource`'s amount),
   `{min_range}` and `{range}` (the `target_distance`, or a targeted spell's range), `{window}` (its seconds),
   `{health_below}`, `{extra_cost}` and `{extra_damage}`, and `{refund}` and `{refund_rank}`, and `{radius}` reads a
-  charge's landing radius too; each at the player's rank, and in the tooltip at the next rank too, below the player's
+  charge's landing radius too; RLM-572 adds `{ticks}`, how often a channel runs its effects for the player's Cast Time
+  Reduction (Blizzard's waves); each at the player's rank, and in the tooltip at the next rank too, below the player's
   (RLM-542);
   validation checks that each has its effect, [architecture 11.6](../docs/architecture.md#116-client-side); a damage
   number shows its school's icon and colour, so write "for {damage} damage", never the school's name); the
@@ -442,7 +443,10 @@ Rules:
   duration_seconds, interval_seconds}` (it pays and starts its cooldown when it begins, pays its cost again as each
   later second begins, and runs its effects every interval; the duration is a whole number of intervals; **a
   player's channel ticks every 0.5 s**, Matěj, 2026-10-29, RLM-518: more, smaller hits beat fewer, bigger ones, so
-  validation refuses another `interval_seconds` but on an `npc_only` spell), the timed
+  validation refuses another `interval_seconds` but on an `npc_only` spell or a channel with `cast_time_reduction:
+  adds_ticks`; that one, RLM-572, keeps its duration under Cast Time Reduction and runs round(ticks × (1 + CTR)) ticks,
+  halves up, spread over it, instead of its interval shrinking: Blizzard's 8 waves, one a second, become 10 with 25 %;
+  `shortens`, the default, keeps the tick count and shortens the channel), the timed
   ones with `castable_while_moving` (by default the cast slows its caster to half its speed and stops its sprint
   until it ends; with `true` the caster moves at full speed and may sprint; moving never cancels a cast, ADR 0039,
   ADR 0047, ADR 0057) and `lock_on` (range and line of sight are not
@@ -454,7 +458,11 @@ Rules:
   casts (`raise`, the default, or `slam`: its fists beat up and down, one slam every 0.75 s, a quake); a cast time may
   `forms_projectile` (its first effect, a projectile with an `appearance`, grows in the caster's raised hands during
   the cast and flies from there); an optional `cost` (`resource` `realmforge:mana` or `realmforge:rage`, `amount` at level
-  1, `per_level`; a channel's is per second); `cooldown_seconds`; `global_cooldown_seconds` (0.5 by default, as in
+  1, `per_level`; a channel's is per second, and a channel may add `up_front`, `{amount, per_level}` paid with its
+  first second's when it begins, RLM-572: Blizzard's 40 mana, then 15 a second); `cooldown_seconds` and
+  `cooldown_per_level_seconds` (added for every rank above 1, usually less than 0, the cooldown staying 0 or more at
+  `max_level`: Frost Nova's 20/15/10 s, RLM-572; cooldowns don't shrink with rank as a rule); `global_cooldown_seconds`
+  (0.5 by default, as in
   WoW; every spell is on the global cooldown, physical abilities too, so it is more than 0); `max_level`;
   the `crit` block (`can_crit`, `multiplier_percent` instead of 1 + the caster's crit damage, `bonus_chance_percent`
   added to the caster's crit chance, `bonus_chance_per_level_percent` more at every rank above 1; every spell can
@@ -547,8 +555,9 @@ Rules:
   `procs` (RLM-540: each a `trigger`, `hit`, `crit`, `kill`, `hit_taken`,
   `applies_effect` (the player gives an enemy the status effect `effect`) or `tick` (a tick of the player's damage over
   time of `effect`, of `spell` when named), a `chance_percent` with `chance_per_level_percent`, an internal
-  `cooldown_seconds` on each target, and one action: `apply_effect` (`effect`, `duration_seconds`, and `from_level`,
-  `{level, duration_seconds}`, a longer duration from a rank on: Frostbite's 3 s at rank 3), `cast` (a spell cast
+  `cooldown_seconds` on each target, and one action: `apply_effect` (`effect`, `duration_seconds`, and either
+  `duration_per_level_seconds`, added for every rank above 1 (RLM-572: Frostbite's 4/6/8 s), or `from_level`,
+  `{level, duration_seconds}`, a longer duration from a rank on), `cast` (a spell cast
   at the other entity at the passive's rank), `open_window` (a spell with a `window`) or, for a `hit` or `crit`,
   `damage_over_time` (RLM-543: `effect`, one of ours with `stacks`, `damage_percent` of the hit's damage with
   `damage_per_level_percent`, over `duration_seconds`; a new one refreshes the stack and adds what it had left: Deep

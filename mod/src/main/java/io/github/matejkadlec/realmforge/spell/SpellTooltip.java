@@ -19,7 +19,8 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 
 /**
  * A spell's tooltip in the spellbook (architecture 11.6, 18; C3b, RLM-25), built from data with live numbers: its name,
- * its rank, its cost at that rank (a channel's per second), its range ({@link #range}), its cast after Cast Time
+ * its rank, its cost at that rank (a channel's per second, after its amount up front, RLM-572), its range
+ * ({@link #range}), its cast after Cast Time
  * Reduction, its cooldown after Cooldown Reduction, and its description with the placeholders filled
  * ({@link SpellText}): its damage numbers with their school's icon and colour; below its highest rank, "Next rank:" with
  * the description at the next rank, from the same stats (RLM-542). A passive spell (RLM-541) shows its rank's
@@ -60,13 +61,11 @@ public final class SpellTooltip {
             lines.addAll(passiveLines(spell, spell.passive().get(), level));
             return lines;
         }
-        String costKey = spell.cast().type() == SpellCast.Type.CHANNEL ? GeneratedTexts.SPELL_TOOLTIP_COST_PER_SECOND
-                : GeneratedTexts.SPELL_TOOLTIP_COST;
-        spell.cost().ifPresent(cost -> cost.resource().unwrapKey().ifPresent(type -> lines.add(Component.translatable(
-                costKey, DamageNumbers.format(spell.costAt(level)), CastTexts.resourceName(type)))));
+        spell.cost().ifPresent(cost -> cost.resource().unwrapKey().ifPresent(type -> lines.add(
+                costLine(spell, cost, level, CastTexts.resourceName(type)))));
         range(spell, level).ifPresent(lines::add);
         lines.add(cast(spell.cast(), stats.applyAsDouble(GeneratedStats.CAST_TIME_REDUCTION)));
-        int cooldown = SpellScaling.cooldownTicks(spell.cooldownTicks(),
+        int cooldown = SpellScaling.cooldownTicks(spell.cooldownTicksAt(level),
                 stats.applyAsDouble(GeneratedStats.COOLDOWN_REDUCTION));
         if (cooldown > 0) {
             lines.add(Component.translatable(GeneratedTexts.SPELL_TOOLTIP_COOLDOWN, seconds(cooldown)));
@@ -121,14 +120,34 @@ public final class SpellTooltip {
                 : Optional.empty();
     }
 
-    /** The cast line: instant, a cast time or a channel, its time after Cast Time Reduction. */
+    /**
+     * The cost line at {@code level}: "20 Mana" for a cast, "15 Mana per sec" for a channel, and "40 Mana, then 15 per
+     * sec" for a channel with an amount up front (RLM-572: Blizzard).
+     */
+    static Component costLine(Spell spell, SpellCost cost, int level, Component resource) {
+        if (spell.cast().type() != SpellCast.Type.CHANNEL) {
+            return Component.translatable(GeneratedTexts.SPELL_TOOLTIP_COST, DamageNumbers.format(spell.costAt(level)),
+                    resource);
+        }
+        if (cost.upFront().isPresent()) {
+            return Component.translatable(GeneratedTexts.SPELL_TOOLTIP_COST_UP_FRONT,
+                    DamageNumbers.format(cost.upFrontAt(level)), DamageNumbers.format(spell.costAt(level)), resource);
+        }
+        return Component.translatable(GeneratedTexts.SPELL_TOOLTIP_COST_PER_SECOND,
+                DamageNumbers.format(spell.costAt(level)), resource);
+    }
+
+    /**
+     * The cast line: instant, a cast time or a channel, its time after Cast Time Reduction (a channel whose ticks it
+     * multiplies keeps its time, RLM-572).
+     */
     static Component cast(SpellCast cast, double castTimeReduction) {
         return switch (cast.type()) {
             case INSTANT -> Component.translatable(GeneratedTexts.SPELL_TOOLTIP_INSTANT);
             case CAST_TIME -> Component.translatable(GeneratedTexts.SPELL_TOOLTIP_CAST_TIME,
-                    seconds(SpellScaling.castTicks(cast.durationTicks(), castTimeReduction)));
-            case CHANNEL -> Component.translatable(GeneratedTexts.SPELL_TOOLTIP_CHANNEL, seconds(
-                    SpellScaling.castTicks(cast.intervalTicks(), castTimeReduction) * cast.tickCount()));
+                    seconds(cast.durationFor(castTimeReduction)));
+            case CHANNEL -> Component.translatable(GeneratedTexts.SPELL_TOOLTIP_CHANNEL,
+                    seconds(cast.durationFor(castTimeReduction)));
         };
     }
 

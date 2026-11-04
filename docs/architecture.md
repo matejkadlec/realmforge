@@ -1432,7 +1432,7 @@ Its name and description are translation keys from C3b, the description's number
   multiplied by 1 + the share a point times the points spent (the `EffectContext`'s damage scale); and a **refund for a
   kill**, growing per rank and from a rank on (`SpellCost.KillRefund`, RLM-543: Execute's 5/10/15 rage; Matěj,
   2026-11-03), which `DamageEffect` gives a player whose hit killed its target. A damage effect may deal more against a target with a status effect
-  (`against_effect`, growing per rank: Ice Lance's × 2 to × 3 against Frozen, RLM-542).
+  (`against_effect`, growing per rank: Ice Lance's × 2 to × 4 against Frozen, RLM-542, RLM-572).
 - **The Arms tree's effects** (RLM-543): `realmforge:charge` (`spell/ChargeEffect`) rushes the caster at its enemy at
   its speed to the closest point: the near side of the target's box on the line the charge came on, a gap of 0.4 blocks
   short of it, so two 0.6-wide middles are 1 block apart (from behind, it stops at the target's back, never through it).
@@ -1482,10 +1482,12 @@ lists spells granted while equipped or on use): the vision's "some from the race
    `EffectContext` (caster, the entity that delivers it, spell, spell level, random source). Effects read the caster's
    stats as they run, those that a projectile or an area runs later included ([11.3](#113-spell-entities)).
 5. A channel pays its cost and starts its cooldown when it begins, and pays the cost again as each later second
-   begins (Matěj, 2026-10-24: as in WoW; a spell paying only at the start or at another pace can come later); a pool
-   that falls short ends it. It runs its effects at the tick interval its data sets for as long as it lasts (a
-   player's channel every 0.5 s, Matěj, 2026-10-29, RLM-518: more, smaller hits beat fewer, bigger ones; the pipeline
-   refuses another interval, and `npc_only` spells keep theirs, Astone's Quake its 0.75 s),
+   begins (Matěj, 2026-10-24: as in WoW); a cost may add an amount up front, paid with the first second's
+   (`SpellCost.UpFront`, Matěj, 2026-11-01, RLM-572: Blizzard's 40 mana, then 15 a second); a pool that falls short
+   ends it. It runs its effects at the tick interval its data sets for as long as it lasts (a player's channel every
+   0.5 s, Matěj, 2026-10-29, RLM-518: more, smaller hits beat fewer, bigger ones; the pipeline refuses another
+   interval, but `npc_only` spells keep theirs, Astone's Quake its 0.75 s, and so does a channel whose ticks Cast Time
+   Reduction multiplies, Blizzard's wave a second, RLM-572),
    checking the target before every tick as in step 4. An interrupt ends it early, and the ticks already run stay
    applied.
 6. Mobs and bosses use the same `SpellCaster`, without a payload. Their cooldowns and current cast live in their
@@ -1552,8 +1554,13 @@ cost (RLM-403, Matěj 2026-10-24); a channel also starts its own cooldown then, 
 `spell/Casting` keeps the casts in progress and ends them from the server tick (`ServerTickEvent.Post`): Cast Time
 Reduction (at most 75 %, its stat's cap) shortens a cast time, and a channel's interval and its seconds, so a channel
 keeps its tick count and its number of payments (`SpellScaling#castTicks`, whole ticks, at least one): one for every
-second its data lasts, begun or whole, the first when it begins and each later one as its second begins, after the
-ticks due then; a pool short of the cost ends it as `not_enough_resource`. Moving never interrupts a cast (it slows
+second its data lasts, begun or whole, the first when it begins (with the cost up front, if any) and each later one as
+its second begins, after the ticks due then; a pool short of the cost ends it as `not_enough_resource`. **A channel
+whose ticks Cast Time Reduction multiplies** (`cast_time_reduction: adds_ticks`, `SpellCast.Haste`; Matěj, 2026-11-01,
+RLM-572: Blizzard) keeps its duration and its whole seconds and runs round(ticks × (1 + reduction)) ticks, halves up
+(`SpellScaling#moreTicks`: Blizzard's 8 waves in 8 s, 10 with 20 or 25 %), spread evenly over it, each at the nearest
+whole tick and the last at its end (`SpellScaling#channelTickAt`); every channel schedules its ticks so, which for a
+shortened one is its interval times the tick. Moving never interrupts a cast (it slows
 the caster, ADR 0039); death, a dimension change, logging out, the caster's removal and a cancel
 (`Spells#cancelCast`, `/qa spell cancel`) do. At its end a cast time checks the target again (`SpellCaster#recheck`:
 alive, then the targeting's range, line of sight and enemy or ally; a spell that locks on only needs its target alive
@@ -1895,7 +1902,9 @@ boss, Will To Survive, Bleeding's 12 ticks through armor, two stacks and a refre
   entity starts with no hit. The Warrior's starting numbers are 10
   a hit, 50 for the whole max health and 2 a second after 5 s, until the class kits (C4) tune them. Mobs pay no cost
   ([11.2](#112-casting-server-authoritative)), so no mob gains rage. `RageGameTests` and `RageRulesTest` cover it.
-- **Cooldowns:** a spell's own cooldown, shortened by Cooldown Reduction (at most 75 %, its stat's cap), and the
+- **Cooldowns:** a spell's own cooldown at its rank (a cooldown may change per rank, `cooldown_per_level_seconds`,
+  `Spell#cooldownTicksAt`: Frost Nova's 20/15/10 s, Ice Barrier's 60/45/30 s, RLM-572), shortened by Cooldown
+  Reduction (at most 75 %, its stat's cap), and the
   global cooldown, 0.5 s by default as in WoW (Matěj, 2026-10-19, RLM-25; it replaced research SP-11's second), which
   every spell is on, physical abilities too (Matěj, 2026-10-24, RLM-402): a spell may change its length, never switch
   it off, and Cooldown Reduction never touches it. Both are stored as the game time they
@@ -2052,7 +2061,8 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
   `{periodic}`, `{periodic_total}`, `{interval}`, `{radius}`; C4 added `{armor_shred}`, `{penetration}`,
   `{crit_chance}` and `{bonus}`, the one attribute modifier of the applied effect, or `{bonus_<attribute>}` for an
   effect with several, its modifier on that attribute by the id's path, RLM-543: Battle Shout's `{bonus_attack_damage}`
-  and `{bonus_attack_speed}`), which `spell/SpellText` fills with
+  and `{bonus_attack_speed}`; RLM-572 added `{ticks}`, how often a channel runs its effects for the player's Cast Time
+  Reduction: Blizzard's waves), which `spell/SpellText` fills with
   the spell's data at the player's level (an effect's duration and strength at the rank too) and their stats as they
   are now, as the effects would land before the target's resistance and a crit; `schema/spell.py` and validation make
   sure each has the effect it reads. A damage number shows its school
@@ -2060,8 +2070,10 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
   GUI sprite, `combat/SpellSchools#icon`: `Component.object` with an `AtlasSprite` of the `gui` atlas,
   `textures/gui/sprites/school/<id>.png`, a generated placeholder until the art exists) and draws the number in the
   school's colour, the spell's school for `{damage}` and the effect's for its damage over time; descriptions read
-  "for {damage} damage". `spell/SpellTooltip` builds the spellbook's tooltip: name, rank, cost (a channel's per second),
-  range, the cast after Cast Time Reduction, the cooldown after Cooldown Reduction and the filled description.
+  "for {damage} damage". `spell/SpellTooltip` builds the spellbook's tooltip: name, rank, cost (a channel's per second,
+  after its amount up front: "40 Mana, then 15 per sec", RLM-572), range, the cast after Cast Time Reduction (a channel
+  whose ticks it multiplies keeps its seconds), the cooldown at the rank after Cooldown Reduction and the filled
+  description.
   `SpellTextGameTests` and `SpellBarGameTests` cover the server side and the texts, `CastQueueTest`,
   `CooldownSweepTest`, `SpellBarLayoutTest` (the default place, the clamping, the saved places, the size and mirror
   rules), `CentreSnapTest`, `CastBarStyleTest`, `KeyLabelsTest` (the key labels), `WandClicksTest`, `SpellTextTest`
@@ -2111,10 +2123,11 @@ to a single target. Damage labels (Low, Medium, High) compare a spell with the o
 
 - **Ranks:** every specialization's first spell has max rank 5 (its maximum level, [11.1](#111-model)). A rank
   raises the spell's damage (its base and, since RLM-534, its coefficient of the caster's power: Frostbolt
-  8/9/10/11/12 + 100/125/150/175/200 % of Spell Power, Slam 4/5.5/7/8.5/10 + 120/140/160/180/200 % of Attack Damage,
-  system C in [11.1](#111-model)) and its effect. **Cooldowns don't shrink with rank:** a spell gets a lower base cooldown
-  instead of a high one that shrinks later, since Cooldown Reduction lowers it as the player progresses
-  ([11.5](#115-resources-cooldowns-modifiers)).
+  8/9/10/11/12 + 100/115/130/145/160 % of Spell Power since RLM-572, Slam 4/5.5/7/8.5/10 + 120/140/160/180/200 % of
+  Attack Damage, system C in [11.1](#111-model)) and its effect. **Cooldowns generally don't shrink with rank:** a spell
+  gets a lower base cooldown instead of a high one that shrinks later, since Cooldown Reduction lowers it as the player
+  progresses ([11.5](#115-resources-cooldowns-modifiers)); exceptions exist (Matěj, 2026-11-03), such as Frost Nova's
+  and Ice Barrier's (RLM-572).
 - **Who is limited by what:** the Warrior's spells are instant with longer cooldowns; the Mage's main spells are
   limited by their cast time and have short or no cooldowns, as in WoW. For casters Cast Time Reduction does much
   what Cooldown Reduction does: it sets how often a spell can be cast. Cooldown Reduction is primarily a caster stat;
@@ -2127,7 +2140,7 @@ to a single target. Damage labels (Low, Medium, High) compare a spell with the o
 | Specialization | First spell | Damage | Cast and cooldown | Effect by rank 1 / 2 / 3 / 4 / 5 |
 | --- | --- | --- | --- | --- |
 | Fire | Fireball | Medium | 1.5 s cast at every rank, no cooldown | Burning (fire damage over time) I / I / I / I / II |
-| Frost | Frostbolt | Medium | 1.5 s cast at every rank, no cooldown | Slowness I / I / I / I / II |
+| Frost | Frostbolt | Medium | 1.5 s cast at every rank, no cooldown | Slowness I / I / I / I / II (RLM-572: I / I / II / II / III, 4 s) |
 | Arcane | Arcane Missiles | High | a 1.5 s channel of 3 missiles, one every 0.5 s, at every rank (RLM-518), no cooldown; costs more mana than Fireball or Frostbolt | spell penetration 5 / 10 / 15 / 20 / 25 % |
 
 - Only the cast time limits Fireball and Frostbolt. Cast Time Reduction later brings them to about 0.5 s: in the
@@ -2210,28 +2223,33 @@ Missiles leave the M1 kit and come back with their trees in M3 (RLM-218).
 | 18 | Blizzard (3) | | |
 
 - **The loop:** slow (Frostbolt, Cone of Cold, Blizzard), freeze (Frost Nova; Frostbite on a Slowness), then Ice Lance,
-  × 2 to × 3 against a Frozen target, with Shatter's crit chance against it.
-- **Numbers** (rank 1 to the highest, SP = Spell Power): **Cone of Cold** 5/6/7 + 60/70/80 % SP to every enemy in a
-  5-block, 60° cone ([11.3](#113-spell-entities)), Slowness II 3/4/5 s, 10 s, 30/40/50 mana. **Ice Lance** instant,
-  3 to 5 + 40 to 60 % SP, × 2/2.25/2.5/2.75/3 against Frozen, 4 s, 15/25/35/45/55 mana. **Frost Nova** 3/4/5 +
-  30/35/40 % SP within 4 blocks, Frozen 5/7.5/10 s, 20 s, 30/40/50 mana. **Blizzard** a 6 s channel at a ground spot,
-  twelve waves of 2/2.5/3 + 20/25/30 % SP within 4 blocks, Slowness I (II at rank 3), 13/18/23 mana a second.
-  **Improved Frostbolt** +5/10/15 % Frostbolt damage; rank 3 widens Frostbolt's splash from 1 to 1.5 blocks instead of
-  the document's "its Slowness also hits the enemies its splash damages", which the splash already does (Matěj,
-  2026-10-31). **Frostbite** a 5/10/15 % chance on the Mage's Slowness to Freeze for 3 s (5 s at rank 3), once every 5 s
-  on each target. **Shatter** +10/20/30 % crit chance against Frozen targets. Frostbolt costs 10/15/20/25/30 mana and
-  Ice Barrier 25/35/45; their other numbers are below. Damage ends Frozen at a 50 % chance
-  ([11.4](#114-status-effects)).
+  × 2 to × 4 against a Frozen target, with Shatter's crit chance against it.
+- **Numbers** (Matěj's rebalance of 2026-11-01, RLM-572, which replaced the first numbers; rank 1 to the highest,
+  SP = Spell Power): **Frostbolt** 8/9/10/11/12 + 100/115/130/145/160 % SP, 10/15/20/25/30 mana, no cooldown, Slowness
+  for 4 s, I / I / II / II / III. **Cone of Cold** 5/6/7 + 80/90/100 % SP to every enemy in a 5-block, 60° cone
+  ([11.3](#113-spell-entities)), Slowness II 4/6/8 s, 10 s, 30/40/50 mana. **Ice Lance** instant, 4/5/6/7/8 +
+  45/50/55/60/65 % SP, × 2/2.5/3/3.5/4 against Frozen, no cooldown, 15/25/35/45/55 mana. **Frost Nova** 3/4/5 +
+  40/50/60 % SP within 4 blocks, Frozen 6/8/10 s, 20/15/10 s, 30/40/50 mana. **Ice Barrier** 25/35/45 mana, 60/45/30 s
+  (its shield below). **Blizzard** an 8 s channel at a ground spot, eight waves of 4/6/8 + 40/60/80 % SP within 4
+  blocks, one a second, Slowness I (II at rank 3), 40/60/80 mana up front and 15/20/25 a second, no cooldown; Cast Time
+  Reduction adds waves instead of shortening it, round(8 × (1 + CTR)), halves up (10 with 20 or 25 %), and its tooltip
+  counts them. **Improved Frostbolt** +5/10/15 % Frostbolt damage; rank 3 widens Frostbolt's splash from 1 to 1.5
+  blocks instead of the document's "its Slowness also hits the enemies its splash damages", which the splash already
+  does (Matěj, 2026-10-31). **Frostbite** a 5/10/15 % chance on the Mage's Slowness to Freeze for 4/6/8 s, once every
+  5 s on each target. **Shatter** +10/20/30 % crit chance against Frozen targets; its tooltip says that crit chance
+  above 100 % turns into crit damage. Damage ends Frozen at a 50 % chance ([11.4](#114-status-effects)).
 - **Matěj's playtest of 2026-11-01** set Blizzard's 6 s, its 4 blocks and its cost, Frostbite's and Frost Nova's
   Frozen at their top ranks (5 s and 10 s; the lower ranks scaled by Claude, Frostbite 3 s, Frost Nova × 2.5), every
-  cost per rank and Frozen's break on damage; Astone died too fast with little effort, and a separate ticket of his
-  balances the spells.
+  cost per rank and Frozen's break on damage; Astone died too fast with little effort, and his rebalance of the same day
+  (RLM-572, the numbers above) followed it.
 - **The target** (RLM-503): an L18 Mage in good M1 gear kills Astone (about 3,000 health in RLM-503's balance; 1,500
   since RLM-580) in about 40 casts, 2.5 to
   3 minutes; at 60 or more, Astone is nerfed rather than the spells buffed.
-- `FrostTreeGameTests` covers every active's damage at rank 1 and its highest rank, Ice Lance against Frozen,
-  Frostbite's chance and cooldown, Frozen breaking on about half the hits, the cone, the nova, Blizzard's waves, the
-  wider splash and the kit by rows.
+- `FrostTreeGameTests` covers every active's damage, mana and cooldown at rank 1 and its highest rank, Ice Lance
+  against Frozen, Frostbite's chance, duration by rank and cooldown, Frozen breaking on about half the hits, the cone,
+  the nova, Blizzard's eight waves and their mana, its ten waves with 20 and 25 % Cast Time Reduction, the wider
+  splash, the tooltips (Blizzard's waves and cost, Frost Nova's cooldown by rank, Shatter's overflow line) and the kit by
+  rows.
 
 **The Arms Warrior's "Bloodletter" tree** (RLM-543; Matěj, 2026-10-30, RLM-333's comment and the "Spell Trees to Level
 18" document, chosen for M1, version 1 of every spell, balanced by Claude): the same rows, a new one every 6 levels,
@@ -2270,13 +2288,13 @@ with their trees in M3. Bloodthirst needs Rend in the tree, which C5 checks; the
   5 % per rank. **Reckless Strike:** 2 + 1 per rank + 100 % of attack damage, 20 rage, 4 s, a melee weapon; crit
   chance +10 % and 5 % more per rank. **Shield Bash:** 1 + 0.5 per rank + 60 % of attack damage, 15 rage, 6 s, a
   shield; Stunned 0.5 s and 0.25 s more per rank.
-- **Frostbolt:** 8/9/10/11/12 + 100 to 200 % SP (system C, RLM-534), 10 mana; Slowness 3 s and 0.5 s more per rank,
-  II from rank 5. **Fireball** (out of the M1 kit since RLM-542): 8 + 2 per rank, 12 mana; Burning (0.75 fire every 0.5 s, many small ticks, RLM-518) 4 s and 0.5 s more per rank, II from
+- **Frostbolt:** 8/9/10/11/12 + 100 to 160 % SP (system C, RLM-534; RLM-572), 10/15/20/25/30 mana; Slowness 4 s, II
+  from rank 3 and III at rank 5 (RLM-572). **Fireball** (out of the M1 kit since RLM-542): 8 + 2 per rank, 12 mana; Burning (0.75 fire every 0.5 s, many small ticks, RLM-518) 4 s and 0.5 s more per rank, II from
   rank 5. **Arcane Missiles:** 3 × (5 + 1 per rank), 12 mana a second.
 - **The self-buffs** (Matěj, 2026-10-30): the Warrior's **Battle Shout** (max rank 2, 15/30 rage, 1 minute: +5/10 %
   attack damage and +10/20 % attack speed for the Warrior and the allies within 10 blocks for 10 minutes; Matěj,
-  2026-11-03) and the Mage's **Ice Barrier** (max rank 3, 25 mana, 1 minute: +10 / 20 / 30 Magic Shield for 10 / 20 /
-  30 s, filled at once; the Mage survives
+  2026-11-03) and the Mage's **Ice Barrier** (max rank 3, 25/35/45 mana, 60/45/30 s since RLM-572: +10 / 20 / 30 Magic
+  Shield for 10 / 20 / 30 s, filled at once; the Mage survives
   through shields, not heals, Matěj, 2026-10-22). Spell power raises neither, Cooldown Reduction shortens both, and a
   second cast refreshes the effect instead of stacking it.
 - **Will To Survive** (the Human's racial): free, 1 minute, cast while stunned, of no school.

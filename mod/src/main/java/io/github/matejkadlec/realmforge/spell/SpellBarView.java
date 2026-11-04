@@ -71,11 +71,13 @@ public record SpellBarView(List<Slot> slots) {
             int window = Slot.NO_WINDOW;
             if (spell.isPresent()) {
                 Spell value = spell.get();
-                int ownTotal = SpellScaling.cooldownTicks(value.cooldownTicks(), cooldownReduction);
+                int ownTotal = SpellScaling.cooldownTicks(value.cooldownTicksAt(Math.max(1, level)),
+                        cooldownReduction);
                 int global = value.globalCooldownTicks() > 0 ? (int) Math.max(0, combat.globalCooldownEnd() - now) : 0;
                 cooldown = own >= global ? share(own, ownTotal) : share(global, globalCooldownTicks);
                 affordable = value.cost().flatMap(cost -> cost.resource().unwrapKey())
-                        .map(type -> combat.resource(type) + 1e-4 >= value.costAt(Math.max(1, level))).orElse(true);
+                        .map(type -> combat.resource(type) + 1e-4 >= value.startCostAt(Math.max(1, level)))
+                        .orElse(true);
                 // A target health condition lights up like a window while the current target meets it (Windows).
                 if (value.conditions().window().isPresent() || value.conditions().targetHealthBelow().isPresent()) {
                     window = (int) Math.max(0, combat.windows().getOrDefault(key.get(), 0L) - now);

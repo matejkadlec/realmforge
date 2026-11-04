@@ -47,7 +47,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
  *   the owner's client sees it and a second cast is refused; this system keeps what only the server needs (the target,
  *   the spell level, where the cast began, the ticks run).</li>
  *   <li><b>Cast Time Reduction</b> shortens a cast time, and a channel's interval, so a channel keeps its tick
- *   count.</li>
+ *   count; a channel whose ticks it multiplies keeps its duration and runs round(ticks × (1 + reduction)) ticks in it
+ *   instead, spread evenly (RLM-572: Blizzard's waves).</li>
  *   <li><b>Interrupts:</b> a spell's knockback (unless the spell may be cast while moving), death, a dimension change,
  *   logging out, the caster's removal and a cancel ({@link #cancel}) end it without more effects.</li>
  *   <li><b>Moving slows, it never interrupts</b> (RLM-261, ADR 0039): a cast of a spell that may not be cast while
@@ -62,9 +63,10 @@ import net.neoforged.neoforge.network.PacketDistributor;
  *   target is checked again ({@link SpellCaster#recheck}), and a failed check ends it like an interrupt, without the
  *   cooldown or the effects; the cost stays paid. Otherwise it starts its cooldown and runs its effects.</li>
  *   <li><b>Its sound:</b> a spell with a cast sound plays it from the caster when the cast begins.</li>
- *   <li><b>A channel</b> paid for its first second when it began, and pays its cost again as each later second begins
- *   (Matěj, 2026-10-24: as in WoW), its seconds shortened by Cast Time Reduction as its interval is, so the number of
- *   payments stays; a pool that falls short ends it ({@link CastEnd#NOT_ENOUGH_RESOURCE}). It runs its effects at the
+ *   <li><b>A channel</b> paid for its first second when it began, with its cost up front if it has one (RLM-572), and
+ *   pays its cost again as each later second begins (Matěj, 2026-10-24: as in WoW), its seconds shortened by Cast Time
+ *   Reduction as its interval is, so the number of payments stays (whole seconds for a channel that keeps its
+ *   duration); a pool that falls short ends it ({@link CastEnd#NOT_ENOUGH_RESOURCE}). It runs its effects at the
  *   end of every interval, checking the target first; a failed check or an interrupt ends it, and the ticks already
  *   run stay applied.</li>
  *   <li><b>Clients</b> learn of a cast from {@link CastStartedPayload} (the caster and every tracking player, and a
@@ -136,10 +138,11 @@ public final class Casting {
         SpellCast spellCast = spell.value().cast();
         double reduction = DamagePipeline.stat(caster, GeneratedStats.CAST_TIME_REDUCTION);
         boolean channel = spellCast.type() == SpellCast.Type.CHANNEL;
-        int interval = channel ? SpellScaling.castTicks(spellCast.intervalTicks(), reduction) : 0;
-        int duration = channel ? interval * spellCast.tickCount()
-                : SpellScaling.castTicks(spellCast.durationTicks(), reduction);
-        int second = channel ? SpellScaling.castTicks(TICKS_PER_SECOND, reduction) : 0;
+        // RLM-572: a channel whose ticks the reduction multiplies keeps its duration, and so its seconds.
+        boolean addsTicks = channel && spellCast.castTimeReduction() == SpellCast.Haste.ADDS_TICKS;
+        int duration = spellCast.durationFor(reduction);
+        int ticks = channel ? spellCast.tickCountFor(reduction) : 0;
+        int second = !channel ? 0 : addsTicks ? TICKS_PER_SECOND : SpellScaling.castTicks(TICKS_PER_SECOND, reduction);
         int payments = channel ? Math.ceilDiv(spellCast.durationTicks(), TICKS_PER_SECOND) : 0;
         Cast cast = new Cast(spell.key(), now, duration, channel);
 
@@ -156,7 +159,7 @@ public final class Casting {
                 speed.addOrUpdateTransientModifier(CAST_SLOW);
             }
         }
-        Running running = new Running(caster, spell, level, target, (ServerLevel) caster.level(), cast, interval,
+        Running running = new Running(caster, spell, level, target, (ServerLevel) caster.level(), cast, ticks,
                 second, payments, damageScale, 0);
         RUNNING.put(caster, running);
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new CastStartedPayload(caster.getId(), cast));
@@ -335,8 +338,8 @@ public final class Casting {
         }
         showCircle(running);
         if (running.cast().channel()) {
-            while (running.ticksRun < spell.cast().tickCount()
-                    && now >= running.cast().startGameTime() + (long) (running.ticksRun + 1) * running.interval()) {
+            while (running.ticksRun < running.ticks() && now >= running.cast().startGameTime()
+                    + SpellScaling.channelTickAt(running.ticksRun + 1, running.ticks(), running.cast().durationTicks())) {
                 Optional<CastFailure> failed = SpellCaster.recheck(caster, spell, running.target());
                 if (failed.isPresent()) {
                     end(caster, CastEnd.of(failed.get()));
@@ -349,7 +352,7 @@ public final class Casting {
                     return;
                 }
             }
-            if (running.ticksRun >= spell.cast().tickCount()) {
+            if (running.ticksRun >= running.ticks()) {
                 end(caster, CastEnd.COMPLETED);
                 return;
             }
@@ -364,7 +367,8 @@ public final class Casting {
             end(caster, CastEnd.of(failed.get()));
             return;
         }
-        SpellCaster.startCooldown(caster, spell, running.spell().key(), caster.getData(SpellAttachments.COMBAT), now);
+        SpellCaster.startCooldown(caster, spell, running.spell().key(), running.spellLevel(),
+                caster.getData(SpellAttachments.COMBAT), now);
         end(caster, CastEnd.COMPLETED);
         SpellCaster.runEffects(running.level(), caster, running.spell(), running.spellLevel(),
                 running.target().now(caster, spell.targeting()), Optional.empty(), running.damageScale());
@@ -400,7 +404,7 @@ public final class Casting {
         SpellCaster.refund(caster, spell, running.paid() / 2, state);
         Long cooldownEnd = state.cooldowns().get(running.spell().key());
         if (cooldownEnd != null) {
-            int cooldown = SpellScaling.cooldownTicks(spell.cooldownTicks(),
+            int cooldown = SpellScaling.cooldownTicks(spell.cooldownTicksAt(running.spellLevel()),
                     DamagePipeline.stat(caster, GeneratedStats.COOLDOWN_REDUCTION));
             state.setCooldownEnd(running.spell().key(),
                     Math.max(running.level().getGameTime(), cooldownEnd - cooldown / 2));
@@ -620,7 +624,7 @@ public final class Casting {
         private final SpellTarget target;
         private final ServerLevel level;
         private final Cast cast;
-        private final int interval;
+        private final int ticks;
         private final int second;
         private final int payments;
         private final double damageScale;
@@ -638,7 +642,7 @@ public final class Casting {
         private Queued next;
 
         private Running(LivingEntity caster, Holder.Reference<Spell> spell, int spellLevel, SpellTarget target,
-                ServerLevel level, Cast cast, int interval, int second, int payments, double damageScale,
+                ServerLevel level, Cast cast, int ticks, int second, int payments, double damageScale,
                 double paid) {
             this.caster = caster;
             this.spell = spell;
@@ -646,7 +650,7 @@ public final class Casting {
             this.target = target;
             this.level = level;
             this.cast = cast;
-            this.interval = interval;
+            this.ticks = ticks;
             this.second = second;
             this.payments = payments;
             this.damageScale = damageScale;
@@ -688,12 +692,18 @@ public final class Casting {
             return cast;
         }
 
-        /** A channel's ticks between two runs of its effects; 0 for a cast time. */
-        int interval() {
-            return interval;
+        /**
+         * How often a channel runs its effects, spread evenly over its duration ({@link SpellCast#tickCountFor}: more
+         * with Cast Time Reduction for a channel whose ticks it multiplies, RLM-572); 0 for a cast time.
+         */
+        int ticks() {
+            return ticks;
         }
 
-        /** A channel's second after Cast Time Reduction, in ticks: how often it pays; 0 for a cast time. */
+        /**
+         * A channel's second in ticks, how often it pays: shortened by Cast Time Reduction as its interval is, a whole
+         * second for a channel that keeps its duration (RLM-572); 0 for a cast time.
+         */
         int second() {
             return second;
         }

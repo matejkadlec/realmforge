@@ -8,34 +8,65 @@ import net.minecraft.util.ExtraCodecs;
 
 /**
  * What a cast costs (architecture 11.1): an amount of a resource, growing per spell level like the effects
- * (research SP-9: MnS's Fireball costs more at higher ranks).
+ * (research SP-9: MnS's Fireball costs more at higher ranks); a channel's for each second, and optionally an amount up
+ * front when it begins (RLM-572).
  *
  * @param resource the resource the cast takes
- * @param amount the amount at spell level 1
+ * @param amount the amount at spell level 1: a channel's for each second
  * @param perLevel added for every spell level above 1
  * @param extra more of the resource a player's cast spends when they have it, for more damage (RLM-540: Execute)
  * @param refundOnKill resource a player's cast gets back for each enemy its hits kill, from a rank on (RLM-543:
  *                     Execute), if any
+ * @param upFront what a channel costs when it begins, on top of its first second's (RLM-572: Blizzard), if anything
  */
 public record SpellCost(Holder<ResourceType> resource, double amount, double perLevel, Optional<Extra> extra,
-        Optional<KillRefund> refundOnKill) {
+        Optional<KillRefund> refundOnKill, Optional<UpFront> upFront) {
     public static final Codec<SpellCost> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                     ResourceType.CODEC.fieldOf("resource").forGetter(SpellCost::resource),
                     Codec.doubleRange(0, Double.MAX_VALUE).fieldOf("amount").forGetter(SpellCost::amount),
                     Codec.doubleRange(0, Double.MAX_VALUE).optionalFieldOf("per_level", 0.0)
                             .forGetter(SpellCost::perLevel),
                     Extra.CODEC.optionalFieldOf("extra").forGetter(SpellCost::extra),
-                    KillRefund.CODEC.optionalFieldOf("refund_on_kill").forGetter(SpellCost::refundOnKill))
+                    KillRefund.CODEC.optionalFieldOf("refund_on_kill").forGetter(SpellCost::refundOnKill),
+                    UpFront.CODEC.optionalFieldOf("up_front").forGetter(SpellCost::upFront))
             .apply(instance, SpellCost::new));
 
     /** A cost without extra spending. */
     public SpellCost(Holder<ResourceType> resource, double amount, double perLevel) {
-        this(resource, amount, perLevel, Optional.empty(), Optional.empty());
+        this(resource, amount, perLevel, Optional.empty(), Optional.empty(), Optional.empty());
     }
 
     /** A cost that may spend extra, without a refund. */
     public SpellCost(Holder<ResourceType> resource, double amount, double perLevel, Optional<Extra> extra) {
-        this(resource, amount, perLevel, extra, Optional.empty());
+        this(resource, amount, perLevel, extra, Optional.empty(), Optional.empty());
+    }
+
+    /** A cost that may spend extra and refund a kill, without an amount up front. */
+    public SpellCost(Holder<ResourceType> resource, double amount, double perLevel, Optional<Extra> extra,
+            Optional<KillRefund> refundOnKill) {
+        this(resource, amount, perLevel, extra, refundOnKill, Optional.empty());
+    }
+
+    /**
+     * What a channel costs when it begins, on top of its first second's: {@code amount} at rank 1 and {@code perLevel}
+     * more for every rank above it (RLM-572: Blizzard's 40/60/80 mana, then 15/20/25 a second).
+     */
+    public record UpFront(double amount, double perLevel) {
+        public static final Codec<UpFront> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                        Codec.doubleRange(0, Double.MAX_VALUE).fieldOf("amount").forGetter(UpFront::amount),
+                        Codec.doubleRange(0, Double.MAX_VALUE).optionalFieldOf("per_level", 0.0)
+                                .forGetter(UpFront::perLevel))
+                .apply(instance, UpFront::new));
+
+        /** The amount at rank {@code level}. */
+        public double amountAt(int level) {
+            return SpellScaling.atLevel(amount, perLevel, level);
+        }
+    }
+
+    /** What a channel costs up front at rank {@code level}, on top of its first second's: 0 without an amount up front. */
+    public double upFrontAt(int level) {
+        return upFront.map(more -> more.amountAt(level)).orElse(0.0);
     }
 
     /**
