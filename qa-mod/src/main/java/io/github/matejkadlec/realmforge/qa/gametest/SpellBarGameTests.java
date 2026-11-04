@@ -1,5 +1,6 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
+import io.github.matejkadlec.realmforge.combat.CombatConfig;
 import io.github.matejkadlec.realmforge.generated.GeneratedSpells;
 import io.github.matejkadlec.realmforge.qa.combat.CastLog;
 import io.github.matejkadlec.realmforge.spell.CastEnd;
@@ -26,8 +27,10 @@ import net.minecraft.world.entity.monster.zombie.Husk;
 
 /**
  * C3b (RLM-25): the spell bar's server side (architecture 11.2 step 1, 11.6). A newly learned spell takes the bar's
- * first empty slot, and learning it again leaves the bar alone (RLM-374); the spellbook moves, swaps and empties slots; a cast from the bar may replace the cast in progress, but
- * only once every other check passed, and never with the same spell; the bar's view knows what the player can afford.
+ * first empty slot, and learning it again leaves the bar alone (RLM-374); the spellbook moves, swaps and empties slots;
+ * a cast from the bar may replace the cast in progress, but only once every other check passed, and never with the same
+ * spell, and a cast with less than a quarter of a second left finishes first, the new spell following it (RLM-517);
+ * the bar's view knows what the player can afford.
  */
 public final class SpellBarGameTests {
     private SpellBarGameTests() {
@@ -134,6 +137,113 @@ public final class SpellBarGameTests {
         });
     }
 
+    /**
+     * RLM-517: with a quarter of a second or more left on the cast, a spell from the bar still cancels it, an instant
+     * one too: the bolt lands at once and its cooldown starts now.
+     */
+    @QaGameTest
+    public static void aBarSpellCancelsACastWithAQuarterSecondOrMoreLeft(GameTestHelper helper) {
+        ServerPlayer player = CastGameTests.caster(helper, "qa-bar-finish-not");
+        Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 3));
+        learn(helper, player, GeneratedSpells.TEST_SLOW_BOLT, 1);
+        learn(helper, player, GeneratedSpells.TEST_BOLT, 1);
+        Optional<Integer> target = Optional.of(husk.getId());
+        helper.assertTrue(SpellBar.cast(player, GeneratedSpells.TEST_SLOW_BOLT, target, true).begun(),
+                "the slow bolt begins");
+        CombatState.Cast slow = Spells.currentCast(player).orElseThrow();
+        helper.runAfterDelay(30, () -> {
+            long now = helper.getLevel().getGameTime();
+            helper.assertTrue(slow.endGameTime() - now >= CombatConfig.finishCastTicks(),
+                    "a quarter of a second or more is left: " + (slow.endGameTime() - now) + " ticks");
+            CastResult bolt = SpellBar.cast(player, GeneratedSpells.TEST_BOLT, target, true);
+            helper.assertTrue(bolt.success() && !bolt.queued(), "the bolt is cast at once: " + bolt);
+            helper.assertValueEqual(CastLog.last(player).map(CastLog.Ended::end), Optional.of(CastEnd.CANCELLED),
+                    "the slow bolt was cancelled");
+            helper.assertFalse(Casting.isCasting(player), "nothing casts any more");
+            helper.assertValueEqual(cooldownEnd(player, GeneratedSpells.TEST_BOLT), Optional.of(now + 60),
+                    "the bolt's 3 s cooldown started now");
+            helper.assertTrue(husk.getHealth() < SpellGameTests.HEALTH, "the bolt hit");
+            logout(player);
+            helper.succeed();
+        });
+    }
+
+    /**
+     * RLM-517 (Matěj, 2026-10-29): with less than a quarter of a second left on the cast, a spell from the bar, sent as
+     * with Queue Spell Casts off ({@code replaceCast}), waits: the cast completes, and the new spell's cast begins in
+     * the same tick, right after it. A newer press replaces the waiting spell.
+     */
+    @QaGameTest
+    public static void aCastWithLessThanAQuarterSecondLeftFinishesBeforeTheNextSpell(GameTestHelper helper) {
+        ServerPlayer player = CastGameTests.caster(helper, "qa-bar-finish-cast");
+        Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 3));
+        learn(helper, player, GeneratedSpells.TEST_SLOW_BOLT, 1);
+        learn(helper, player, GeneratedSpells.TEST_HOMING_BOLT, 1);
+        learn(helper, player, GeneratedSpells.TEST_BOLT, 1);
+        Optional<Integer> target = Optional.of(husk.getId());
+        helper.assertTrue(SpellBar.cast(player, GeneratedSpells.TEST_SLOW_BOLT, target, true).begun(),
+                "the slow bolt begins");
+        CombatState.Cast slow = Spells.currentCast(player).orElseThrow();
+        helper.runAfterDelay(37, () -> {
+            long left = slow.endGameTime() - helper.getLevel().getGameTime();
+            helper.assertTrue(left > 0 && left < CombatConfig.finishCastTicks(),
+                    "less than a quarter of a second is left: " + left + " ticks");
+            CastResult bolt = SpellBar.cast(player, GeneratedSpells.TEST_BOLT, target, true);
+            helper.assertTrue(bolt.queued(), "the instant bolt waits: " + bolt);
+            CastResult homing = SpellBar.cast(player, GeneratedSpells.TEST_HOMING_BOLT, target, true);
+            helper.assertTrue(homing.queued(), "a newer press waits instead of it: " + homing);
+            helper.assertValueEqual(Casting.queued(player), Optional.of(GeneratedSpells.TEST_HOMING_BOLT),
+                    "the homing bolt waits");
+            helper.assertValueEqual(Spells.currentCast(player).map(CombatState.Cast::spell),
+                    Optional.of(GeneratedSpells.TEST_SLOW_BOLT), "the slow bolt goes on");
+            helper.assertValueEqual(husk.getHealth(), (float) SpellGameTests.HEALTH, "nothing hit yet");
+        });
+        helper.runAfterDelay(45, () -> {
+            helper.assertValueEqual(CastLog.last(player), Optional.of(new CastLog.Ended(
+                    GeneratedSpells.TEST_SLOW_BOLT, CastEnd.COMPLETED)), "the slow bolt completed");
+            helper.assertTrue(husk.getHealth() < SpellGameTests.HEALTH, "and hit");
+            Optional<CombatState.Cast> next = Spells.currentCast(player);
+            helper.assertValueEqual(next.map(CombatState.Cast::spell), Optional.of(GeneratedSpells.TEST_HOMING_BOLT),
+                    "the homing bolt casts");
+            helper.assertValueEqual(next.map(CombatState.Cast::startGameTime), Optional.of(slow.endGameTime()),
+                    "it began in the tick the slow bolt completed");
+            helper.assertValueEqual(cooldownEnd(player, GeneratedSpells.TEST_BOLT), Optional.empty(),
+                    "the bolt it replaced was never cast");
+            logout(player);
+            helper.succeed();
+        });
+    }
+
+    /** RLM-517: an instant spell from the bar waits for a cast with less than a quarter of a second left the same way. */
+    @QaGameTest
+    public static void anInstantSpellWaitsForACastNearlyDone(GameTestHelper helper) {
+        ServerPlayer player = CastGameTests.caster(helper, "qa-bar-finish-instant");
+        Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 3));
+        learn(helper, player, GeneratedSpells.TEST_SLOW_BOLT, 1);
+        learn(helper, player, GeneratedSpells.TEST_BOLT, 1);
+        Optional<Integer> target = Optional.of(husk.getId());
+        helper.assertTrue(SpellBar.cast(player, GeneratedSpells.TEST_SLOW_BOLT, target, true).begun(),
+                "the slow bolt begins");
+        CombatState.Cast slow = Spells.currentCast(player).orElseThrow();
+        helper.runAfterDelay(37, () -> {
+            long left = slow.endGameTime() - helper.getLevel().getGameTime();
+            helper.assertTrue(left > 0 && left < CombatConfig.finishCastTicks(),
+                    "less than a quarter of a second is left: " + left + " ticks");
+            helper.assertTrue(SpellBar.cast(player, GeneratedSpells.TEST_BOLT, target, true).queued(),
+                    "the instant bolt waits");
+            helper.assertValueEqual(cooldownEnd(player, GeneratedSpells.TEST_BOLT), Optional.empty(), "not cast yet");
+        });
+        helper.runAfterDelay(45, () -> {
+            helper.assertValueEqual(CastLog.last(player), Optional.of(new CastLog.Ended(
+                    GeneratedSpells.TEST_SLOW_BOLT, CastEnd.COMPLETED)), "the slow bolt completed");
+            helper.assertValueEqual(cooldownEnd(player, GeneratedSpells.TEST_BOLT),
+                    Optional.of(slow.endGameTime() + 60), "the bolt was cast in the tick the slow bolt completed");
+            helper.assertFalse(Casting.isCasting(player), "an instant bolt leaves no cast");
+            logout(player);
+            helper.succeed();
+        });
+    }
+
     /** The bar's view: a spell the pool does not cover shows as unaffordable, and its cooldown sweep starts full. */
     @QaGameTest
     public static void theBarShowsAffordabilityAndCooldowns(GameTestHelper helper) {
@@ -165,6 +275,11 @@ public final class SpellBarGameTests {
 
     private static void learn(GameTestHelper helper, ServerPlayer player, ResourceKey<Spell> spell, int level) {
         Spells.learn(player, Spells.get(helper.getLevel().registryAccess(), spell).orElseThrow(), level);
+    }
+
+    /** When {@code spell}'s own cooldown ends for {@code player}, while it runs. */
+    private static Optional<Long> cooldownEnd(ServerPlayer player, ResourceKey<Spell> spell) {
+        return Optional.ofNullable(player.getData(SpellAttachments.COMBAT).cooldowns().get(spell));
     }
 
     private static void assertRefused(GameTestHelper helper, CastResult result, CastFailure expected, String what) {

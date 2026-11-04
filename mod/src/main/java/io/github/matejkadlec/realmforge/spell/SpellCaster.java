@@ -57,7 +57,9 @@ import net.minecraft.world.item.ItemStack;
  * <p>The spell bar may replace the cast in progress (C3b, RLM-25; Matěj, 2026-10-19: with spell queueing off, a new
  * spell cancels the cast and casts at once): with {@code replaceCast}, a cast of another spell skips the
  * already-casting check, and only once every other check passed is the cast in progress cancelled, so a refused spell
- * never cancels it. Two spells never cast at once.
+ * never cancels it. A cast with less than a quarter of a second left (the common config's {@code finishCastSeconds})
+ * is not cancelled: it finishes, and the new spell waits and is cast right after it (Matěj, 2026-10-29, RLM-517;
+ * {@link CastResult#queued}). Two spells never cast at once.
  *
  * <p>A proc casts its spell through {@link #castProc}: at once and for free, whatever the caster is doing.
  */
@@ -180,6 +182,11 @@ public final class SpellCaster {
             return CastResult.refused(CastFailure.NOT_ENOUGH_RESOURCE);
         }
         if (current.isPresent()) {
+            if (Casting.finishesFirst(caster, now)) {
+                // RLM-517: a cast nearly done finishes, and this spell follows it, checked and paid again then.
+                Casting.queueAfter(caster, spell, level, aim);
+                return CastResult.queued(hit);
+            }
             Casting.cancel(caster);
         }
 
@@ -212,6 +219,14 @@ public final class SpellCaster {
         runEffects(serverLevel, caster, spell, level, hit, Optional.empty(), damageScale);
         wentOff(caster, spell);
         return CastResult.cast(hit);
+    }
+
+    /**
+     * {@code caster} casts {@code spell} at {@code level} at {@code aim} now that the cast it waited for ended
+     * (RLM-517, {@link Casting}): every check again, as if it was asked for now, without replacing a cast.
+     */
+    static CastResult castQueued(LivingEntity caster, Holder.Reference<Spell> spell, int level, SpellAim aim) {
+        return cast(caster, spell, level, aim, false);
     }
 
     /**

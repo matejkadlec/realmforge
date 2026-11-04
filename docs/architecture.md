@@ -1464,8 +1464,10 @@ lists spells granted while equipped or on use): the vision's "some from the race
    spell's target is in range and line of sight, a player holds what the spell `requires` (11.1), and the caster is
    not silenced, stunned (but for a spell `castable_while_stunned`, C4) or already casting. A
    direction or a ground point never refuses a cast for its target (spell aiming, below).
-3. Instant spells run now. A cast-time or channelled spell stores the current cast in the `combat` attachment and
-   sends `CastStartedPayload` to the caster and tracking players (cast bar, animation). A player who starts
+3. Instant spells run now. A spell the spell bar asks for while a cast has less than a quarter of a second left waits
+   for it and is cast right after it (RLM-517, [11.6](#116-client-side)). A cast-time or channelled spell stores the
+   current cast in the `combat` attachment and sends `CastStartedPayload` to the caster and tracking players (cast
+   bar, animation). A player who starts
    tracking the caster later (walking up to a boss, reconnecting mid-cast) gets the current cast from a
    `PlayerEvent.StartTracking` listener, as a `CastStartedPayload` with the original start time, so the telegraph
    still shows. An interrupt cancels the cast; moving never does, but slows the caster
@@ -1796,13 +1798,16 @@ placeholder disc in the effect's colour with an arrow up or down, or one drawn i
 `generate/effect_icons.py`: Battle Shout's and Ice Barrier's, C4), the name
 `effect.realmforge.<id>` and `GeneratedEffectExpectations`, which `ContentEffectGameTests` checks. Each is an
 `effect/StatusEffect`: vanilla's modifiers, multiplied by the amplifier + 1, and an `effect/Periodic` that ticks at the
-end of every interval since the effect began (an effect of 4 s and 1 s intervals ticks 4 times, the first after a
-second; validation keeps a spell's durations whole intervals), each level adding the amount again. It counts the
-remaining duration (`Periodic#ticksAt`), which every application resets, so an area or a channel that applies it again
-sooner than it ticks would keep it from ticking at all: validation refuses an interval shorter than the effect's
-(RLM-376); an equal one loses only the partial interval, as in Classic. Cast Time Reduction shortens a channel's
-interval, and validation cannot see it, so a hasted channel that applies such an effect at every interval still keeps
-it from ticking.
+end of every interval since the effect was first applied (an effect of 4 s and 1 s intervals ticks 4 times, the first
+after a second; validation keeps a spell's durations whole intervals), each level adding the amount again. **It ticks at
+the pace of its first application** (RLM-487): `effect/EffectAges` counts every server tick each periodic effect runs
+on its holder (`realmforge:effect_ages`, saved, never synced) and `Periodic#ticksAtAge` ticks it at every whole interval
+of that age, instead of vanilla's remaining duration, which every application resets. A new application of an effect
+the holder does not have starts the count again (`MobEffectEvent.Added` without an old instance), and its removal or
+expiry forgets it. So an application while it lasts only lengthens it: an area or a channel may apply it again at any
+interval (a channel that Cast Time Reduction hastens, a channel's areas that pulse out of step) and it still ticks every
+interval, and a recast loses only the partial interval after its last tick, as in Classic. Until RLM-487 validation
+refused an area or a channel that applied it sooner than it ticks (RLM-376), which no longer holds anything back.
 `effect/EffectTicks` deals a tick as a hit of the school from the effect's caster: its amount plus its share of the
 caster's Spell Power (`spell_power_percent` on the effect's `periodic`, system C, RLM-534; Burning's 3 % a tick), each
 amplifier level adding that again, which the damage pipeline raises by the caster's school power, both as they are when
@@ -1818,7 +1823,9 @@ holds it as the hidden effect, which takes over without an event once the strong
 what dispels (C4) and talents (postponed, RLM-28) read. An effect a proc's spell applied keeps the proc origin, and
 its ticks carry it, so they trigger no proc
 ([12](#12-talents)). `EffectGameTests` covers the ticks, the caster's stats, a caster that left, the modifiers, the
-sources and a proc's damage over time.
+sources, a proc's damage over time, and burning applied again by a hasted channel (`test_kindle`) and by a channel's
+overlapping areas (`test_ember_field`), which ticks every second throughout (RLM-487); `PeriodicTest` and
+`EffectAgesTest` the pace.
 
 **In code (C4, RLM-27): stuns, ranks and cleanses.** An effect marked `stun` (Stunned, Shield Bash's) gives -100 %
 movement speed and jump strength (the pipeline requires both modifiers), and `effect/Stuns` does the rest while it
@@ -1967,6 +1974,18 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
   crosshair points, and `replaceCast`); `spell/SpellBar` picks a targeted spell's target by aim assistance when it names
   none ([11.2](#112-casting-server-authoritative)) and casts it through `SpellCaster`, which with `replaceCast` skips
   the already-casting check for another spell and cancels the cast in progress only once every other check passed. A refusal goes back as `CastRefusedPayload`.
+- **A cast nearly done finishes** (Matěj, 2026-10-29, RLM-517): pressing another spell still interrupts the cast in
+  progress, unless the cast has less than a quarter of a second left (`finishCastSeconds`, 0.25, in the common config
+  `combat/CombatConfig`, [19.2](#192-configuration)): then the cast finishes, and the new spell is cast right after it,
+  in the same server tick, so chained casts never cancel a cast a moment from done. It holds with Queue Spell Casts off,
+  for an instant new spell too. `SpellCaster` runs every check of the new spell first, as for a replacement (a refused
+  spell never waits), then hands it to `Casting#queueAfter` and answers `CastResult#queued`; once the cast ends,
+  `Casting` casts the waiting spell at the end of the server tick, after the ended cast's effects, through every check
+  and its cost again, and a refusal reaches the player as `CastRefusedPayload`. A newer press replaces the waiting
+  spell, and a cast that ends by a cancel, a death, a dimension change or a logout drops it. A swing (RLM-399) is
+  always cut: a new spell cuts its animation, and its damage lands only if its hit moment had passed. The server
+  decides, so the client's `CastQueue` sends as before; `SpellBarGameTests` covers both sides of the threshold, a
+  cast-time and an instant new spell, and a newer press.
 - **Right click with a wand** (RLM-500; Matěj, 2026-10-29) is the first slot's key: with an item of
   `#realmforge:wands` in the main hand and a spell in the first slot, `client/spell/WandCasting` turns a right click
   that interacts with nothing into a press of that slot and holding it into holding the key, which `SpellBarInput`
@@ -2117,7 +2136,7 @@ to a single target. Damage labels (Low, Medium, High) compare a spell with the o
   1.5 s, as every player channel ticks every 0.5 s, so it matches Fireball's and Frostbolt's 1.5 s cast. Its damage
   per second is now above theirs, which the playtest rebalances.
 - Cast Time Reduction shortens Arcane Missiles' channel and keeps its 3 missiles: all the ticks come closer together
-  (RLM-487 covers hasted channels). That is enough scaling: fewer seconds and more missiles together could be a problem, and not reducing
+  (an effect over time it applies keeps its own pace, RLM-487). That is enough scaling: fewer seconds and more missiles together could be a problem, and not reducing
   a channel's time would be wrong globally.
 - "No cooldown" is only for these base spells: many other Mage spells, Ice Block above all, keep normal cooldowns.
 - This replaced the proposal of 2026-10-19 (a 1 s cast at rank 1 down to instant at rank 5, and 3 / 3 / 4 / 4 / 5
@@ -3958,9 +3977,11 @@ numbers are content, so they are versioned, validated and tested. The client con
 spell bar goes and how big it is, and whether the Highlight Spell Target key toggles or is held
 ([11.6](#116-client-side)); the Realmforge config screen edits them ([18](#18-client-code-rendering-gui-input)). One exception: the
 common config, `combat/CombatConfig`, `config/realmforge-common.toml`, holds the blocking rules
-([9.3](#93-blocking-with-two-handed-weapons)) and the in-combat window ([9.4](#94-in-combat), RLM-348, whose ticket
-allowed content or config), because Matěj tunes them while he plays (RLM-297) and NeoForge reloads the file when it
-changes. Once they settle they can move into content.
+([9.3](#93-blocking-with-two-handed-weapons)), the in-combat window ([9.4](#94-in-combat), RLM-348, whose ticket
+allowed content or config) and how little of a cast must be left for it to finish before the next spell
+(`finishCastSeconds`, RLM-517, whose ticket asked for a config value, [11.6](#116-client-side)), because Matěj tunes
+them while he plays (RLM-297) and NeoForge reloads the file when it changes. Once they settle they can move into
+content.
 
 ### 19.3 Mixins and access transformers
 
