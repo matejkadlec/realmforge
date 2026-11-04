@@ -420,7 +420,7 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
   pushes, force-pushes and deletion. A local commit on `master` is still a mistake: undo it (below), never push it.
 - **Start every task from a fresh `origin/master`:** `git fetch origin && git switch -c <type>/<slug> origin/master`.
   `<type>` is the Conventional Commits type of the main change (`feat`, `fix`, `docs`, `build`, `ci`, `test`,
-  `chore`); `<slug>` is two to five kebab-case words, e.g. `feat/talent-tree-schema`. One branch is one pull
+  `chore`); `<slug>` is two to five kebab-case words, e.g. `feat/spell-tree-schema`. One branch is one pull
   request is one feature or content batch. A Jira batch puts its ticket keys before the slug, e.g.
   `feat/rlm-17-feature-skeleton` ([flow](docs/ai-development-flow.md#branches-and-worktrees)).
 - A session that Claude Code already put on its own branch or worktree (the desktop app's `claude/<name>`
@@ -529,9 +529,11 @@ Refines [ADR 0011](docs/decisions/0011-repository-layout-and-workflow.md).
    playtest opens no PR before his `qa1`: push the branch and hand it off instead
    ([flow: Playtest handoff](docs/ai-development-flow.md#playtest-handoff)). CI (`.github/workflows/ci.yml`)
    runs: content pipeline + generated-files check + the worktree cleanup and Gradle queue suites, Gradle build +
-   JUnit + GameTests, reproducibility of the vanilla and Apotheosis snapshots, packwiz index (these four are the
-   required checks on `master`), the worktree cleanup port's smoke test on Windows, and the full pack boot on a
-   dedicated server and on a client ([ADR 0018](docs/decisions/0018-pack-boot-tests.md)).
+   JUnit + GameTests, reproducibility of the vanilla and Apotheosis snapshots, packwiz index, the full pack boot on a
+   dedicated server and on a client (these six are the required checks on `master`;
+   [ADR 0018](docs/decisions/0018-pack-boot-tests.md), the pack boots since 2026-11-04,
+   [ADR 0071](docs/decisions/0071-the-pack-boots-are-required-checks.md)), and the worktree cleanup port's smoke test
+   on Windows.
 6. `finalize-pr` merges once an independent `pr-reviewer` review of the exact head leaves no P1 or P2 open (or
    Matěj approves that head after a capped or disputed review), every review thread is resolved and the
    required checks are green, unless a fix after Matěj's playtest changed gameplay: then he retests and answers

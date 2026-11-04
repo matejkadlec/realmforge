@@ -75,7 +75,8 @@ and come with task Q1; recipes come with the first content that needs one. Spike
 ## M1: The character to level 18 (stats, spells, gear)
 
 **Goal:** a Warrior and a Mage that work completely from level 1 to 18: their stats, their spells with real
-visuals, and their gear up to netherite with curios and Apotheosis affixes (Matěj, 2026-10-29, RLM-6). **Player
+visuals, and their gear up to netherite with Apotheosis affixes (Matěj, 2026-10-29, RLM-6; curios moved to M3 or
+later on 2026-11-04, RLM-625). **Player
 systems come first:** every new system must be testable when it lands, and a boss built before the stats, spells and
 gear it is balanced against cannot be (Astone, RLM-491). So M1 builds and balances no custom mob, dungeon or boss;
 M2 does, against the finished character ([ADR 0058](decisions/0058-player-systems-before-world-content.md)). M1
@@ -93,7 +94,7 @@ gear of the old M2 moved here.
 | Spell trees | one specialization spell tree per class, full to level 18 (C5, RLM-218); no talents as of v1.0.0: they could be added later, but they are not planned (Matěj, 2026-11-03, RLM-28, RLM-586; postponed since 2026-10-16, [ADR 0044](decisions/0044-third-party-mods-by-milestone.md)) |
 | Spell visuals | icons, and every spell's model, trajectory, particles, animation and sounds |
 | Leveling | levels 1-18 with the level cap of D2 (C2); the chapter advancements that raise the cap are granted by command until M2's quests grant them |
-| Gear | Apotheosis's rarities, affixes, gems and reforging fitted to our stats ([ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md)); weapons, wands and caster robes up to netherite with textures; our own shield tiers; curios with textures, with Artifacts placed item by item ([ADR 0066](decisions/0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md)) |
+| Gear | Apotheosis's rarities, affixes, gems and reforging fitted to our stats ([ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md)); weapons (the Katana, Hammer and Rapier first, RLM-617), wands and caster robes up to netherite with textures; our own shield tiers; no curios: Artifacts and Curios move to M3 or later (Matěj, 2026-11-04, RLM-625) |
 | Items | the Scrolls of Respec and Rebirth |
 | World | Overworld as the test world: vanilla hostile mobs with levels (W1), vanilla strongholds off |
 | Pack | the M1 mods of [ADR 0044](decisions/0044-third-party-mods-by-milestone.md) ([Pack](#pack-parallel)) and the gear mods, which were M2's until 2026-10-29 |
@@ -109,8 +110,8 @@ mounts, villages, the enchanting overhaul, contracts, the gated ores (RLM-194, M
 Nether and End (apart from strongholds off, which leaves the End unreachable,
 [ADR 0044](decisions/0044-third-party-mods-by-milestone.md)).
 
-**Order:** the foundations first, then the phases in order: stats, classes and spells, spell visuals, gear and
-curios (Matěj, 2026-10-29). "After" in a task names what must be merged first.
+**Order:** the foundations first, then the phases in order: stats, classes and spells, spell visuals, gear (Matěj,
+2026-10-29; curios left M1 on 2026-11-04, RLM-625). "After" in a task names what must be merged first.
 
 ### Foundations
 
@@ -274,14 +275,17 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
   dump for the ID universe ([ADR 0005](decisions/0005-content-pipeline-yaml-single-source-of-truth.md)), once
   content references other mods' items.
 - **Weapons and armor:** every weapon type in the seven vanilla materials (Matěj, 2026-10-15), the wands (RLM-172)
-  and caster robes (RLM-197) up to netherite, all with textures, and more weapon and armor sets.
+  and caster robes (RLM-197) up to netherite, all with textures, and more weapon and armor sets. Chapters 1 and 2
+  need three new melee weapons, the Katana, the Hammer and the Rapier (RLM-617); many more come before v1. No weapons
+  mod joins besides YDM's Weapon Master: Realmforge makes all its own weapons (Matěj, 2026-11-04, RLM-624).
 - **Shields** (RLM-378). Our own shield tiers with a block cooldown per tier, from wood to netherite, then our realm
   materials.
-- **Curios:** Curios with the first curios of our own, with textures; Artifacts with a place for each of its items
+- **Curios: not in M1 or M2.** Artifacts, and Curios with it, moves to M3 or later (Matěj, 2026-11-04, RLM-625, split
+  from RLM-314; our curio slots' loot categories follow it, RLM-556). Each Artifacts item keeps its place
   ([research](research/artifacts.md#matějs-decision-and-where-each-item-goes): the curio rule ended and Immersive Armors
   stays out, Matěj 2026-10-30, RLM-512, RLM-513,
-  [ADR 0066](decisions/0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md)), and the gear and
-  tooltip mods (RLM-314: Artifacts, Legendary Tooltips, Item Borders, YDM's Weapon Master).
+  [ADR 0066](decisions/0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md)). The gear and
+  tooltip mods stay in M1 (RLM-314: Legendary Tooltips, Item Borders, YDM's Weapon Master).
 - **Scrolls** of Respec (RLM-226), a full spell point reset, and of Rebirth (RLM-228), a full character reset.
 
 ### Pack (parallel)
@@ -312,8 +316,8 @@ RLM-279; Lootr comes with W6 in M2 (RLM-288).
 1. The full pack boots in CI (spike 6 job) and plays in Prism on Matěj's PC with acceptable performance (spark
    profile).
 2. A Warrior and a Mage can each be levelled from 1 to 18 with a full specialization tree, every spell with its real
-   visuals, gear up to netherite (the Mage's caster robes included), working curios and Apotheosis affixes, and the
-   reworked character sheet (RLM-6).
+   visuals, gear up to netherite (the Mage's caster robes included) and Apotheosis affixes, and the reworked
+   character sheet (RLM-6; curios moved to M3 or later, RLM-625).
 3. JUnit covers the formulas and the spell tree rules; GameTests cover spells, leveling and the cap, and the gear;
    every CI job is green.
 4. `docs/architecture.md` and CLAUDE.md match the code; spike outcomes and changed decisions have ADRs.
@@ -337,7 +341,7 @@ M2; both stages are M2's now.
 | --- | --- |
 | Chapters | 2: Overworld (chapter 1, levels 1-10) and Undervault (chapter 2, levels 6-18); each chapter's last quest grants the advancement that raises the level cap (D2) |
 | Dimension | 1 custom dimension, the stone realm: one giant cave with a single walkable floor (Undervault, [realm design](design/realms.md#the-stone-realm)), with its textures; data-driven worldgen, locked until chapter 1's main questline unlocks it, entered through the realm portal |
-| Mobs | 1-2 custom mob types for the dungeons (proposal D11) with real models, textures and animations, Undervault's own mobs, and mob levels for dungeons and structures |
+| Mobs | custom mobs with real models, textures, animations and sounds: every boss, and every mob of the structures chapters 1 and 2's quests need, Undervault's own mobs among them, and mob levels for dungeons and structures; D11's cap of 1-2 custom mob types no longer holds (Matěj, 2026-11-04, RLM-7) |
 | Dungeons | 2 procedural, instanced dungeon types: one ends in the boss's lair, one in a treasury with no boss; the world-structure dungeons of Overworld and Undervault |
 | Bosses | Astone, the Unbroken: 3 phases, on the ground, no blindness or darkness, balanced against the finished character; Overworld's final boss, an elite Illusioner |
 | Quests | chapters 1 and 2, about 25-30 quests, generated into FTB Quests, with XP rewards, quest choice rewards with pre-rolled gear, and RNG item chests |
@@ -345,7 +349,16 @@ M2; both stages are M2's now.
 | Pack | Lootr ([ADR 0041](decisions/0041-dungeon-containers-hold-loot-through-lootr.md)), the structure, dungeon, illager and village mods of [ADR 0044](decisions/0044-third-party-mods-by-milestone.md) |
 | Release | v0.1.0, built from a tag (D7) |
 
-**Not in M2:** dungeon parties: instances are solo (decision D8); parties come later (RLM-68). The gated ores
+**What M1 and M2 deliver** (Matěj, 2026-11-04, RLM-7): a playable demo, at least complete chapters 1 and 2: the spell
+bar and resource management; leveling, stats and character XP; the Warrior and the Mage to level 18 with their Arms
+and Frost trees' animations and textures; the Warrior's armor and three weapons (the Katana, the Hammer, the Rapier,
+RLM-617); the Mage's armor and wands with textures; the character sheet with its textures; a complete Undervault
+(generation, portal, textures, and its mobs: at least every boss and every mob of its structures); chapters 1 and 2's
+quests in the game; the structures those quests need, with their mobs; the bosses those quests need; custom sounds for
+our mobs and bosses, and boss music (RLM-126).
+
+**Not in M2:** professions, mounts and, most likely, curios (RLM-625). Dungeon parties: instances are solo (decision
+D8); parties come later (RLM-68). The gated ores
 (RLM-194, M4), and changes to the Nether and End apart from strongholds off
 ([ADR 0044](decisions/0044-third-party-mods-by-milestone.md)).
 
@@ -371,10 +384,10 @@ M2; both stages are M2's now.
   or builds them.
 - **Undervault's textures and worldgen** (RLM-266 to RLM-270) and **the realm portal's art and rules** (RLM-300,
   RLM-301, RLM-306, RLM-337, RLM-358, RLM-394).
-- **W3 Custom mobs** (RLM-33, M, after W1 and C3a; D11). 1-2 custom mob types for the dungeons (archetypes: melee and
-  caster), GeckoLib models, loot tables without trash. *Done when:* GameTests check that they spawn with levels and
-  drop valid loot. Their real models, textures and animations (A2, RLM-350, RLM-401, RLM-453, RLM-385), and mob
-  levels for dungeons (RLM-240, RLM-304, RLM-305).
+- **W3 Custom mobs** (RLM-33, M, after W1 and C3a; D11). The first custom mob types (archetypes: melee and caster;
+  D11's cap of 1-2 types no longer holds, RLM-7), GeckoLib models, loot tables without trash. *Done when:* GameTests
+  check that they spawn with levels and drop valid loot. Their real models, textures and animations (A2, RLM-350,
+  RLM-401, RLM-453, RLM-385), and mob levels for dungeons (RLM-240, RLM-304, RLM-305).
 - **W4 Dungeon framework** (RLM-34, L, after spike 3 and W1). The instance dimension from spike 3;
   `realmforge:dungeon_type`; the room format and its validation (`content/rooms/`); the pure planner and layout
   with fuzz tests; the builder with data markers and chunk tickets; `InstanceManager`; entry through a temporary
@@ -600,4 +613,4 @@ decided, which wins over the proposal here.
 | D8 | RLM-58 | Who enters an instance | spike 3 | **Decided 2026-10-11 (RLM-58): solo only in M1** (the dungeons are M2's since 2026-10-29, so solo only in M2). Every player who enters gets their own instance; entry is a temporary portal opened with a dungeon key (W4); parties come later through our own command-based party system (RLM-68), not FTB Teams |
 | D9 | RLM-59 | License of `content/`, `art/` and `docs/` | R2 | an ADR before the first release ([ADR 0009](decisions/0009-licensing.md) left it open); the quest texts feed the All Rights Reserved pack |
 | D10 | RLM-47 | Nether and End: overhaul or remove | M4 planning | **Decided 2026-10-12 (RLM-47): remove both** ([ADR 0025](decisions/0025-remove-the-nether-and-end.md)). Their items get new sources (quests, trades, realm drops); Overworld is the starting area and the hub ([realm design](design/realms.md)). [ADR 0032](decisions/0032-v1-realm-layout-amends-the-nether-and-end-removal.md) amends it for the v1 layout (RLM-188): Overworld covers levels 1-10, Ashfire (the late fire realm) does not replace the Nether, and netherite comes from Undervault. Carried out in M4 |
-| D11 | RLM-60 | Custom mobs in M2 (M1 until 2026-10-29) | W3 | 1-2 custom types (a melee and a caster archetype) plus leveled vanilla hostile mobs; every custom mob needs a model, animations and a UV texture that Matěj reviews, so more wait for M4 |
+| D11 | RLM-60 | Custom mobs in M2 (M1 until 2026-10-29) | W3 | 1-2 custom types (a melee and a caster archetype) plus leveled vanilla hostile mobs; every custom mob needs a model, animations and a UV texture that Matěj reviews, so more wait for M4. The cap no longer holds (Matěj, 2026-11-04, RLM-7): M2 has every boss and every mob of the structures chapters 1 and 2 need |

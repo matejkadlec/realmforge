@@ -215,10 +215,11 @@ which scale with the Attack Damage stat.
   well ahead: the reason it is only an option ([question 2](#questions-for-matěj)).
 - At level 60 (Spell Power about 60) Potency IX's +5 is a tenth of Frostbolt's Spell Power share, and the percent
   enchantments have been overtaken by gems and affixes.
-- Toward RLM-503's "about 40 casts": Potency V or a Focus V takes 12–15 % off a guardian's cast count on its own
-  (60 → about 52); gems (Ballast and Combatant, Flawed: about +7 Spell Power on this wand, +14 a Frostbolt),
-  Sorcerous and the crits do the rest. Astone is now balanced at 1,500 health against the current spells (RLM-503,
-  2026-11-03), so whatever the enchantments add should be checked in the same playtest as RLM-547's gems.
+- Toward RLM-503's "about 40 casts" (no target since 2026-11-04: a boss's cast count depends on the boss, RLM-624):
+  Potency V or a Focus V takes 12–15 % off a guardian's cast count on its own (60 → about 52); gems (Ballast and
+  Combatant, Flawed: about +7 Spell Power on this wand, +14 a Frostbolt), Sorcerous and the crits do the rest. Astone is
+  now balanced at 1,500 health against the current spells (RLM-503, 2026-11-03), so whatever the enchantments add should
+  be checked in the same playtest as RLM-547's gems.
 
 ## How they reach the game
 

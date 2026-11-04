@@ -47,14 +47,16 @@ weakens a test or check.
   - `Gradle build, JUnit, GameTests` (timeout 45 minutes)
   - `Vanilla ID universe is reproducible` (timeout 15 minutes)
   - `Modpack index is up to date` (timeout 15 minutes)
+  - `Full pack boots on a dedicated server` and `Full pack boots on a client` (timeout 30 minutes each), required
+    since 2026-11-04 ([ADR 0071](../../../docs/decisions/0071-the-pack-boots-are-required-checks.md)), once Matěj
+    adds them to the ruleset
 - CI (`.github/workflows/ci.yml`) runs on `pull_request` and on push to `master`, on GitHub-hosted
   `ubuntu-latest` runners, except one job on `windows-latest`: `Worktree cleanup on Windows (PowerShell 5.1 and 7)`
   (timeout 15 minutes), the PowerShell port's smoke test `tests/test_git_clean_worktrees_windows.ps1` under both
-  editions. It and the two pack boot jobs (`Full pack boots on a dedicated server`, `Full pack boots on a client`)
-  are not required checks, but "Green" (under "Checks" in "Signals") counts every check on the head, so a red one
-  holds the merge like a required one. A full run usually takes about 2 minutes (1m40s–2m20s in October 2026); the
-  Gradle job is the longest. Runs are cancelled per ref when a newer push arrives. On failure the Gradle job uploads
-  the artifact `gradle-logs-and-reports` (game logs, crash reports, test reports).
+  editions. It is not a required check, but "Green" (under "Checks" in "Signals") counts every check on the head,
+  so a red one holds the merge like a required one. A full run usually takes about 2 minutes (1m40s–2m20s in October
+  2026); the Gradle job is the longest. Runs are cancelled per ref when a newer push arrives. On failure the Gradle job
+  uploads the artifact `gradle-logs-and-reports` (game logs, crash reports, test reports).
 - No workflow deploys. After a merge, only CI on `master` runs.
 - `deleteBranchOnMerge` decides whether GitHub deletes the head branch at merge. In October 2026 it was off.
 - The reviewer is `.claude/agents/pr-reviewer.md` (tools: Read, Grep, Glob).
@@ -393,7 +395,7 @@ Read each signal fresh from GitHub at every step, and never trust an earlier rea
 - **Checks.** The latest attempt of every check on the head SHA:
   `gh api --paginate "repos/matejkadlec/realmforge/commits/<sha>/check-runs?filter=latest"` (never
   `filter=all`, which adds obsolete attempts that a re-run replaced).
-  - Green means each of those completed with `success`, `neutral` or `skipped`, and all four required checks
+  - Green means each of those completed with `success`, `neutral` or `skipped`, and all six required checks
     (listed under "Repository facts") are among them.
   - Behind them are the workflow runs (`gh api "repos/matejkadlec/realmforge/actions/runs?head_sha=<sha>"`)
     and their jobs (`gh api repos/matejkadlec/realmforge/actions/runs/<id>/jobs`, with `status`,

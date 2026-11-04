@@ -6,7 +6,7 @@ Status: Accepted (amends [0044](0044-third-party-mods-by-milestone.md),
 [0038](0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md) and
 [0041](0041-dungeon-containers-hold-loot-through-lootr.md) in their milestones, and the roadmap's decision D7);
 amended by [0066](0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md) (Artifacts placed item by item,
-Immersive Armors rejected), 2026-10-31
+Immersive Armors rejected), 2026-10-31; curios and Artifacts moved to M3 or later, noted 2026-11-04 (RLM-624)
 
 ## Context
 
@@ -32,6 +32,8 @@ were drafts, and their scope will change again; M3 to M8 stay as they are.
   rarities, affixes, gems and reforging fitted to our stats, weapons, wands and caster robes up to netherite, our
   shield tiers, curios, and Artifacts and Immersive Armors as Matěj picks them. M1 is tested in an Overworld test
   world, on the training dummy and vanilla mobs with levels (W1), with no custom mob, dungeon, boss or quest.
+  - 2026-11-04 (RLM-624, RLM-625): Matěj moved Artifacts, and Curios with it, to M3 or later: M1 and M2 ship
+    without curios. The rest of M1's gear stands.
 - **M2 is the world of chapters 1 and 2:** Undervault and the realm portal with their art, custom mobs with real
   models, the two instanced dungeon types, Astone finished and balanced against the finished character, the quests
   of chapters 1 and 2, coins and merchants, the old M2's world content (the world-structure dungeons, illagers and

@@ -1183,12 +1183,13 @@ the playtest covers it.
     2026-10-30: 5 minutes is far too long in Minecraft). It belongs to no spell school, so the spell bar frames it in
     black with a dark grey fill.
   - **Sword Specialization** (passive; only its name, not a class specialization) gives +10% damage with sword-like
-    weapons: the item tag `#realmforge:sword_like`, swords and katanas today, and longswords and maybe rapiers once
-    the pack has them. For a Human, the tooltip of every such weapon (hover, JEI) shows two lines below the weapon's
-    stats and above the Apotheosis affixes, where Apotheosis puts "Heavenly Implements": "Sword Specialization" in
-    gold and "+10% damage with swords" in yellow (Matěj, 2026-10-30). The race's tooltip on the character sheet's
-    Character tab shows the racial ability and passive the same way, each on two lines: "Racial Ability" in gold over
-    "Will To Survive" in yellow, and "Sword Specialization" in gold over its line in yellow.
+    weapons: the item tag `#realmforge:sword_like`, vanilla's swords today, and katanas and rapiers once RLM-617 adds
+    them, never hammers (Matěj, 2026-11-04, RLM-563, RLM-624). For a Human, the tooltip of every such weapon (hover,
+    JEI) shows two lines below the weapon's stats and above the Apotheosis affixes, where Apotheosis puts "Heavenly
+    Implements": "Sword Specialization" in gold and "+10% damage with swords" in yellow (Matěj, 2026-10-30). The race's
+    tooltip on the character sheet's Character tab shows the racial ability and passive the same way, each on two lines:
+    "Racial Ability" in gold over "Will To Survive" in yellow, and "Sword Specialization" in gold over its line in
+    yellow.
 - **A class** gives its role, resource type, starting stats, spells by level, its specializations' spell trees and
   starting kit. Its role (melee, caster or ranged) decides which role-bound bonuses of the stat rules its players get
   ([8.3](#83-derived-stats-and-milestones), RLM-170). Race and
@@ -1394,8 +1395,11 @@ Its name and description are translation keys from C3b, the description's number
   sets 2 to 6, Intellect 0.5 a point. **Coefficient rules**, so Frostbolt and Slam stay the main damage spells: a
   single-target cast has the highest coefficient per cast (Frostbolt 100 to 200 %); an instant spell with a
   cooldown less per cast; an area spell about a third of a single-target spell per target; damage over time and
-  channels split theirs over the ticks (Arcane Missiles 35 to 65 % a missile, Burning 3 % a tick). The aim: about 20
-  offensive casts for a boss and 1 or 2 for a normal mob at every level. Mobs have no Spell Power, so their spells
+  channels split theirs over the ticks (Arcane Missiles 35 to 65 % a missile, Burning 3 % a tick). There is no cast
+  target (Matěj, 2026-11-04, RLM-624): a boss's depends on the boss (about 60 casts for one with high health and low
+  damage, about 30 for one with low health and high damage; Astone against full netherite about 31 Frostbolts, about
+  33 after RLM-616), and regular mobs have none, as they vary too much and a cast's damage differs by spell: mob
+  health and armor are tuned in playtests, first drafts expected to be off. Mobs have no Spell Power, so their spells
   deal their amounts (their damage grows with their level instead, [14.1](#141-mob-levels)).
 - **Passive spells** (RLM-541; Matěj: "passive spells are spells"): a spell with a `passive` (`spell/Passive`) is
   learned with ranks like any other but never cast (`CastFailure.PASSIVE`) and never on the spell bar (learning one
@@ -2251,9 +2255,10 @@ Missiles leave the M1 kit and come back with their trees in M3 (RLM-218).
   Frozen at their top ranks (5 s and 10 s; the lower ranks scaled by Claude, Frostbite 3 s, Frost Nova × 2.5), every
   cost per rank and Frozen's break on damage; Astone died too fast with little effort, and his rebalance of the same day
   (RLM-572, the numbers above) followed it.
-- **The target** (RLM-503): an L18 Mage in good M1 gear kills Astone (about 3,000 health in RLM-503's balance; 1,500
-  since RLM-580) in about 40 casts, 2.5 to
-  3 minutes; at 60 or more, Astone is nerfed rather than the spells buffed.
+- **No cast target** (Matěj, 2026-11-04, RLM-624): RLM-503's "about 40 casts" for an L18 Mage in good M1 gear against
+  Astone (about 3,000 health then; 1,500 since RLM-580) is no target any more. A boss's cast count depends on the
+  boss (about 60 for high health and low damage, about 30 for low health and high damage); Astone against full
+  netherite takes about 31 Frostbolts, about 33 after RLM-616, and is tuned in playtests.
 - `FrostTreeGameTests` covers every active's damage, mana and cooldown at rank 1 and its highest rank, Ice Lance
   against Frozen, Frostbite's chance, duration by rank and cooldown, Frozen breaking on about half the hits, the cone,
   the nova, Blizzard's eight waves and their mana, its ten waves with 20 and 25 % Cast Time Reduction, the wider
@@ -2788,7 +2793,8 @@ phases:
 - **Level:** the definition's fixed `level`, through `MobLevels.FixedLevel` ([14.1](#141-mob-levels)): the sources
   (a dungeon run's level) come first, the fixed level before the dimension's rule.
 - **No flight in the arena** (RLM-559; Matěj, 2026-10-16 and 2026-10-29, RLM-232): creative flight, Apotheosis's
-  Unbound or any other source of `neoforge:creative_flight`, is off in a living boss's arena (`boss/ArenaFlight`).
+  Unbound or any other source of `neoforge:creative_flight`, is off in a living boss's arena (`boss/ArenaFlight`),
+  and in Skyhearth too once it exists (Matěj, 2026-11-04, RLM-624).
   Every 5 ticks a boss with a home holds every player within its arena: a transient modifier zeroes the attribute, so
   `IPlayerExtension#mayFly` turns false and `ServerPlayer#tick` lands a flying player; creative mode keeps its own
   flight. A player who could fly on entering sees a title and a chat line (`message.realmforge.arena_no_flight*`)

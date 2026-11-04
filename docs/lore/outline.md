@@ -409,7 +409,7 @@ version of each, with Maren's lines as letters (each chapter's "In M1" part).
 | 1 | Enter the Undervault | M1 | first arrival; "Undervault — Stone Realm" |
 | 2 | Why the Wayfarer Goes Down | M1 (text), M2 (scene) | the keeper has had no relief since the war; clear his halls, reach him, pass the trial |
 | 3 | The Gatewrights' Forge-Stock | M1 | 4 Ancient Debris, the last netherite in Realmforge; a smithing template |
-| 4 | The Right Tool | M1 | a Netherite Pickaxe ("Hella tough"), with two optional netherite side quests |
+| 4 | Tools of the Undervault | M1 | a Netherite Pickaxe ("Hella tough"), with two optional netherite side quests |
 | 5 | Overcome the Obedient | M1 | 10 Hewn Sentinels and 10 Hewn Chanters; the Cairnfolk and the tremors in the text |
 | 6 | Find the Hewn's Mine | M2 | the mine (RLM-429) |
 | 7 | The Overseers' Watch | M2 | 3 Hewn Overseers |

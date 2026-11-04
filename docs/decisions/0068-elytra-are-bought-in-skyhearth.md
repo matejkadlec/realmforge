@@ -4,7 +4,7 @@ Date: 2026-11-03
 
 Status: Accepted (supersedes [0037](0037-elytra-from-chapter-3s-final-boss-amends-the-nether-and-end-removal.md);
 amends [0025](0025-remove-the-nether-and-end.md)'s elytra row and the sources of End Stone, the Dragon Head and the
-Dragon Egg)
+Dragon Egg); the vendor and the prices of point 3 noted 2026-11-04 (RLM-624)
 
 ## Context
 
@@ -28,6 +28,10 @@ Egg... Elytra won't be a game drop." 0037 is accepted, so this ADR records the c
 3. **Open, for the Skyhearth design:** who the NPC is, the prices (in our coins,
    [0040](0040-coins-and-data-driven-merchant-trades.md)), and from when it sells the elytra
    ([realm design, open question 22](../design/realms.md#open-questions)).
+   - 2026-11-04 (RLM-624): Matěj answered who and for what. The NPC is Edric, the Explorer, and his trades hold
+     (RLM-244): the elytra cost the Ice Queen's Frost Crown (repeatable), the Dragon Head the Molten Heart
+     (repeatable), the Dragon Egg Netherius's skull (once per world), and End Stone coins. From when the elytra are
+     on sale stays open.
 4. **The "every item is obtainable" check lists the four items as known exceptions** until the NPC exists.
 
 Everything else 0025 and [0066](0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md) say about

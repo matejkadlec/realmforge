@@ -3,7 +3,8 @@
 Date: 2026-10-11
 
 Status: Accepted (amends [0010](0010-testing-strategy.md)), adjusted 2026-10-12 for Minecraft 26.1.2
-([0026](0026-platform-minecraft-26-1-2-neoforge.md), see the note at the end)
+([0026](0026-platform-minecraft-26-1-2-neoforge.md), see the note at the end); the jobs made required checks by
+[0071](0071-the-pack-boots-are-required-checks.md), 2026-11-04
 
 ## Context
 
@@ -58,6 +59,8 @@ What the spike measured on 2026-10-11 (WSL2, the pack of `master` at `a5afcd1`, 
 - The two jobs run beside the Gradle job, so they add little wall time, but each run downloads every mod jar from
   Modrinth and CurseForge: an outage there fails the job. Caching the mods is the fix if that becomes frequent.
 - The jobs protect `master` only once Matěj adds them to the ruleset's required checks.
+  - 2026-11-04 (RLM-624): they are required checks from now on
+    ([0071](0071-the-pack-boots-are-required-checks.md)); Matěj adds them to the ruleset.
 - The client runs on software rendering and stops at the title screen: it proves that the client loads, not how
   the game looks or performs, and it never joins a world (the server boot covers world generation). Matěj's
   playtests in Prism remain the judge of rendering, shaders and frame rate.

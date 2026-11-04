@@ -160,10 +160,10 @@ broke them. Each rule names the chapter 1 case that taught it, so the next chapt
 20. **A boss needs no story reason to repeat.** "There's an infinite amount of every boss, why this specific boss would
     have it explained"; once a boss is defeated in the story, it stays defeated. _(Added 2026-10-27, chapter 2's text
     review, RLM-351.)_
-21. **A modern word may stay when it is a deliberate reference inside the world.** "Hella tough" in the quest "The
-    Right Tool" is a nod to the Nether: "it's a nether reference, keep it. I wouldn't use it if it didn't have the word
-    'hell' in it." The no-slang rule still holds for everything else; flag a modern word once, and keep it if Matěj
-    gives it such a reason. _(Added 2026-10-27, RLM-351 chat.)_
+21. **A modern word may stay when it is a deliberate reference inside the world.** "Hella tough" in the quest "Tools
+    of the Undervault" is a nod to the Nether: "it's a nether reference, keep it. I wouldn't use it if it didn't have
+    the word 'hell' in it." The no-slang rule still holds for everything else; flag a modern word once, and keep it if
+    Matěj gives it such a reason. _(Added 2026-10-27, RLM-351 chat; the quest's name since 2026-11-04, RLM-624.)_
 
 ## 4. Quest rules
 

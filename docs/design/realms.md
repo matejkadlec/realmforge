@@ -113,7 +113,8 @@ to drop borrowed mythology (RLM-357,
   (RE-9) covers Undervault too once that boss exists (M2): the Illusioner drops the Stone Signet Shard, crafted with
   diamonds, Overworld's most precious gem, and stone into the Signet of the Undervault (RLM-395).
 - 1 stat point (Matěj, 2026-10-15, RLM-196) and about 1 skill point per level; spell limits per chapter as in D4
-  (RLM-54).
+  (RLM-54), only a rough guide for active spells since 2026-11-04 (RLM-624): the real guide is the tree's shape, 2–3
+  spells a row, a row every 6 levels, about 5–6 spells (active and passive) a chapter.
 - Each chapter ends in a short main quest chain whose last step opens the next band (PR-1); everything else is
   optional.
 
@@ -773,7 +774,8 @@ For Matěj; each has a proposal so the design can go on.
     (RLM-115), so tier 2's flight now comes from Undervault's chapter while mounts are planned for M4; spell unlocks
     per chapter (research PR-8; no talents as of v1.0.0, RLM-586) follow the new chapters. The elytra part is
     settled: no boss gives them, a Skyhearth NPC sells them (Matěj, 2026-11-03, RLM-568,
-    [ADR 0068](../decisions/0068-elytra-are-bought-in-skyhearth.md)).
+    [ADR 0068](../decisions/0068-elytra-are-bought-in-skyhearth.md)). So is tier 2: the first flying tier, planned with
+    chapter 2, waits for the mount system, and nothing is built for it before then (Matěj, 2026-11-04, RLM-624).
 16. **Sunwastes' material** now that ancient debris and netherite scrap moved to Undervault (Matěj,
     2026-10-15). Proposal: a desert gem or metal of its own for its gear (it adds no tool tier, RLM-194), and the
     brushing loot keeps its gems and books.
@@ -794,11 +796,18 @@ For Matěj; each has a proposal so the design can go on.
     here too (and still in Overworld), is open. Proposal: yes, in both.
 22. **The Skyhearth vendor of elytra** (Matěj, 2026-11-03, RLM-568,
     [ADR 0068](../decisions/0068-elytra-are-bought-in-skyhearth.md)): an NPC there sells the elytra, End Stone, the
-    Dragon Head and the Dragon Egg. Open: who the NPC is, the prices (in coins, RLM-222), and from when the elytra are
-    on sale. Skyhearth opens at about level 15, so elytra could come long before the twins. Proposal: the elytra are
-    on sale once a player has finished chapter 4 (both twins), so flight from elytra keeps the place the boss source
-    gave it, after the first flying mounts; End Stone and the two dragon items are on sale from the start.
-23. **Spell limits by the eight chapters.** Validation's D4 rule allows 4 × N active spells by the end of chapter N
+    Dragon Head and the Dragon Egg. **Who and for what, answered** (Matěj, 2026-11-04, RLM-624; Edric's trades,
+    RLM-244): Edric, the Explorer sells them; the elytra cost the Ice Queen's Frost Crown (repeatable), the Dragon
+    Head the Molten Heart (repeatable), the Dragon Egg Netherius's skull (once per world), End Stone coins. Open: from
+    when the elytra are on sale. Skyhearth opens at about level 15, so elytra could come long before the twins.
+    Proposal: the elytra are on sale once a player has finished chapter 4 (both twins), so flight from elytra keeps the
+    place the boss source gave it, after the first flying mounts; End Stone and the two dragon items are on sale from
+    the start.
+23. **Spell limits by the eight chapters.** **Answered** (Matěj, 2026-11-04, RLM-624): "4 × N spells by the end of
+    chapter N" is only a rough guide for active spells, so validation warns instead of failing (RLM-627). The real
+    guide is the tree's shape: 2–3 spells a row, a row every 6 levels, about 5–6 spells (active and passive) a chapter;
+    the Arms tree has 11 spells and the Frost tree 10 across chapters 1 and 2. The question as it stood: validation's
+    D4 rule allows 4 × N active spells by the end of chapter N
     (`_check_class_spells`, RLM-333). With the twins as chapters 3 and 4, both ending at level 30, the limit at level 30
     stays 12 (chapter 3's), but every later chapter allows 4 more than under the seven: 20 by level 40 instead of 16,
     up to 32 by level 60 instead of 28. Only chapters 1 and 2 exist, so nothing validates differently yet. Proposal:

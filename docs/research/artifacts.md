@@ -43,7 +43,9 @@ better; an item that clashes with our systems (stats, the damage pipeline, a lat
 late enough, a tweak, or is off, each with its reason. His notes: the Night Vision Goggles are useless here (every
 player has Night Vision by default), and the Onion Ring, as far as he knows, does nothing. The catalogue's questions
 2–9 fall away; this section answers them item by item, and the pack task RLM-314 builds it
-([ADR 0066](../decisions/0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md)).
+([ADR 0066](../decisions/0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md)). Since
+2026-11-04 that task is RLM-625, in M3 or later: Matěj moved Artifacts, and Curios with it, out of M1, so M1 and M2
+ship without curios (RLM-624). The placement stands.
 
 ### The rules this placement follows
 
@@ -134,7 +136,7 @@ Off with every other Artifacts source (`campsiteCount` 0). The Mimic is a fair i
 chest that bites), but it drops Artifacts' own table; a later dungeon ticket can bring it back with a loot table of
 ours (an override of `artifacts:artifact`) and its spawns in our rooms.
 
-### For RLM-314
+### For RLM-314 (now RLM-625)
 
 - `general.toml`: Curios compatibility on (Accessories' and Trinkets' off); every world source off as above.
 - `items.toml`: `generateAsLoot` false everywhere; the tweaks of the table (Villager Hat, Cowboy Hat, Shock Pendant,

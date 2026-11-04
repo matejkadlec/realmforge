@@ -140,7 +140,8 @@ Matěj reviewed all 99 affixes of Apotheosis 9.1.0 on 2026-10-16 (RLM-232) and c
 - **Executing and Giant Slaying** are no longer exclusive: Executing is off.
 - **RLM-232's rules for kept affixes** (RLM-559): Unbound (creative flight, Pinnacle only) is off in boss arenas
   (Matěj, 2026-10-29: a warning by title and chat, Slow Falling, flight back on leaving and when the boss dies or
-  resets; [architecture 14.3](../architecture.md#143-bosses)), and in Skyhearth once it exists. Super-Massive and
+  resets; [architecture 14.3](../architecture.md#143-bosses)), and in Skyhearth too once it exists (Matěj,
+  2026-11-04, RLM-624: not only in boss arenas). Super-Massive and
   Radial break no block a player could not break by hand: an instance's protection already refused their extra
   blocks, and a guard adds the spawn protection and world border check vanilla made only for the first block
   ([architecture 19.4](../architecture.md#194-optional-integrations)). The realm tool tiers (RLM-194, M4) apply to

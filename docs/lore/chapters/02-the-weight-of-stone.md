@@ -96,11 +96,13 @@ pickaxe will get through it, slowly. Netherite is better: it lasts longer, digs 
   Upgrade Smithing Template. The number is confirmed in a test world. The errand's opening is a mirror scene in M2.
   Ancient debris generates only below the walkable floor, at a medium rate, never exposed to air (RLM-449). The Nether's
   story is the quest's text.
-- **Quest 4, "The Right Tool"** (beat 6; M1): craft a Netherite Pickaxe. Its text (decided 27 October; "Hella" is a nod
-  to the Nether): "Hella tough. Lasts longer, digs faster and doesn't burn on top of that. You may want to make some
-  copies of the smithing template first." The copies come from the copy recipe, which takes Vaultstone instead of
-  netherrack (RLM-447). There is no tool-tier rule: Undervault's own blocks are harder (RLM-450), and every pickaxe
-  mines at its normal speed.
+- **Quest 4, "Tools of the Undervault"** (beat 6; M1; "The Right Tool" until Matěj renamed it on 4 November,
+  RLM-624): craft a Netherite Pickaxe. Its text (decided 27 October; "Hella" is a nod to the Nether): "Hella tough.
+  Lasts longer, digs faster and doesn't burn on top of that. You may want to make some copies of the smithing template
+  first." "Digs faster" still holds: netherite mines faster than diamond, if by less than first planned, as diamond
+  and the tiers below have a hard mining-speed cap (Matěj, 4 November). The copies come from the copy recipe, which
+  takes Vaultstone instead of netherrack (RLM-447). There is no tool-tier rule: Undervault's own blocks are harder
+  (RLM-450), and every pickaxe mines at its normal speed.
   - Vaultstone and Vaultstone Bricks have twice deepslate's hardness, the other Undervault stones less, the ores
     deepslate's, and the Vaultwood set, Vaultdirt and the Vaultgrass Block twice their vanilla counterparts.
   - Vanilla blocks and other mods' blocks keep their own hardness.
@@ -520,7 +522,7 @@ M1 has the realm, the Sentinels and Chanters, the catacombs, the stone arena and
 Its quest book tells chapter 2 with Maren's lines as letters and the Keykeeper's and the Stonebound's as quest text:
 
 1.  "Enter the Undervault", with Maren's letter on why you go down;
-2.  "The Gatewrights' Forge-Stock", then "The Right Tool" and its two side quests;
+2.  "The Gatewrights' Forge-Stock", then "Tools of the Undervault" and its two side quests;
 3.  "Overcome the Obedient";
 4.  "Ore for the Cairnfolk", which gives the catacomb key;
 5.  "The Catacombs", whose treasury gives the arena key;
