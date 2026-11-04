@@ -89,26 +89,6 @@
           }
         }
       ]
-    },
-    {
-      "type": "apotheosis:mob_effect",
-      "gem_class": "apotheosis:bow",
-      "mob_effect": "apothic_attributes:bleeding",
-      "stack_on_reapply": true,
-      "stacking_limit": 4,
-      "target": "arrow_target",
-      "values": {
-        "flawless": {
-          "duration": 160,
-          "amplifier": 0,
-          "cooldown": 40
-        },
-        "perfect": {
-          "duration": 160,
-          "amplifier": 1,
-          "cooldown": 40
-        }
-      }
     }
   ]
 }

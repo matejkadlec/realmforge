@@ -83,7 +83,7 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   Specialization; Bloodthirst, Overpower, Victory Rush; Execute), with a charge a player's own client runs, which stops
   a block from its target on the near side, stuns round that point and hops a block back, a target distance by rank, a
   heal of a share of max health, a refund for a kill, a crit's bleed and Execute lit while the current target is low, and
-  Apotheosis's Bleeding turned into a stack of ours that shows its level (RLM-579);
+  no bleed from Apotheosis (RLM-600: Bloodletting and Devilish off, no Tyrannical bow bonus);
   and the Mage's, the Frost Mage's "Shatter" tree (RLM-542: Improved Frostbolt, Frostbolt, Cone of Cold; Ice Lance,
   Frost Nova, Frostbite; Shatter, Ice Barrier; Blizzard), with a cone along the look, Ice Lance's × 2 to × 4 against
   Frozen and Frostbite's freeze on a Slowness; the first spells of rank 5, and the Human's Will To Survive in the

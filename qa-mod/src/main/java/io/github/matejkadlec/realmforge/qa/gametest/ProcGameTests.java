@@ -14,6 +14,7 @@ import io.github.matejkadlec.realmforge.spell.Spell;
 import io.github.matejkadlec.realmforge.spell.SpellAim;
 import io.github.matejkadlec.realmforge.spell.SpellCaster;
 import io.github.matejkadlec.realmforge.spell.Spells;
+import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -95,6 +96,47 @@ public final class ProcGameTests {
         QaProcs.clear(player);
         logout(player);
         helper.succeed();
+    }
+
+    /**
+     * RLM-564: an effect a proc's spell applies after the proc ran sets off no applies-effect proc. A sure on-hit proc
+     * casts {@code test_missile}, whose Slowness lands ticks later, after the proc's action; the player's sure proc on
+     * applying Slowness, which makes the husk glow, stays quiet for it. The same missile cast as a spell sets it off.
+     */
+    @QaGameTest(timeoutTicks = 100)
+    public static void anEffectAProcsSpellAppliesLaterFiresNoProc(GameTestHelper helper) {
+        ServerPlayer player = player(helper, "qa-proc-late-effect");
+        Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 2));
+        Proc glowOnSlowness = new Proc(RealmforgeQa.id("glow_on_slowness"), Proc.Trigger.APPLIES_EFFECT, 1, 0,
+                new Proc.ApplyEffect(MobEffects.GLOWING, 100, 0, false),
+                MobEffects.SLOWNESS.unwrapKey().map(key -> key.identifier()), Optional.empty(), false);
+        QaProcs.give(player, new Proc(RealmforgeQa.id("missile_on_hit"), Proc.Trigger.HIT, 1, 0,
+                new Proc.CastSpell(GeneratedSpells.TEST_MISSILE, 1)));
+        QaProcs.give(player, glowOnSlowness);
+
+        melee(helper, player, husk);
+        helper.assertFalse(husk.hasEffect(MobEffects.SLOWNESS), "the proc's missile is still in flight");
+        helper.runAfterDelay(20, () -> {
+            helper.assertTrue(husk.hasEffect(MobEffects.SLOWNESS), "the proc's missile landed its Slowness");
+            helper.assertFalse(husk.hasEffect(MobEffects.GLOWING),
+                    "a proc's spell's Slowness, landing after the proc ran, fires no applies-effect proc");
+
+            QaProcs.clear(player);
+            QaProcs.give(player, glowOnSlowness);
+            husk.removeEffect(MobEffects.SLOWNESS);
+            Spells.learn(player, Spells.get(helper.getLevel().registryAccess(), GeneratedSpells.TEST_MISSILE)
+                    .orElseThrow(), 1);
+            CastResult cast = SpellCaster.cast(player, GeneratedSpells.TEST_MISSILE, husk);
+            helper.assertTrue(cast.success(), "test_missile cast as a spell: " + cast.failure());
+            helper.runAfterDelay(20, () -> {
+                helper.assertTrue(husk.hasEffect(MobEffects.SLOWNESS), "the spell's missile landed its Slowness");
+                helper.assertTrue(husk.hasEffect(MobEffects.GLOWING),
+                        "a spell's Slowness, landing as late, fires the applies-effect proc");
+                QaProcs.clear(player);
+                logout(player);
+                helper.succeed();
+            });
+        });
     }
 
     /** A crit and a kill fire their own triggers' procs, and a proc may apply a status effect to its holder. */

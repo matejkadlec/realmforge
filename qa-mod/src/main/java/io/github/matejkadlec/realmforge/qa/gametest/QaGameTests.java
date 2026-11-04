@@ -40,11 +40,11 @@ public final class QaGameTests {
     public static final String PLATFORM_17X17 = "platform_17x17";
 
     private static final List<Class<?>> HOLDERS = List.of(
+            ApotheosisBleedGameTests.class,
             ApotheosisGameTests.class,
             ApotheosisGemGameTests.class,
             ApotheosisLootGameTests.class,
             ApothicAttributesGameTests.class,
-            ApothicBleedGameTests.class,
             AreaMiningGameTests.class,
             ArenaFlightGameTests.class,
             ArmsTreeGameTests.class,

@@ -115,8 +115,11 @@ Matěj reviewed all 99 affixes of Apotheosis 9.1.0 on 2026-10-16 (RLM-232) and c
 2026-10-30 and 2026-10-31; the data comes from `content/apotheosis_affixes/`, `apotheosis_rarities/`,
 `apotheosis_tier_augments/` and `apotheosis_rarity_overrides/` ([architecture 19.4](../architecture.md#194-optional-integrations)).
 
-- **31 affixes off:** the review's 29, Executing (too strong as shipped, too weak nerfed, and it skips a boss's last
-  phase) and Runed (Spell Resistance is a mob-only stat, RLM-233). 68 stay.
+- **33 affixes off:** the review's 29, Executing (too strong as shipped, too weak nerfed, and it skips a boss's last
+  phase), Runed (Spell Resistance is a mob-only stat, RLM-233), and Bloodletting and Devilish (RLM-600, 2026-11-03:
+  the Apotheosis bleed leaves the pack, and Rend and Deep Wounds are the only bleeds, each an effect of its own). 66
+  stay. Shields keep two basic effects, Reinforcing and Venomous, enough for Legendary's two slots, and the Tyrannical
+  gem has no bow bonus any more ([gem catalogue](../research/apotheosis-gems.md)).
 - **Opened to Rare:** Giant Slaying (5–10 %, and no longer Pinnacle-only) and Acidic (2–4 s, Epic 3–6 s, no longer
   Pinnacle-only), Thunderstruck (2–4), Blighted (Wither I–II for 8–10 s; Epic becomes I–III), Spectral (10–30 %),
   Catalyzing (5–15 s), Psychic (40–60 %) and Retreating.

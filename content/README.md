@@ -562,7 +562,8 @@ Rules:
   `splash`, whose splash reaches `radius` blocks farther from rank `from_level`: Improved Frostbolt's rank 3); and
   `procs` (RLM-540: each a `trigger`, `hit`, `crit`, `kill`, `hit_taken`,
   `applies_effect` (the player gives an enemy the status effect `effect`) or `tick` (a tick of the player's damage over
-  time of `effect`, of `spell` when named), a `chance_percent` with `chance_per_level_percent`, an internal
+  time of `effect`, one of ours with `stacks`, whose ticks alone are hits a proc sees, of `spell` when named, which
+  gives `effect` as a `damage_over_time`: RLM-564), a `chance_percent` with `chance_per_level_percent`, an internal
   `cooldown_seconds` on each target, and one action: `apply_effect` (`effect`, `duration_seconds`, and either
   `duration_per_level_seconds`, added for every rank above 1 (RLM-572: Frostbite's 4/6/8 s), or `from_level`,
   `{level, duration_seconds}`, a longer duration from a rank on), `cast` (a spell cast

@@ -1212,7 +1212,7 @@ def _check_passive(source: str, spell: SpellDef, content: Content, universe: IdU
         if entry.model.stacks is not None
     }
     for n, proc in enumerate(passive.procs):
-        problems += _check_proc(source, f"passive.procs.{n}", proc, spell, spells, universe)
+        problems += _check_proc(source, f"passive.procs.{n}", proc, spell, spells, stacked, universe)
         if proc.damage_over_time is not None:
             problems += _check_proc_damage_over_time(
                 source, f"passive.procs.{n}.damage_over_time", proc.damage_over_time, stacked
@@ -1242,11 +1242,13 @@ def _check_proc(
     proc: BaseModel,
     spell: SpellDef,
     spells: dict[str, SpellDef],
+    stacked: dict[str, StacksDef],
     universe: IdUniverse,
 ) -> list[Problem]:
-    """A passive's proc (RLM-540): the effects it watches or gives exist; the spell whose ticks it watches deals damage
-    over time; the spell it casts is active and a player's, at the passive's ranks; the spell whose window it opens has
-    one."""
+    """A passive's proc (RLM-540): the effects it watches or gives exist; the spell it casts is active and a player's,
+    at the passive's ranks; the spell whose window it opens has one. A tick proc watches one of our effects with stacks,
+    the only ones whose ticks are hits a proc sees (``effect/StackTicks``; a periodic effect's, Burning's, are not), and
+    the spell it names gives that effect as a damage over time (RLM-564)."""
     problems: list[Problem] = []
     for field, effect in (
         ("effect", proc.effect),
@@ -1256,13 +1258,33 @@ def _check_proc(
             problems.append(
                 Problem(source, f"{path}.{field}", _unknown(effect, MOB_EFFECT_REGISTRY, universe))
             )
+    if (
+        proc.trigger == "tick"
+        and proc.effect is not None
+        and proc.effect not in stacked
+        and universe.contains(MOB_EFFECT_REGISTRY, proc.effect)
+    ):
+        problems.append(
+            Problem(
+                source,
+                f"{path}.effect",
+                f"{proc.effect} is no effect of content/effects/ with stacks: only their ticks set off a tick proc",
+            )
+        )
     if proc.spell is not None:
         watched = spells.get(proc.spell)
         if watched is None:
             problems.append(Problem(source, f"{path}.spell", _unknown(proc.spell, SPELL_REGISTRY, universe)))
-        elif watched.first_effect(DAMAGE_OVER_TIME) is None and watched.first_effect(APPLY_EFFECT) is None:
+        elif not any(
+            effect.type == DAMAGE_OVER_TIME and effect.effect == proc.effect
+            for _, effect in watched.all_effects()
+        ):
             problems.append(
-                Problem(source, f"{path}.spell", f"{proc.spell} applies no damage over time to tick")
+                Problem(
+                    source,
+                    f"{path}.spell",
+                    f"{proc.spell} gives no damage over time of {proc.effect}, so it has no ticks to watch",
+                )
             )
     if proc.cast is not None:
         cast = spells.get(proc.cast)

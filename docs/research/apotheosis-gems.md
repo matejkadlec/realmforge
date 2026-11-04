@@ -236,7 +236,7 @@ Drops: any dimension, every world tier, from cracked, unique.
 | chestplate, leggings | `minecraft:armor_toughness` 0.5 / 1 / 2 / 3 / 4 / 6 |
 | shield | `minecraft:armor_toughness` (of base) 5 % / 15 % / 22.5 % / 30 % / 37.5 % / 50 % |
 | boots | `minecraft:max_health` (of total) 5 % / 7.5 % / 12.5 % / 17.5 % / 22.5 % / 40 % and `apothic_attributes:life_steal` → `realmforge:lifesteal` -0.025 / -0.05 / -0.075 / -0.1 / -0.125 / -0.2 |
-| bow | `apothic_attributes:bleeding` I / II on the arrow's target (from flawless) |
+| bow | none: its `apothic_attributes:bleeding` I / II on the arrow's target (from flawless) is gone since RLM-600 (Matěj, 2026-11-03: the Apotheosis bleed leaves the pack), so it fits no bow |
 
 #### Warlord (`apotheosis:core/warlord`)
 

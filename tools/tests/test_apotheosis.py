@@ -341,6 +341,34 @@ def test_no_generated_file_grants_a_remapped_apothic_attributes_stat(files: dict
                 assert f'"apothic_attributes:{stat}"' not in text, path
 
 
+def test_no_affix_or_gem_of_the_pack_gives_apothic_attributes_bleeding(files: dict[str, bytes]) -> None:
+    """RLM-600 (Matěj, 2026-11-03: the Apotheosis bleed leaves the pack): every affix and gem Apotheosis loads, its own
+    or the one our file replaces it with, gives no ``apothic_attributes:bleeding``; Bloodletting and Devilish are off,
+    and Tyrannical keeps every bonus but its bow's."""
+    snapshot = load_snapshot(RepoPaths())
+    loaded = 0
+    for kind, folder in (("affixes", AFFIXES), ("gems", GEMS)):
+        for entry_id, entry in snapshot.entries[kind].items():
+            path = folder + entry_id.removeprefix("apotheosis:") + ".json"
+            data = generated_json(files, path) if path in files else entry
+            if data == DISABLED:
+                continue
+            loaded += 1
+            assert "apothic_attributes:bleeding" not in json.dumps(data), entry_id
+    assert loaded > 50, loaded
+    for affix in ("melee/mob_effect/bloodletting", "shield/mob_effect/devilish"):
+        assert generated_json(files, AFFIXES + affix + ".json") == DISABLED, affix
+    tyrannical = generated_json(files, GEMS + "core/tyrannical.json")
+    own = snapshot.entry("gems", "apotheosis:core/tyrannical")
+    assert own is not None
+    assert [bonus["gem_class"] for bonus in tyrannical["bonuses"]] == [
+        bonus["gem_class"] for bonus in own["bonuses"] if bonus["gem_class"] != "apotheosis:bow"
+    ]
+    assert {key: value for key, value in tyrannical.items() if key != "bonuses"} == {
+        key: value for key, value in own.items() if key != "bonuses"
+    }
+
+
 def test_potion_charms_cannot_be_made(files: dict[str, bytes]) -> None:
     for recipe in ("potion_charm", "infusion/potion_charm"):
         assert generated_json(files, DATA + f"apotheosis/recipe/{recipe}.json") == DISABLED
@@ -541,20 +569,34 @@ def test_a_stat_is_remapped_once(repo: RepoPaths) -> None:
 
 
 def test_a_remapped_stat_left_where_no_remap_applies_is_reported(repo: RepoPaths) -> None:
-    """Bloodletting's bleeding is an effect, not a granted attribute: a remap cannot reach it."""
+    """Acidic's Sundering is an effect, not a granted attribute: a remap cannot reach it (Bloodletting's Bleeding was
+    the example until RLM-600 turned it off)."""
+    write(
+        repo.content / "apotheosis_stat_remaps" / "sundering.yaml",
+        "id: sundering\nsource: apothic_attributes:sundering\noff: true\n",
+    )
+    problems = problems_for(repo)
+    assert any(
+        "affixes apotheosis:ranged/mob_effect/acidic names apothic_attributes:sundering at mob_effect" in p
+        for p in problems
+    ), problems
+    assert any(
+        "no Apotheosis affix, gem or tier augment grants apothic_attributes:sundering" in p for p in problems
+    )
+
+
+def test_a_switched_off_entry_counts_for_no_remap(repo: RepoPaths) -> None:
+    """RLM-600 turned Bloodletting and Devilish off and took Tyrannical's bow bonus, the pack's only sources of
+    Apothic Attributes' Bleeding, so nothing is left for a remap of it to reach."""
     write(
         repo.content / "apotheosis_stat_remaps" / "bleeding.yaml",
         "id: bleeding\nsource: apothic_attributes:bleeding\noff: true\n",
     )
     problems = problems_for(repo)
-    assert any(
-        "affixes apotheosis:melee/mob_effect/bloodletting names apothic_attributes:bleeding at mob_effect"
-        in p
-        for p in problems
-    ), problems
-    assert any(
-        "no Apotheosis affix, gem or tier augment grants apothic_attributes:bleeding" in p for p in problems
-    )
+    assert problems == [
+        "content/apotheosis_stat_remaps/bleeding.yaml: source: no Apotheosis affix, gem or tier augment grants "
+        "apothic_attributes:bleeding"
+    ], problems
 
 
 def test_source_base_cannot_convert_one_stat_of_an_all_stats_bonus(repo: RepoPaths) -> None:
@@ -655,14 +697,19 @@ RARITY_OVERRIDES = DATA + "apotheosis/apotheosis/rarity_override/"
 NOTICES = "mod/src/generated/resources/META-INF/third_party/apotheosis/"
 
 
-def test_the_review_s_thirty_one_affixes_are_off(files: dict[str, bytes]) -> None:
-    """The 29 of the review, Executing (2026-10-29) and Runed (2026-10-30), and no other affix."""
+# RLM-600: the Apotheosis bleed leaves the pack (Matěj, 2026-11-03).
+BLEEDS_OFF = ("melee/mob_effect/bloodletting", "shield/mob_effect/devilish")
+
+
+def test_the_review_s_thirty_one_affixes_and_the_two_bleeds_are_off(files: dict[str, bytes]) -> None:
+    """The 29 of the review, Executing (2026-10-29) and Runed (2026-10-30), Bloodletting and Devilish (RLM-600), and
+    no other affix."""
     off = {
         path.removeprefix(AFFIXES).removesuffix(".json")
         for path in files
         if path.startswith(AFFIXES) and generated_json(files, path) == DISABLED
     }
-    assert off == set(REVIEW_OFF)
+    assert off == set(REVIEW_OFF) | set(BLEEDS_OFF)
 
 
 @pytest.mark.parametrize(

@@ -2326,7 +2326,9 @@ return; the proc engine at its end exists since C3a.
   damage source carries it, and the proc engine ignores hits that have one. Otherwise a guaranteed on-hit proc
   that deals damage would trigger itself until the server's stack overflows. A status effect applied by a proc
   keeps the origin for all its later ticks ([11.4](#114-status-effects)), so a proc's damage over time cannot
-  start a chain either.
+  start a chain either, and its application fires no applies-effect proc, also when a proc's spell lands it ticks
+  later (a bolt's Slowness): `Effects.applying` hands the `MobEffectEvent.Added` listeners the source of the
+  application `Effects.apply` is making (RLM-564).
 - **Learning:** on level-up, `character` grants points through `talent`'s API, as its class data says (for example
   one per level from some level on). `LearnTalentPayload(tree, node)` → pure `TalentRules` check that the tree is
   one of the player's class trees (a provider that `character` implements), points, prerequisites, tier and rank →
@@ -4021,10 +4023,7 @@ stunned mob's AI step, as vanilla skips an immobile one's, so goals without cont
 ([13](#13-items-gear-and-loot), RLM-537; `MagicProtectionGameTests`): `EnchantmentSelectionMixin` after vanilla's
 `EnchantmentHelper#filterCompatibleEnchantments`, and `ApothicTableSelectionMixin` after Apothic Enchanting's
 `ApothEnchantmentHelper#pickEnchantment` with `ArcanaEnchantmentDataAccessor` for its candidates' package-private
-enchantment, the last two `@Pseudo` as above. `ApothicBleedStackingMixin` redirects the effect reads and updates in
-`applyEffect` of Apotheosis's `MobEffectAffix` and `MobEffectBonus`, so a Bleeding they stack raises our stack instead
-([19.4](#194-optional-integrations), RLM-579; `ApothicBleedGameTests`); `@Pseudo` and required like
-`InventorySortingStacksMixin`. The QA mod has two, for dev runs only: `GameTestServerMixin` gives the
+enchantment, the last two `@Pseudo` as above. The QA mod has two, for dev runs only: `GameTestServerMixin` gives the
 GameTest world the data pack dimensions, which vanilla leaves out ([20](#20-tests-per-layer)), and
 `MinecraftProfileLookupMixin`, a client mixin (the config's `client` list), retries the dev client's one profile
 lookup at startup up to three times, 1 s and then 2 s apart (`ProfileLookupRetry`, RLM-570;
@@ -4187,21 +4186,13 @@ attributes up by id, so the core mod has no compile-time dependency on it:
   RLM-272 Apotheosis's own data grants our crit and dodge instead (below); the caps stay, as they cost nothing and
   guard against another mod's data or a later Apotheosis release that grants Apothic Attributes' again.
 
-**Its Bleeding is ours** (RLM-579; Matěj's playtest of 2026-11-03: a Bloodletting sword and Rend showed two Bleedings
-on one target). Apotheosis's Bloodletting and Devilish affixes and its Tyrannical gem give
-`apothic_attributes:bleeding`, 1 + its level every 2 s through armor. `compat/apothic_attributes/ApothicBleeds` turns
-every application of it into a stack of our `realmforge:bleeding` ([11.4](#114-status-effects)) with the same damage, a
-quarter of 1 + its level every half second: `MobEffectEvent.Applicable` refuses the effect (`DO_NOT_APPLY`) and gives
-the target's last attacker's stack instead, its spell and proc origin `realmforge:apothic_bleeding` (one stack per
-attacker for these sources, beside Rend's and Deep Wounds', and no proc from its ticks). The level shows as the
-effect's amplifier, Bleeding IV, the highest of a target's sources' (Matěj's playtest of 2026-11-03: without it, the
-stacking looked gone); the damage is the stacks'. A source that stacks on
-reapply reads the target's effect to raise it; `mixin/ApothicBleedStackingMixin` ([19.3](#193-mixins-and-access-transformers))
-hands it a stand-in at the stack's level and remaining time, so Apotheosis's own step, limit (Bloodletting's Bleeding
-IV) and longer duration decide the raise, which goes to the stack. Nothing else reads the effect: Apothic Attributes'
-`DetonationEffect` uses only its damage type of the same name. `ApothicBleedGameTests` hit with a Bloodletting sword up
-to its limit, within its cooldown too, tick its stack through armor beside Rend's and convert a bleed of any other
-source.
+**Its Bleeding is not in the pack** (RLM-600; Matěj, 2026-11-03: Rend and Deep Wounds are the only bleeds, each an
+effect of its own, RLM-601). Apotheosis's Bloodletting and Devilish affixes are off and its Tyrannical gem has no bow
+bonus (below), so nothing gives `apothic_attributes:bleeding`; RLM-579's conversion of it into a stack of our Bleeding
+is gone with them. An item that rolled Bloodletting before keeps the entry in its affixes and loads without an error,
+but Apotheosis skips an affix its registry no longer has (`AffixHelper#getAffixesImpl`), so the item shows and does
+nothing of it. `ApotheosisBleedGameTests` check every affix and gem bonus the game loads, the Tyrannical gem in a bow,
+and such a sword's hit.
 
 The pack's config (`pack/config/apotheosis/`) sets its protection and armor formulas to vanilla's and turns its
 attributes panel off; Apothic Enchanting's inlined enchantment descriptions are on, because it replaces the
@@ -4257,8 +4248,8 @@ NeoForge stacks the mods' data packs in that order, so a file of ours replaces t
   2026-10-29).
 - **Mythic shows as Legendary**: the rarity's name and the two texts that say mythic are in the core mod's
   `assets/apotheosis/lang/en_us.json` (texts of other mods, above).
-- **The affix set of Matěj's review** (RLM-232, [the design](design/apotheosis.md#the-affix-set)): 31 affixes are off,
-  the review's 29, Executing and Runed; Giant Slaying and Acidic lose their Pinnacle-only weight; eight affixes roll
+- **The affix set of Matěj's review** (RLM-232, [the design](design/apotheosis.md#the-affix-set)): 33 affixes are off,
+  the review's 29, Executing, Runed, and RLM-600's Bloodletting and Devilish; Giant Slaying and Acidic lose their Pinnacle-only weight; eight affixes roll
   from Rare; Rare gets a chanced ability slot, 25 %, next to its rules; every world tier's cap on Apothic
   Enchanting's max Eterna is off.
 - **Rarity overrides** (RLM-232): Apotheosis rolls a rarity's rules for every loot category unless a rarity override
