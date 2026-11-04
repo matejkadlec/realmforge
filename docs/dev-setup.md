@@ -227,6 +227,12 @@ there while the game runs. The handoff gives the commands
   pack (RLM-382). It needs no world and no mouse, so it runs headless too:
   `xvfb-run -a -s "-screen 0 1920x1080x24" ./gradlew runClient -PofflineClient` with the variable set (cloud sessions
   have Xvfb and Mesa).
+- **Spell tree screenshots without input.** `REALMFORGE_QA_SPELL_TREE_SHOTS=<label> ./gradlew runClient -PofflineClient
+  -PleanClient` makes the QA mod create a superflat world and a Mage, so the spellbook opens by itself, click Choose and
+  spells as a player would (real clicks and real payloads, which a GameTest's fake player cannot send), repeat it with a
+  Warrior for Bloodthirst's arrow, save each state to `run/client/screenshots/<label>-spelltree-<state>.png`, log
+  `Spell tree check passed` or `FAILED` for what each click should do, and quit (RLM-333). Headless:
+  `xvfb-run -a -s "-screen 0 1280x960x24"` before it, with the variable set.
 - **A trace of real charges without input.** `REALMFORGE_QA_CHARGE_TRACE=<label> ./gradlew runClient -PofflineClient`
   makes the QA mod create a superflat world from the title screen, make a level-18 Warrior and cast Charge at a husk from
   several setups (from either side, diagonally, with forward held, at a mod's target dummy when the pack has one),
