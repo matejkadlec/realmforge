@@ -1219,7 +1219,8 @@ the playtest covers it.
   - **Points:** exactly 1 per level from level 2 on, so 17 at level 18 (Matěj, 2026-11-03 and 2026-11-04). **A pick
     gives the tree's first spell free at rank 1** (decision D4: every class starts with one spell), and every other rank
     costs a point, rank 1 included (Matěj, 2026-11-04). So a level 18 character has 18 ranks of the tree's 31, and class
-    spells no longer come by level. RLM-503 rebalances Astone against that: she was tuned with builds of 26 and 27 ranks.
+    spells no longer come by level. Astone was tuned with builds of 26 and 27 ranks but no Apotheosis affixes, gems or
+    curios, and Matěj expects those to match the missing ranks (2026-11-04, RLM-503).
   - **In code:** `character/Specialization` and `character/TreeSpell` are the class's `specializations`. A specialization
     without spells comes later (M3): the window names it, and nobody can pick it. `character/SpellPoints` holds the pure
     rules. Nothing saves the points: the spellbook's ranks are their only record (spent: the tree's ranks less the free

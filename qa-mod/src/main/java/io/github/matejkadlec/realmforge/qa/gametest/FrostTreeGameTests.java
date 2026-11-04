@@ -84,8 +84,9 @@ public final class FrostTreeGameTests {
      * stat back to its default (RLM-577: no value from an earlier {@code /qa stats set} leaks in), a new Human Mage,
      * chapter 1's raised cap, level 18, the tree at 26 ranks (Frostbolt 5, Ice Lance 5, Improved Frostbolt, Frostbite,
      * Shatter and Frost Nova 3, Cone of Cold 2, Ice Barrier and Blizzard 1), and the Netherite caster set and wand at
-     * level V. Since C5 a real level 18 character has 18 ranks, and this line skips the rules to keep the state Astone
-     * was balanced with until RLM-503 rebalances her. The handoff gives it to Matěj as
+     * level V. Since C5 a real level 18 character has 18 ranks; this line skips the rules to keep the state Astone was
+     * balanced with, which has no affixes, gems or curios, and Matěj expects those to match the missing ranks
+     * (2026-11-04, RLM-503). The handoff gives it to Matěj as
      * {@code execute as @p at @p run} and this line.
      */
     static final String ASTONE_SETUP = "qa run qa stats reset; qa character reset; "
