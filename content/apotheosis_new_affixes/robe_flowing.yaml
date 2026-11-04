@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_new_affixes.schema.json
+# Mana per second on a robe piece, against the Mage's 5 (gear design, Matěj, 2026-10-30, RLM-511).
+id: robe_flowing
+name: {en_us: Flowing}
+suffix: {en_us: of the River}
+stat: realmforge:mana_regeneration
+categories:
+  - realmforge:robe_head
+  - realmforge:robe_chest
+  - realmforge:robe_legs
+  - realmforge:robe_feet
+values:
+  apotheosis:common: {min: 0.2, max: 0.4, step: 0.05}
+  apotheosis:uncommon: {min: 0.3, max: 0.5, step: 0.05}
+  apotheosis:rare: {min: 0.4, max: 0.8, step: 0.05}
+  apotheosis:epic: {min: 0.6, max: 1.0, step: 0.05}
+  apotheosis:mythic: {min: 0.8, max: 1.5, step: 0.05}

@@ -1,0 +1,46 @@
+{
+  "type": "apotheosis:attribute",
+  "attribute": "realmforge:max_mana",
+  "categories": [
+    "realmforge:robe_head",
+    "realmforge:robe_chest",
+    "realmforge:robe_legs",
+    "realmforge:robe_feet"
+  ],
+  "definition": {
+    "affix_type": "stat",
+    "exclusive_set": [],
+    "weights": {
+      "quality": 0.1,
+      "weight": 25
+    }
+  },
+  "operation": "add_value",
+  "values": {
+    "apotheosis:common": {
+      "min": 5.0,
+      "max": 10.0,
+      "step": 1.0
+    },
+    "apotheosis:uncommon": {
+      "min": 8.0,
+      "max": 12.0,
+      "step": 1.0
+    },
+    "apotheosis:rare": {
+      "min": 10.0,
+      "max": 18.0,
+      "step": 1.0
+    },
+    "apotheosis:epic": {
+      "min": 15.0,
+      "max": 25.0,
+      "step": 1.0
+    },
+    "apotheosis:mythic": {
+      "min": 20.0,
+      "max": 35.0,
+      "step": 1.0
+    }
+  }
+}

@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Bursting (Vitality on being hurt) gives no armor, so caster robes roll it too (gear design, RLM-557).
+id: bursting
+affix: apotheosis:armor/mob_effect/bursting
+replace:
+  types:
+    - apotheosis:chestplate
+    - apotheosis:leggings
+    - realmforge:robe_chest
+    - realmforge:robe_legs

@@ -3,7 +3,9 @@
   "attribute": "realmforge:projectile_resistance",
   "categories": [
     "apotheosis:helmet",
-    "apotheosis:chestplate"
+    "apotheosis:chestplate",
+    "realmforge:robe_head",
+    "realmforge:robe_chest"
   ],
   "definition": {
     "affix_type": "basic_effect",

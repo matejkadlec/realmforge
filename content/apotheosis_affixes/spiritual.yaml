@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Spiritual (healing received) gives no armor, so caster robes roll it too (gear design, RLM-557).
+id: spiritual
+affix: apotheosis:armor/attribute/spiritual
+replace:
+  categories:
+    - apotheosis:chestplate
+    - apotheosis:leggings
+    - realmforge:robe_chest
+    - realmforge:robe_legs

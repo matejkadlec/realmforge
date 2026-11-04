@@ -1,15 +1,23 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
+import io.github.matejkadlec.realmforge.generated.GeneratedItems;
+import io.github.matejkadlec.realmforge.generated.GeneratedStats;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.monster.zombie.Husk;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 /**
- * RLM-232, RLM-273 and RLM-546: the affix set of Matěj's review and our wands' and robes' loot categories, as
- * Apotheosis loads them with the pack (ADR 0042). The tests that read Apotheosis's registries and loot code delegate to {@link ApotheosisLoot},
+ * RLM-232, RLM-273, RLM-546 and RLM-557: the affix set of Matěj's review, our wands' and robes' loot categories and
+ * the robes' affixes, as Apotheosis loads them with the pack (ADR 0042). The tests that read Apotheosis's registries and loot code delegate to {@link ApotheosisLoot},
  * so this class names no Apotheosis type (the lean dev client runs without it). Rolling items there also checks that
  * no category meets a slot it has nothing left for: Apotheosis logs "Failed to execute AffixLootRule (no affixes
  * available)" at ERROR then, which {@code rf gametest-log} refuses.
@@ -85,7 +93,7 @@ public final class ApotheosisLootGameTests {
 
     /**
      * Done when of RLM-273: no affix can roll on a wand at any rarity, so never a melee one; a sword still has its
-     * affixes. The wand's own affixes are the caster affixes (RLM-557).
+     * affixes. The wand's own affixes are RLM-562's.
      */
     @QaGameTest
     public static void aWandNeverRollsAMeleeAffix(GameTestHelper helper) {
@@ -104,9 +112,87 @@ public final class ApotheosisLootGameTests {
         ApotheosisLoot.aGuardianGemFitsNoRobe(helper);
     }
 
-    /** RLM-546: a robe or a wand rolled at every rarity gets the rarity and no affix, without an empty slot's error. */
+    /** RLM-546: a wand rolled at every rarity gets the rarity and no affix, without an empty slot's error. */
     @QaGameTest(timeoutTicks = 200)
-    public static void aRobeOrAWandRollsARarityWithoutAffixes(GameTestHelper helper) {
-        ApotheosisLoot.aRobeOrAWandRollsARarityWithoutAffixes(helper);
+    public static void aWandRollsARarityWithoutAffixes(GameTestHelper helper) {
+        ApotheosisLoot.aWandRollsARarityWithoutAffixes(helper);
+    }
+
+    /** Done when of RLM-557: what can roll on each robe piece, at each rarity, is the gear design's list, no armor. */
+    @QaGameTest
+    public static void eachRobePieceOffersTheGearDesignsAffixes(GameTestHelper helper) {
+        ApotheosisLoot.eachRobePieceOffersTheGearDesignsAffixes(helper);
+    }
+
+    /**
+     * Done when of RLM-557: a robe rolls caster affixes and no armor affix, at every rarity and tier, with a stat
+     * affix for every stat slot and without an empty slot's error (the log check).
+     */
+    @QaGameTest(timeoutTicks = 200)
+    public static void aRobeRollsCasterAffixesAndNoArmorAffix(GameTestHelper helper) {
+        ApotheosisLoot.aRobeRollsCasterAffixesAndNoArmorAffix(helper);
+    }
+
+    /** RLM-557: a worn robe's Sorcerous, at its top Legendary roll, adds its 4 Spell Power; held, nothing. */
+    @QaGameTest
+    public static void sorcerousAddsItsSpellPowerWhenTheRobeIsWorn(GameTestHelper helper) {
+        robeAffixAddsItsStat(helper, "qa-apoth-sorcerous", "robe_sorcerous", GeneratedStats.SPELL_POWER, 4.0);
+    }
+
+    /** RLM-557: a worn robe's Fiery, at its top Legendary roll, adds its 14 % Fire Power, as a share. */
+    @QaGameTest
+    public static void fieryAddsItsFirePowerWhenTheRobeIsWorn(GameTestHelper helper) {
+        robeAffixAddsItsStat(helper, "qa-apoth-fiery", "robe_fiery", GeneratedStats.FIRE_POWER, 0.14);
+    }
+
+    /** RLM-557: a worn robe's Warded, at its top Legendary roll, adds its 5 Magic Shield. */
+    @QaGameTest
+    public static void wardedAddsItsMagicShieldWhenTheRobeIsWorn(GameTestHelper helper) {
+        robeAffixAddsItsStat(helper, "qa-apoth-warded", "robe_warded", GeneratedStats.MAGIC_SHIELD, 5.0);
+    }
+
+    /** RLM-557 and the gear design: a worn robe's Bolstering fires on being hurt, as on any armor. */
+    @QaGameTest
+    public static void bolsteringFiresOnAWornRobeWhenItsWearerIsHit(GameTestHelper helper) {
+        ServerPlayer player = ApotheosisGameTests.player(helper, "qa-apoth-bolstering");
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(GeneratedItems.NETHERITE_ROBES.get()));
+        ApotheosisGameTests.run(player, "apoth set_rarity apotheosis:epic");
+        ApotheosisGameTests.run(player, "apoth affix apply apotheosis:armor/mob_effect/bolstering 1.0");
+        player.setItemSlot(EquipmentSlot.CHEST, player.getMainHandItem().copy());
+        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        ApotheosisGameTests.ticks(player, 2);
+        helper.assertFalse(player.hasEffect(MobEffects.RESISTANCE), "no Resistance before the hit");
+
+        Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 2));
+        husk.doHurtTarget(helper.getLevel(), player);
+        helper.assertTrue(player.hasEffect(MobEffects.RESISTANCE), "Bolstering gives Resistance when the wearer is hit");
+        ApotheosisGameTests.logout(player);
+        helper.succeed();
+    }
+
+    /** The two commands a player reaches a Legendary affix with, then the difference it makes held and worn. */
+    private static void robeAffixAddsItsStat(GameTestHelper helper, String name, String affix,
+            Holder<Attribute> stat, double expected) {
+        ServerPlayer player = ApotheosisGameTests.player(helper, name);
+        // Against plain robes worn, as the robes' own gear stats count too.
+        player.setItemSlot(EquipmentSlot.CHEST, new ItemStack(GeneratedItems.NETHERITE_ROBES.get()));
+        ApotheosisGameTests.ticks(player, 2);
+        double plain = player.getAttributeValue(stat);
+
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(GeneratedItems.NETHERITE_ROBES.get()));
+        ApotheosisGameTests.run(player, "apoth set_rarity apotheosis:mythic");
+        ApotheosisGameTests.run(player, "apoth affix apply realmforge:" + affix + " 1.0");
+        ApotheosisGameTests.ticks(player, 2);
+        helper.assertTrue(Math.abs(player.getAttributeValue(stat) - plain) < EPSILON,
+                affix + " adds nothing while the robes are held");
+
+        player.setItemSlot(EquipmentSlot.CHEST, player.getMainHandItem().copy());
+        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        ApotheosisGameTests.ticks(player, 2);
+        double gained = player.getAttributeValue(stat) - plain;
+        helper.assertTrue(Math.abs(gained - expected) < EPSILON,
+                affix + " at its top adds " + expected + ", added " + gained);
+        ApotheosisGameTests.logout(player);
+        helper.succeed();
     }
 }

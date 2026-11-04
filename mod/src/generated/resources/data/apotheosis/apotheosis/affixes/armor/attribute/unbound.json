@@ -2,7 +2,8 @@
   "type": "apotheosis:attribute",
   "attribute": "neoforge:creative_flight",
   "categories": [
-    "apotheosis:chestplate"
+    "apotheosis:chestplate",
+    "realmforge:robe_chest"
   ],
   "definition": {
     "affix_type": "stat",

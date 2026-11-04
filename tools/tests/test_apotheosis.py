@@ -17,7 +17,9 @@ from realmforge_tools.problems import ValidationFailed
 from realmforge_tools.project import REPO_ROOT, RepoPaths
 from realmforge_tools.schema.apotheosis import (
     RARITIES,
+    ROBE_LOOT_CATEGORIES,
     ApotheosisAffixDef,
+    ApotheosisNewAffixDef,
     ApotheosisRarityDef,
     ApotheosisRarityOverrideDef,
     ApotheosisStatRemapDef,
@@ -31,6 +33,12 @@ AFFIXES = DATA + "apotheosis/apotheosis/affixes/"
 GEMS = DATA + "apotheosis/apotheosis/gems/"
 AUGMENTS = DATA + "apotheosis/apotheosis/tier_augments/"
 SCHEMA = "# yaml-language-server: $schema=../../tools/schemas/{}.schema.json\n"
+ARMOR_TO_ROBE = {
+    "apotheosis:helmet": "realmforge:robe_head",
+    "apotheosis:chestplate": "realmforge:robe_chest",
+    "apotheosis:leggings": "realmforge:robe_legs",
+    "apotheosis:boots": "realmforge:robe_feet",
+}
 
 
 def generated(repo: RepoPaths) -> dict[str, bytes]:
@@ -115,7 +123,7 @@ def test_the_pack_s_metafile_pins_a_sha512() -> None:
 
 def test_lucky_replaces_apotheosis_s_affix_without_the_curios_category(files: dict[str, bytes]) -> None:
     lucky = generated_json(files, AFFIXES + "generic/attribute/lucky.json")
-    # Apotheosis 9.1.0's generic/attribute/lucky.json, without apotheosis:charm.
+    # Apotheosis 9.1.0's generic/attribute/lucky.json, without apotheosis:charm, with the robes (RLM-557).
     assert lucky == {
         "type": "apotheosis:attribute",
         "attribute": "minecraft:luck",
@@ -130,6 +138,10 @@ def test_lucky_replaces_apotheosis_s_affix_without_the_curios_category(files: di
             "apotheosis:trident",
             "apotheosis:melee_weapon",
             "apotheosis:shears",
+            "realmforge:robe_head",
+            "realmforge:robe_chest",
+            "realmforge:robe_legs",
+            "realmforge:robe_feet",
         ],
         "definition": {"affix_type": "stat", "exclusive_set": [], "weights": {"quality": 0.1, "weight": 25}},
         "operation": "add_value",
@@ -151,7 +163,6 @@ def test_lucky_replaces_apotheosis_s_affix_without_the_curios_category(files: di
         ("weapon/attribute/shredding", "realmforge:armor_shred"),
         ("melee/attribute/vampiric", "realmforge:lifesteal"),
         ("melee/attribute/berserking", "realmforge:overheal"),
-        ("armor/attribute/timekeeping", "realmforge:cooldown_reduction"),
     ],
 )
 def test_an_affix_grants_our_stat_with_apotheosis_s_values(
@@ -175,14 +186,15 @@ def test_a_damage_reduction_affix_becomes_our_resistance_with_apotheosis_s_value
     files: dict[str, bytes], affix: str, stat: str
 ) -> None:
     """RLM-233: the reduction share per rarity becomes an add_value of our stat, a share too; the items it rolls on and
-    its slot kind stay Apotheosis's."""
+    its slot kind stay Apotheosis's, and the robe of each armor category it lists joins them (RLM-557)."""
     original = load_snapshot(RepoPaths()).entry("affixes", f"apotheosis:armor/dmg_reduction/{affix}")
     assert original is not None and original["type"] == "apotheosis:damage_reduction"
     fitted = generated_json(files, AFFIXES + f"armor/dmg_reduction/{affix}.json")
+    robes = [ARMOR_TO_ROBE[category] for category in original["categories"]]
     assert fitted == {
         "type": "apotheosis:attribute",
         "attribute": stat,
-        "categories": original["categories"],
+        "categories": original["categories"] + robes,
         "definition": original["definition"],
         "operation": "add_value",
         "values": original["values"],
@@ -197,8 +209,11 @@ def test_protection_pierce_and_shred_affixes_are_off(files: dict[str, bytes], af
 def test_stats_without_an_equivalent_of_ours_stay_apothic_attributes(files: dict[str, bytes]) -> None:
     """Healing received (RLM-233), the ranged stats (RLM-235), vanilla XP (Matěj, 2026-10-29) and the rest keep their
     affixes untouched."""
+    spiritual = generated_json(files, AFFIXES + "armor/attribute/spiritual.json")
+    assert (
+        spiritual["attribute"] == "apothic_attributes:healing_received"
+    )  # it only joins the robes (RLM-557)
     for affix in (
-        "armor/attribute/spiritual",
         "ranged/attribute/agile",
         "ranged/attribute/elven",
         "breaker/attribute/experienced",
@@ -719,14 +734,11 @@ def test_the_rest_of_a_capped_rarity_is_the_fitted_rarity_s(files: dict[str, byt
     assert helmet == [rule for rule in rare if rule["type"] != "apotheosis:chanced"]
 
 
-@pytest.mark.parametrize("category", ["wand", "robe_head", "robe_chest", "robe_legs", "robe_feet"])
-def test_our_categories_drop_every_affix_slot_and_keep_the_rest(
-    files: dict[str, bytes], category: str
-) -> None:
-    """RLM-546: the wand and the robes have no affix to roll yet, so every rarity keeps its sockets and durability and
-    no slot is left for Apotheosis to log as empty."""
-    override = generated_json(files, RARITY_OVERRIDES + f"realmforge/{category}.json")
-    assert override["category"] == f"realmforge:{category}"
+def test_the_wand_drops_every_affix_slot_and_keeps_the_rest(files: dict[str, bytes]) -> None:
+    """RLM-546: the wand has no affix to roll yet (RLM-562), so every rarity keeps its sockets and durability and no
+    slot is left for Apotheosis to log as empty."""
+    override = generated_json(files, RARITY_OVERRIDES + "realmforge/wand.json")
+    assert override["category"] == "realmforge:wand"
     rules = override["overrides"]
     assert list(rules) == list(RARITIES)
     assert rules["apotheosis:common"] == []
@@ -857,3 +869,273 @@ def test_no_apotheosis_data_needs_no_license(repo: RepoPaths) -> None:
     assert not any(
         path.startswith(NOTICES) or ("/data/apotheosis/" in path and path != ours) for path in files
     )
+
+
+# Affixes of our own and the robes' affixes (RLM-557, the gear design's table).
+NEW_AFFIXES = DATA + "realmforge/apotheosis/affixes/"
+GIVES_ARMOR = {"minecraft:armor", "minecraft:armor_toughness"}
+
+
+def spread(*ranges: tuple[float, float, float] | float) -> list[dict | float]:
+    return [
+        value if isinstance(value, int | float) else {"min": value[0], "max": value[1], "step": value[2]}
+        for value in ranges
+    ]
+
+
+def fitted_affixes(files: dict[str, bytes]) -> dict[str, dict]:
+    """Every affix Apotheosis loads, by id: ours, and its own as fitted, without the ones switched off."""
+    affixes: dict[str, dict] = {}
+    for id_, original in load_snapshot(RepoPaths()).entries["affixes"].items():
+        data = (
+            json.loads(files[path])
+            if (path := AFFIXES + id_.split(":", 1)[1] + ".json") in files
+            else original
+        )
+        if data != DISABLED:
+            affixes[id_] = data
+    for path, data in files.items():
+        if path.startswith(NEW_AFFIXES):
+            affixes[f"realmforge:{path.removeprefix(NEW_AFFIXES).removesuffix('.json')}"] = json.loads(data)
+    return affixes
+
+
+def listed_categories(affix: dict) -> list[str]:
+    return affix.get("categories") or affix.get("types") or []
+
+
+@pytest.mark.parametrize(
+    ("affix", "stat", "rarities", "values"),
+    [
+        (
+            "robe_sorcerous",
+            "realmforge:spell_power",
+            RARITIES,
+            spread((1, 1.5, 0.25), (1, 1.5, 0.25), (1.5, 2.5, 0.25), (2, 3, 0.25), (2.5, 4, 0.25)),
+        ),
+        (
+            "robe_deep",
+            "realmforge:max_mana",
+            RARITIES,
+            spread((5, 10, 1), (8, 12, 1), (10, 18, 1), (15, 25, 1), (20, 35, 1)),
+        ),
+        (
+            "robe_flowing",
+            "realmforge:mana_regeneration",
+            RARITIES,
+            spread((0.2, 0.4, 0.05), (0.3, 0.5, 0.05), (0.4, 0.8, 0.05), (0.6, 1, 0.05), (0.8, 1.5, 0.05)),
+        ),
+        (
+            "robe_warded",
+            "realmforge:magic_shield",
+            RARITIES,
+            spread(1, (1, 2, 0.5), (1, 3, 0.5), (2, 4, 0.5), (3, 5, 0.5)),
+        ),
+        *(
+            (
+                f"robe_{name}",
+                f"realmforge:{school}_power",
+                RARITIES[1:],
+                spread((0.03, 0.05, 0.01), (0.04, 0.07, 0.01), (0.06, 0.1, 0.01), (0.08, 0.14, 0.01)),
+            )
+            for name, school in (("fiery", "fire"), ("frozen", "frost"), ("arcane_touched", "arcane"))
+        ),
+    ],
+)
+def test_a_robe_affix_has_the_gear_design_s_values(
+    files: dict[str, bytes], affix: str, stat: str, rarities: tuple[str, ...], values: list
+) -> None:
+    assert generated_json(files, NEW_AFFIXES + f"{affix}.json") == {
+        "type": "apotheosis:attribute",
+        "attribute": stat,
+        "categories": list(ROBE_LOOT_CATEGORIES.values()),
+        "definition": {"affix_type": "stat", "exclusive_set": [], "weights": {"quality": 0.1, "weight": 25}},
+        "operation": "add_value",
+        "values": dict(zip(rarities, values, strict=True)),
+    }
+
+
+def test_an_affix_of_ours_has_its_name_and_suffix_in_our_lang(files: dict[str, bytes]) -> None:
+    lang = generated_json(files, "mod/src/generated/resources/assets/realmforge/lang/en_us.json")
+    assert lang["affix.realmforge:robe_sorcerous"] == "Sorcerous"
+    assert lang["affix.realmforge:robe_sorcerous.suffix"] == "of Sorcery"
+    for path in files:
+        if path.startswith(NEW_AFFIXES):
+            key = f"affix.realmforge:{path.removeprefix(NEW_AFFIXES).removesuffix('.json')}"
+            assert key in lang and f"{key}.suffix" in lang
+
+
+def test_timekeeping_rolls_on_the_robe_head_and_chest_from_rare(files: dict[str, bytes]) -> None:
+    timekeeping = generated_json(files, AFFIXES + "armor/attribute/timekeeping.json")
+    assert timekeeping["attribute"] == "realmforge:cooldown_reduction"
+    assert timekeeping["categories"] == [
+        "apotheosis:helmet",
+        "apotheosis:chestplate",
+        "apotheosis:shield",
+        "realmforge:robe_head",
+        "realmforge:robe_chest",
+    ]
+    assert timekeeping["values"] == {
+        "apotheosis:rare": {"min": 0.01, "max": 0.05, "step": 0.005},
+        "apotheosis:epic": {"min": 0.05, "max": 0.075, "step": 0.005},
+        "apotheosis:mythic": {"min": 0.05, "max": 0.1, "step": 0.005},
+    }
+
+
+def test_no_robe_rolls_armor_or_toughness(files: dict[str, bytes]) -> None:
+    for id_, affix in fitted_affixes(files).items():
+        if affix.get("attribute") in GIVES_ARMOR:
+            assert not set(listed_categories(affix)) & set(ROBE_LOOT_CATEGORIES.values()), id_
+
+
+def test_every_kept_armor_affix_that_gives_no_armor_joins_the_robe_of_its_slot(
+    files: dict[str, bytes],
+) -> None:
+    """Task 3: the rule of the gear design, so a later review's change to the affix set cannot leave one behind."""
+    checked = 0
+    for id_, affix in fitted_affixes(files).items():
+        listed = listed_categories(affix)
+        armor = [category for category in listed if category in ARMOR_TO_ROBE]
+        if armor and affix.get("attribute") not in GIVES_ARMOR:
+            assert {ARMOR_TO_ROBE[category] for category in armor} <= set(listed), id_
+            checked += 1
+    assert checked == 18
+
+
+def test_a_robe_has_an_affix_for_every_slot_it_keeps(files: dict[str, bytes]) -> None:
+    """Apotheosis logs an error and rolls nothing for a slot that finds no affix of its kind left for the item."""
+    snapshot = load_snapshot(RepoPaths())
+    affixes = fitted_affixes(files)
+    for category in ROBE_LOOT_CATEGORIES.values():
+        override_file = RARITY_OVERRIDES + category.replace(":", "/") + ".json"
+        overrides = generated_json(files, override_file)["overrides"] if override_file in files else {}
+        for rarity in RARITIES:
+            rarity_file = DATA + "apotheosis/apotheosis/rarities/" + rarity.split(":")[1] + ".json"
+            fitted = (
+                generated_json(files, rarity_file)
+                if rarity_file in files
+                else snapshot.entry("rarities", rarity)
+            )
+            rules = overrides.get(rarity, fitted["rules"])
+            for kind in ("stat", "basic_effect", "ability"):
+                slots = sum(_slot_kind_of(rule) == kind for rule in rules)
+                rolled = [
+                    id_
+                    for id_, affix in affixes.items()
+                    if category in listed_categories(affix)
+                    and affix["definition"]["affix_type"] == kind
+                    and rarity in affix.get("values", {})
+                ]
+                assert len(rolled) >= slots, (category, rarity, kind, rolled)
+
+
+def _slot_kind_of(rule: dict) -> str | None:
+    if rule["type"] == "apotheosis:chanced":
+        return _slot_kind_of(rule["rule"])
+    return rule.get("affix_type") if rule["type"] == "apotheosis:affix" else None
+
+
+def test_only_the_robe_head_and_feet_skip_slots(files: dict[str, bytes]) -> None:
+    assert RARITY_OVERRIDES + "realmforge/robe_chest.json" not in files
+    assert RARITY_OVERRIDES + "realmforge/robe_legs.json" not in files
+    head = generated_json(files, RARITY_OVERRIDES + "realmforge/robe_head.json")["overrides"]
+    feet = generated_json(files, RARITY_OVERRIDES + "realmforge/robe_feet.json")["overrides"]
+    for rarity in ("apotheosis:rare", "apotheosis:epic", "apotheosis:mythic"):
+        assert not [rule for rule in head[rarity] if _slot_kind_of(rule) == "ability"]
+        assert len([rule for rule in head[rarity] if _slot_kind_of(rule) == "basic_effect"]) == 1
+        assert not [rule for rule in feet[rarity] if _slot_kind_of(rule) == "ability"]
+    assert list(head) == list(feet) == ["apotheosis:rare", "apotheosis:epic", "apotheosis:mythic"]
+
+
+def new_affix(repo: RepoPaths, body: str) -> None:
+    write(
+        repo.content / "apotheosis_new_affixes" / "test_affix.yaml",
+        "id: test_affix\nname: {en_us: Testing}\nsuffix: {en_us: of Tests}\n" + body,
+    )
+
+
+def test_a_new_affix_needs_no_range_for_a_fixed_value(repo: RepoPaths) -> None:
+    new_affix(
+        repo,
+        "stat: realmforge:magic_shield\ncategories: [realmforge:robe_chest]\nvalues: {apotheosis:mythic: 2}\nweight: 5\n",
+    )
+    affix = generated_json(generated(repo), NEW_AFFIXES + "test_affix.json")
+    assert affix["values"] == {"apotheosis:mythic": 2.0}
+    assert affix["definition"]["weights"] == {"quality": 0.1, "weight": 5}
+
+
+@pytest.mark.parametrize(
+    ("body", "message"),
+    [
+        (
+            "stat: minecraft:armor\ncategories: [realmforge:robe_chest]\nvalues: {apotheosis:rare: 1}\n",
+            "must be one of our stats",
+        ),
+        (
+            "stat: realmforge:spell_power\ncategories: [apotheosis:chestplate]\nvalues: {apotheosis:rare: 1}\n",
+            "not a loot category of ours",
+        ),
+        (
+            "stat: realmforge:fire_power\ncategories: [realmforge:robe_chest]\nvalues: {apotheosis:rare: 3}\n",
+            "its values are fractions",
+        ),
+        (
+            "stat: realmforge:fire_power\ncategories: [realmforge:robe_chest]\n"
+            "values: {apotheosis:rare: {min: 3, max: 5, step: 1}}\n",
+            "its values are fractions",
+        ),
+        (
+            "stat: realmforge:spell_power\ncategories: [realmforge:wand]\nvalues: {apotheosis:rare: 1}\n",
+            "says no_affixes",
+        ),
+    ],
+)
+def test_a_new_affix_is_checked(repo: RepoPaths, body: str, message: str) -> None:
+    new_affix(repo, body)
+    assert_problem(repo, message)
+
+
+def test_a_replaced_list_cannot_name_a_category_without_slots(repo: RepoPaths) -> None:
+    write(
+        repo.content / "apotheosis_affixes" / "vampiric.yaml",
+        "id: vampiric\naffix: apotheosis:melee/attribute/vampiric\nreplace:\n  categories: [realmforge:wand]\n",
+    )
+    assert_problem(repo, "says no_affixes")
+
+
+@pytest.mark.parametrize(
+    ("values", "message"),
+    [
+        ({"apotheosis:legendary": 1}, "unknown rarities apotheosis:legendary"),
+        ({}, "at least 1 item"),
+        ({"apotheosis:rare": {"min": 2, "max": 2, "step": 1}}, "a fixed value is a plain number"),
+        ({"apotheosis:rare": {"min": 3, "max": 2, "step": 1}}, "min must be below max"),
+        ({"apotheosis:rare": {"min": 1, "max": 2, "step": 0.3}}, "not a whole number of steps"),
+        ({"apotheosis:rare": {"min": 1, "max": 2, "step": 0}}, "greater than 0"),
+    ],
+)
+def test_a_new_affix_s_values_are_refused_by_its_schema(values: dict, message: str) -> None:
+    data = {
+        "id": "test",
+        "name": {"en_us": "Testing"},
+        "suffix": {"en_us": "of Tests"},
+        "stat": "realmforge:spell_power",
+        "categories": ["realmforge:robe_chest"],
+        "values": values,
+    }
+    with pytest.raises(ValidationError, match=message):
+        ApotheosisNewAffixDef.model_validate(data)
+
+
+def test_a_new_affix_names_a_category() -> None:
+    with pytest.raises(ValidationError, match="at least 1 item"):
+        ApotheosisNewAffixDef.model_validate(
+            {
+                "id": "test",
+                "name": {"en_us": "Testing"},
+                "suffix": {"en_us": "of Tests"},
+                "stat": "realmforge:spell_power",
+                "categories": [],
+                "values": {"apotheosis:rare": 1},
+            }
+        )

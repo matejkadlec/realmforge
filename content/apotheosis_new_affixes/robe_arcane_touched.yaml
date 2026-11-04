@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_new_affixes.schema.json
+# Arcane Power on a robe piece, from Uncommon (gear design, Matěj, 2026-10-30, RLM-511).
+id: robe_arcane_touched
+name: {en_us: Arcane-Touched}
+suffix: {en_us: of the Arcane}
+stat: realmforge:arcane_power
+categories:
+  - realmforge:robe_head
+  - realmforge:robe_chest
+  - realmforge:robe_legs
+  - realmforge:robe_feet
+values:
+  apotheosis:uncommon: {min: 0.03, max: 0.05, step: 0.01}
+  apotheosis:rare: {min: 0.04, max: 0.07, step: 0.01}
+  apotheosis:epic: {min: 0.06, max: 0.1, step: 0.01}
+  apotheosis:mythic: {min: 0.08, max: 0.14, step: 0.01}

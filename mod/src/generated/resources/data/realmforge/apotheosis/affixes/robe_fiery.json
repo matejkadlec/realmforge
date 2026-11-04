@@ -1,0 +1,41 @@
+{
+  "type": "apotheosis:attribute",
+  "attribute": "realmforge:fire_power",
+  "categories": [
+    "realmforge:robe_head",
+    "realmforge:robe_chest",
+    "realmforge:robe_legs",
+    "realmforge:robe_feet"
+  ],
+  "definition": {
+    "affix_type": "stat",
+    "exclusive_set": [],
+    "weights": {
+      "quality": 0.1,
+      "weight": 25
+    }
+  },
+  "operation": "add_value",
+  "values": {
+    "apotheosis:uncommon": {
+      "min": 0.03,
+      "max": 0.05,
+      "step": 0.01
+    },
+    "apotheosis:rare": {
+      "min": 0.04,
+      "max": 0.07,
+      "step": 0.01
+    },
+    "apotheosis:epic": {
+      "min": 0.06,
+      "max": 0.1,
+      "step": 0.01
+    },
+    "apotheosis:mythic": {
+      "min": 0.08,
+      "max": 0.14,
+      "step": 0.01
+    }
+  }
+}

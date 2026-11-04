@@ -112,7 +112,7 @@ So the proposal, for RLM-273's Java (a category is a registry entry) and RLM-272
 | Category | Items | Slot | How |
 | --- | --- | --- | --- |
 | `realmforge:wand` | `#realmforge:wands` | main hand | RLM-273 (its affixes: RLM-562) |
-| `realmforge:robe_head`, `robe_chest`, `robe_legs`, `robe_feet` | the caster sets (piece names by archetype: Cap, Robes, Pants, Sandals) | the armor slot | RLM-546 (accepted on RLM-536, 2026-10-30): four categories, each robe mapped in `apotheosis:loot_category_overrides` (generated from the item's `gear`), so the order of the predicates never matters |
+| `realmforge:robe_head`, `robe_chest`, `robe_legs`, `robe_feet` | the caster sets (piece names by archetype: Cap, Robes, Pants, Sandals) | the armor slot | RLM-546 (accepted on RLM-536, 2026-10-30): four categories, each robe mapped in `apotheosis:loot_category_overrides` (generated from the item's `gear`), so the order of the predicates never matters. Their affixes: RLM-557 |
 | `realmforge:ring`, `necklace`, `bracelet` | `#curios:ring` and so on | the curio slot | RLM-556, once Curios and our curio items are in the pack |
 | ranged and rogue armor | the first ranged set (Hood, Tunic, Greaves, Tabi) | the armor slot | when that set exists (M3), the same way as robes |
 
@@ -133,9 +133,10 @@ instead: RLM-565 keeps the health across the login, so the clamp no longer cuts 
 
 ### Caster: robes and wands
 
-New affixes of our own, through the `apotheosis_affixes` content type (`type: apotheosis:attribute`, like
-`lucky.yaml`), all `stat` kind so they roll from Common. Matěj approved the robe affixes on 2026-10-30 (RLM-511,
-question 4; RLM-557 builds them). Values per piece, Common / Uncommon / Rare / Epic / Legendary, anchored on our robes
+New affixes of our own, through the `apotheosis_new_affixes` content type (`type: apotheosis:attribute`), all `stat`
+kind so they roll from Common. Matěj approved the robe affixes on 2026-10-30 (RLM-511, question 4); RLM-557 built them,
+with these names as working names, and suffixes of its own: of Sorcery, of the Deep Well, of the River, of Warding, of
+Embers, of Winter, of the Arcane. Values per piece, Common / Uncommon / Rare / Epic / Legendary, anchored on our robes
 and on the Mage's 100 mana and 5 mana per second. Spell Power is flat points since RLM-534 (scaling system C): a
 Netherite robe piece gives 0.9–2.4 Spell Power and 40 mana (6 Spell Power for the set), an Arcane Silk one 0.7–1.8 and
 25 (4.5 for the set), and a wand 1–5.
@@ -148,13 +149,16 @@ Netherite robe piece gives 0.9–2.4 Spell Power and 40 mana (6 Spell Power for 
 | Warded | magic shield | 1 / 1–2 / 1–3 / 2–4 / 3–5 |
 | Timekeeping (Apotheosis's, remapped by RLM-272) | cooldown reduction | from Rare: 1–5 / 5–7.5 / 5–10 %, on the robe head and chest categories |
 | Fiery, Frozen, Arcane-Touched | fire, frost or arcane power | from Uncommon: 3–5 / 4–7 / 6–10 / 8–14 % |
-| Apotheosis's kept armor affixes that give no armor (Fortunate, Lucky, Stalwart, Windswept, Aquatic, Feathery, Bolstering and the like) | as Apotheosis's | the robe categories join their lists |
+| Apotheosis's kept armor affixes that give no armor | as Apotheosis's | the robe categories join their lists, slot by slot: stat Aquatic, Blessed, Fortunate, Gravitational, Lucky, Spiritual, Stalwart, Unbound, Windswept; basic effect Blast-Forged, Bolstering, Bursting, Deflective, Feathery, Nimble, Revitalizing; ability Blockading |
 
 - **No Spellwarded.** Spell Resistance and the school resistances are mob-only stats (Matěj, 2026-10-30, RLM-233): a
   player's magic defense is Magic Protection (RLM-537), Magic Shield, Dodge and health. So the caster affixes are ten,
   and Spell Penetration (RLM-535) takes Spellwarded's place on wands.
 - **No armor or toughness on robes,** so Ironforged, Adamantine and Steel Touched leave them out, and the robe
   categories never take the melee armor affixes.
+- **A robe piece skips the slots it has nothing for** (RLM-557), as helmets and boots do: the head no ability and one
+  basic effect at Rare and above (Deflective is its one), the feet no ability. Unhurried, the boots' one ability, is
+  hard-coded to Apotheosis's own boots category. The chest and legs have Blockading and keep every slot.
 - **Wands roll affixes like melee weapons, converted to spells** (Matěj, 2026-10-31, RLM-562, which replaces this
   table's former wand column). Stat affixes: Sorcerous (flat Spell Power 2–3 / 2–3 / 3–5 / 4–6 / 5–8, as Violent),
   Hastened (cast time reduction), Timeless (cooldown reduction), Spellbreaking (Spell Penetration), Insightful (crit
@@ -333,12 +337,13 @@ names any gear to take off before the line runs.
 These tickets carry the approved design:
 
 - **RLM-272** (Done): Apotheosis's data from our YAML. RLM-273 (Done): the wand loot category.
-- **RLM-546** (built): the four robe loot categories and their `loot_category_overrides`; until the caster affixes,
-  the wand and robe categories roll no affix slot (rarity overrides with `no_affixes`).
+- **RLM-546** (built): the four robe loot categories and their `loot_category_overrides`; until RLM-562, the wand
+  category rolls no affix slot (a rarity override with `no_affixes`).
 - **RLM-537** (built): Magic Protection, 0.5 protection point per level in vanilla's shared pool (Matěj's pick of
   2026-11-01; the pool stops at 80 %), up to VIII with Apothic Enchanting, and at most two different protections on one
   piece.
-- **RLM-557:** the pipeline for affixes of our own and the robe affixes (the table above).
+- **RLM-557** (built): the pipeline for affixes of our own (`content/apotheosis_new_affixes/`) and the robe affixes (the
+  table above).
 - **RLM-562:** the wand affixes (stats, effects on spell hit, abilities), a stun ability for every weapon, and Hexed.
 - **RLM-547** and **RLM-548:** the gem bonuses for wands and robes; **RLM-556:** the curio categories, their affixes,
   sockets and gem bonuses.

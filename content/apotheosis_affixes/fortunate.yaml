@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Fortunate (luck) gives no armor, so caster robes roll it too (gear design, RLM-557).
+id: fortunate
+affix: apotheosis:armor/attribute/fortunate
+replace:
+  categories:
+    - apotheosis:helmet
+    - apotheosis:chestplate
+    - apotheosis:leggings
+    - apotheosis:boots
+    - realmforge:robe_head
+    - realmforge:robe_chest
+    - realmforge:robe_legs
+    - realmforge:robe_feet

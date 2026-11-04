@@ -2,6 +2,11 @@
 # Feathery (less fall damage): Apotheosis's damage reduction becomes our Fall Resistance, an attribute the character
 # sheet shows and the damage pipeline applies by damage type tag (Matěj, 2026-10-16, RLM-233). Apotheosis's values,
 # items and rolls stay.
+# It gives no armor, so caster robes roll it too (gear design, RLM-557).
 id: feathery
 affix: apotheosis:armor/dmg_reduction/feathery
+replace:
+  categories:
+    - apotheosis:boots
+    - realmforge:robe_feet
 to_attribute: realmforge:fall_resistance

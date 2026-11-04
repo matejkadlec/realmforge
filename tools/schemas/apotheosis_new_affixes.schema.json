@@ -1,0 +1,133 @@
+{
+  "$defs": {
+    "AffixValueRange": {
+      "additionalProperties": false,
+      "description": "What an affix adds at one rarity, by the level it rolled: Placebo's StepFunction in its bounds form. Placebo\nrefuses a range that is not a whole number of steps, and min equal to max: a fixed value is a plain number.",
+      "properties": {
+        "max": {
+          "description": "The value at the highest roll.",
+          "title": "Max",
+          "type": "number"
+        },
+        "min": {
+          "description": "The value at the lowest roll.",
+          "title": "Min",
+          "type": "number"
+        },
+        "step": {
+          "description": "The values between go up by this much.",
+          "exclusiveMinimum": 0,
+          "title": "Step",
+          "type": "number"
+        }
+      },
+      "required": [
+        "min",
+        "max",
+        "step"
+      ],
+      "title": "AffixValueRange",
+      "type": "object"
+    },
+    "LocalizedText": {
+      "additionalProperties": false,
+      "description": "A player-facing text, keyed by locale. Realmforge ships English only, so en_us is the one locale.",
+      "properties": {
+        "en_us": {
+          "description": "English (US). Required.",
+          "minLength": 1,
+          "title": "En Us",
+          "type": "string"
+        }
+      },
+      "required": [
+        "en_us"
+      ],
+      "title": "LocalizedText",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "An affix of our own (RLM-557), a new entry where Apotheosis looks for affixes of any namespace: the stat it adds\nper rarity, the loot categories of ours it rolls on, its name and its suffix. It is an ``apotheosis:attribute``\naffix of the ``stat`` kind, the one kind Apotheosis's own format covers without code. An item that rolls it is\nnamed by it: \"Sorcerous Netherite Robes of Winter\" (``name`` for one affix, ``suffix`` for another).",
+  "properties": {
+    "categories": {
+      "description": "The loot categories it rolls on, each one of ours, e.g. realmforge:robe_chest.",
+      "items": {
+        "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+        "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Categories",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "name": {
+      "$ref": "#/$defs/LocalizedText",
+      "description": "The word before an item's name, e.g. Sorcerous."
+    },
+    "quality": {
+      "default": 0.1,
+      "description": "How much a player's luck raises its weight (Apotheosis's stat affixes: 0.1).",
+      "minimum": 0,
+      "title": "Quality",
+      "type": "number"
+    },
+    "stat": {
+      "description": "The stat it adds, one of ours (content/stats/), e.g. realmforge:spell_power.",
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+      "title": "Stat",
+      "type": "string"
+    },
+    "suffix": {
+      "$ref": "#/$defs/LocalizedText",
+      "description": "The words after an item's name, e.g. of Sorcery."
+    },
+    "values": {
+      "description": "Rarity -> what it adds there, added to the stat as a flat amount (add_value): {min, max, step} or a fixed number. A share is a fraction: 3 % is 0.03. It rolls only at the rarities listed.",
+      "minProperties": 1,
+      "patternProperties": {
+        "^[a-z0-9_.-]+:[a-z0-9_./-]+$": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/$defs/AffixValueRange"
+            }
+          ]
+        }
+      },
+      "propertyNames": {
+        "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe."
+      },
+      "title": "Values",
+      "type": "object"
+    },
+    "weight": {
+      "default": 25,
+      "description": "How often it rolls against the others (Apotheosis's stat affixes: 25).",
+      "exclusiveMinimum": 0,
+      "title": "Weight",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "suffix",
+    "stat",
+    "categories",
+    "values"
+  ],
+  "title": "ApotheosisNewAffixDef",
+  "type": "object"
+}

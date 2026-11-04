@@ -2,6 +2,13 @@
 # Blockading (less physical damage): Apotheosis's damage reduction becomes our Physical Resistance, an attribute the
 # character sheet shows and the damage pipeline applies by damage type tag to melee hits, projectiles and physical
 # spells, of every mob and mod (Matěj, 2026-10-16, RLM-233). Apotheosis's values, items and rolls stay.
+# It gives no armor, so caster robes roll it too: the robe chest's and legs' one ability (gear design, RLM-557).
 id: blockading
 affix: apotheosis:armor/dmg_reduction/blockading
+replace:
+  categories:
+    - apotheosis:chestplate
+    - apotheosis:leggings
+    - realmforge:robe_chest
+    - realmforge:robe_legs
 to_attribute: realmforge:physical_resistance

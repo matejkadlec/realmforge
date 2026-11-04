@@ -2,7 +2,8 @@
   "type": "apotheosis:attribute",
   "attribute": "realmforge:fall_resistance",
   "categories": [
-    "apotheosis:boots"
+    "apotheosis:boots",
+    "realmforge:robe_feet"
   ],
   "definition": {
     "affix_type": "basic_effect",
