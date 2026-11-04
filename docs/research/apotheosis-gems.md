@@ -244,10 +244,12 @@ Drops: any dimension, every world tier, from cracked.
 
 | Category | Bonus (lowest purity → perfect) |
 | --- | --- |
-| melee weapon, trident, bow | `apothic_attributes:crit_damage` → `realmforge:crit_damage` (of base) 10 % / 20 % / 35 % / 45 % / 55 % / 70 % |
+| melee weapon, bow | `apothic_attributes:crit_damage` → `realmforge:crit_damage` (of base) 10 % / 20 % / 35 % / 45 % / 55 % / 70 % |
 | chestplate | `minecraft:max_health` (of base) 5 % / 10 % / 15 % / 20 % / 25 % / 35 % |
 | helmet | `minecraft:attack_damage` (of total) 5 % / 10 % / 12.5 % / 15 % / 17.5 % / 22.5 % |
 | trident | `minecraft:strength` I / II on the thrower when the trident hits (from flawless) |
+
+The crit damage bonus's gem class is `weapons`, melee weapons and bows only: a trident gets only the Strength effect.
 
 ### Overworld gems
 
@@ -269,8 +271,11 @@ Drops: Overworld, Frontier to Pinnacle, from flawed, unique.
 | --- | --- |
 | helmet | all stats (of total) 5 % / 7.5 % / 10 % / 15 % (31 attributes; protection pierce and shred leave the list, the remapped ones count as ours) |
 | pickaxe | copper ore drops raw gold at 15 / 20 / 25 / 40 % |
-| bow | `apothic_attributes:prot_shred` (**off**) 0.25 / 0.3 / 0.35 / 0.4 and `apothic_attributes:draw_speed` (of total) -35 % / -45 % / -55 % / -65 % |
+| bow | **off** as a whole: `apothic_attributes:prot_shred` (**off**) 0.25 / 0.3 / 0.35 / 0.4 and `apothic_attributes:draw_speed` (of total) -35 % / -45 % / -55 % / -65 % |
 | shield | `minecraft:armor` (of base) 15 % / 25 % / 35 % / 50 % and `minecraft:armor_toughness` (of base) 7.5 % / 12.5 % / 22.5 % / 30 % and `minecraft:movement_speed` (of total) -25 % / -30 % / -35 % / -40 % |
+
+The bow bonus is one multi-attribute bonus, and our data drops it whole because protection shred is switched off, draw
+speed with it. Royalty therefore no longer fits a bow.
 
 #### Verdant Ruin (`apotheosis:overworld/verdant_ruin`)
 
@@ -287,7 +292,7 @@ Drops: Overworld, Frontier to Pinnacle, from flawed, unique.
 
 #### Endersurge (`apotheosis:the_end/endersurge`)
 
-Drops: the End (**never in Realmforge**), Summit and Pinnacle, from flawless, unique.
+Drops: the End (**never in Realmforge**: no stronghold, no End portal), Summit and Pinnacle, from flawless, unique.
 
 | Category | Bonus (lowest purity → perfect) |
 | --- | --- |
@@ -295,19 +300,22 @@ Drops: the End (**never in Realmforge**), Summit and Pinnacle, from flawless, un
 
 #### Mageslayer (`apotheosis:the_end/mageslayer`)
 
-Drops: the End (**never in Realmforge**), Summit and Pinnacle, from normal, unique.
+Drops: the End (**never in Realmforge**: no stronghold, no End portal), Summit and Pinnacle, from normal, unique.
 
 | Category | Bonus (lowest purity → perfect) |
 | --- | --- |
-| melee weapon, trident | `apothic_attributes:prot_shred` (**off**) 0.25 / 0.35 / 0.45 and `apothic_attributes:armor_shred` → `realmforge:armor_shred` (of base) -15 % / -30 % / -50 % |
+| melee weapon, trident | **off** as a whole: `apothic_attributes:prot_shred` (**off**) 0.25 / 0.35 / 0.45 and `apothic_attributes:armor_shred` (of base) -15 % / -30 % / -50 % |
 | helmet | **heals on magic damage** 15 % / 22.5 % / 35 % |
 | shield | `minecraft:resistance` I / I / II on the blocker after a block |
+
+The melee weapon and trident bonus is one multi-attribute bonus, and our data drops it whole because protection shred
+is switched off, the armor shred with it. Mageslayer therefore no longer fits a melee weapon or a trident.
 
 ### Nether gems
 
 #### Blood Lord (`apotheosis:the_nether/blood_lord`)
 
-Drops: the Nether (**never in Realmforge**), Ascent to Pinnacle, from flawed, unique.
+Drops: the Nether (until M4 removes it, then Ashfire, RLM-550), Ascent to Pinnacle, from flawed, unique.
 
 | Category | Bonus (lowest purity → perfect) |
 | --- | --- |
@@ -319,7 +327,7 @@ Drops: the Nether (**never in Realmforge**), Ascent to Pinnacle, from flawed, un
 
 #### Inferno (`apotheosis:the_nether/inferno`)
 
-Drops: the Nether (**never in Realmforge**), Ascent to Pinnacle, from flawed, unique.
+Drops: the Nether (until M4 removes it, then Ashfire, RLM-550), Ascent to Pinnacle, from flawed, unique.
 
 | Category | Bonus (lowest purity → perfect) |
 | --- | --- |
@@ -330,7 +338,7 @@ Drops: the Nether (**never in Realmforge**), Ascent to Pinnacle, from flawed, un
 
 #### Molten Breach (`apotheosis:the_nether/molten_breach`)
 
-Drops: the Nether (**never in Realmforge**), Ascent to Pinnacle, from flawed, unique.
+Drops: the Nether (until M4 removes it, then Ashfire, RLM-550), Ascent to Pinnacle, from flawed, unique.
 
 | Category | Bonus (lowest purity → perfect) |
 | --- | --- |
@@ -350,9 +358,12 @@ Drops: the Nether (**never in Realmforge**), Ascent to Pinnacle, from flawed, un
    RLM-546 the four robe categories, filled through the data map
    ([architecture 13](../architecture.md#13-items-gear-and-loot)). Until RLM-547 and RLM-548 add their bonuses, no gem
    fits a wand or a robe at all.
-2. **The five Nether and End gems never drop.** Blood Lord, Inferno and Molten Breach name `minecraft:the_nether` in
-   their `constraints.dimensions`, Endersurge and Mageslayer `minecraft:the_end`, and the pack has neither
-   ([ADR 0025](../decisions/0025-remove-the-nether-and-end.md)). Their new homes are Ashfire and Unmade Isles (RLM-550).
+2. **The two End gems never drop; the three Nether gems drop in the Nether until M4.** Endersurge and Mageslayer name
+   `minecraft:the_end` in their `constraints.dimensions`, and the End is unreachable: vanilla strongholds are off from
+   M1, so no End portal generates ([ADR 0044](../decisions/0044-third-party-mods-by-milestone.md)). Blood Lord, Inferno
+   and Molten Breach name `minecraft:the_nether`, which stays as it is until M4 removes it
+   ([ADR 0025](../decisions/0025-remove-the-nether-and-end.md): "M1 does not change them"), so they drop there from
+   the Ascent tier up. Their new homes are Ashfire and Unmade Isles (RLM-550).
 3. **Damage reductions by damage type.** No gem gives a player a school resistance or Spell Resistance. Three bonuses
    test damage type tags instead:
    - **Verdant Ruin's chestplate** (magic damage reduction 12.5 to 20 %) and **Mageslayer's helmet** (it heals a share

@@ -103,11 +103,11 @@ consumable decisions of 11–12 October 2026.
 
 - **[apotheosis-gems.md](apotheosis-gems.md)**: all 21 gems of Apotheosis 9.1.0 from the pinned snapshot, each bonus
   per gear category and purity with our stat remaps applied; how gems, categories and extra bonuses work; the findings
-  (wands were melee weapons and robes armor to Apotheosis, the five Nether and End gems never drop, which bonuses read
-  the physical and magic damage tags, an overlapping extra bonus fails with a WARN only); what data covers and what
-  needs code. **Decided (Matěj, 2026-10-30):** wands and four robe categories take gems through extra bonuses with
-  caster stats, the robes with swaps to Magic Shield and Spell Power, no gem gives a spell or school resistance, and
-  the Nether and End gems move to Ashfire and Unmade Isles (RLM-546 to RLM-550).
+  (wands were melee weapons and robes armor to Apotheosis, the End gems never drop and the Nether's only until M4,
+  which bonuses read the physical and magic damage tags, an overlapping extra bonus fails with a WARN only); what data
+  covers and what needs code. **Decided (Matěj, 2026-10-30):** wands and four robe categories take gems through extra
+  bonuses with caster stats, the robes with swaps to Magic Shield and Spell Power, no gem gives a spell or school
+  resistance, and the Nether and End gems move to Ashfire and Unmade Isles (RLM-546 to RLM-550).
 
 ## Coins, merchant trades and trade display (2026-10-19, RLM-222)
 
