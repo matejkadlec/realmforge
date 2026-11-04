@@ -23,6 +23,12 @@ public final class ApotheosisBleedGameTests {
         ApotheosisBleeds.aTyrannicalGemGivesABowNoBleeding(helper);
     }
 
+    /** Reforging a sword and a shield at Legendary never rolls Bloodletting or Devilish. */
+    @QaGameTest(timeoutTicks = 200)
+    public static void reforgingRollsNoBleedAffix(GameTestHelper helper) {
+        ApotheosisBleeds.reforgingRollsNoBleedAffix(helper);
+    }
+
     /** A sword that rolled Bloodletting before loads, and its hit gives no bleed. */
     @QaGameTest
     public static void aSwordThatRolledBloodlettingLoadsAndBleedsNothing(GameTestHelper helper) {

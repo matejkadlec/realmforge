@@ -17,6 +17,7 @@ import dev.shadowsoffire.placebo.dynreg.DynamicHolder;
 import io.github.matejkadlec.realmforge.generated.GeneratedEffects;
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -28,6 +29,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.entity.monster.zombie.Husk;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
@@ -42,6 +44,10 @@ final class ApotheosisBleeds {
     private static final Identifier APOTHIC_BLEEDING = Identifier.parse("apothic_attributes:bleeding");
     private static final Identifier BLOODLETTING = Identifier.parse("apotheosis:melee/mob_effect/bloodletting");
     private static final Identifier DEVILISH = Identifier.parse("apotheosis:shield/mob_effect/devilish");
+    /** The playtest handoff's command for a Perfect Tyrannical gem. */
+    private static final String GIVE_PERFECT_TYRANNICAL =
+            "give @s apotheosis:gem[apotheosis:gem=\"apotheosis:core/tyrannical\",apotheosis:purity=\"perfect\"]";
+    private static final int REFORGES = 20;
 
     private ApotheosisBleeds() {
     }
@@ -87,6 +93,13 @@ final class ApotheosisBleeds {
      */
     static void aTyrannicalGemGivesABowNoBleeding(GameTestHelper helper) {
         Gem tyrannical = ApotheosisGems.gem("core/tyrannical");
+        // The playtest handoff's command gives the Perfect gem.
+        ServerPlayer player = ApotheosisGameTests.player(helper, "qa-apoth-tyrannical");
+        ApotheosisGameTests.run(player, GIVE_PERFECT_TYRANNICAL);
+        helper.assertTrue(ItemStack.isSameItemSameComponents(player.getInventory().getItem(0),
+                tyrannical.toStack(Purity.PERFECT)), "the handoff's /give gives a Perfect Tyrannical gem: "
+                        + player.getInventory().getItem(0).getComponents());
+        ApotheosisGameTests.logout(player);
         ItemStack bow = new ItemStack(Items.BOW);
         SocketHelper.setSockets(bow, 1);
         LootCategory bows = LootCategory.forItem(bow);
@@ -101,6 +114,27 @@ final class ApotheosisBleeds {
                 "its melee bonus stays");
         helper.assertTrue(SocketHelper.canSocketGemInItem(sword, tyrannical.toStack(Purity.PERFECT)),
                 "a Perfect Tyrannical gem still fits a sword");
+        helper.succeed();
+    }
+
+    /**
+     * Done when of RLM-600, as the playtest reaches it: {@code /apoth reforge apotheosis:mythic} on a held sword and
+     * shield rolls Legendary affixes every time, and never Bloodletting or Devilish (a shield's two basic effects are
+     * Reinforcing and Venomous now).
+     */
+    static void reforgingRollsNoBleedAffix(GameTestHelper helper) {
+        ServerPlayer player = ApotheosisGameTests.player(helper, "qa-apoth-reforge-bleed");
+        for (Item item : List.of(Items.DIAMOND_SWORD, Items.SHIELD)) {
+            player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(item));
+            for (int i = 0; i < REFORGES; i++) {
+                ApotheosisGameTests.run(player, "apoth reforge apotheosis:mythic");
+                Set<DynamicHolder<Affix>> affixes = AffixHelper.getAffixes(player.getMainHandItem()).keySet();
+                helper.assertFalse(affixes.isEmpty(), item + " reforged with affixes");
+                helper.assertTrue(affixes.stream().noneMatch(affix -> affix.is(BLOODLETTING) || affix.is(DEVILISH)),
+                        item + " rolled no Bloodletting or Devilish: " + affixes);
+            }
+        }
+        ApotheosisGameTests.logout(player);
         helper.succeed();
     }
 
