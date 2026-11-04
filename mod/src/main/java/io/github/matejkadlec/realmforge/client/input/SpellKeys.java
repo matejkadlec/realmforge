@@ -17,11 +17,12 @@ import org.lwjgl.glfw.GLFW;
 
 /**
  * The spell bar's keys (C3b, RLM-25), rebindable in Options > Controls under Realmforge Spell Bar, and the spellbook's
- * key. Defaults (Matěj, 2026-10-15, 2026-10-16 and his playtest of 2026-10-21): R, T, F, G, H and C for the bar's
- * first six slots, Ů and § (the two keys right of L on his Czech QWERTZ keyboard: a US keyboard's {@code ;} and
- * {@code '}) for the last two, X for the racial ability beside the bar; P opens the spellbook. GLFW names keys by their
- * position on a US keyboard. Vanilla's chat (T), Swap Item With Offhand (F) and the creative toolbar keys (C, X) move
- * or go unbound in the pack's default keys ({@code pack/config/defaultoptions/keybindings.txt}); {@link KeyLabels}
+ * key. Defaults (Matěj, 2026-10-15, 2026-10-16, his playtest of 2026-10-21 and 2026-11-01, RLM-573): R, T, F, G,
+ * C and Y for the bar's first six slots (Y as his Czech QWERTZ keyboard labels GLFW's {@code Z}), Ů and § (the two
+ * keys right of L on his keyboard: a US keyboard's {@code ;} and {@code '}) for the last two, X for the racial ability
+ * beside the bar; P opens the spellbook. GLFW names keys by their position on a US keyboard. Vanilla's chat (T), Swap
+ * Item With Offhand (F) and the creative toolbar keys (C, X) move or go unbound in the pack's default keys
+ * ({@code pack/config/defaultoptions/keybindings.txt}), and so does Xaero's Enlarge Minimap (Z); {@link KeyLabels}
  * makes the § key's label visible.
  */
 public final class SpellKeys {
@@ -29,7 +30,7 @@ public final class SpellKeys {
     public static final KeyMapping.Category CATEGORY = new KeyMapping.Category(Realmforge.id("spell_bar"));
 
     private static final int[] DEFAULTS = {GLFW.GLFW_KEY_R, GLFW.GLFW_KEY_T, GLFW.GLFW_KEY_F, GLFW.GLFW_KEY_G,
-            GLFW.GLFW_KEY_H, GLFW.GLFW_KEY_C, GLFW.GLFW_KEY_SEMICOLON, GLFW.GLFW_KEY_APOSTROPHE, GLFW.GLFW_KEY_X};
+            GLFW.GLFW_KEY_C, GLFW.GLFW_KEY_Z, GLFW.GLFW_KEY_SEMICOLON, GLFW.GLFW_KEY_APOSTROPHE, GLFW.GLFW_KEY_X};
     private static final String[] NAMES = {GeneratedTexts.KEY_SPELL_SLOT_1, GeneratedTexts.KEY_SPELL_SLOT_2,
             GeneratedTexts.KEY_SPELL_SLOT_3, GeneratedTexts.KEY_SPELL_SLOT_4, GeneratedTexts.KEY_SPELL_SLOT_5,
             GeneratedTexts.KEY_SPELL_SLOT_6, GeneratedTexts.KEY_SPELL_SLOT_7, GeneratedTexts.KEY_SPELL_SLOT_8,
@@ -44,7 +45,9 @@ public final class SpellKeys {
     /**
      * Highlight Spell Target: pressed to toggle, or held (the client option
      * {@code ClientConfig#HIGHLIGHT_SPELL_TARGET}), it shows the target circle under the mob an enemy spell would go to
-     * now (RLM-468; Left Alt by default, which no key of the pack takes): {@code client/spell/TargetCircle} reads it.
+     * now (RLM-468; Left Alt by default, which no key of the pack binds alone): {@code client/spell/TargetCircle} reads
+     * it. The pack uses Alt as a modifier (Apotheosis's Alt+T and Alt+K) and Windows has Alt+Tab, so a toggle counts
+     * only a lone press, Alt going down and up with no other key in between ({@link LonePress}, RLM-522).
      */
     public static final Lazy<KeyMapping> HIGHLIGHT_SPELL_TARGET = Lazy.of(() -> new RealmforgeKeyMapping(
             GeneratedTexts.KEY_HIGHLIGHT_SPELL_TARGET, GLFW.GLFW_KEY_LEFT_ALT, CATEGORY));
