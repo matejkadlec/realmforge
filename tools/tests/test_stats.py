@@ -797,10 +797,11 @@ def test_without_a_stamina_stat_nothing_lowers_exhaustion(repo: RepoPaths) -> No
 def test_no_stats_or_rules_still_compile(repo: RepoPaths) -> None:
     # Spell schools name their power and resistance stats, and races, classes, effects and gear their modifiers' stats,
     # so they go too, and with the schools the spells and effects that name them, and the mobs and bosses that cast them.
-    # Apotheosis's stat remaps name the stats that replace Apothic Attributes'.
+    # Apotheosis's stat remaps name the stats that replace Apothic Attributes', and our own affixes the stats they add.
     for folder in (
         "stats",
         "apotheosis_stat_remaps",
+        "apotheosis_new_affixes",
         "stat_rules",
         "spell_schools",
         "spells",
