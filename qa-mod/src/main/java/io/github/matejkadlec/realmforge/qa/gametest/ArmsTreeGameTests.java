@@ -91,7 +91,9 @@ public final class ArmsTreeGameTests {
      * The playtest's setup line against Astone (RLM-543, RLM-503; gear.md's expected gear for Astone, RLM-551): a new
      * Human Warrior, chapter 1's raised cap, level 18, the tree at 27 ranks (Slam and Overpower 5, Deep Wounds, Rend and
      * Execute 3, Bloodthirst, Charge and Victory Rush 2, Battle Shout and Two-Handed Specialization 1), which since C5 is
-     * more than a real level 18 character's 18 and skips the rules, until RLM-503 rebalances Astone; full netherite armor with Protection V and Unbreaking V, and a netherite
+     * more than a real level 18 character's 18 and skips the rules, to keep the state Astone was balanced with, which
+     * has no affixes, gems or curios, and Matěj expects those to match the missing ranks (2026-11-04, RLM-503);
+     * full netherite armor with Protection V and Unbreaking V, and a netherite
      * sword with Sharpness V and Unbreaking V; the kit's shield stays for Overpower's blocks. The handoff gives it to
      * Matěj as {@code execute as @p at @p run} and this line.
      */
