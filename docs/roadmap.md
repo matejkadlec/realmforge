@@ -90,7 +90,7 @@ gear of the old M2 moved here.
 | Classes | 2: a melee class and a caster (decision D1: Warrior with rage, Mage with mana) |
 | Stats | primary stats with derived bonuses, milestones and class-dependent bonuses; damage-type resistances and Healing Received as our own stats; the character sheet, split into tabs and reworked with our own background, font and layout |
 | Spells | 4-5 per class, covering a self-buff, a debuff, single target, AoE and one special spell (such as a blink), with hit shapes; the spell bar, casting and combat QoL |
-| Spell trees | one specialization spell tree per class, full to level 18 (C5, RLM-218); talents are postponed indefinitely (Matěj, 2026-10-16, RLM-28, [ADR 0044](decisions/0044-third-party-mods-by-milestone.md)) |
+| Spell trees | one specialization spell tree per class, full to level 18 (C5, RLM-218); no talents as of v1.0.0: they could be added later, but they are not planned (Matěj, 2026-11-03, RLM-28, RLM-586; postponed since 2026-10-16, [ADR 0044](decisions/0044-third-party-mods-by-milestone.md)) |
 | Spell visuals | icons, and every spell's model, trajectory, particles, animation and sounds |
 | Leveling | levels 1-18 with the level cap of D2 (C2); the chapter advancements that raise the cap are granted by command until M2's quests grant them |
 | Gear | Apotheosis's rarities, affixes, gems and reforging fitted to our stats ([ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md)); weapons, wands and caster robes up to netherite with textures; our own shield tiers; curios with textures, with Artifacts placed item by item ([ADR 0066](decisions/0066-the-curio-rule-ends-artifacts-joins-and-immersive-armors-stays-out.md)) |
@@ -104,7 +104,7 @@ dungeon, boss or quest is needed (RLM-6).
 **Not in M1** (M2's since 2026-10-29): Undervault's art and worldgen, the realm portal's art, custom mobs and their
 models, instanced dungeons, Astone's finish and balance, quests, coins and merchants, and the release. **Later
 milestones:** a second race, more classes, each class's other two specializations and dual spec (M1 has one
-specialization per class; RLM-218), talents and glyphs (postponed indefinitely, RLM-28), professions, pets,
+specialization per class; RLM-218), glyphs (postponed indefinitely, RLM-28), professions, pets,
 mounts, villages, the enchanting overhaul, contracts, the gated ores (RLM-194, M4), custom NPCs, and changes to the
 Nether and End (apart from strongholds off, which leaves the End unreachable,
 [ADR 0044](decisions/0044-third-party-mods-by-milestone.md)).
@@ -241,7 +241,7 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
   [architecture 10.1](architecture.md#101-races-and-classes), RLM-219); a first balance pass on the training dummy.
   The Mage never heals: it survives through utility (Ice Block, Mirror Image) and shields (Mana Shield, Ice Barrier,
   perhaps spells that raise the Magic Shield for a while) (Matěj, 2026-10-22).
-- **C5 Specialization spell trees** (RLM-333, M, after C4). Talents are postponed indefinitely (RLM-28), but the M1
+- **C5 Specialization spell trees** (RLM-333, M, after C4). No talents as of v1.0.0 (RLM-28, RLM-586), but the M1
   tree stays as a specialization spell tree, one per class (Matěj, 2026-10-16, RLM-218): most spells take several
   points and grow stronger with each, some gain an extra effect at the top rank, big-impact spells have one rank;
   the tree holds active and passive spells. The spell trees window, where the player picks the specialization and
@@ -525,7 +525,7 @@ professions (RLM-328, [ADR 0044](decisions/0044-third-party-mods-by-milestone.md
 
 ## M6: Companions and mounts
 
-Outline: the pet system (one pet, class exceptions, spells, skills that level up, talents, dialogues, a bond
+Outline: the pet system (one pet, class exceptions, spells, skills that level up, dialogues, a bond
 progression, resurrection); mount tiers 4 to 6 and their extras (tier 5's rider ignores fire and lava damage, tier
 6's resists its chapter's debuff once the debuff and tenacity system exists), and an optional mount journal
 (RLM-115; the mount system and tiers 1 to 3 come in M4, and tier 4 moves with chapter 5, Deepholm, if that is
@@ -554,8 +554,10 @@ No milestone yet:
   Professions replace EMI Trades next to JEI / REI Trades
   ([ADR 0040](decisions/0040-coins-and-data-driven-merchant-trades.md)), the pack already shows damage numbers, No
   Recipe Book is in, and Toast Control stays ([ADR 0044](decisions/0044-third-party-mods-by-milestone.md)).
-- Talents (RLM-28) and glyphs: postponed indefinitely, maybe not in v1 (Matěj, 2026-10-16). Each class's spells
-  form specialization spell trees instead (C5, RLM-218).
+- Talents (RLM-28): none as of v1.0.0; they could be added later, but they are not planned (Matěj, 2026-11-03,
+  RLM-586), pets' talents included (Matěj, 2026-11-04, RLM-624). Each class's spells form specialization spell
+  trees with ranks and passive spells instead (C5, RLM-218, RLM-333). Glyphs: postponed indefinitely, maybe not in
+  v1 (Matěj, 2026-10-16).
 - The Nature (RLM-369) and Shadow (RLM-370) spell schools, late and undecided: Nature with the Druid and the Shaman,
   Shadow with the Warlock (relatively late) and a shadow Priest. No school comes without a class that uses it
   (Matěj, 2026-10-22).

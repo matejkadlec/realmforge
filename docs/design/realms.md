@@ -770,9 +770,9 @@ For Matěj; each has a proposal so the design can go on.
 14. **The reduced efficiency** of an earlier realm's tool. **Dropped 2026-10-26 (Matěj, RLM-194, RLM-450): no tool
     speed rule at all**; Undervault's own blocks are harder than vanilla's instead.
 15. **Knock-on of the v1 layout** (to check with Matěj, not changed here): mount tiers unlock by chapter quests
-    (RLM-115), so tier 2's flight now comes from Undervault's chapter while mounts are planned for M4; spell and talent
-    unlocks per chapter (research PR-8) follow the new chapters. The elytra part is settled: no boss gives them, a
-    Skyhearth NPC sells them (Matěj, 2026-11-03, RLM-568,
+    (RLM-115), so tier 2's flight now comes from Undervault's chapter while mounts are planned for M4; spell unlocks
+    per chapter (research PR-8; no talents as of v1.0.0, RLM-586) follow the new chapters. The elytra part is
+    settled: no boss gives them, a Skyhearth NPC sells them (Matěj, 2026-11-03, RLM-568,
     [ADR 0068](../decisions/0068-elytra-are-bought-in-skyhearth.md)).
 16. **Sunwastes' material** now that ancient debris and netherite scrap moved to Undervault (Matěj,
     2026-10-15). Proposal: a desert gem or metal of its own for its gear (it adds no tool tier, RLM-194), and the

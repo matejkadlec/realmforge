@@ -31,14 +31,15 @@
 - One core mod split into **feature packages** (`character/`, `spell/`, `boss/`, `dungeon/`, ...), each with one
   `<Name>Feature` entry class. All client-only code sits under `client/`, enforced by an automated check.
 - **Three kinds of registries:** static (what Minecraft needs Java objects for: items, entities, status effects,
-  attributes), datapack (our game definitions: races, classes, spells, talents, bosses, dungeon types, affixes),
+  attributes), datapack (our game definitions: races, classes, spells, bosses, dungeon types, affixes),
   reloadable vanilla data (loot tables, recipes, tags, advancements). Polymorphic data dispatches on Java
   "type registries".
 - **YAML → `rf gen` → generated Java and JSON → jar → game.** Python validates first; codecs validate again at
   world load; GameTests compare the running game with expectations generated from the same YAML.
-- **One spell and effect engine** for players, mobs, bosses, items and talent procs. Boss abilities are spells.
-- **One attribute model:** primary stats (STR, DEX, INT, ...) are attributes; race, class, level, talents, gear and
-  effects all act through attribute modifiers. Our own damage pipeline sits on NeoForge's damage events.
+- **One spell and effect engine** for players, mobs, bosses, items and passive spells' procs. Boss abilities are
+  spells.
+- **One attribute model:** primary stats (STR, DEX, INT, ...) are attributes; race, class, level, passive spells,
+  gear and effects all act through attribute modifiers. Our own damage pipeline sits on NeoForge's damage events.
 - **Player state** lives in NeoForge data attachments that sync to the client automatically.
 - **Quests stay in FTB Quests**, bridged by advancements and statistics: a chapter's last quest grants an
   advancement, and that raises the level cap.
@@ -83,7 +84,7 @@
 | `MapCodec`, dispatch | A codec for the fields of an object. Dispatch picks the `MapCodec` from a `type` field, like a pydantic discriminated union. |
 | `ResourceKey`, `Holder` | A `ResourceKey` names a registry entry (`realmforge:firebolt` in the spell registry); a `Holder` is a resolved reference to the entry itself. |
 | Tag | A named set of registry entries defined in data, such as `#minecraft:swords` or `#minecraft:bypasses_armor`. |
-| Data attachment | NeoForge's way to store our own data on a player, entity, chunk or level (character level, talents), saved with its holder and optionally synced. |
+| Data attachment | NeoForge's way to store our own data on a player, entity, chunk or level (character level, spellbook), saved with its holder and optionally synced. |
 | Data component | Typed data on an item stack (replaces stack NBT since 1.20.5): rarity, affixes, sockets. |
 | Attribute, modifier | Vanilla's stat system (`generic.max_health`, `generic.attack_damage`, ...). Modifiers with an id add to or multiply the base value. |
 | `SavedData` | Vanilla's way to store data for a whole level or world (our dungeon plots, world flags). |
@@ -98,9 +99,9 @@
 1. **Server-authoritative.** All rules and state live on the logical server. The client renders, plays effects and
    sends intents ("cast spell X at target Y"); the server validates every intent.
 2. **Java holds behaviour types, data holds instances**
-   ([ADR 0005](decisions/0005-content-pipeline-yaml-single-source-of-truth.md)). A new spell, talent, boss or dungeon
-   type is YAML. Java changes only for a new kind of behaviour, such as a new spell effect type.
-3. **One effect engine.** Players, mobs, bosses, items and talent procs act through the same spell system. Boss
+   ([ADR 0005](decisions/0005-content-pipeline-yaml-single-source-of-truth.md)). A new spell, boss or dungeon type is
+   YAML. Java changes only for a new kind of behaviour, such as a new spell effect type.
+3. **One effect engine.** Players, mobs, bosses, items and passive spells' procs act through the same spell system. Boss
    abilities are spells, so interrupts, dispels and crowd control work on bosses by design ("boss mechanics that
    tie in with the skills and talents" in the [vision](vision.md)).
 4. **One attribute model.** Every combat number is a vanilla or Realmforge attribute changed by modifiers with
@@ -143,7 +144,7 @@ game start .. static registries (generated and hand-written Java), then frozen
 world load .. datapack registries decoded by codecs and synced to clients
 /reload ..... loot tables, recipes, tags, advancements
    ▼
-server: feature systems (character, stats, combat, spells, talents, mobs, bosses, dungeons, ...)
+server: feature systems (character, stats, combat, spells, mobs, bosses, dungeons, ...)
    ⇅  payloads and synced attachments
 client: HUD, screens, input, renderers (client/ only)
 ```
@@ -188,7 +189,7 @@ io.github.matejkadlec.realmforge
 │                     lifesteal, overheal, health regeneration, magic shield, combat text, damage over time
 ├─ effect/            behaviour classes of our status effects
 ├─ spell/             spells, effect types, casting, cooldowns, resources, procs, spell entities
-├─ talent/            talent trees, points, spell modifiers; glyphs later
+├─ talent/            F3's talents attachment only: no talents as of v1.0.0 (12)
 ├─ item/              item behaviours, gear components; affixes and gems later
 ├─ loot/              loot functions and conditions, reward rolls
 ├─ character/         races, classes, character data, leveling, level caps, the character sheet's view
@@ -230,8 +231,8 @@ visible in one file.
 
 ### 4.4 Dependencies between features
 
-Dependencies point one way, and data references follow the same direction (a class names its spells and talent
-trees, so `character` sits above `spell` and `talent`). "May use" includes whatever the used package may use.
+Dependencies point one way, and data references follow the same direction (a class names its specialization
+trees' spells, so `character` sits above `spell` and `talent`). "May use" includes whatever the used package may use.
 
 | Package | May use |
 | --- | --- |
@@ -255,12 +256,12 @@ to `world`, generated status effects to `effect`) and follow that feature's row.
 
 How features cooperate without breaking the direction:
 
-- **Higher calls lower** through its public API: on level-up, `character` grants talent points through `talent`'s
-  API and teaches class spells through `spell`'s; after a change, `talent` asks `stats` to recompute and `spell` to
-  drop its cached spell modifiers.
+- **Higher calls lower** through its public API: on level-up, `character` grants spell points and teaches class
+  spells through `spell`'s API; after a change, `spell` asks `stats` to recompute and drops its cached spell
+  modifiers.
 - **Lower asks higher through provider interfaces** it defines and the higher feature implements: casting needs
-  talent modifiers, the spellbook needs spells granted by equipped items, `stats` collects modifiers from race,
-  class and talents, and `talent` needs to know which trees the player's class allows.
+  passive spells' modifiers, the spellbook needs spells granted by equipped items, and `stats` collects modifiers
+  from race, class and passive spells.
 - **Higher reacts to lower through our own events** posted on the game bus: for example, `combat` reports a
   critical hit and the proc engine in `spell` reacts to it.
 - **Each feature declares its own registries and their keys** (`spell/SpellRegistries.SPELL`). Shared type
@@ -319,7 +320,7 @@ How features cooperate without breaking the direction:
 | `realmforge:class` | `content/classes/` | class: role (melee, caster, ranged), resource type, starting stats, spells by level, its specializations' spell trees (C5), starting kit | yes | M1 |
 | `realmforge:spell_school` | `content/spell_schools/` | school (owned by `combat`): kind (physical or magic), colour, its damage type, and the stats that are its power and resistance (attributes from `content/stats/`, static registrations, so a new school's stats need a game restart) | yes | M1 |
 | `realmforge:spell` | `content/spells/` | spell for players or NPCs: school, what it scales with, targeting, cast, cost, cooldowns, crit rules, typed effects with values per spell level (C3a-1), its name and description with placeholders (C3b) | yes | M1 |
-| `realmforge:talent_tree` | `content/talents/` | WoW-style tree: nodes on a grid, ranks, prerequisites, typed effects per rank | yes | postponed ([12](#12-talents)) |
+| `realmforge:talent_tree` | `content/talents/` | WoW-style tree: nodes on a grid, ranks, prerequisites, typed effects per rank | yes | not planned: no talents as of v1.0.0 ([12](#12-talents)) |
 | `realmforge:stat_rule` | `content/stat_rules/` | what a primary stat gives: per-point modifiers, milestone bonuses, each for every player or some class roles | yes | M1 |
 | `realmforge:curve` | `content/curves/` | named table of points (level → value), linearly interpolated: XP per level, mob scaling, item budgets | yes | M1 |
 | `realmforge:chapter` | `content/chapters/` | story chapter (owned by `progression`, C2): order, the level cap while it is the player's current chapter and the one once it is completed; its advancement `realmforge:chapter/<id>` marks it completed (what a chapter unlocks names the chapter through `chapter_completed`) | yes | M1 |
@@ -345,7 +346,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | --- | --- | --- |
 | `realmforge:spell_effect_type` | damage, heal (C3a-1, `spell/SpellEffectTypes`); apply_effect, remove_effect, projectile, area, teleport, dash, knockback (C3a-3); summon later | spells, so also boss abilities and procs |
 | `realmforge:targeting_type` | self, enemy, ally (C3a-1, `spell/TargetingTypes`); ground point, direction (C3a-3); for NPCs current target, random player, farthest player (C3a-4); arena point with the first boss that needs it | spells, boss abilities |
-| `realmforge:talent_effect_type` | attribute_modifier, spell_modifier, grant_spell, proc | talents (postponed, [12](#12-talents)); later glyphs and set bonuses |
+| `realmforge:talent_effect_type` | attribute_modifier, spell_modifier, grant_spell, proc | talents (not planned: no talents as of v1.0.0, [12](#12-talents)); glyphs and set bonuses if they come |
 | `realmforge:resource_type` | mana, rage (`spell/ResourceTypes`; C1 gave them ids and names, C3a-1 their pools, C3a-4 rage's gain and decay) | classes, spell costs |
 | `realmforge:phase_trigger_type` | health_below, time_in_phase (W5a, `boss/PhaseTriggerTypes`); adds_defeated with a spell that summons adds | bosses |
 | `realmforge:dungeon_ending_type` | boss_lair, treasury; later puzzle, wave_arena, escape, mounted_run, exploration | dungeon types |
@@ -374,8 +375,8 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
    (`id_universe.NEOFORGE_ATTRIBUTES`, [ADR 0064](decisions/0064-neoforges-attributes-join-the-id-universe.md)) plus
    our content; the full-pack registry dump is still a TODO ([ADR 0005](decisions/0005-content-pipeline-yaml-single-source-of-truth.md)).
 3. **Semantic rules:** the ADR 0005 rules (every item obtainable, rewards usable and repairable in their chapter,
-   quest texts match the data, no orphaned lang keys or textures), structural rules per type (talent trees have
-   no cycles and no unreachable nodes, boss phase thresholds decrease, dungeon rules are satisfiable) and the
+   quest texts match the data, no orphaned lang keys or textures), structural rules per type (spell trees have
+   no cycles and no unreachable spells, boss phase thresholds decrease, dungeon rules are satisfiable) and the
    vision guardrails (principle 10).
 4. **Generators** write every derived file; CI fails when `rf gen` changes anything.
 5. **Runtime:** when a world loads, a decoding error in one of our datapack registries stops the GameTest server
@@ -452,8 +453,8 @@ book with the rest of `pack/config/` (`seedPackConfig`), which deletes each run'
   file name, texts become keys, units are converted, unset optional fields are left out, and everything else keeps
   its YAML name and value. A type that needs a different JSON shape converts in its own generator instead.
 - Numbers shown to players come from data, never typed into prose. Spell tooltips fill placeholders such as
-  `{damage}` at runtime from the current values, talents included; quest texts are generated from the same YAML as
-  the game (boss level, location, recipe).
+  `{damage}` at runtime from the current values, passive spells included; quest texts are generated from the same
+  YAML as the game (boss level, location, recipe).
 
 ### 6.4 Example: the life of a spell
 
@@ -512,7 +513,7 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
 | `realmforge:spellbook` | `spell` | players | known spells and their levels, the spell bar's layout: its eight slots and the racial slot beside it (C3b) | owner |
 | `realmforge:combat` | `spell` | players and mobs that cast | resource pools (mana, rage), cooldowns, current cast (transient), whether a cast set Better Combat's disable tag | owner, throttled (players; clients never read a mob's copy) |
 | `realmforge:effect_sources` | `effect` | living entities | who applied each status effect a spell gave the holder: the caster's UUID, the spell's id, the proc origin ([11.4](#114-status-effects), C3c) | not synced (the server reads it) |
-| `realmforge:talents` | `talent` | players | allocated ranks per tree, unspent points | owner |
+| `realmforge:talents` | `talent` | players | allocated ranks per tree, unspent points (F3; unused, as no talents are planned, [12](#12-talents)) | owner |
 | `realmforge:night_vision` | `world` | players | whether Night Vision is switched on (on by default) | not synced (the effect itself is) |
 | `realmforge:visited_realms` | `world` | players | the ids of the realms the player has arrived in, so the arrival shows a realm's flavour line once (W2b); copied on death | not synced |
 | `realmforge:instance` | `dungeon` | players | the run's plot, the return point (spike 3) and the game mode to give back when entering switched it to Adventure (W4c) | not synced |
@@ -556,10 +557,11 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
   (`stats/StatsAttachments`, `character/CharacterAttachments`, `spell/SpellAttachments`,
   `talent/TalentAttachments`), registered from its `<Name>Feature`. The values are `stats/EntityLevel`,
   `character/CharacterData`, `spell/Spellbook`, `spell/CombatState` and `talent/TalentAllocation`; owner-only data
-  syncs with `core/Attachments#toOwner`. Talent trees are named by `Identifier` until their registry exists (postponed
-  with talents, [12](#12-talents)); races and classes are `ResourceKey`s since C1, and spells since C3a-1, which save
-  the same string, so F3's saves stay readable. `CombatState` keeps one pool per resource type (`resources`, by the
-  type's id), absent until the type's pool first fills ([11.5](#115-resources-cooldowns-modifiers)). Leveling (C2,
+  syncs with `core/Attachments#toOwner`. Talent trees are named by `Identifier`, as their registry does not exist
+  (no talents as of v1.0.0, [12](#12-talents)); races and classes are `ResourceKey`s since C1, and spells since
+  C3a-1, which save the same string, so F3's saves stay readable. `CombatState` keeps one pool per resource type
+  (`resources`, by the type's id), absent until the type's pool first fills
+  ([11.5](#115-resources-cooldowns-modifiers)). Leveling (C2,
   [10.2](#102-leveling)) caches the level cap there for players with a character, and stat points (RLM-196) save the
   points spent on each primary stat by the stat's id; the unspent points are derived, never saved. Every saved field is
   optional with a default, so an empty save reads as the default value.
@@ -583,7 +585,7 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
   `DeferredHolder` is still unbound.
 - **Primary stats (ours, decision D5):** strength (STR), dexterity (DEX), vitality (VIT: health; Stamina is a
   secondary stat of its own, below) and intellect (INT). They are attributes, so gear, buffs
-  and talents modify them like anything else. They start at 0: race, class, the stat points a player spends, talents
+  and passive spells modify them like anything else. They start at 0: race, class, the stat points a player spends
   and gear raise them (C1 and later; levels give stat points, not stats: RLM-196). Luck and defense stay out (D5).
 - **Secondary stats (ours):** crit chance (5 % to start with; a player's is a pseudo-random chance, so long runs
   without a crit never happen while the rate stays the stat, RLM-526, [9.1](#91-damage-pipeline)), crit damage
@@ -658,7 +660,6 @@ would remove both bonuses.
 | --- | --- | --- | --- |
 | race and class | `stats/CharacterStats`, from `character`'s `StatSource` (`character/CharacterBonuses`): each modifier's amount, the same at every level | `realmforge:race/<namespace>/<n>/<path>`, `realmforge:class/<namespace>/<n>/<path>` for the race or class `<namespace>:<path>` | saved, recomputed |
 | spent stat points | `stats/CharacterStats`, from `character`'s `StatSource` (`character/StatPoints`, [10.2](#102-leveling)): one modifier per primary stat with points, adding them | `realmforge:stat_points/<namespace>/<path>` for the stat `<namespace>:<path>` | saved, recomputed |
-| talents | `stats/CharacterStats`, from `talent`'s provider | `realmforge:talent/<tree>/<node>/<n>` | saved, recomputed |
 | passive spells (RLM-541) | `stats/CharacterStats`, from `spell`'s `StatSource` (`spell/Passives`): each known passive spell's modifiers at its rank, while its weapon condition holds | `realmforge:spell/<namespace>/<n>/<path>` for the passive spell `<namespace>:<path>` | saved, recomputed |
 | derived from primary stats | `stats/CharacterStats`, from stat rules ([8.3](#83-derived-stats-and-milestones)) | `realmforge:stat/<rule namespace>/<entry>/<rule path>`: `<entry>` is `<n>` per point, `at_<points>_<n>` per milestone; the rule's path comes last, as only it may contain slashes | saved, recomputed |
 | gear with fixed stats | vanilla, from the item's attribute modifiers ([13](#13-items-gear-and-loot)) | `realmforge:gear/<slot>/<n>` (generated: `<slot>` is `mainhand` or the armor slot); a wand's attack damage and speed use vanilla's base ids (`Item.BASE_ATTACK_DAMAGE_ID`, `BASE_ATTACK_SPEED_ID`), as vanilla's weapons, so the tooltip shows them as its base numbers | while equipped |
@@ -670,7 +671,7 @@ would remove both bonuses.
 whenever a source changes, and on the player's first tick after login or respawn. `stats/RecomputedModifiers` does
 the rewrite for one source: it owns the ids its predicate accepts (stat rules: our `stat/` prefix), removes those it
 no longer produces, and replaces only the modifiers whose amount or operation changed. The data stays the source of
-truth, so a rebalanced talent applies at the next login without migrations. The modifiers are saved rather than
+truth, so a rebalanced stat rule applies at the next login without migrations. The modifiers are saved rather than
 transient because of how vanilla handles health:
 
 - **Loading a player** applies saved modifiers first, then health, and `setHealth` clamps to the max health at that
@@ -742,8 +743,9 @@ A GameTest player (`QaPlayers#loginOnPlatform`) is never ticked by its connectio
   Warrior and a Mage the same Dexterity and Vitality.
 - Recompute when a primary stat may have changed: marked dirty by `LivingEquipmentChangeEvent`,
   `MobEffectEvent.Added`, `MobEffectEvent.Remove`, `MobEffectEvent.Expired` and our own changes
-  (`CharacterStats#markDirty`: level, talents), plus a cheap check every 10 ticks that compares primary values and
-  the level with the last applied snapshot (covers curios, other mods and commands such as `/qa level`).
+  (`CharacterStats#markDirty`: level, a passive spell learned), plus a cheap check every 10 ticks that compares
+  primary values and the level with the last applied snapshot (covers curios, other mods and commands such as
+  `/qa level`).
 - No cycles: rules read primary stats and write only secondary or vanilla attributes, and each primary stat has at
   most one rule (validation rules). `StatRule`'s codec also refuses a rule from any other data pack that reads no
   primary stat or writes one: a rule raising a primary stat would read its own bonuses back as a changed input at
@@ -865,7 +867,7 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
      against the target (Shatter on a Frozen one) is in the hit's crit rule already.
    - **Crit overflow** (C4, RLM-392): a crit chance above 100 % (Reckless Strike's bonus can take it there) turns
      into crit damage 1:1, every 1 % above 100 % adding 1 % crit damage (`DamageCalculator#critMultiplier`), for
-     melee, ranged and school hits alike. Talents act through those attributes or are already part of
+     melee, ranged and school hits alike. Passive spells act through those attributes or are already part of
      the spell's damage ([11.5](#115-resources-cooldowns-modifiers)).
    - **A player's crit is pseudo-random** (Matěj, 2026-10-30, RLM-526): bad-luck protection by Dota 2's
      pseudo-random distribution (`combat/CritDistribution`). The N-th roll since the player's last crit succeeds with
@@ -1169,7 +1171,7 @@ the playtest covers it.
   `CreateCharacterPayload(race, class)` → the server checks the combination and that no character exists yet → sets
   the attachment, gives the starting kit, recomputes stats.
 - **The server enforces creation too:** a client that skips the screen gains nothing. Until the character exists,
-  the server refuses the player's gameplay payloads (casting, spell bar, talents) and awards no character XP, and
+  the server refuses the player's gameplay payloads (casting, spell bar, stat points) and awards no character XP, and
   every system that reads race or class handles a missing character instead of assuming one.
 - **A race** gives base modifiers, innate spells, optionally a size (`generic.scale`), and the allowed classes.
 - **Racial abilities** (Matěj, 2026-10-15, RLM-219; built in C4): every race has one racial passive and one racial
@@ -1275,14 +1277,14 @@ the playtest covers it.
   victim's level relative to the player's (mobs far below give nothing) and by its kill XP multiplier (its rank); quests (`/realmforge xp`); dungeon
   completion and boss kills; later discoveries and professions. A player's XP multiplier (`xp_multiplier`, 100 % by
   default) scales every gain.
-- **Level-up:** earn stat points, recompute stats, grant talent points and teach class spells through their
+- **Level-up:** earn stat points, recompute stats, grant spell points and teach class spells through their
   features' APIs (C4, C5), toast and sound, fire the `realmforge:level_reached` trigger for advancements.
 - **Stat points** (Matěj, 2026-10-15, RLM-196): every level from 2 on earns primary stat points, one a level
   (the curve `stat_points_per_level`), which the player spends on the character sheet, a point at a time, on any
   primary stat: no class locks a stat away. A spent point is final until the player unlearns them all with a Scroll of
   Oblivion, an item that is hard to get on purpose (Matěj wants it as a hard repeatable quest's reward, or an expensive
   shop item once coins exist; the quest waits for Q1). Race and class stats no longer grow with the level. Two more
-  scrolls follow (Matěj, 2026-10-16): the Scroll of Respecialization returns every spell (talent) point, the Scroll
+  scrolls follow (Matěj, 2026-10-16): the Scroll of Respecialization returns every spell point, the Scroll
   of Rebirth resets the whole character (race, class, spell and stat points); the three share one scroll texture in
   purple-ish, yellow-ish and red-ish tones.
 - **In code (C2, RLM-23):**
@@ -1420,9 +1422,9 @@ Its name and description are translation keys from C3b, the description's number
   a spell pushes its target only through a `realmforge:knockback` effect (C3a-3).
 - **Crits** (Matěj, 2026-10-15): every spell can crit, heals too, on the caster's crit chance for 1 + the caster's
   crit damage (150 % with the base 50 %), crit damage being shared with melee. A spell's `crit` data may switch
-  crits off, add a bonus chance, or set its own multiplier (`combat/CritRule`); talents (postponed, RLM-28) will change
-  all three. A player's spell crits are pseudo-random on their own counter, apart from weapon attacks
-  ([9.1](#91-damage-pipeline), RLM-526).
+  crits off, add a bonus chance, or set its own multiplier (`combat/CritRule`); passive spells may change
+  them (Shatter's crit chance against Frozen targets). A player's spell crits are pseudo-random on their own
+  counter, apart from weapon attacks ([9.1](#91-damage-pipeline), RLM-526).
 
 - **What a cast needs in hand** (C4, RLM-499): `requires` lists `melee_weapon` (an item of
   `#realmforge:melee_weapons`: swords, axes, maces, spears, tridents and their like, never a wand) in the main hand
@@ -1769,7 +1771,7 @@ type only for genuinely new behaviour.
   (RLM-544). `FrostTreeGameTests` covers Cone of Cold's cone, `ConeShapeTest` the geometry.
 - Both deliver their effects themselves: the hit's direct entity is the projectile or the area, its causing entity
   the caster, so kill credit and the hit direction work as for an arrow. Their effects read the caster's stats when
-  they land; no snapshot is taken at the cast, as nothing (talents, procs) needs one yet. A spell entity ends when its
+  they land; no snapshot is taken at the cast, as nothing (passives, procs) needs one yet. A spell entity ends when its
   caster leaves its level (logs out, changes dimension, a mob that died and was removed).
 - **Never saved:** they carry a live cast (the caster, the spell), so a chunk that unloads or a server that stops
   drops them (`shouldBeSaved` is false), they use no portal, and commands cannot summon them. Only their size is
@@ -1797,7 +1799,7 @@ type only for genuinely new behaviour.
   a few behaviour classes in `effect/` (`applyEffectTick`, `shouldApplyEffectTickThisTick`). Vanilla effects can be
   referenced directly.
 - Effects applied by spells remember their source as plain ids (the caster's UUID, the spell's id), because
-  `effect` sits below `spell`; dispels and talent interactions use them. They also remember whether a proc
+  `effect` sits below `spell`; dispels and passive spells' procs use them. They also remember whether a proc
   applied them, and the damage or healing of their ticks carries that proc origin ([12](#12-talents)).
 - Guardrail: only a few bosses may apply blindness or darkness (validation counts them).
 
@@ -1833,7 +1835,7 @@ effect's removal or expiry does too. An application that changes nothing (`MobEf
 effect as it is, and it ends no later) keeps it: `MobEffectEvent.Added` fires before that update, so `Effects` asks a
 copy of the old instance (RLM-373). A weaker but longer one forgets it too, though `update` keeps the effect: vanilla
 holds it as the hidden effect, which takes over without an event once the stronger one ends. `Effects#source` is
-what dispels (C4) and talents (postponed, RLM-28) read. An effect a proc's spell applied keeps the proc origin, and
+what dispels (C4) and procs read. An effect a proc's spell applied keeps the proc origin, and
 its ticks carry it, so they trigger no proc
 ([12](#12-talents)). `EffectGameTests` covers the ticks, the caster's stats, a caster that left, the modifiers, the
 sources, a proc's damage over time, and burning applied again by a hasted channel (`test_kindle`) and by a channel's
@@ -1915,8 +1917,9 @@ boss, Will To Survive, Bleeding's 12 ticks through armor, two stacks and a refre
   every spell is on, physical abilities too (Matěj, 2026-10-24, RLM-402): a spell may change its length, never switch
   it off, and Cooldown Reduction never touches it. Both are stored as the game time they
   end.
-- Spell modifiers from talents (later glyphs and gear) are collected into a cached per-player view, invalidated
-  when talents or gear change, and applied when a cast starts: cast time, cost, cooldown, damage, extra effects.
+- Spell modifiers come from passive spells (`spell/Passives`, RLM-541: more damage for named spells, crit chance
+  against Frozen targets, a wider splash), read from the caster's spellbook where they apply; no talents add any (no
+  talents as of v1.0.0, [12](#12-talents)), and gear may, should glyphs or set bonuses come.
 
 ### 11.6 Client side
 
@@ -2316,10 +2319,11 @@ RLM-54), as C4 made it.
 
 ## 12. Talents
 
-**Postponed indefinitely** (Matěj, 2026-10-16, RLM-28; confirmed 2026-10-18,
-[ADR 0044](decisions/0044-third-party-mods-by-milestone.md)): M1 builds no talents, and each class's spells form
-specialization spell trees instead (C5, RLM-333; RLM-218, [10.1](#101-races-and-classes)). The design below stays for when talents
-return; the proc engine at its end exists since C3a.
+**No talents as of v1.0.0** (Matěj, 2026-11-03, RLM-28, RLM-586): they could be added later, but they are not
+planned. They were postponed indefinitely on 2026-10-16 ([ADR 0044](decisions/0044-third-party-mods-by-milestone.md));
+each class's spells form specialization spell trees with ranks and passive spells instead (C5, RLM-333; RLM-218,
+[10.1](#101-races-and-classes)). The `talent` package holds only F3's `talents` attachment. The design below is kept
+for reference, should talents ever come; the proc engine at its end exists since C3a and serves passive spells.
 
 - **Model:** one `realmforge:talent_tree` entry per tree with its grid size and nodes: id, column, row, icon, max
   rank, prerequisites (another node at some rank; points spent in the tree for each tier) and typed effects per
@@ -2341,7 +2345,7 @@ return; the proc engine at its end exists since C3a.
   later.
 - **Validation:** Python checks every tree (no cycles, every node reachable, the tier math works out); JUnit
   property tests check that no sequence of payloads reaches an invalid allocation.
-- **Glyphs** (postponed with talents) reuse the same effect types, with glyph items as the source.
+- **Glyphs** (not planned either) would reuse the same effect types, with glyph items as the source.
 - **Screen:** a WoW-style grid, drawn from a pure `TalentTreeView`.
 - **In code (C3a-4, RLM-212): the proc engine.** A `spell/Proc` has an id, a trigger (`HIT`, `CRIT`, `KILL` or
   `HIT_TAKEN`, from its holder's side), a chance, an internal cooldown in ticks (research SP-15) and an action: cast a
@@ -2349,7 +2353,8 @@ return; the proc engine at its end exists since C3a.
   the holder) or apply a status effect (`ApplyEffect`, to the holder or the other entity). `spell/Procs` reacts to
   `CombatEvent.Hit` (every hit with an attacker: melee, ranged and spells, a dodged one never) and to kills
   (`LivingDeathEvent`, last, so a totem's save counts), and fires the procs that every `Procs.Source` gives the
-  entities involved; items and talents (postponed, RLM-28) will add theirs, and the QA mod adds `QaProcs` for its tests.
+  entities involved; passive spells give theirs (RLM-540), items will add theirs, and the QA mod adds `QaProcs` for
+  its tests.
   A proc fires at its chance outside its internal cooldown, which starts once its spell was cast or its effect took
   hold. Its spell goes through `SpellCaster#castProc`: at once and free, whatever its cast type, without the spell's
   cooldowns or the global cooldown, while another cast runs. The proc origin is the proc's id: `EffectContext`
@@ -3653,7 +3658,8 @@ depth limit.
     - `realmforge:spell_cast` (Q1-2, `SpellCastTrigger`): fired by `SpellCaster` for a player's cast that goes off, an
       instant spell when it is cast and a cast time or channel when it ends `COMPLETED` (`Casting#end`), never an
       interrupted cast or a proc's spell; a criterion names `"spell"`, any when left out;
-    - `boss_defeated` comes with the boss (W5, RLM-35), `talent_learned` with talents.
+    - `boss_defeated` comes with the boss (W5, RLM-35), `talent_learned` only if talents come (none as of v1.0.0,
+      [12](#12-talents)).
 
     Custom statistics (`Registries.CUSTOM_STAT`, `progression/ProgressionStats`) count repeatable things:
     `realmforge:dungeons_completed` (Q1-2), awarded with `dungeon_completed`. `Stats.CUSTOM` keeps a statistic by
@@ -3756,7 +3762,7 @@ depth limit.
 | Data | Mechanism |
 | --- | --- |
 | datapack registries | NeoForge, at login, through each registry's network codec |
-| character, spellbook, talents | synced attachments, sent on every `setData` |
+| character, spellbook | synced attachments, sent on every `setData` |
 | effect sources | not synced: only the server reads who applied an effect |
 | combat state | attachment synced explicitly and throttled |
 | magic shield | synced attachment, to the owner, on every change (a hit, a refill) |
@@ -3809,7 +3815,7 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   server in CI runs as a dedicated server and is a second line of defence, but only for code the tests run, and
   NeoForge's own client classes are mostly not marked client-only, so only the import check catches those.
 - **Thin screens:** screens and HUD layers draw from view models computed in common code (`CharacterSheetView`,
-  `TalentTreeView`), so their logic is testable without rendering.
+  `SpellTreeView`), so their logic is testable without rendering.
 - **Layout helper** (`client/screen/layout/Flex`, RLM-560): a small flexbox-style layout, so a screen says what goes
   next to what instead of placing coordinates by hand. A node is a row or a column of children (a gap between them,
   padding inside, children aligned across the axis: start, centre, end or stretched) or a leaf with a size of its own
@@ -4391,15 +4397,15 @@ of 2026-10-29), the same everywhere, the dev client included.
 
 | What | Where | M1 examples |
 | --- | --- | --- |
-| pure logic | JUnit in `mod/src/test` | damage formula, talent rules, dungeon planner fuzzing, boss phase machine, XP curve |
-| content | pytest in `tools/tests` | schemas, references, semantic rules, guardrails, talent tree validity |
+| pure logic | JUnit in `mod/src/test` | damage formula, spell point rules, dungeon planner fuzzing, boss phase machine, XP curve |
+| content | pytest in `tools/tests` | schemas, references, semantic rules, guardrails, spell tree validity |
 | data against codecs | GameTest server start, data errors in its log (`uv run rf gametest-log`), generated expectations | every spell decodes; every generated loot table, recipe and advancement loads; ids and key fields match |
 | behaviour in a world | GameTests in `qa-mod` | firebolt damages a dummy by the expected amount; the level stops at the cap; the chapter advancement raises it; the boss enters phase 2 at 70%; an instance is built, entered and cleaned up |
 | client isolation | pytest import check (`tools/tests/test_client_isolation.py`); dedicated GameTest server | - |
 | whole pack | `uv run rf pack-boot`: the CI jobs `pack-boot` and `pack-boot-client` boot the pack plus our jar with NeoForge's self tests ([ADR 0018](decisions/0018-pack-boot-tests.md)) | server and client load (with and without the optional mods, when the pack has any); no unexplained ERROR line |
 | balance | Python simulation (M3) | time to kill per class and level, boss phase survival, time to item |
 
-The QA mod grows with the features: `/qa` commands (level, class, talents, gear presets, boss at phase N, enter an
+The QA mod grows with the features: `/qa` commands (level, class, spell points, gear presets, boss at phase N, enter an
 instance with a given seed, reset cooldowns, god mode), a training dummy with a DPS meter, and a combat log file
 that agents can read. So far:
 
