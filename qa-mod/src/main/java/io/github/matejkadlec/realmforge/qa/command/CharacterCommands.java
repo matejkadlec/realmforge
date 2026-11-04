@@ -70,8 +70,8 @@ public final class CharacterCommands {
 
     /**
      * Removes the player's character and recomputes their stats, so the race and class modifiers go and the client
-     * opens the creation screen again. The level falls back to 1 and the spellbook empties with it (C4: the next
-     * character learns its own class's spells). Returns whether the player had one.
+     * opens the creation screen again. The level falls back to 1 and the spellbook empties with it (C5: the next
+     * character picks its own specialization). Returns whether the player had one.
      */
     public static boolean reset(ServerPlayer player) {
         boolean had = Characters.exists(player);
@@ -86,8 +86,9 @@ public final class CharacterCommands {
     private static int show(CommandContext<CommandSourceStack> context, ServerPlayer player) {
         CharacterData character = Characters.data(player);
         String text = character.exists()
-                ? player.getPlainTextName() + ": race " + character.race().orElseThrow().identifier() + ", classes "
-                        + character.classes().stream().map(key -> key.identifier().toString()).toList()
+                ? player.getPlainTextName() + ": race " + character.race().orElseThrow().identifier() + ", class "
+                        + character.playerClass().map(key -> key.identifier().toString()).orElse("none")
+                        + ", specialization " + character.specialization().orElse("none")
                         + ", character XP " + character.totalXp()
                 : player.getPlainTextName() + " has no character";
         context.getSource().sendSuccess(() -> Component.literal(text), false);

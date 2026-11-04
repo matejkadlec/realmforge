@@ -13,6 +13,7 @@ from realmforge_tools.schema.character import (
     CharacterModifierDef,
     RaceDef,
     RageDef,
+    SpecializationDef,
     bonuses,
     passive_bonuses,
 )
@@ -138,15 +139,33 @@ def _races(content: Content) -> bytes:
     return source.encode("utf-8")
 
 
+def _optional(value: str | None) -> str:
+    return "Optional.empty()" if value is None else f"Optional.of({string_literal(value)})"
+
+
+def _specialization(class_id: str, n: int, specialization: SpecializationDef) -> str:
+    spells = ", ".join(
+        f"new TreeSpell({string_literal(taught.spell)}, {taught.level}, {taught.column}, "
+        f"{_optional(taught.requires)})"
+        for taught in specialization.spells
+    )
+    return (
+        f"new Specialization({string_literal(specialization.id)}, "
+        f"{string_literal(translation_key('class', class_id, f'specializations.{n}.name'))}, "
+        f"{string_literal(translation_key('class', class_id, f'specializations.{n}.description'))}, "
+        f"{_optional(specialization.first_spell)}, List.of({spells}))"
+    )
+
+
 def _classes(content: Content) -> bytes:
     rows = []
     for player_class in (entry.model for entry in content.classes):
         kit = ", ".join(
             f"new KitItem({string_literal(item.item)}, {item.count})" for item in player_class.starting_kit
         )
-        spells = ", ".join(
-            f"new ClassSpell({string_literal(taught.spell)}, {taught.level})"
-            for taught in player_class.spells
+        specializations = ",\n                            ".join(
+            _specialization(player_class.id, n, specialization)
+            for n, specialization in enumerate(player_class.specializations)
         )
         rows.append(
             "            new ClassExpectation(\n"
@@ -157,7 +176,7 @@ def _classes(content: Content) -> bytes:
             f"                    {_rage(player_class.rage)},\n"
             f"                    List.of({kit}),\n"
             f"                    {_bonuses('class', player_class.id, player_class.modifiers)},\n"
-            f"                    List.of({spells}))"
+            f"                    List.of({specializations}))"
         )
     source = (
         header(Path(__file__), "content/classes/") + f"package {QA_GENERATED_PACKAGE};\n"
@@ -177,8 +196,13 @@ def _classes(content: Content) -> bytes:
         "    public record KitItem(String item, int count) {\n"
         "    }\n"
         "\n"
-        "    /** A spell the class teaches at a level. */\n"
-        "    public record ClassSpell(String spell, int level) {\n"
+        "    /** A spell of a specialization's tree: its row's level, its column, and the spell its arrow needs. */\n"
+        "    public record TreeSpell(String spell, int level, int column, Optional<String> requires) {\n"
+        "    }\n"
+        "\n"
+        "    /** A specialization: its id, its texts, its free first spell and its tree; no spells means it comes later. */\n"
+        "    public record Specialization(String id, String nameKey, String descriptionKey, Optional<String> firstSpell,\n"
+        "            List<TreeSpell> spells) {\n"
         "    }\n"
         "\n"
         "    /**\n"
@@ -186,7 +210,8 @@ def _classes(content: Content) -> bytes:
         "     * are the ones the game must give, in this order.\n"
         "     */\n"
         "    public record ClassExpectation(String id, String nameKey, String descriptionKey, String resource,\n"
-        "            Optional<Rage> rage, List<KitItem> startingKit, List<Bonus> bonuses, List<ClassSpell> spells) {\n"
+        "            Optional<Rage> rage, List<KitItem> startingKit, List<Bonus> bonuses,\n"
+        "            List<Specialization> specializations) {\n"
         "    }\n"
         "\n"
         f"    public static final List<ClassExpectation> CLASSES = {_list(rows)};\n"

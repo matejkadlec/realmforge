@@ -27,8 +27,13 @@ RESOURCE_TYPES: tuple[str, ...] = (f"{MOD_ID}:mana", f"{MOD_ID}:rage")
 ResourceType = Literal["realmforge:mana", "realmforge:rage"]
 RAGE = f"{MOD_ID}:rage"
 
-# The highest level a class may teach a spell at: far beyond today's caps (30), within the chapters' levels.
-MAX_CLASS_SPELL_LEVEL = 1000
+# The highest level a spell tree's row may open at: far beyond today's caps (30), within the chapters' levels.
+MAX_TREE_SPELL_LEVEL = 1000
+
+# A spell tree's shape (Matěj, 2026-10-30, RLM-333, like WotLK's talent trees): rows of 1 to 3 spells in three columns,
+# the first row at level 1 and a new one every 6 levels (1, 6, 12, 18, ...).
+TREE_COLUMNS = 3
+TREE_ROW_STEP = 6
 
 # Every class's starting kit holds this much bread (Matěj, 2026-10-14: "for both classes and any future classes").
 STARTING_BREAD: tuple[str, int] = ("minecraft:bread", 32)
@@ -166,17 +171,83 @@ class RageDef(StrictModel):
     )
 
 
-class ClassSpellDef(StrictModel):
-    """A spell a class teaches its players at a level (C4): they learn it at rank 1 once they reach the level, and
-    keep it."""
+class TreeSpellDef(StrictModel):
+    """One spell of a specialization's spell tree (C5, RLM-333): where it stands, and what it needs besides points."""
 
     spell: ResourceId = Field(description="The spell, e.g. realmforge:slam.")
-    level: int = Field(ge=1, le=MAX_CLASS_SPELL_LEVEL, description="The character level that teaches it.")
+    level: int = Field(
+        ge=1,
+        le=MAX_TREE_SPELL_LEVEL,
+        description="The character level that opens its row: 1, then every 6 levels (6, 12, 18, ...).",
+    )
+    column: int = Field(ge=1, le=TREE_COLUMNS, description="Its column in the row: 1 (left), 2 or 3 (right).")
+    requires: ResourceId | None = Field(
+        default=None,
+        description="The arrow: a spell of an earlier row of this tree that the player must know at any rank first.",
+    )
+
+
+class SpecializationDef(StrictModel):
+    """A specialization and its spell tree (C5, RLM-333; Matěj, 2026-10-15, RLM-218): the player picks one in the spell
+    trees window and spends points there. One without spells comes later: the window names it, and nobody can pick it
+    yet (M1 has one tree per class, the other two come in M3)."""
+
+    id: str = Field(
+        pattern=r"^[a-z][a-z0-9_]*$",
+        max_length=64,
+        description="Lowercase snake_case id, unique in the class, e.g. frost. Characters save it.",
+    )
+    name: LocalizedText = Field(description="Its name above the tree (Title Case), e.g. Frost.")
+    description: LocalizedText = Field(description="One short sentence on how it plays, in its tooltip.")
+    first_spell: ResourceId | None = Field(
+        default=None,
+        description="The tree's first spell, in its level 1 row: free at rank 1 when the player picks the "
+        "specialization (decision D4: every class starts with one spell; Matěj, 2026-11-04). Set exactly when the "
+        "tree has spells.",
+    )
+    spells: list[TreeSpellDef] = Field(
+        default_factory=list,
+        description="The tree's spells. Every rank costs a point, but first_spell's first.",
+    )
+
+    @model_validator(mode="after")
+    def _tree(self) -> SpecializationDef:
+        levels = {taught.spell: taught.level for taught in self.spells}
+        if len(levels) != len(self.spells):
+            names = [taught.spell for taught in self.spells]
+            repeated = sorted({name for name in names if names.count(name) > 1})
+            raise ValueError(f"a tree holds each spell once: {', '.join(repeated)}")
+        if not self.spells:
+            if self.first_spell is not None:
+                raise ValueError("a specialization without spells has no first_spell")
+            return self
+        if self.first_spell is None:
+            raise ValueError("every class starts with one spell (decision D4): set first_spell")
+        if levels.get(self.first_spell) != 1:
+            raise ValueError(f"first_spell {self.first_spell} must be in the tree's level 1 row")
+        places = [(taught.level, taught.column) for taught in self.spells]
+        if len(set(places)) != len(places):
+            repeated_places = sorted({place for place in places if places.count(place) > 1})
+            raise ValueError(f"two spells share a place (level, column): {repeated_places}")
+        for taught in self.spells:
+            if taught.level != 1 and taught.level % TREE_ROW_STEP != 0:
+                raise ValueError(
+                    f"{taught.spell}: a row opens at level 1 or every {TREE_ROW_STEP} levels, not {taught.level}"
+                )
+            if taught.requires is not None:
+                needed = levels.get(taught.requires)
+                if needed is None:
+                    raise ValueError(f"{taught.spell} requires {taught.requires}, which is not in this tree")
+                if needed >= taught.level:
+                    raise ValueError(
+                        f"{taught.spell} requires {taught.requires}, which is not in an earlier row"
+                    )
+        return self
 
 
 class ClassDef(StrictModel):
-    """A class: its role, its resource, the stats it gives, its spells by level and its starting kit (architecture
-    10.1). The specialization spell trees come with C5."""
+    """A class: its role, its resource, the stats it gives, its specializations' spell trees and its starting kit
+    (architecture 10.1)."""
 
     id: ContentId
     name: LocalizedText = Field(
@@ -202,20 +273,20 @@ class ClassDef(StrictModel):
     starting_kit: list[KitItemDef] = Field(
         default_factory=list, description="Items a new character of this class receives once."
     )
-    spells: list[ClassSpellDef] = Field(
+    specializations: list[SpecializationDef] = Field(
         default_factory=list,
-        description="The spells the class teaches by level (C4): one at level 1, and at most 4 per chapter in all "
+        description="Its specializations with their spell trees (C5). A tree holds at most 4 active spells per chapter "
         "(decision D4: chapter N allows 4 x N spells).",
     )
 
     @model_validator(mode="after")
-    def _spells(self) -> ClassDef:
-        names = [spell.spell for spell in self.spells]
-        repeated = sorted({name for name in names if names.count(name) > 1})
+    def _specializations(self) -> ClassDef:
+        ids = [specialization.id for specialization in self.specializations]
+        repeated = sorted({name for name in ids if ids.count(name) > 1})
         if repeated:
-            raise ValueError(f"a class teaches each spell once: {', '.join(repeated)}")
-        if names and not any(spell.level == 1 for spell in self.spells):
-            raise ValueError("every class starts with one spell (decision D4): teach one at level 1")
+            raise ValueError(f"a class names each specialization once: {', '.join(repeated)}")
+        if ids and not any(specialization.spells for specialization in self.specializations):
+            raise ValueError("every class starts with one spell (decision D4): give a specialization spells")
         return self
 
     @model_validator(mode="after")

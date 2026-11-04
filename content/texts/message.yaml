@@ -43,6 +43,18 @@ texts:
     en_us: "You have learned a new spell: %1$s"
   stat_points_unspent:
     en_us: "Unspent stat points: %1$s. Press %2$s to spend them on your character sheet."
+  # A level-up with spell points to spend (C5, RLM-333; %1$s the points, %2$s the spellbook's key).
+  spell_points_unspent:
+    en_us: "Unspent spell points: %1$s. Press %2$s to spend them in your spellbook."
+  # A character who has not picked a specialization yet, when they create it or log in (%1$s the spellbook's key).
+  specialization_pick:
+    en_us: "Press %1$s to choose your specialization in your spellbook."
+  # A level-up that opens a new row of the player's spell tree.
+  spell_tree_row_open:
+    en_us: A new row of your spell tree is open.
+  # A level that fell below the spell points spent or a spell's row (%1$s the unspent points now).
+  spell_points_returned:
+    en_us: "Your level fell, so your spell points are unspent again. Unspent spell points: %1$s."
   # The Scroll of Oblivion returned every spent point (%1$s the unspent points now).
   stat_points_unlearned:
     en_us: "Your stat points are unspent again. Unspent stat points: %1$s."

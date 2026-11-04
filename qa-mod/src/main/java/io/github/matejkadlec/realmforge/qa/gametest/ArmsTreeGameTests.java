@@ -89,9 +89,9 @@ public final class ArmsTreeGameTests {
     private static final String ARMOR_V = "[enchantments={\"minecraft:protection\":5,\"minecraft:unbreaking\":5}]";
     /**
      * The playtest's setup line against Astone (RLM-543, RLM-503; gear.md's expected gear for Astone, RLM-551): a new
-     * Human Warrior, chapter 1's raised cap, level 18, the tree at a 17-point build on top of the kit's rank 1 (Slam and
-     * Overpower 5, Deep Wounds, Rend and Execute 3, Bloodthirst, Charge and Victory Rush 2, Battle Shout and
-     * Two-Handed Specialization 1), full netherite armor with Protection V and Unbreaking V, and a netherite
+     * Human Warrior, chapter 1's raised cap, level 18, the tree at 27 ranks (Slam and Overpower 5, Deep Wounds, Rend and
+     * Execute 3, Bloodthirst, Charge and Victory Rush 2, Battle Shout and Two-Handed Specialization 1), which since C5 is
+     * more than a real level 18 character's 18 and skips the rules, until RLM-503 rebalances Astone; full netherite armor with Protection V and Unbreaking V, and a netherite
      * sword with Sharpness V and Unbreaking V; the kit's shield stays for Overpower's blocks. The handoff gives it to
      * Matěj as {@code execute as @p at @p run} and this line.
      */
@@ -102,6 +102,7 @@ public final class ArmsTreeGameTests {
             + "qa spell learn realmforge:deep_wounds 3; qa spell learn realmforge:rend 3; "
             + "qa spell learn realmforge:execute 3; qa spell learn realmforge:bloodthirst 2; "
             + "qa spell learn realmforge:charge 2; qa spell learn realmforge:victory_rush 2; "
+            + "qa spell learn realmforge:battle_shout; qa spell learn realmforge:two_handed_weapon_specialization; "
             + "give @s minecraft:netherite_helmet" + ARMOR_V + "; give @s minecraft:netherite_chestplate" + ARMOR_V
             + "; give @s minecraft:netherite_leggings" + ARMOR_V + "; give @s minecraft:netherite_boots" + ARMOR_V
             + "; give @s minecraft:netherite_sword[enchantments={\"minecraft:sharpness\":5,\"minecraft:unbreaking\":5}]";
@@ -666,42 +667,6 @@ public final class ArmsTreeGameTests {
                 "Your critical hits make the enemy bleed for 20% of the hit's damage over 6 sec.", "Next rank:",
                 "Your critical hits make the enemy bleed for 40% of the hit's damage over 6 sec."),
                 "Deep Wounds at rank 1 and rank 2");
-        logout(player);
-        helper.succeed();
-    }
-
-    /**
-     * The Warrior learns the tree at rank 1 by its rows: Slam, Charge and Deep Wounds at level 1; Rend, Battle Shout and
-     * Two-Handed Specialization at 6; Bloodthirst, Overpower and Victory Rush at 12; Execute at 18 (once
-     * chapter 1 raised the cap); the bar holds the actives in that order, never the passives, and Reckless Strike and
-     * Shield Bash never come.
-     */
-    @QaGameTest(timeoutTicks = 100)
-    public static void theWarriorLearnsTheTreeByItsRows(GameTestHelper helper) {
-        ServerPlayer player = ClassKitGameTests.character(helper, "qa-arms-kit", "warrior");
-        assertKnows(helper, player, List.of(GeneratedSpells.SLAM, GeneratedSpells.CHARGE, GeneratedSpells.DEEP_WOUNDS),
-                List.of(GeneratedSpells.REND), 1);
-        reachLevel(helper, player, 6);
-        assertKnows(helper, player, List.of(GeneratedSpells.REND, GeneratedSpells.BATTLE_SHOUT,
-                GeneratedSpells.TWO_HANDED_WEAPON_SPECIALIZATION), List.of(GeneratedSpells.BLOODTHIRST,
-                GeneratedSpells.OVERPOWER), 6);
-        AdvancementHolder chapter = helper.getLevel().getServer().getAdvancements()
-                .get(Identifier.parse("realmforge:chapter/chapter_1"));
-        helper.assertTrue(player.getAdvancements().award(chapter, "completed"), "chapter 1 raises the cap to 18");
-        reachLevel(helper, player, 12);
-        assertKnows(helper, player, List.of(GeneratedSpells.BLOODTHIRST, GeneratedSpells.OVERPOWER,
-                GeneratedSpells.VICTORY_RUSH), List.of(GeneratedSpells.EXECUTE), 12);
-        reachLevel(helper, player, 18);
-        assertKnows(helper, player, List.of(GeneratedSpells.EXECUTE),
-                List.of(GeneratedSpells.RECKLESS_STRIKE, GeneratedSpells.SHIELD_BASH), 18);
-        Spellbook book = player.getData(SpellAttachments.SPELLBOOK);
-        List<ResourceKey<Spell>> bar = new ArrayList<>();
-        for (int slot = 0; slot < 8; slot++) {
-            book.slot(slot).ifPresent(bar::add);
-        }
-        helper.assertValueEqual(bar, List.of(GeneratedSpells.SLAM, GeneratedSpells.CHARGE, GeneratedSpells.REND,
-                GeneratedSpells.BATTLE_SHOUT, GeneratedSpells.OVERPOWER, GeneratedSpells.VICTORY_RUSH,
-                GeneratedSpells.EXECUTE), "the bar holds the seven actives in the tree's order");
         logout(player);
         helper.succeed();
     }

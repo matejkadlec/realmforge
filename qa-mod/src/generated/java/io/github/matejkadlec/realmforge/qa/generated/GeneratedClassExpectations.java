@@ -24,8 +24,13 @@ public final class GeneratedClassExpectations {
     public record KitItem(String item, int count) {
     }
 
-    /** A spell the class teaches at a level. */
-    public record ClassSpell(String spell, int level) {
+    /** A spell of a specialization's tree: its row's level, its column, and the spell its arrow needs. */
+    public record TreeSpell(String spell, int level, int column, Optional<String> requires) {
+    }
+
+    /** A specialization: its id, its texts, its free first spell and its tree; no spells means it comes later. */
+    public record Specialization(String id, String nameKey, String descriptionKey, Optional<String> firstSpell,
+            List<TreeSpell> spells) {
     }
 
     /**
@@ -33,7 +38,8 @@ public final class GeneratedClassExpectations {
      * are the ones the game must give, in this order.
      */
     public record ClassExpectation(String id, String nameKey, String descriptionKey, String resource,
-            Optional<Rage> rage, List<KitItem> startingKit, List<Bonus> bonuses, List<ClassSpell> spells) {
+            Optional<Rage> rage, List<KitItem> startingKit, List<Bonus> bonuses,
+            List<Specialization> specializations) {
     }
 
     public static final List<ClassExpectation> CLASSES = List.of(
@@ -45,7 +51,9 @@ public final class GeneratedClassExpectations {
                     Optional.empty(),
                     List.of(new KitItem("realmforge:stone_wand", 1), new KitItem("realmforge:apprentice_hat", 1), new KitItem("realmforge:apprentice_robes", 1), new KitItem("realmforge:apprentice_pants", 1), new KitItem("realmforge:apprentice_boots", 1), new KitItem("minecraft:bread", 32)),
                     List.of(new Bonus("realmforge:class/realmforge/0/mage", "realmforge:intellect", "add_value", 5.0), new Bonus("realmforge:class/realmforge/1/mage", "realmforge:vitality", "add_value", 2.0), new Bonus("realmforge:class/realmforge/2/mage", "realmforge:dexterity", "add_value", 1.0), new Bonus("realmforge:class/realmforge/3/mage", "realmforge:max_mana", "add_value", 100.0), new Bonus("realmforge:class/realmforge/4/mage", "realmforge:mana_regeneration", "add_value", 5.0)),
-                    List.of(new ClassSpell("realmforge:frostbolt", 1), new ClassSpell("realmforge:improved_frostbolt", 1), new ClassSpell("realmforge:cone_of_cold", 1), new ClassSpell("realmforge:ice_lance", 6), new ClassSpell("realmforge:frost_nova", 6), new ClassSpell("realmforge:frostbite", 6), new ClassSpell("realmforge:shatter", 12), new ClassSpell("realmforge:ice_barrier", 12), new ClassSpell("realmforge:blizzard", 18))),
+                    List.of(new Specialization("fire", "class.realmforge.mage.specializations.0.name", "class.realmforge.mage.specializations.0.description", Optional.empty(), List.of()),
+                            new Specialization("frost", "class.realmforge.mage.specializations.1.name", "class.realmforge.mage.specializations.1.description", Optional.of("realmforge:frostbolt"), List.of(new TreeSpell("realmforge:improved_frostbolt", 1, 1, Optional.empty()), new TreeSpell("realmforge:frostbolt", 1, 2, Optional.empty()), new TreeSpell("realmforge:cone_of_cold", 1, 3, Optional.empty()), new TreeSpell("realmforge:ice_lance", 6, 1, Optional.empty()), new TreeSpell("realmforge:frost_nova", 6, 2, Optional.empty()), new TreeSpell("realmforge:frostbite", 6, 3, Optional.empty()), new TreeSpell("realmforge:shatter", 12, 1, Optional.empty()), new TreeSpell("realmforge:ice_barrier", 12, 2, Optional.empty()), new TreeSpell("realmforge:blizzard", 18, 1, Optional.empty()))),
+                            new Specialization("arcane", "class.realmforge.mage.specializations.2.name", "class.realmforge.mage.specializations.2.description", Optional.empty(), List.of()))),
             new ClassExpectation(
                     "realmforge:warrior",
                     "class.realmforge.warrior.name",
@@ -54,7 +62,9 @@ public final class GeneratedClassExpectations {
                     Optional.of(new Rage(10.0, 50.0, 2.0, 100)),
                     List.of(new KitItem("minecraft:stone_sword", 1), new KitItem("minecraft:shield", 1), new KitItem("minecraft:leather_helmet", 1), new KitItem("minecraft:leather_chestplate", 1), new KitItem("minecraft:leather_leggings", 1), new KitItem("minecraft:leather_boots", 1), new KitItem("minecraft:bread", 32)),
                     List.of(new Bonus("realmforge:class/realmforge/0/warrior", "realmforge:strength", "add_value", 5.0), new Bonus("realmforge:class/realmforge/1/warrior", "realmforge:vitality", "add_value", 4.0), new Bonus("realmforge:class/realmforge/2/warrior", "realmforge:dexterity", "add_value", 2.0)),
-                    List.of(new ClassSpell("realmforge:slam", 1), new ClassSpell("realmforge:charge", 1), new ClassSpell("realmforge:deep_wounds", 1), new ClassSpell("realmforge:rend", 6), new ClassSpell("realmforge:battle_shout", 6), new ClassSpell("realmforge:two_handed_weapon_specialization", 6), new ClassSpell("realmforge:bloodthirst", 12), new ClassSpell("realmforge:overpower", 12), new ClassSpell("realmforge:victory_rush", 12), new ClassSpell("realmforge:execute", 18))));
+                    List.of(new Specialization("arms", "class.realmforge.warrior.specializations.0.name", "class.realmforge.warrior.specializations.0.description", Optional.of("realmforge:slam"), List.of(new TreeSpell("realmforge:charge", 1, 1, Optional.empty()), new TreeSpell("realmforge:slam", 1, 2, Optional.empty()), new TreeSpell("realmforge:deep_wounds", 1, 3, Optional.empty()), new TreeSpell("realmforge:rend", 6, 1, Optional.empty()), new TreeSpell("realmforge:battle_shout", 6, 2, Optional.empty()), new TreeSpell("realmforge:two_handed_weapon_specialization", 6, 3, Optional.empty()), new TreeSpell("realmforge:bloodthirst", 12, 1, Optional.of("realmforge:rend")), new TreeSpell("realmforge:overpower", 12, 2, Optional.empty()), new TreeSpell("realmforge:victory_rush", 12, 3, Optional.empty()), new TreeSpell("realmforge:execute", 18, 1, Optional.empty()))),
+                            new Specialization("fury", "class.realmforge.warrior.specializations.1.name", "class.realmforge.warrior.specializations.1.description", Optional.empty(), List.of()),
+                            new Specialization("protection", "class.realmforge.warrior.specializations.2.name", "class.realmforge.warrior.specializations.2.description", Optional.empty(), List.of()))));
 
     private GeneratedClassExpectations() {
     }

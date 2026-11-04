@@ -39,7 +39,11 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
 /**
- * The spellbook (C3b, RLM-25), opened and closed by its key (P by default): the spell bar as on the HUD, the spells the
+ * The spellbook (C3b, RLM-25), opened and closed by its key (P by default), with two tabs (C5, RLM-333; Matěj,
+ * 2026-10-21): the Spell Tree ({@link SpellTreeTab}), where points are spent, and the Spell Bar. A click, the number
+ * keys, Tab or the arrow keys switch them, as on the character sheet, and the window remembers the last one.
+ *
+ * <p>The Spell Bar tab: the spell bar as on the HUD, the spells the
  * player knows, and each spell's tooltip with live numbers ({@link SpellTooltip}). A click on a known spell, then on a
  * bar slot, puts it there ({@code SetSpellBarSlotPayload}); a click on a slot's spell picks it up to move it, and
  * dropping it on another spell swaps them; a right click empties a slot. The racial slot is the race's (C4), so it
@@ -51,7 +55,14 @@ import org.lwjgl.glfw.GLFW;
  * thumb can be dragged and whose track takes a click.
  */
 public final class SpellbookScreen extends Screen {
-    private static final int PANEL_WIDTH = 236;
+    /** The panel's width on the Spell Bar tab; the Spell Tree tab has its own ({@link SpellTreeTab#WIDTH}). */
+    private static final int BAR_PANEL_WIDTH = 236;
+    private static final int TAB_TREE = 0;
+    private static final int TAB_BAR = 1;
+    private static final int TAB_COUNT = 2;
+    private static final int TAB_GAP = 12;
+    private static final int TAB_IDLE = 0xFFA0A0A0;
+    private static final int TAB_HOVER = 0xFFC8C8C8;
     private static final int PADDING = 8;
     private static final int ROW = 20;
     /** The known spells' slots, smaller than the bar's to fit a row. */
@@ -73,6 +84,9 @@ public final class SpellbookScreen extends Screen {
     private static final int THUMB = 0xFFA0A0A0;
     private static final int THUMB_HELD = 0xFFFFFFFF;
 
+    /** The tab the window shows, kept between openings as the character sheet's is. */
+    private static int selectedTab = TAB_TREE;
+
     /** The spell picked up to put on the bar, if any. */
     @Nullable
     private ResourceKey<Spell> selected;
@@ -81,12 +95,22 @@ public final class SpellbookScreen extends Screen {
     @Nullable
     private Double grab;
 
+    @Nullable
+    private SpellTreeTab treeTab;
+
     public SpellbookScreen() {
         super(Component.translatable(GeneratedTexts.GUI_SPELLBOOK));
     }
 
+    /** The window on its Spell Tree tab: a new character chooses a specialization here (C5, RLM-333). */
+    public static SpellbookScreen onSpellTree() {
+        selectedTab = TAB_TREE;
+        return new SpellbookScreen();
+    }
+
     @Override
     protected void init() {
+        treeTab = new SpellTreeTab(minecraft);
         SpriteIconButton gear = SpriteIconButton.builder(Component.translatable(GeneratedTexts.GUI_SPELL_OPTIONS),
                         button -> minecraft.setScreen(new RealmforgeConfigScreen(this)), true)
                 .size(GEAR_BUTTON, GEAR_BUTTON)
@@ -94,7 +118,7 @@ public final class SpellbookScreen extends Screen {
                 .withTootip()
                 .build();
         // Level with the title: its middle on the title's line of text.
-        gear.setPosition(left() + PANEL_WIDTH - PADDING - GEAR_BUTTON,
+        gear.setPosition(left() + panelWidth() - PADDING - GEAR_BUTTON,
                 top() + PADDING + font.lineHeight / 2 - GEAR_BUTTON / 2);
         addRenderableWidget(gear);
     }
@@ -110,11 +134,27 @@ public final class SpellbookScreen extends Screen {
             onClose();
             return true;
         }
+        int key = event.key();
+        if (key >= GLFW.GLFW_KEY_1 && key < GLFW.GLFW_KEY_1 + TAB_COUNT) {
+            select(key - GLFW.GLFW_KEY_1);
+            return true;
+        }
+        if (key == GLFW.GLFW_KEY_TAB || key == GLFW.GLFW_KEY_RIGHT) {
+            select((selectedTab + 1) % TAB_COUNT);
+            return true;
+        }
+        if (key == GLFW.GLFW_KEY_LEFT) {
+            select((selectedTab + TAB_COUNT - 1) % TAB_COUNT);
+            return true;
+        }
         return super.keyPressed(event);
     }
 
     @Override
     public boolean mouseScrolled(double x, double y, double scrollX, double scrollY) {
+        if (selectedTab != TAB_BAR) {
+            return false;
+        }
         scroll = Math.clamp(scroll - (int) Math.signum(scrollY), 0, scrollBar().maxScroll());
         return true;
     }
@@ -161,6 +201,19 @@ public final class SpellbookScreen extends Screen {
         if (player == null) {
             return super.mouseClicked(event, doubleClick);
         }
+        int tab = tabAt(event.x(), event.y());
+        if (tab >= 0 && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            select(tab);
+            click();
+            return true;
+        }
+        if (selectedTab == TAB_TREE) {
+            if (treeTab != null && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT
+                    && treeTab.click(player, left(), top(), bottom(), event.x(), event.y())) {
+                return true;
+            }
+            return super.mouseClicked(event, doubleClick);
+        }
         if (clickScrollBar(event)) {
             return true;
         }
@@ -195,7 +248,7 @@ public final class SpellbookScreen extends Screen {
     @Override
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
         super.extractBackground(graphics, mouseX, mouseY, a);
-        graphics.fill(left(), top(), left() + PANEL_WIDTH, bottom(), PANEL);
+        graphics.fill(left(), top(), left() + panelWidth(), bottom(), PANEL);
     }
 
     @Override
@@ -208,6 +261,17 @@ public final class SpellbookScreen extends Screen {
         int x = left();
         int y = top();
         graphics.text(font, title.copy().withStyle(ChatFormatting.BOLD), x + PADDING, y + PADDING, HEADING);
+        int hoveredTab = tabAt(mouseX, mouseY);
+        for (int tab = 0; tab < TAB_COUNT; tab++) {
+            graphics.text(font, tabName(tab), tabX(tab), y + PADDING, tab == selectedTab ? HEADING
+                    : tab == hoveredTab ? TAB_HOVER : TAB_IDLE);
+        }
+        if (selectedTab == TAB_TREE) {
+            if (treeTab != null) {
+                treeTab.extract(graphics, player, x, y, bottom(), mouseX, mouseY);
+            }
+            return;
+        }
 
         SpellBarView bar = SpellBarHud.view(player);
         graphics.text(font, Component.translatable(GeneratedTexts.GUI_SPELL_BAR), x + PADDING, barTitleY(), TITLE);
@@ -220,7 +284,7 @@ public final class SpellbookScreen extends Screen {
             }
         }
         List<FormattedCharSequence> hint = font.split(Component.translatable(GeneratedTexts.GUI_SPELLBOOK_HINT),
-                PANEL_WIDTH - 2 * PADDING);
+                panelWidth() - 2 * PADDING);
         for (int line = 0; line < hint.size(); line++) {
             graphics.text(font, hint.get(line), x + PADDING, hintY() + line * 10, HINT);
         }
@@ -348,6 +412,41 @@ public final class SpellbookScreen extends Screen {
         minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
     }
 
+    /** Shows {@code tab}; the panel's width changes with it, so the gear button moves. */
+    private void select(int tab) {
+        selectedTab = tab;
+        selected = null;
+        grab = null;
+        rebuildWidgets();
+    }
+
+    private static Component tabName(int tab) {
+        return Component.translatable(tab == TAB_TREE ? GeneratedTexts.GUI_SPELL_TREE : GeneratedTexts.GUI_SPELL_BAR);
+    }
+
+    /** Where a tab's name starts: after the title on its line. */
+    private int tabX(int tab) {
+        int tabX = left() + PADDING + font.width(title.copy().withStyle(ChatFormatting.BOLD)) + TAB_GAP;
+        for (int before = 0; before < tab; before++) {
+            tabX += font.width(tabName(before)) + TAB_GAP;
+        }
+        return tabX;
+    }
+
+    /** The tab whose name is under the screen position, or -1. */
+    private int tabAt(double mouseX, double mouseY) {
+        int y = top() + PADDING;
+        if (mouseY < y - 2 || mouseY >= y + font.lineHeight + 2) {
+            return -1;
+        }
+        for (int tab = 0; tab < TAB_COUNT; tab++) {
+            if (mouseX >= tabX(tab) && mouseX < tabX(tab) + font.width(tabName(tab))) {
+                return tab;
+            }
+        }
+        return -1;
+    }
+
     /** The bar slot under the screen position, or -1. */
     private int slotAt(double mouseX, double mouseY) {
         if (mouseY < barY() || mouseY >= barY() + SpellBarLayout.SLOT) {
@@ -370,8 +469,12 @@ public final class SpellbookScreen extends Screen {
         return row < Math.min(known().size(), scroll + visibleRows()) ? row : -1;
     }
 
+    private static int panelWidth() {
+        return selectedTab == TAB_TREE ? SpellTreeTab.WIDTH : BAR_PANEL_WIDTH;
+    }
+
     private int left() {
-        return (width - PANEL_WIDTH) / 2;
+        return (width - panelWidth()) / 2;
     }
 
     private int top() {
@@ -392,7 +495,7 @@ public final class SpellbookScreen extends Screen {
 
     private int slotX(int slot) {
         // The HUD's layout on a screen as wide as the bar starts the bar at 0.
-        return left() + (PANEL_WIDTH - SpellBarLayout.WIDTH) / 2 + SpellBarLayout.slotX(slot, SpellBarLayout.WIDTH);
+        return left() + (BAR_PANEL_WIDTH - SpellBarLayout.WIDTH) / 2 + SpellBarLayout.slotX(slot, SpellBarLayout.WIDTH);
     }
 
     private int hintY() {
@@ -418,11 +521,11 @@ public final class SpellbookScreen extends Screen {
 
     /** The scrollbar's left edge, at the panel's right padding. */
     private int scrollBarX() {
-        return left() + PANEL_WIDTH - PADDING - SCROLLBAR_WIDTH;
+        return left() + BAR_PANEL_WIDTH - PADDING - SCROLLBAR_WIDTH;
     }
 
     /** Where the rows end: before the scrollbar while it shows, at the panel's right padding otherwise. */
     private int listRight() {
-        return scrollBar().shown() ? scrollBarX() - SCROLLBAR_GAP : left() + PANEL_WIDTH - PADDING;
+        return scrollBar().shown() ? scrollBarX() - SCROLLBAR_GAP : left() + BAR_PANEL_WIDTH - PADDING;
     }
 }

@@ -119,8 +119,13 @@ public final class CharacterCreationScreen extends Screen {
 
     @Override
     public void tick() {
-        if (minecraft.player == null || Characters.exists(minecraft.player)) {
+        if (minecraft.player == null) {
             minecraft.setScreen(null);
+            return;
+        }
+        if (Characters.exists(minecraft.player)) {
+            // The character exists: next comes the specialization, without which they know no class spell (C5, RLM-333).
+            minecraft.setScreen(SpellbookScreen.onSpellTree());
             return;
         }
         if (waiting > 0 && --waiting == 0 && create != null) {

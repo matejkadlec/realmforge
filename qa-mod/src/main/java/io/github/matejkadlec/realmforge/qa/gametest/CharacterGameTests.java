@@ -85,8 +85,8 @@ public final class CharacterGameTests {
         CharacterData character = Characters.data(player);
         helper.assertTrue(character.exists(), "the player has a character");
         helper.assertValueEqual(character.race().orElseThrow().identifier().toString(), race.id(), "race");
-        helper.assertValueEqual(character.classes().stream().map(key -> key.identifier().toString()).toList(),
-                List.of(playerClass.id()), "classes");
+        helper.assertValueEqual(character.playerClass().map(key -> key.identifier().toString()),
+                Optional.of(playerClass.id()), "class");
         assertStats(helper, player, race, playerClass);
         helper.assertValueEqual(player.getHealth(), player.getMaxHealth(), "health refilled to the new maximum");
         for (KitItem item : playerClass.startingKit()) {
@@ -278,8 +278,8 @@ public final class CharacterGameTests {
         run(server, player, "qa character create " + race.id() + " " + NOTHING);
         helper.assertFalse(Characters.exists(player), "an unknown class creates nothing");
         run(server, player, "qa character create " + race.id() + " " + last);
-        helper.assertValueEqual(Characters.data(player).classes().stream().map(key -> key.identifier().toString())
-                .toList(), List.of(last), "the command created the character");
+        helper.assertValueEqual(Characters.data(player).playerClass().map(key -> key.identifier().toString()),
+                Optional.of(last), "the command created the character");
         helper.assertFalse(characterModifiers(player).isEmpty(), "with its modifiers");
         run(server, player, "qa character reset");
         helper.assertFalse(Characters.exists(player), "reset removed the character");

@@ -354,25 +354,30 @@ def test_proc_damage_placeholders(repo: RepoPaths) -> None:
 # The Warrior's kit (RLM-543)
 
 
-def test_the_warrior_learns_the_bloodletter_tree_by_its_rows() -> None:
+def test_the_arms_tree_stands_in_its_rows() -> None:
     content, _ = load_and_validate(RepoPaths())
     warrior = next(entry.model for entry in content.classes if entry.model.id == "warrior")
-    assert [(taught.spell.removeprefix("realmforge:"), taught.level) for taught in warrior.spells] == [
-        ("slam", 1),
-        ("charge", 1),
-        ("deep_wounds", 1),
-        ("rend", 6),
-        ("battle_shout", 6),
-        ("two_handed_weapon_specialization", 6),
-        ("bloodthirst", 12),
-        ("overpower", 12),
-        ("victory_rush", 12),
-        ("execute", 18),
+    arms = next(entry for entry in warrior.specializations if entry.id == "arms")
+    assert arms.first_spell == "realmforge:slam"
+    assert [
+        (taught.spell.removeprefix("realmforge:"), taught.level, taught.column) for taught in arms.spells
+    ] == [
+        ("charge", 1, 1),
+        ("slam", 1, 2),
+        ("deep_wounds", 1, 3),
+        ("rend", 6, 1),
+        ("battle_shout", 6, 2),
+        ("two_handed_weapon_specialization", 6, 3),
+        ("bloodthirst", 12, 1),
+        ("overpower", 12, 2),
+        ("victory_rush", 12, 3),
+        ("execute", 18, 1),
     ]
+    assert [taught.requires for taught in arms.spells if taught.requires] == ["realmforge:rend"]
+    assert [entry.id for entry in warrior.specializations if not entry.spells] == ["fury", "protection"]
     ranks = {entry.model.id: entry.model.max_level for entry in content.spells}
     assert {
-        t.spell.removeprefix("realmforge:"): ranks[t.spell.removeprefix("realmforge:")]
-        for t in warrior.spells
+        t.spell.removeprefix("realmforge:"): ranks[t.spell.removeprefix("realmforge:")] for t in arms.spells
     } == {
         "slam": 5,
         "charge": 2,

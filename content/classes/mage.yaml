@@ -2,13 +2,11 @@
 # The M1 caster (decision D1, RLM-51): intellect. A caster starts with 100 Max Mana and 5 Mana Regeneration, 5 mana a
 # second (Matěj, 2026-10-14); it starts with the Stone Wand (RLM-172) and the Apprentice's set (RLM-197). The stats stay
 # the same at every level: each level gives a stat point to spend instead, and the class keeps these as its starting
-# identity until Matěj decides on them (2026-10-15, RLM-196). Its kit is the Frost Mage's "Shatter" tree (RLM-542;
-# Matěj, 2026-10-30, RLM-333): until the spell trees window (C5) spends points, the kit teaches every spell of the tree
-# at rank 1 at its row's level, a row every 6 levels: Improved Frostbolt, Frostbolt (decision D4's starting spell) and
-# Cone of Cold at 1; Ice Lance, Frost Nova and Frostbite at 6; Shatter and Ice Barrier at 12; Blizzard at 18. Four
-# active spells by the end of chapter 1 (D4: 4 x N, passives aside). Fireball and Arcane Missiles leave the kit and
-# return with their trees in M3 (RLM-218). The Mage never heals: it survives through shields and utility (Matěj,
-# 2026-10-22).
+# identity until Matěj decides on them (2026-10-15, RLM-196). M1's tree is the Frost Mage's "Shatter" (RLM-542; Matěj,
+# 2026-10-30, RLM-333), a new row every 6 levels; four active spells by the end of chapter 1 (D4: 4 x N, passives
+# aside). Picking the specialization gives Frostbolt free at rank 1, and every other rank costs a spell point (C5,
+# Matěj, 2026-11-04). Fire and Arcane come with their trees in M3 (RLM-218), and Fireball and Arcane Missiles with them.
+# The Mage never heals: it survives through shields and utility (Matěj, 2026-10-22).
 id: mage
 name:
   en_us: Mage
@@ -29,13 +27,24 @@ starting_kit:
   - {item: realmforge:apprentice_pants}
   - {item: realmforge:apprentice_boots}
   - {item: minecraft:bread, count: 32}
-spells:
-  - {spell: realmforge:frostbolt, level: 1}
-  - {spell: realmforge:improved_frostbolt, level: 1}
-  - {spell: realmforge:cone_of_cold, level: 1}
-  - {spell: realmforge:ice_lance, level: 6}
-  - {spell: realmforge:frost_nova, level: 6}
-  - {spell: realmforge:frostbite, level: 6}
-  - {spell: realmforge:shatter, level: 12}
-  - {spell: realmforge:ice_barrier, level: 12}
-  - {spell: realmforge:blizzard, level: 18}
+specializations:
+  - id: fire
+    name: {en_us: Fire}
+    description: {en_us: "Set your enemies alight and let the flames do the work."}
+  - id: frost
+    name: {en_us: Frost}
+    description: {en_us: "Slow your enemies, freeze them, then break them."}
+    first_spell: realmforge:frostbolt
+    spells:
+      - {spell: realmforge:improved_frostbolt, level: 1, column: 1}
+      - {spell: realmforge:frostbolt, level: 1, column: 2}
+      - {spell: realmforge:cone_of_cold, level: 1, column: 3}
+      - {spell: realmforge:ice_lance, level: 6, column: 1}
+      - {spell: realmforge:frost_nova, level: 6, column: 2}
+      - {spell: realmforge:frostbite, level: 6, column: 3}
+      - {spell: realmforge:shatter, level: 12, column: 1}
+      - {spell: realmforge:ice_barrier, level: 12, column: 2}
+      - {spell: realmforge:blizzard, level: 18, column: 1}
+  - id: arcane
+    name: {en_us: Arcane}
+    description: {en_us: "Spend your mana freely and strike hard with raw magic."}

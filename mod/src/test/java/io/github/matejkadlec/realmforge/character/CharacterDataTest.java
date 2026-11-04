@@ -27,7 +27,7 @@ class CharacterDataTest {
     private static final ResourceKey<Attribute> INTELLECT = GeneratedStats.INTELLECT.unwrapKey().orElseThrow();
 
     private static final CharacterData CHARACTER = new CharacterData(Optional.of(HUMAN),
-            List.of(WARRIOR, MAGE), 123_456_789_012L, Optional.of(20), Map.of(STRENGTH, 3, INTELLECT, 1));
+            Optional.of(WARRIOR), 123_456_789_012L, Optional.of(20), Map.of(STRENGTH, 3, INTELLECT, 1));
 
     @Test
     void codecRoundTrips() {
@@ -52,7 +52,7 @@ class CharacterDataTest {
     void savedShapeReads() {
         CharacterData read = RoundTrip.parseSnbt(CharacterData.CODEC,
                 "{race: \"realmforge:human\", classes: [\"realmforge:warrior\"], total_xp: 450L}").getOrThrow();
-        assertEquals(new CharacterData(Optional.of(HUMAN), List.of(WARRIOR), 450,
+        assertEquals(new CharacterData(Optional.of(HUMAN), Optional.of(WARRIOR), 450,
                 Optional.empty()), read);
     }
 
@@ -77,14 +77,12 @@ class CharacterDataTest {
 
     @Test
     void constructorEnforcesTheSameRules() {
-        assertThrows(IllegalArgumentException.class, () -> new CharacterData(Optional.empty(),
-                List.of(MAGE, MAGE), 0, Optional.empty()));
         assertThrows(IllegalArgumentException.class,
-                () -> new CharacterData(Optional.empty(), List.of(), -1, Optional.empty()));
+                () -> new CharacterData(Optional.empty(), Optional.empty(), -1, Optional.empty()));
         assertThrows(IllegalArgumentException.class,
-                () -> new CharacterData(Optional.empty(), List.of(), 0, Optional.of(0)));
+                () -> new CharacterData(Optional.empty(), Optional.empty(), 0, Optional.of(0)));
         assertThrows(IllegalArgumentException.class,
-                () -> new CharacterData(Optional.empty(), List.of(), 0, Optional.empty(), Map.of(STRENGTH, 0)));
+                () -> new CharacterData(Optional.empty(), Optional.empty(), 0, Optional.empty(), Map.of(STRENGTH, 0)));
     }
 
     @Test
@@ -97,13 +95,32 @@ class CharacterDataTest {
         assertEquals(0, CharacterData.NONE.spentStatPoints());
     }
 
+    /** A save from before C5 holds its class in a list; it reads as that class, and nothing writes the list again. */
     @Test
-    void classesAreCopied() {
-        var classes = new ArrayList<>(List.of(WARRIOR));
-        CharacterData character = new CharacterData(Optional.of(HUMAN), classes, 0,
-                Optional.empty());
-        classes.add(MAGE);
-        assertEquals(List.of(WARRIOR), character.classes());
+    void anOldListOfClassesReadsAsTheClass() {
+        CharacterData read = RoundTrip.parseSnbt(CharacterData.CODEC,
+                "{race: \"realmforge:human\", classes: [\"realmforge:mage\"]}").getOrThrow();
+        assertEquals(Optional.of(MAGE), read.playerClass());
+        assertEquals(Optional.empty(), read.specialization());
+    }
+
+    @Test
+    void theSpecializationSaves() {
+        CharacterData read = RoundTrip.parseSnbt(CharacterData.CODEC, "{race: \"realmforge:human\", "
+                + "class: \"realmforge:mage\", specialization: \"frost\"}").getOrThrow();
+        assertEquals(Optional.of("frost"), read.specialization());
+        assertEquals(read, RoundTrip.nbt(CharacterData.CODEC, read));
+    }
+
+    /** A new character picks anew; picking keeps everything else. */
+    @Test
+    void aSpecializationIsPickedAndCreationClearsIt() {
+        CharacterData picked = CHARACTER.withSpecialization("arms");
+        assertEquals(Optional.of("arms"), picked.specialization());
+        assertEquals(CHARACTER.statPoints(), picked.statPoints());
+        assertEquals(Optional.empty(), picked.create(HUMAN, MAGE).specialization());
+        assertEquals(Optional.of("arms"), picked.withTotalXp(5).withLevelCap(10)
+                .withStatPoints(Map.of()).specialization());
     }
 
     @Test
@@ -115,8 +132,8 @@ class CharacterDataTest {
     /** Creating a character sets the race and the one class, and keeps XP, the cached cap and spent points. */
     @Test
     void createSetsRaceAndClassAndKeepsTheRest() {
-        CharacterData before = new CharacterData(Optional.empty(), List.of(), 300, Optional.of(10));
-        assertEquals(new CharacterData(Optional.of(HUMAN), List.of(MAGE), 300, Optional.of(10)),
+        CharacterData before = new CharacterData(Optional.empty(), Optional.empty(), 300, Optional.of(10));
+        assertEquals(new CharacterData(Optional.of(HUMAN), Optional.of(MAGE), 300, Optional.of(10)),
                 before.create(HUMAN, MAGE));
         assertEquals(CHARACTER.statPoints(), CHARACTER.create(HUMAN, MAGE).statPoints());
     }

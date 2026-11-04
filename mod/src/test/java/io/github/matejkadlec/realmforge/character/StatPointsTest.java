@@ -27,7 +27,7 @@ class StatPointsTest {
     private static final Curve ONE_A_LEVEL = new Curve(Optional.empty(), List.of(new Curve.Point(2, 1)));
     private static final CharacterData CHARACTER = new CharacterData(
             Optional.of(ResourceKey.create(CharacterRegistries.RACE, Realmforge.id("human"))),
-            List.of(ResourceKey.create(CharacterRegistries.CLASS, Realmforge.id("mage"))), 0, Optional.empty());
+            Optional.of(ResourceKey.create(CharacterRegistries.CLASS, Realmforge.id("mage"))), 0, Optional.empty());
 
     @Test
     void levelsFrom2OnEarnTheCurvesPoints() {

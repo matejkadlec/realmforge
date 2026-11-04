@@ -114,6 +114,15 @@ public record Spellbook(Map<ResourceKey<Spell>, Integer> spells, Map<Integer, Re
         return this;
     }
 
+    /** This book without {@code spell}: not known, and in no slot. */
+    public Spellbook withoutSpell(ResourceKey<Spell> spell) {
+        Map<ResourceKey<Spell>, Integer> known = new HashMap<>(spells);
+        known.remove(spell);
+        Map<Integer, ResourceKey<Spell>> slots = new HashMap<>(bar);
+        slots.values().removeIf(spell::equals);
+        return new Spellbook(known, slots);
+    }
+
     /** This book with {@code spell} known at {@code level} (1 or more), replacing the level it had. */
     public Spellbook withSpell(ResourceKey<Spell> spell, int level) {
         Map<ResourceKey<Spell>, Integer> known = new HashMap<>(spells);
