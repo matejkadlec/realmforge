@@ -1,5 +1,5 @@
 """Colours in content (``HexColor``): either case validates, and every generated file gets them in uppercase
-(RLM-507)."""
+(RLM-507), a realm's portal colour included (RLM-599)."""
 
 from __future__ import annotations
 
@@ -15,6 +15,7 @@ from realmforge_tools.validate import load_and_validate
 from tests.conftest import write
 
 SPELL_DATA = "mod/src/generated/resources/data/realmforge/realmforge/spell"
+REALM_DATA = "mod/src/generated/resources/data/realmforge/realmforge/realm"
 EXPECTATIONS = (
     "qa-mod/src/generated/java/io/github/matejkadlec/realmforge/qa/generated/GeneratedSpellExpectations.java"
 )
@@ -60,3 +61,15 @@ def test_a_lowercase_ring_color_reaches_the_spell_data_and_the_expectations_uppe
     dust_ring = expectations[expectations.index('"realmforge:dust_ring"') :]
     assert 'Map.of("affects", "enemies", "ring_color", "#8C8C8C")' in dust_ring
     assert "#8c8c8c" not in expectations
+
+
+def test_a_lowercase_realm_colour_reaches_the_realm_data_uppercased(repo: RepoPaths) -> None:
+    # A realm's colour uses the same HexColor as every other colour (RLM-599), so content/README's rule holds for it.
+    stone = repo.content / "realms" / "stone.yaml"
+    text = stone.read_text(encoding="utf-8")
+    assert 'colour: "#7A8FB0"' in text
+    stone.write_text(text.replace('colour: "#7A8FB0"', 'colour: "#7a8fb0"'), encoding="utf-8")
+    content, _ = load_and_validate(repo)
+    files = {repo.rel(path): data for path, data in generate_all(content, repo).items()}
+    assert json.loads(files[f"{REALM_DATA}/stone.json"])["colour"] == "#7A8FB0"
+    assert b"#7a8fb0" not in files[f"{REALM_DATA}/stone.json"]

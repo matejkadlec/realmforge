@@ -5,7 +5,9 @@ The import rules of the third-party dungeon rooms in `content/rooms/third_party/
 each with the `rules.yaml` that `rf rooms import` reads ([tools/README](../../tools/README.md#rooms)). The rules
 record which pieces of a source are rooms (`include`, `exclude`, `max_size`) and how they become ours: renamed and
 custom blocks, jigsaws, loot tables, entities, and for the plainest sets the variety and decorations of `dress`.
-Each source's `LICENSE` and `NOTICE` (and `COPYING` for LGPL-3.0) sit next to its rooms, not here.
+Each source's `LICENSE` and `NOTICE` (and `COPYING` for LGPL-3.0) sit next to its rooms, not here. Dungeon Now
+Loading and Mo' Structures carry none, and `rf validate` refuses license files in their folders
+([ADR 0067](../../docs/decisions/0067-the-mod-is-all-rights-reserved-imported-rooms-included.md)).
 
 ## Sources
 
@@ -42,7 +44,8 @@ Loading's red wool is the rock around a room). Our dungeons place the templates 
 those processors, so the rules map each marker to what the processor always, or nearly always, makes of it; random
 decay (mossy or cracked variants) is left to our themes.
 
-Each license was checked at the version imported (2026-10-14); the `NOTICE` says where it is stated, and where
+Each license was checked at the version imported (2026-10-14); the `NOTICE` says where it is stated (for Dungeon Now
+Loading and Mo' Structures, which keep no `NOTICE` since ADR 0067, the table above is the record), and where
 sources disagreed (Dungeon Now Loading: CC0 in the jar, MIT on Modrinth, repository gone) the import follows the
 jar. None of the imported pieces
 copies a vanilla template: each was compared with 26.1.2's templates of the same footprint. The closest copies,
@@ -80,4 +83,6 @@ room (`treasure/egg`, RLM-361) grows a layer for lava over its glass ceiling, in
 spider spawner in its quartz egg, closed in until a run opens one side (its `openings`), and keeps two of its six
 chests.
 
-A newer version of a source updates its `NOTICE` (version, file, what changed) and this table.
+A newer version of a source updates its `NOTICE` (version, file, what changed) and this table. A newer version of
+Dungeon Now Loading or Mo' Structures updates only the table: neither gets a `NOTICE` back, which `rf validate`
+refuses ([ADR 0067](../../docs/decisions/0067-the-mod-is-all-rights-reserved-imported-rooms-included.md)).
