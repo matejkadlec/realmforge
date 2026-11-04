@@ -4356,12 +4356,15 @@ that agents can read. So far:
   without a portal or a timer; without a seed a random one is drawn and named
   ([15.3](#153-generation-pure-first-then-minecraft), [15.5](#155-instances));
 - `/qa stats set <stat> <value> [<players>]`, `/qa stats reset|show` (F4b: points for a primary stat, percent for a
-  share) and `/qa level <level> [<entity>]` (a player with a character gets exactly the character XP of the level,
-  quietly, so the level follows up to the level cap, C2; another player or a mob gets the `realmforge:level`
-  attachment, which XP and loot read; a hostile mob also gets the scaling of the level, W1, and a player's
-  race and class bonuses follow it, C1). The core mod's operator command `/realmforge xp add|set|query`
-  ([10.2](#102-leveling)) gives, sets or shows character XP, and vanilla's `/advancement grant @s only
-  realmforge:chapter/chapter_1` completes chapter 1;
+  share; `reset` puts the base value of every one of our stats, `GeneratedStats.ALL` with the primaries, back to its
+  default and recomputes the stat rules, and leaves the gear and its modifiers, the race and class bonuses, vanilla's
+  and Apothic Attributes' attributes, and the effects as they are, so a handoff's stat-dependent check starts its
+  command block line with it, [flow: Reaching the state](ai-development-flow.md#reaching-the-state), RLM-577) and
+  `/qa level <level> [<entity>]` (a player with a character gets exactly the character XP of the level, quietly, so
+  the level follows up to the level cap, C2; another player or a mob gets the `realmforge:level` attachment, which XP
+  and loot read; a hostile mob also gets the scaling of the level, W1, and a player's race and class bonuses follow
+  it, C1). The core mod's operator command `/realmforge xp add|set|query` ([10.2](#102-leveling)) gives, sets or shows
+  character XP, and vanilla's `/advancement grant @s only realmforge:chapter/chapter_1` completes chapter 1;
 - `/qa mob [<entity>]` (W1): a mob's level, health over its maximum with the multiple its level added, armor with the
   points its level added, and the damage multiple of its hits; without an argument, the nearest hostile mob within
   32 blocks. The training dummy joins at level 1, which adds nothing;

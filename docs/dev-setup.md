@@ -157,12 +157,14 @@ git switch <branch>
 .\gradlew.bat runClient
 ```
 
-For a later revision of the same branch, `git pull --ff-only` updates it, or after a rebase `git fetch origin`
-followed by `git reset --keep origin/<branch>`, which refuses to discard local edits. When you are done,
-`.\gradlew.bat --stop` stops the Gradle daemon and frees its memory. Then answer in any Claude Code session:
-`qa1` when the playtest passed (the batch gets its pull request), or `qa2` with what is wrong (the agent revises
-the same branch; [AI development flow](ai-development-flow.md#playtest-handoff)). A retest of a pull request that
-is already open (a reconfirmation) is answered in the session that asked for it.
+For a later revision of the same branch, `git pull --ff-only` updates it. After a rebase (a `qa1` that rebased the
+played branch, a force-pushed revision), your branch and `origin/<branch>` have diverged and the pull refuses:
+`git fetch origin` followed by `git reset --keep origin/<branch>` moves it to the remote head, which
+`git rev-parse --short HEAD` prints, and refuses to discard local edits. The handoff says which of the two to run.
+When you are done, `.\gradlew.bat --stop` stops the Gradle daemon and frees its memory. Then answer in any Claude Code
+session: `qa1` when the playtest passed (the batch gets its pull request), or `qa2` with what is wrong (the agent
+revises the same branch; [AI development flow](ai-development-flow.md#playtest-handoff)). A retest of a pull request
+that is already open (a reconfirmation) is answered in the session that asked for it.
 
 Every playtest leaves its branch in the clone, and the Claude desktop app adds its session branches and worktrees.
 `git_clean_worktrees.ps1`, the PowerShell port of the cleanup script, removes the merged ones from the clone's

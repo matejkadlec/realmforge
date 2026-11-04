@@ -317,6 +317,13 @@ rarity with its affixes and filled sockets, and the level and stat points when t
 the check is about. Where exact affixes or gems are impractical, stronger base gear or enchantments of equal power
 stand in, and the handoff says so. Later handoffs add rows; Matěj's corrections from playtests update them.
 
+A balance check counts on stat values, so its line starts the way every stat-dependent check's does (Matěj,
+2026-11-03, RLM-577; [Reaching the state](../ai-development-flow.md#reaching-the-state)): first `qa stats reset`, so
+values from earlier `/qa stats set` commands never leak in, then a `qa stats set <stat> <value>` for each stat value
+the check expects (the reset sets the primaries back to their defaults too), then the level and only then the gear
+of the row. What to test names those values. The reset leaves items and their modifiers alone, so What to test also
+names any gear to take off before the line runs.
+
 | Content | Level | Melee (Warrior) | Caster (Mage) | Enchantments | Rarity and sockets | Source |
 | --- | --- | --- | --- | --- | --- | --- |
 | Astone, Undervault's final boss | 18 | full netherite armor and a netherite sword | the Netherite set (cap, robes, pants, sandals) and the Netherite Wand | level V for every enchantment, Protection and Unbreaking included: Apothic Enchanting raises vanilla's maximum levels (RLM-552) | Rare, every socket filled with a Flawed gem | Matěj, 2026-10-30: "full netherite, enchantments at about level V, rare gems"; gems have purities, not rarities, so "rare gems" reads as Rare pieces with Flawed gems until a playtest says otherwise. RLM-534's target: such a player deals about 50 per spell to her |
