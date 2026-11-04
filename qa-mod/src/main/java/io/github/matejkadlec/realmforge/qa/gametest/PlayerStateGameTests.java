@@ -80,7 +80,7 @@ public final class PlayerStateGameTests {
         GameProfile profile = new GameProfile(UUID.randomUUID(), "qa-state-save");
         ServerPlayer first = QaPlayers.loginOnPlatform(helper, profile);
         fill(first);
-        // A login catches up on the racial spell (C4): the saved spellbook holds it already, so the relog changes nothing.
+        // A login catches up on the racial spell (C4): the saved spellbook holds it, so the relog changes nothing.
         RacialSpells.teach(first);
         Spellbook saved = first.getData(SpellAttachments.SPELLBOOK);
         helper.assertValueEqual(saved.level(FIREBOLT), Optional.of(2), "a taught spell keeps the rank it had");

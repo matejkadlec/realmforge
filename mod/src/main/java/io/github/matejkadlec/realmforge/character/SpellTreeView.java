@@ -10,8 +10,8 @@ import net.minecraft.core.Holder;
 import net.minecraft.world.entity.player.Player;
 
 /**
- * What the spellbook's Spell Tree tab shows (C5, RLM-333, architecture 18), from synced data and free of client code, so
- * GameTests can read the same states the window draws.
+ * What the spellbook's Spell Tree tab shows (C5, RLM-333, architecture 18), from synced data and free of client code,
+ * so GameTests can read the same states the window draws.
  *
  * @param unspent the player's points left
  * @param picked  whether the player has picked a specialization

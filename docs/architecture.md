@@ -1190,7 +1190,8 @@ the playtest covers it.
     tooltip on the character sheet's Character tab shows the racial ability and passive the same way, each on two lines:
     "Racial Ability" in gold over "Will To Survive" in yellow, and "Sword Specialization" in gold over its line in
     yellow.
-- **A class** gives its role, resource type, starting stats, its specializations' spell trees and starting kit. Its role (melee, caster or ranged) decides which role-bound bonuses of the stat rules its players get
+- **A class** gives its role, resource type, starting stats, its specializations' spell trees and starting kit. Its
+  role (melee, caster or ranged) decides which role-bound bonuses of the stat rules its players get
   ([8.3](#83-derived-stats-and-milestones), RLM-170). Race and
   class stats stay the same at every level: each level gives stat points the player spends instead
   ([10.2](#102-leveling); Matěj, 2026-10-15, RLM-196: classes are for skills and abilities, not fixed stat
@@ -1221,13 +1222,14 @@ the playtest covers it.
     costs a point, rank 1 included (Matěj, 2026-11-04). So a level 18 character has 18 ranks of the tree's 31, and class
     spells no longer come by level. Astone was tuned with builds of 26 and 27 ranks but no Apotheosis affixes, gems or
     curios, and Matěj expects those to match the missing ranks (2026-11-04, RLM-503).
-  - **In code:** `character/Specialization` and `character/TreeSpell` are the class's `specializations`. A specialization
-    without spells comes later (M3): the window names it, and nobody can pick it. `character/SpellPoints` holds the pure
-    rules. Nothing saves the points: the spellbook's ranks are their only record (spent: the tree's ranks less the free
-    one), so they can never disagree. `character/SpellTrees` applies the rules: `pick` and `spend`, each from a payload
-    (`PickSpecializationPayload`, `SpendSpellPointPayload`) that it checks again, `reset` (the Scroll of Respec's effect
-    to come, RLM-226; `/qa spec reset` until then), and `fit`, which returns every point when the level no longer pays for
-    them or no longer opens a known spell's row, as stat points do.
+  - **In code:** `character/Specialization` and `character/TreeSpell` are the class's `specializations`. A
+    specialization without spells comes later (M3): the window names it, and nobody can pick it.
+    `character/SpellPoints` holds the pure rules. Nothing saves the points: the spellbook's ranks are their only record
+    (spent: the tree's ranks less the free one), so they can never disagree. `character/SpellTrees` applies the rules:
+    `pick` and `spend`, each from a payload (`PickSpecializationPayload`, `SpendSpellPointPayload`) that it checks
+    again, `reset` (the Scroll of Respec's effect to come, RLM-226; `/qa spec reset` until then), and `fit`, which
+    returns every point when the level no longer pays for them or no longer opens a known spell's row, as stat points
+    do.
   - **Tested by:** `SpellPointsTest` (the rules and refusals), `SpellTreeGameTests` (a spent point changing a cast, each
     refusal, a fallen level, the window's states). `/qa spec show|pick|spend|reset` reach any state.
 - **Changing race or class:** a QA command in M1, an in-game way later.
@@ -1477,8 +1479,8 @@ Its name and description are translation keys from C3b, the description's number
   A heal may add a share of the healed entity's max health and heal the caster instead of the target (`on_caster`,
   Victory Rush).
 
-A player knows a spell through their specialization's tree (C5), race, talents (`grant_spell`) or items (an item component
-lists spells granted while equipped or on use): the vision's "some from the race or class, some from items".
+A player knows a spell through their specialization's tree (C5), race, talents (`grant_spell`) or items (an item
+component lists spells granted while equipped or on use): the vision's "some from the race or class, some from items".
 
 ### 11.2 Casting (server-authoritative)
 
@@ -1992,8 +1994,9 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
   SHIFT reads CTR-S), drawn smaller when it would leave the slot.
 - **Learning and placing:** `Spells#learn` puts a newly learned spell into the bar's first empty slot, unless it is a
   mob's. Learning a known spell again, at any level (a spell point, C5), leaves the bar
-  as the player arranged it, so a spell taken off stays off (RLM-374). The spellbook (`client/screen/SpellbookScreen`, whose Spell Bar tab this is, beside the
-  Spell Tree tab, `client/screen/SpellTreeTab`, drawn from `character/SpellTreeView`; C5, RLM-333;
+  as the player arranged it, so a spell taken off stays off (RLM-374). The spellbook (`client/screen/SpellbookScreen`,
+  whose Spell Bar tab this is, beside the Spell Tree tab, `client/screen/SpellTreeTab`, drawn from
+  `character/SpellTreeView`; C5, RLM-333;
   a scrollbar beside its Known Spells while they do not fit, `client/screen/ScrollBar`, RLM-542; a name too long for
   its row wraps onto a second line, Matěj's playtest of 2026-11-03) moves a known spell into a slot, swapping with the
   one there, or empties one, through `SetSpellBarSlotPayload` and `Spells#placeOnBar`, which refuses another slot or an
@@ -2282,8 +2285,8 @@ about one passive for every two actives. Points buy its ranks in the spell trees
 **The Arms Warrior's "Bloodletter" tree** (RLM-543; Matěj, 2026-10-30, RLM-333's comment and the "Spell Trees to Level
 18" document, chosen for M1, version 1 of every spell, balanced by Claude): the same rows, a new one every 6 levels,
 the first two holding four actives (D4). Points buy its ranks in the spell trees window (C5, RLM-333,
-[10.1](#101-races-and-classes)). Reckless Strike and Shield Bash come back with their trees in M3. Bloodthirst needs Rend
-in the tree.
+[10.1](#101-races-and-classes)). Reckless Strike and Shield Bash come back with their trees in M3. Bloodthirst needs
+Rend in the tree.
 
 | Row (level) | Left | Middle | Right |
 | --- | --- | --- | --- |

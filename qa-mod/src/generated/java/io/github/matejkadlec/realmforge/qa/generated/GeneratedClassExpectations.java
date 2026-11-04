@@ -28,9 +28,9 @@ public final class GeneratedClassExpectations {
     public record TreeSpell(String spell, int level, int column, Optional<String> requires) {
     }
 
-    /** A specialization: its id, its texts, its free first spell and its tree; no spells means it comes later. */
-    public record Specialization(String id, String nameKey, String descriptionKey, Optional<String> firstSpell,
-            List<TreeSpell> spells) {
+    /** A specialization: id, texts, free first spell and tree; no spells means it comes later. */
+    public record Specialization(String id, String nameKey, String descriptionKey,
+            Optional<String> firstSpell, List<TreeSpell> spells) {
     }
 
     /**

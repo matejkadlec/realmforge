@@ -79,10 +79,11 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   wear). A new player
   creates a character (C1): the Human race and the Warrior and Mage classes, with their stats and starting kits,
   and their specialization spell trees (C5, RLM-333): the spellbook (P) has a Spell Tree and a Spell Bar tab, a player
-  picks a specialization there, which gives its first spell free, and spends 1 point per level from level 2 on on any
+  picks a specialization there, which gives its first spell free, and spends points (1 per level from level 2) on any
   rank of a row their level has opened (rows at 1, 6, 12, 18; an arrow may need another spell), so 18 ranks at level 18;
   the character attachment stores one class and the specialization, and the ranks are the only record of the points;
-  each class's M1 tree (C4, RLM-27): the Warrior's, the Arms Warrior's "Bloodletter" tree (RLM-543: Slam, Charge, Deep Wounds; Rend, Battle Shout, Two-Handed
+  each class's M1 tree (C4, RLM-27): the Warrior's, the Arms Warrior's "Bloodletter" tree (RLM-543: Slam, Charge,
+  Deep Wounds; Rend, Battle Shout, Two-Handed
   Specialization; Bloodthirst, Overpower, Victory Rush; Execute), with a charge a player's own client runs, which stops
   a block from its target on the near side, stuns round that point and hops a block back, a target distance by rank, a
   heal of a share of max health, a refund for a kill, a crit's bleed and Execute lit while the current target is low, and

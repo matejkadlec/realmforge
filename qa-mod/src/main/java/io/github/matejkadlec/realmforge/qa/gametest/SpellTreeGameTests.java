@@ -139,8 +139,8 @@ public final class SpellTreeGameTests {
         helper.assertValueEqual(SpellTrees.spend(player, GeneratedSpells.IMPROVED_FROSTBOLT), SpellPoints.Result.SPENT,
                 "the point");
         helper.assertTrue(Passives.damageBonus(player, GeneratedSpells.FROSTBOLT) > 0, "the bonus applies");
-        helper.assertValueEqual(player.getData(SpellAttachments.SPELLBOOK).barSlotOf(GeneratedSpells.IMPROVED_FROSTBOLT),
-                -1, "a passive never goes onto the bar");
+        helper.assertValueEqual(player.getData(SpellAttachments.SPELLBOOK)
+                .barSlotOf(GeneratedSpells.IMPROVED_FROSTBOLT), -1, "a passive never goes onto the bar");
         logout(player);
         helper.succeed();
     }

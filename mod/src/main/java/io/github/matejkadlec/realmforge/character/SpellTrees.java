@@ -17,9 +17,9 @@ import net.minecraft.world.entity.player.Player;
 
 /**
  * Specializations and their spell trees (C5, RLM-333, architecture 10.1). A new character knows only their race's
- * spell. They pick a specialization in the spellbook's Spell Tree tab, which teaches the tree's first spell free at rank
- * 1, and then spend a point per rank ({@link SpellPoints}); every request comes through a payload and is checked here.
- * The reads use synced data, so the client's window shows the same.
+ * spell. They pick a specialization in the spellbook's Spell Tree tab, which teaches the tree's first spell free at
+ * rank 1, and then spend a point per rank ({@link SpellPoints}); every request comes through a payload and is checked
+ * here. The reads use synced data, so the client's window shows the same.
  */
 public final class SpellTrees {
     /** What a request to pick a specialization led to. Only {@link #PICKED} changes anything. */
@@ -93,7 +93,8 @@ public final class SpellTrees {
             return result;
         }
         player.setData(CharacterAttachments.CHARACTER, character.withSpecialization(id));
-        chosen(player).flatMap(Specialization::firstSpellKey).filter(first -> Spells.knownLevel(player, first).isEmpty())
+        chosen(player).flatMap(Specialization::firstSpellKey)
+                .filter(first -> Spells.knownLevel(player, first).isEmpty())
                 .flatMap(first -> Spells.get(player.registryAccess(), first)).ifPresent(first -> {
                     Spells.learn(player, first, 1);
                     player.sendSystemMessage(Component.translatable(GeneratedTexts.MESSAGE_SPELL_LEARNED,
@@ -102,7 +103,7 @@ public final class SpellTrees {
         return result;
     }
 
-    /** Spends one of the player's points on the next rank of {@code spell} if the rules allow it; returns what happened. */
+    /** Spends a point on the next rank of {@code spell} if the rules allow it; returns what happened. */
     public static SpellPoints.Result spend(ServerPlayer player, ResourceKey<Spell> spell) {
         SpellPoints.Result result = check(player, spell);
         if (result == SpellPoints.Result.SPENT) {
@@ -147,7 +148,8 @@ public final class SpellTrees {
                 Spells.forget(player, taught.key());
             }
         }
-        first.flatMap(key -> Spells.get(player.registryAccess(), key)).ifPresent(spell -> Spells.learn(player, spell, 1));
+        first.flatMap(key -> Spells.get(player.registryAccess(), key))
+                .ifPresent(spell -> Spells.learn(player, spell, 1));
         return spent;
     }
 

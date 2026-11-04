@@ -60,9 +60,10 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
  *   {@link KillXp}, with the victim's {@link KillXpMultiplier}, shown in the action bar. Players without a character
  *   gain no XP (architecture 10.1).</li>
  *   <li>A level-up earns stat points ({@link StatPoints}), recomputes the stats, shows a title, plays a fanfare to the
- *   player and bursts particles around them, says in chat how many stat points are unspent, says how many spell points are
- *   unspent and whether a row of the spell tree opened ({@link SpellTrees}, C5), and fires {@code realmforge:level_reached}, as
- *   does every login. A level that falls below the points spent returns them all, stat and spell points alike.</li>
+ *   player and bursts particles around them, says in chat how many stat points are unspent, says how many spell
+ *   points are unspent and whether a row of the spell tree opened ({@link SpellTrees}, C5), and fires
+ *   {@code realmforge:level_reached}, as does every login. A level that falls below the points spent returns them all,
+ *   stat and spell points alike.</li>
  *   <li>A login leaves the stat recompute to the player's first tick (architecture 8.2): only then are the gear's
  *   modifiers back, which the saved stat modifiers were computed with (RLM-202).</li>
  * </ul>

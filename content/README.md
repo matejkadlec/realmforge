@@ -317,13 +317,14 @@ Rules:
   `decay_after_seconds` (how long after the last hit dealt or taken the pool starts to decay;
   [architecture 11.5](../docs/architecture.md#115-resources-cooldowns-modifiers)). A class
   gives `modifiers` and a `starting_kit` (items with a `count` of 1 to 64, given once, when the player's first character is created; every class's kit
-  holds Bread ×32, Matěj, 2026-10-14, which validation checks), and its `specializations` (C5, RLM-333), each with an `id` unique
-  in the class, a `name` and a `description`. One without `spells` comes later (M3): the window names it, and nobody can
-  pick it. One with `spells` sets `first_spell`, an active spell of its level 1 row, free at rank 1 with the pick
+  holds Bread ×32, Matěj, 2026-10-14, which validation checks), and its `specializations` (C5, RLM-333), each with an
+  `id` unique in the class, a `name` and a `description`. One without `spells` comes later (M3): the window names it,
+  and nobody can pick it. One with `spells` sets `first_spell`, an active spell of its level 1 row, free at rank 1 with the pick
   (decision D4), and lists `{spell, level, column, requires}`: each spell once, `level` the row's (1, then every 6
   levels), `column` 1 to 3 with no place taken twice, and `requires` an optional arrow to a spell of an earlier row of
   the tree. The class's resource must pay for them, and a tree holds at most 4 × N active spells by the end of chapter
-  N's level cap: passive spells never go on the bar, so they do not count, Matěj, 2026-10-30. A modifier is the stat rules' shape (`attribute`,
+  N's level cap: passive spells never go on the bar, so they do not count, Matěj, 2026-10-30. A modifier is the stat
+  rules' shape (`attribute`,
   `operation`, `amount` or `amount_percent`, in the same units) and gives the same at every level: levels give stat
   points to spend instead (Matěj, 2026-10-15, RLM-196), so `per_level` is refused. A race's or class's `name` is a
   label (Title Case); its `description` is one or two sentences in the lore style guide's voice, which never assume

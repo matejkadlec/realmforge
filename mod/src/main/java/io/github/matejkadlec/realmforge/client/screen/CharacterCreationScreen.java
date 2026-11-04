@@ -124,7 +124,7 @@ public final class CharacterCreationScreen extends Screen {
             return;
         }
         if (Characters.exists(minecraft.player)) {
-            // The character exists: next comes the specialization, without which they know no class spell (C5, RLM-333).
+            // The character exists: next comes the specialization, which gives their first class spell (C5, RLM-333).
             minecraft.setScreen(SpellbookScreen.onSpellTree());
             return;
         }

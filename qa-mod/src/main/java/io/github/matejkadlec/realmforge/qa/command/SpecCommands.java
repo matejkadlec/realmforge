@@ -71,7 +71,8 @@ final class SpecCommands {
 
     private static int spend(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
-        ResourceKey<Spell> spell = ResourceKey.create(SpellRegistries.SPELL, IdentifierArgument.getId(context, "spell"));
+        ResourceKey<Spell> spell = ResourceKey.create(SpellRegistries.SPELL,
+                IdentifierArgument.getId(context, "spell"));
         SpellPoints.Result result = SpellTrees.spend(player, spell);
         if (result == SpellPoints.Result.SPENT) {
             context.getSource().sendSuccess(() -> Component.literal("Spent a point on " + spell.identifier() + "; "

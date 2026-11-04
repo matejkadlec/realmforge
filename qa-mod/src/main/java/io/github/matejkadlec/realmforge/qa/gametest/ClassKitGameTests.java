@@ -119,7 +119,7 @@ public final class ClassKitGameTests {
         helper.succeed();
     }
 
-    /** A login catches up on the racial spell (a character from before their race had one), and teaches nothing else. */
+    /** A login catches up on the racial spell (a character older than their race's), and teaches nothing else. */
     @QaGameTest
     public static void aLoginCatchesUpOnTheRacialSpell(GameTestHelper helper) {
         ServerPlayer player = character(helper, "qa-kit-levels", "warrior");

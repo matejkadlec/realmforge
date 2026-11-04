@@ -31,8 +31,8 @@ import org.lwjgl.glfw.GLFW;
 /**
  * Screenshots of the spellbook's two tabs for an agent (C5, RLM-333), and a run of the window's real path: with the
  * environment variable {@code REALMFORGE_QA_SPELL_TREE_SHOTS} set, the dev client creates a superflat world and a Mage,
- * so the window opens by itself, clicks Choose and spells as a player would (real clicks on the screen, real payloads to
- * the server), repeats it with a Warrior for Bloodthirst's arrow, saves each state to
+ * so the window opens by itself, clicks Choose and spells as a player would (real clicks on the screen, real payloads
+ * to the server), repeats it with a Warrior for Bloodthirst's arrow, saves each state to
  * {@code run/client/screenshots/<value>-spelltree-<state>.png}, and quits. It logs an error for a click that did not do
  * what it should, as a GameTest's fake player has no client. It needs no input, so it runs headless under Xvfb.
  */
@@ -81,7 +81,8 @@ public final class QaSpellTreeShots {
         }
         QaSpellTreeShots run = new QaSpellTreeShots(prefix.strip());
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, event -> run.tick(Minecraft.getInstance()));
-        RealmforgeQa.LOGGER.info("Spell tree screenshots requested ({}): the client will play the window and quit", prefix);
+        RealmforgeQa.LOGGER.info("Spell tree screenshots requested ({}): the client will play the window and quit",
+                prefix);
     }
 
     private void tick(Minecraft minecraft) {
@@ -122,7 +123,8 @@ public final class QaSpellTreeShots {
         then(() -> shot(minecraft, "1-new-mage"));
         then(() -> clickChoose(minecraft, 1));
         when(() -> SpellTrees.chosen(minecraft.player).isPresent(), () -> {
-            check(Spells.knownLevel(minecraft.player, GeneratedSpells.FROSTBOLT).orElse(0) == 1, "Choose teaches Frostbolt");
+            check(Spells.knownLevel(minecraft.player, GeneratedSpells.FROSTBOLT).orElse(0) == 1,
+                    "Choose teaches Frostbolt");
             hover(minecraft, 1, 0, 1);
         });
         then(() -> shot(minecraft, "2-frost-picked"));
@@ -137,8 +139,10 @@ public final class QaSpellTreeShots {
         then(() -> clickCell(minecraft, 1, 0, 0));
         then(() -> clickCell(minecraft, 1, 2, 1));
         then(() -> {
-            check(Spells.knownLevel(minecraft.player, GeneratedSpells.FROSTBOLT).orElse(0) == 3, "two clicks rank Frostbolt up");
-            check(Spells.knownLevel(minecraft.player, GeneratedSpells.ICE_LANCE).orElse(0) == 1, "a click teaches Ice Lance");
+            check(Spells.knownLevel(minecraft.player, GeneratedSpells.FROSTBOLT).orElse(0) == 3,
+                    "two clicks rank Frostbolt up");
+            check(Spells.knownLevel(minecraft.player, GeneratedSpells.ICE_LANCE).orElse(0) == 1,
+                    "a click teaches Ice Lance");
             check(SpellTrees.unspent(minecraft.player) == 12, "five clicks spend five of 17 points");
             hover(minecraft, 1, 1, 0);
         });

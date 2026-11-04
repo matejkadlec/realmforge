@@ -1804,8 +1804,8 @@ def _check_characters(content: Content, universe: IdUniverse) -> list[Problem]:
     name attributes that exist, in their unit as for stat rules (architecture 8.3), and add their percents to the
     base (architecture 8.2); kit items exist, and every kit holds the starting bread. A race's racial spell and a
     specialization's spells are players' spells; a racial spell is free, as a race spans classes of different resources,
-    and a tree's spells cost the class's own resource, at most 4 x N of them by the end of chapter N (decision D4). A racial passive
-    names an item tag that exists, and its modifiers add their percents to the base too."""
+    and a tree's spells cost the class's own resource, at most 4 x N of them by the end of chapter N (decision D4). A
+    racial passive names an item tag that exists, and its modifiers add their percents to the base too."""
     problems: list[Problem] = []
     stats = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.stats}
     spells = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.spells}

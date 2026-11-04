@@ -82,9 +82,10 @@ final class SpellTreeTab {
     void extract(GuiGraphicsExtractor graphics, LocalPlayer player, int left, int top, int bottom, int mouseX,
             int mouseY) {
         SpellTreeView view = SpellTreeView.of(player);
-        graphics.text(font, view.picked()
+        Component heading = view.picked()
                 ? Component.translatable(GeneratedTexts.GUI_SPELL_POINTS, view.unspent())
-                : Component.translatable(GeneratedTexts.GUI_SPELL_TREE_PICK), left + PADDING, top + PADDING + 14, TITLE);
+                : Component.translatable(GeneratedTexts.GUI_SPELL_TREE_PICK);
+        graphics.text(font, heading, left + PADDING, top + PADDING + 14, TITLE);
         for (int index = 0; index < view.trees().size(); index++) {
             drawTree(graphics, view, view.trees().get(index), index, left, top, bottom, mouseX, mouseY);
         }
@@ -163,8 +164,8 @@ final class SpellTreeTab {
     }
 
     /**
-     * The arrow from the spell it needs: from under that spell's rank, across if the columns differ, down to this spell,
-     * with its head on top of it. Lit once the player knows the spell it comes from.
+     * The arrow from the spell it needs: from under that spell's rank, across if the columns differ, down to this
+     * spell, with its head on top of it. Lit once the player knows the spell it comes from.
      */
     private void drawArrow(GuiGraphicsExtractor graphics, Tree tree, Cell cell, int cardX, int cardY) {
         cell.requires().flatMap(required -> tree.cells().stream()
