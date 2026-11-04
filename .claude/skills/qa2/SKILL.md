@@ -34,5 +34,7 @@ revising; this skill may not weaken either. _qa2: changes required_ there holds 
 7. **Hand back** with the status overview from `CLAUDE.md` in its manual-test shape: _What to test_ limited to
    what the revision changed, the whole block that switches Matěj's checkout to the branch, updates it and launches
    the game (_Launch commands_: `cd`, `git fetch origin`, `git switch <branch>`, `git pull --ff-only`, then
-   `.\gradlew.bat runClient`; never the update command alone), how he answers (`qa1`, `qa2`), and Verification with
-   its `Tickets:` line. Then wait for his next answer.
+   `.\gradlew.bat runClient`; never the update command alone; when this revision rebased the branch, so
+   `git merge-base --is-ancestor <the head he last ran> origin/<branch>` fails, `git reset --keep origin/<branch>`
+   and `git rev-parse --short HEAD` replace `git pull --ff-only`: _Launch commands_, "A rewritten branch"), how he
+   answers (`qa1`, `qa2`), and Verification with its `Tickets:` line. Then wait for his next answer.

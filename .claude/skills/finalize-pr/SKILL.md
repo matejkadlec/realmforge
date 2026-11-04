@@ -48,8 +48,12 @@ weakens a test or check.
   - `Vanilla ID universe is reproducible` (timeout 15 minutes)
   - `Modpack index is up to date` (timeout 15 minutes)
 - CI (`.github/workflows/ci.yml`) runs on `pull_request` and on push to `master`, on GitHub-hosted
-  `ubuntu-latest` runners. A full run usually takes about 2 minutes (1m40s–2m20s in October 2026); the Gradle
-  job is the longest. Runs are cancelled per ref when a newer push arrives. On failure the Gradle job uploads
+  `ubuntu-latest` runners, except one job on `windows-latest`: `Worktree cleanup on Windows (PowerShell 5.1 and 7)`
+  (timeout 15 minutes), the PowerShell port's smoke test `tests/test_git_clean_worktrees_windows.ps1` under both
+  editions. It and the two pack boot jobs (`Full pack boots on a dedicated server`, `Full pack boots on a client`)
+  are not required checks, but "Green" (under "Checks" in "Signals") counts every check on the head, so a red one
+  holds the merge like a required one. A full run usually takes about 2 minutes (1m40s–2m20s in October 2026); the
+  Gradle job is the longest. Runs are cancelled per ref when a newer push arrives. On failure the Gradle job uploads
   the artifact `gradle-logs-and-reports` (game logs, crash reports, test reports).
 - No workflow deploys. After a merge, only CI on `master` runs.
 - `deleteBranchOnMerge` decides whether GitHub deletes the head branch at merge. In October 2026 it was off.
@@ -208,8 +212,11 @@ above, and its first bundle's head SHA must equal the starting head it recorded.
    - Add or adjust a focused regression test for every code fix, in the suite the changed code calls for:
      pytest in `tools/tests/`, JUnit in `mod/src/test/`, a GameTest in `qa-mod/`, or the shell suite in `tests/`
      that covers a script: `tests/test_git_clean_worktrees.sh` for `git_clean_worktrees.sh` and its PowerShell
-     port `git_clean_worktrees.ps1`, `tests/test_gradle_queue.sh` for `.claude/scripts/gradle-queue.sh` and
-     `.claude/hooks/cloud-warmup.sh`. A fix only to docs, skills or other text that no test reads needs none.
+     port `git_clean_worktrees.ps1`, `tests/test_git_clean_worktrees_windows.ps1` for the port's Windows-only paths
+     (Windows PowerShell 5.1's command line quoting, case-insensitive paths, the `.exe` lookup, junctions), which
+     runs only in CI's Windows job or on Windows, `tests/test_gradle_queue.sh` for
+     `.claude/scripts/gradle-queue.sh` and `.claude/hooks/cloud-warmup.sh`. A fix only to docs, skills or other text
+     that no test reads needs none.
    - Keep the unrelated changes already on the branch, and refactor nothing beyond what the finding needs.
 
    Then run the targeted checks and commit the fix (one commit per root cause, Conventional Commits, staged by
@@ -224,6 +231,10 @@ above, and its first bundle's head SHA must equal the starting head it recorded.
    - `git_clean_worktrees.sh`, `git_clean_worktrees.ps1` or `tests/test_git_clean_worktrees.sh`:
      `bash tests/test_git_clean_worktrees.sh` and `bash tests/test_git_clean_worktrees.sh git_clean_worktrees.ps1`
      (the second needs `pwsh`);
+   - `git_clean_worktrees.ps1` or `tests/test_git_clean_worktrees_windows.ps1`: also
+     `tests/test_git_clean_worktrees_windows.ps1 -Edition Desktop` under `powershell` and `-Edition Core` under
+     `pwsh`, which run only on Windows: a Linux session leaves them to CI's Windows job and reads that job's result
+     on the pushed head ("Checks" in "Signals");
    - `.claude/scripts/gradle-queue.sh`, `.claude/hooks/cloud-warmup.sh` or `tests/test_gradle_queue.sh`:
      `bash tests/test_gradle_queue.sh`.
 
@@ -527,7 +538,12 @@ expects: RLM's transitions are all global, so Jira refuses no stale move.
 - **Reconfirmation:** when check 6 finds commits after the played head that change gameplay, move the tickets
   in Pending CR back to Pending User QA (transition `41`) with a `🎮 Playtest handoff` limited to
   that change (the new head, "What to test", the launch commands for this branch), and report in the manual-test
-  shape, asking for the answer (`qa1` or `qa2`) in this session, which keeps owning the pull request.
+  shape, asking for the answer (`qa1` or `qa2`) in this session, which keeps owning the pull request. Pick the
+  launch block by the head Matěj last ran (the latest `🎮 Playtest handoff`'s): when
+  `git merge-base --is-ancestor <that head> origin/<branch>` fails, `qa1` rebased the branch since (or a revision
+  was force-pushed), his clone has diverged, and `git pull --ff-only` refuses, so the block uses
+  `git reset --keep origin/<branch>` and `git rev-parse --short HEAD` instead and the handoff names the head it
+  prints (`docs/ai-development-flow.md`, "Launch commands", "A rewritten branch").
 - **Playtest passed again:** Matěj's `qa1` in this session records it and moves the tickets to Pending CR (the
   [`qa1`](../qa1/SKILL.md) skill); the run then continues to the merge.
 - **Playtest failed:** his `qa2` with what is wrong, in this session, follows the [`qa2`](../qa2/SKILL.md) skill

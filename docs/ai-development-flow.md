@@ -529,8 +529,31 @@ Every manual-test handoff gives complete commands Matěj can paste, under "Launc
     .\gradlew.bat runClient
     ```
 
-    After a rebase (the remote branch was force-pushed), `git reset --keep origin/<branch>` takes the place of
-    `git pull --ff-only`.
+    **A rewritten branch** (RLM-576): when the branch was rewritten since the head Matěj last ran (a `qa1` that
+    rebased it before publishing, a revision pushed with `--force-with-lease`), his clone still holds the old
+    commits, `git switch` reports that the branches have diverged and `git pull --ff-only` refuses. The agent
+    tests it before the handoff, with `<played head>` the head of the latest `🎮 Playtest handoff`:
+
+    ```bash
+    git fetch origin <branch> && git merge-base --is-ancestor <played head> origin/<branch>
+    ```
+
+    When that fails (exit code 1), the block moves his local branch to the remote one instead of pulling, and
+    prints the head it lands on, which the handoff names:
+
+    ```powershell
+    cd $HOME\projects\realmforge-win
+    git fetch origin
+    git switch <branch>
+    git reset --keep origin/<branch>
+    git rev-parse --short HEAD
+    .\gradlew.bat runClient
+    ```
+
+    `git reset --keep` drops the old local commits (the played ones, which `origin` no longer has) but refuses,
+    and changes nothing, when a file it would replace holds uncommitted edits; other uncommitted edits stay as they
+    are. When it refuses, Matěj commits or stashes his edits and runs it again. A clone that never had the branch
+    gets it fresh from `git switch`, and the reset then changes nothing, so the same block works there too.
   - a playtest checkout, with `<sha>` the new head:
 
     ```bash
@@ -572,6 +595,17 @@ the QA mod's `/qa` commands in the dev client (Matěj, 2026-10-29, RLM-508).
   takes the whole line. Say how to run it once per handoff: `/give @s minecraft:command_block`, place it in creative,
   paste the line, set it to **Always Active** and press Done, and it runs once. Commands he types between checks
   (casting, `/damage @s 10` in the middle of a step) stay single lines.
+- **A check that counts on stat values** (Matěj, 2026-11-03, RLM-577): when a check expects specific stat values
+  (Strength 15, 20 % Spell Power, a crit chance the tooltip should read), the command block line brings his character
+  to exactly those values, so values from earlier `/qa stats set` commands never leak in:
+  - it starts with `qa stats reset`, which puts the base value of every one of our stats, the primaries included,
+    back to its default;
+  - then a `qa stats set <stat> <value>` for **each value the check expects**: "this test expects Strength 15" means
+    `qa stats set strength 15` is in the line;
+  - then the level and the gear, when the check needs them (`qa level <level>`, the `give` commands);
+  - What to test names the expected values, and any gear to take off when the numbers assume none: the reset keeps
+    the items and their modifiers, the race and class bonuses, vanilla's and Apothic Attributes' attributes, and the
+    effects ([architecture 20](architecture.md#20-tests-per-layer)'s `/qa` list).
 - Verify each command where an agent can: a GameTest that runs it, or the dev server console
   (`./gradlew runServer`).
 - When a state exists only in an automated test, say so in What to test.

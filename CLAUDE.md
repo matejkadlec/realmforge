@@ -562,13 +562,19 @@ merges). Four parts:
    ...`, with how to run it ([flow: Reaching the state](docs/ai-development-flow.md#reaching-the-state)). A balance
    check of a dungeon, an instance or a boss also gives the gear a player is expected to bring there in that line,
    and names the loadout in one line: what, and why it is the expected one
-   ([gear.md](docs/design/gear.md#expected-gear-for-balance-tests), RLM-551).
+   ([gear.md](docs/design/gear.md#expected-gear-for-balance-tests), RLM-551). A check that counts on stat values
+   (Strength 15, 20 % Spell Power) starts that line with `qa stats reset`, then sets every value the check expects
+   (`qa stats set strength 15`), then the level and the gear, and What to test names the values and any gear to take
+   off, since the reset keeps items and their modifiers (Matěj, 2026-11-03, RLM-577).
 2. **Launch commands:** complete commands he can paste, in one block, with the checkout named in the heading,
    e.g. "Launch commands (your Windows clone)"
    ([flow: Launch commands](docs/ai-development-flow.md#launch-commands)). For the Windows clone, always the whole
    block, a revision's too: `cd $HOME\projects\realmforge-win`, `git fetch origin`, `git switch <branch>`, then
    `git pull --ff-only` for a revision, and `.\gradlew.bat runClient`, one per line; never the update command alone,
-   as his clone is often on another batch by the time he tests (Matěj, 2026-10-24).
+   as his clone is often on another batch by the time he tests (Matěj, 2026-10-24). When the branch was rewritten
+   since the head he last ran (a `qa1` rebase, a force-pushed revision: `git merge-base --is-ancestor <played head>
+   origin/<branch>` fails), `git reset --keep origin/<branch>` and `git rev-parse --short HEAD` take the place of
+   `git pull --ff-only` (RLM-576).
 3. **How he answers**, in one line. For a first playtest, in this session or any later one: `qa1` passes the test
    (the batch is then published), `qa2` with what is wrong asks for a revision. For a reconfirmation of a
    published pull request, in this session, whose `finalize-pr` run owns it: `qa1` passes it (the run continues to
