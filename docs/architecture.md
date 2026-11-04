@@ -2326,7 +2326,9 @@ return; the proc engine at its end exists since C3a.
   damage source carries it, and the proc engine ignores hits that have one. Otherwise a guaranteed on-hit proc
   that deals damage would trigger itself until the server's stack overflows. A status effect applied by a proc
   keeps the origin for all its later ticks ([11.4](#114-status-effects)), so a proc's damage over time cannot
-  start a chain either.
+  start a chain either, and its application fires no applies-effect proc, also when a proc's spell lands it ticks
+  later (a bolt's Slowness): `Effects.applying` hands the `MobEffectEvent.Added` listeners the source of the
+  application `Effects.apply` is making (RLM-564).
 - **Learning:** on level-up, `character` grants points through `talent`'s API, as its class data says (for example
   one per level from some level on). `LearnTalentPayload(tree, node)` → pure `TalentRules` check that the tree is
   one of the player's class trees (a provider that `character` implements), points, prerequisites, tier and rank →
