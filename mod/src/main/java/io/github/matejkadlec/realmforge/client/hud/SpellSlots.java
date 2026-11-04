@@ -52,6 +52,15 @@ public final class SpellSlots {
      */
     public static void draw(GuiGraphicsExtractor graphics, Font font, int x, int y, int size, SpellBarView.Slot slot,
             Optional<Component> key) {
+        draw(graphics, font, x, y, size, slot, key, 0, 0);
+    }
+
+    /**
+     * {@link #draw(GuiGraphicsExtractor, Font, int, int, int, SpellBarView.Slot, Optional)} with the spell's initials
+     * moved by {@code initialsX} and {@code initialsY}, for a caller that draws something else in the slot.
+     */
+    public static void draw(GuiGraphicsExtractor graphics, Font font, int x, int y, int size, SpellBarView.Slot slot,
+            Optional<Component> key, int initialsX, int initialsY) {
         graphics.fill(x, y, x + size, y + size, BACKGROUND);
         Optional<Spell> spell = slot.spell();
         int frame = spell.map(value -> value.school().isPresent() ? ARGB.opaque(value.color()) : NO_SCHOOL_FRAME)
@@ -61,7 +70,7 @@ public final class SpellSlots {
             int alpha = spell.get().school().isPresent() ? SCHOOL_FILL_ALPHA : NO_SCHOOL_FILL_ALPHA;
             graphics.fill(x + 1, y + 1, x + size - 1, y + size - 1, ARGB.color(alpha, spell.get().color()));
             graphics.centeredText(font, initials(Language.getInstance().getOrDefault(spell.get().name())),
-                    x + size / 2 + 1, textY, TEXT);
+                    x + size / 2 + 1 + initialsX, textY + initialsY, TEXT);
             if (!slot.affordable()) {
                 graphics.fill(x + 1, y + 1, x + size - 1, y + size - 1, UNAFFORDABLE);
             }

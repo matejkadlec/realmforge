@@ -116,7 +116,7 @@ texts:
   spellbook:
     en_us: Spellbook
   known_spells:
-    en_us: Known Spells
+    en_us: Spells
   spell_bar:
     en_us: Spell Bar
   no_known_spells:
@@ -129,9 +129,9 @@ texts:
   # The spellbook's Spell Tree tab (C5, RLM-333; client/screen/SpellTreeTab). The Spell Bar tab's name is spell_bar.
   spell_tree:
     en_us: Spell Tree
-  # %1$s the unspent points.
+  # At the end of the spellbook's top line, on both tabs (%1$s the unspent points, gold while there are any).
   spell_points:
-    en_us: "Spell Points: %1$s"
+    en_us: "Unspent: %1$s"
   spell_tree_pick:
     en_us: Choose your specialization.
   # The button under a specialization's tree, before the player has picked one.
@@ -140,9 +140,6 @@ texts:
   # A specialization whose tree does not exist yet (M3).
   spell_tree_later:
     en_us: Coming later
-  # Beside a row: "Lv. 6" (%1$s the level that opens it).
-  spell_tree_row_level:
-    en_us: Lv. %1$s
   # The last line of a tree spell's tooltip, saying what a click does or why it does nothing.
   spell_tree_spend:
     en_us: Click to spend a point.

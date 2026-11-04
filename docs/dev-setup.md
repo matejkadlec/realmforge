@@ -230,7 +230,8 @@ there while the game runs. The handoff gives the commands
 - **Spell tree screenshots without input.** `REALMFORGE_QA_SPELL_TREE_SHOTS=<label> ./gradlew runClient -PofflineClient
   -PleanClient` makes the QA mod create a superflat world and a Mage, so the spellbook opens by itself, click Choose and
   spells as a player would (real clicks and real payloads, which a GameTest's fake player cannot send), repeat it with a
-  Warrior for Bloodthirst's arrow, save each state to `run/client/screenshots/<label>-spelltree-<state>.png`, log
+  Warrior for Bloodthirst's arrow and the Spell Bar tab's two columns, save each state to
+  `run/client/screenshots/<label>-spelltree-<state>.png`, log
   `Spell tree check passed` or `FAILED` for what each click should do, and quit (RLM-333). Headless:
   `xvfb-run -a -s "-screen 0 1280x960x24"` before it, with the variable set.
 - **A trace of real charges without input.** `REALMFORGE_QA_CHARGE_TRACE=<label> ./gradlew runClient -PofflineClient`

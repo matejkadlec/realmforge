@@ -28,9 +28,6 @@ starting_kit:
   - {item: realmforge:apprentice_boots}
   - {item: minecraft:bread, count: 32}
 specializations:
-  - id: fire
-    name: {en_us: Fire}
-    description: {en_us: "Set your enemies alight and let the flames do the work."}
   - id: frost
     name: {en_us: Frost}
     description: {en_us: "Slow your enemies, freeze them, then break them."}
@@ -45,6 +42,9 @@ specializations:
       - {spell: realmforge:shatter, level: 12, column: 1}
       - {spell: realmforge:ice_barrier, level: 12, column: 2}
       - {spell: realmforge:blizzard, level: 18, column: 1}
+  - id: fire
+    name: {en_us: Fire}
+    description: {en_us: "Set your enemies alight and let the flames do the work."}
   - id: arcane
     name: {en_us: Arcane}
     description: {en_us: "Spend your mana freely and strike hard with raw magic."}

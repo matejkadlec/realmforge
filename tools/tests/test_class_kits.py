@@ -571,7 +571,7 @@ def test_class_spells_and_racials_reach_the_data_and_expectations() -> None:
     classes = files[f"{QA}/GeneratedClassExpectations.java"].decode()
     assert 'new TreeSpell("realmforge:frostbolt", 1, 2, Optional.empty())' in classes
     assert 'new TreeSpell("realmforge:bloodthirst", 12, 1, Optional.of("realmforge:rend"))' in classes
-    assert 'new Specialization("frost", "class.realmforge.mage.specializations.1.name"' in classes
+    assert 'new Specialization("frost", "class.realmforge.mage.specializations.0.name"' in classes
 
 
 def test_passive_modifier_ids_name_the_race() -> None:

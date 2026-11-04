@@ -1230,6 +1230,11 @@ the playtest covers it.
     again, `reset` (the Scroll of Respec's effect to come, RLM-226; `/qa spec reset` until then), and `fit`, which
     returns every point when the level no longer pays for them or no longer opens a known spell's row, as stat points
     do.
+  - **The window** (Matěj's playtest of 2026-11-04): one size on both tabs, with the unspent points at the end of its
+    top line. A spell's square is as big as the bar's, holds its rank in its corner, and has one of three shades
+    (`client/screen/SpellShade`): full light once known, a little darker and pulsing, a second each way, while a click
+    would teach it, and very dark while it cannot be learned. The Spell Bar tab's spells fill one column, then the
+    other, then both in turn with a scrollbar (`client/screen/SpellColumns`).
   - **Tested by:** `SpellPointsTest` (the rules and refusals), `SpellTreeGameTests` (a spent point changing a cast, each
     refusal, a fallen level, the window's states). `/qa spec show|pick|spend|reset` reach any state.
 - **Changing race or class:** a QA command in M1, an in-game way later.
@@ -1997,7 +2002,7 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
   as the player arranged it, so a spell taken off stays off (RLM-374). The spellbook (`client/screen/SpellbookScreen`,
   whose Spell Bar tab this is, beside the Spell Tree tab, `client/screen/SpellTreeTab`, drawn from
   `character/SpellTreeView`; C5, RLM-333;
-  a scrollbar beside its Known Spells while they do not fit, `client/screen/ScrollBar`, RLM-542; a name too long for
+  a scrollbar beside its spells once they fill both columns, `client/screen/ScrollBar`, RLM-542; a name too long for
   its row wraps onto a second line, Matěj's playtest of 2026-11-03) moves a known spell into a slot, swapping with the
   one there, or empties one, through `SetSpellBarSlotPayload` and `Spells#placeOnBar`, which refuses another slot or an
   unknown spell.

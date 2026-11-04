@@ -307,7 +307,7 @@ public final class SpellTreeGameTests {
                 List.of(GeneratedSpells.ICE_LANCE, GeneratedSpells.FROST_NOVA, GeneratedSpells.FROSTBITE),
                 List.of(GeneratedSpells.SHATTER, GeneratedSpells.ICE_BARRIER),
                 List.of(GeneratedSpells.BLIZZARD)));
-        helper.assertValueEqual(SpellTreeView.of(mage).trees().get(1).rowLevels(), List.of(1, 6, 12, 18),
+        helper.assertValueEqual(SpellTreeView.of(mage).trees().getFirst().rowLevels(), List.of(1, 6, 12, 18),
                 "a row every 6 levels");
         logout(warrior);
         logout(mage);

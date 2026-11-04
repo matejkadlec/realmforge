@@ -1,6 +1,7 @@
 package io.github.matejkadlec.realmforge.client.screen;
 
 import io.github.matejkadlec.realmforge.Realmforge;
+import io.github.matejkadlec.realmforge.character.SpellTrees;
 import io.github.matejkadlec.realmforge.client.hud.SpellBarHud;
 import io.github.matejkadlec.realmforge.client.hud.SpellBarLayout;
 import io.github.matejkadlec.realmforge.client.hud.SpellSlots;
@@ -32,6 +33,7 @@ import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.Holder;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.FormattedCharSequence;
@@ -41,28 +43,37 @@ import org.lwjgl.glfw.GLFW;
 /**
  * The spellbook (C3b, RLM-25), opened and closed by its key (P by default), with two tabs (C5, RLM-333; Matěj,
  * 2026-10-21): the Spell Tree ({@link SpellTreeTab}), where points are spent, and the Spell Bar. A click, the number
- * keys, Tab or the arrow keys switch them, as on the character sheet, and the window remembers the last one.
+ * keys, Tab or the arrow keys switch them, as on the character sheet, and the window remembers the last one. The
+ * window has one size, and its top line stays the same on both tabs, with the unspent spell points beside the gear
+ * button (Matěj's playtest of 2026-11-04).
  *
- * <p>The Spell Bar tab: the spell bar as on the HUD, the spells the
- * player knows, and each spell's tooltip with live numbers ({@link SpellTooltip}). A click on a known spell, then on a
- * bar slot, puts it there ({@code SetSpellBarSlotPayload}); a click on a slot's spell picks it up to move it, and
- * dropping it on another spell swaps them; a right click empties a slot. The racial slot is the race's (C4), so it
+ * <p>The Spell Bar tab: the spell bar as on the HUD, top left, the spells the player knows in two columns
+ * ({@link SpellColumns}), and each spell's tooltip with live numbers ({@link SpellTooltip}). A click on a known spell,
+ * then on a bar slot, puts it there ({@code SetSpellBarSlotPayload}); a click on a slot's spell picks it up to move it,
+ * and dropping it on another spell swaps them; a right click empties a slot. The racial slot is the race's (C4), so it
  * only shows. A passive spell (RLM-541) is listed with its rank and "Passive" and never goes onto the bar; its tooltip
  * shows its rank and the next one. The gear button top right, level with the title (RLM-497; Matěj, 2026-10-29: an
  * icon instead of the word), opens the Realmforge config screen ({@link RealmforgeConfigScreen}), "Options" in its
- * tooltip. The panel is drawn as the background, under the button, so the button shows at full brightness. A list
- * longer than the panel scrolls with the wheel and shows a scrollbar beside it ({@link ScrollBar}, RLM-542), whose
- * thumb can be dragged and whose track takes a click.
+ * tooltip. The panel is drawn as the background, under the button, so the button shows at full brightness. Spells
+ * that fill both columns scroll them together with the wheel and show a scrollbar beside them ({@link ScrollBar},
+ * RLM-542), whose thumb can be dragged and whose track takes a click.
  */
 public final class SpellbookScreen extends Screen {
-    /** The panel's width on the Spell Bar tab; the Spell Tree tab has its own ({@link SpellTreeTab#WIDTH}). */
-    private static final int BAR_PANEL_WIDTH = 236;
+    /** The window's width on both tabs: changing with the tab, it jumped (Matěj's playtest of 2026-11-04). */
+    private static final int PANEL_WIDTH = SpellTreeTab.WIDTH;
     private static final int TAB_TREE = 0;
     private static final int TAB_BAR = 1;
     private static final int TAB_COUNT = 2;
     private static final int TAB_GAP = 12;
     private static final int TAB_IDLE = 0xFFA0A0A0;
     private static final int TAB_HOVER = 0xFFC8C8C8;
+    /** The gap between the unspent points and the gear button. */
+    private static final int UNSPENT_GAP = 6;
+    /** The unspent points' number while there are any, the headings' gold without its alpha, for a text style. */
+    private static final int UNSPENT_RGB = 0xFFC94A;
+    /** The two columns of spells: the gap on each side of the line between them, and the line's colour. */
+    private static final int DIVIDER_GAP = 4;
+    private static final int DIVIDER = 0x40FFFFFF;
     private static final int PADDING = 8;
     private static final int ROW = 20;
     /** The known spells' slots, smaller than the bar's to fit a row. */
@@ -77,7 +88,7 @@ public final class SpellbookScreen extends Screen {
     /** The gear button and its sprite ({@code realmforge:icon/gear}, drawn in {@code generate/gui_icons.py}). */
     private static final int GEAR_BUTTON = 16;
     private static final int GEAR_SPRITE = 12;
-    /** The Known Spells scrollbar: its width, its gap to the rows, and its colours. */
+    /** The spells' scrollbar: its width, its gap to the rows, and its colours. */
     private static final int SCROLLBAR_WIDTH = 4;
     private static final int SCROLLBAR_GAP = 2;
     private static final int TRACK = 0x40FFFFFF;
@@ -118,7 +129,7 @@ public final class SpellbookScreen extends Screen {
                 .withTootip()
                 .build();
         // Level with the title: its middle on the title's line of text.
-        gear.setPosition(left() + panelWidth() - PADDING - GEAR_BUTTON,
+        gear.setPosition(left() + PANEL_WIDTH - PADDING - GEAR_BUTTON,
                 top() + PADDING + font.lineHeight / 2 - GEAR_BUTTON / 2);
         addRenderableWidget(gear);
     }
@@ -231,7 +242,7 @@ public final class SpellbookScreen extends Screen {
             }
             return true;
         }
-        int row = rowAt(event.x(), event.y());
+        int row = spellAt(event.x(), event.y());
         if (row >= 0 && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
             ResourceKey<Spell> spell = known().get(row).getKey();
             // A passive spell (RLM-541) is never cast, so it never goes onto the bar.
@@ -248,7 +259,7 @@ public final class SpellbookScreen extends Screen {
     @Override
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
         super.extractBackground(graphics, mouseX, mouseY, a);
-        graphics.fill(left(), top(), left() + panelWidth(), bottom(), PANEL);
+        graphics.fill(left(), top(), left() + PANEL_WIDTH, bottom(), PANEL);
     }
 
     @Override
@@ -266,6 +277,9 @@ public final class SpellbookScreen extends Screen {
             graphics.text(font, tabName(tab), tabX(tab), y + PADDING, tab == selectedTab ? HEADING
                     : tab == hoveredTab ? TAB_HOVER : TAB_IDLE);
         }
+        Component unspent = unspent(player);
+        graphics.text(font, unspent, x + PANEL_WIDTH - PADDING - GEAR_BUTTON - UNSPENT_GAP - font.width(unspent),
+                y + PADDING, HEADING);
         if (selectedTab == TAB_TREE) {
             if (treeTab != null) {
                 treeTab.extract(graphics, player, x, y, bottom(), mouseX, mouseY);
@@ -283,8 +297,7 @@ public final class SpellbookScreen extends Screen {
                 graphics.outline(slotX - 1, barY() - 1, SpellBarLayout.SLOT + 2, SpellBarLayout.SLOT + 2, SELECTED);
             }
         }
-        List<FormattedCharSequence> hint = font.split(Component.translatable(GeneratedTexts.GUI_SPELLBOOK_HINT),
-                panelWidth() - 2 * PADDING);
+        List<FormattedCharSequence> hint = hintLines();
         for (int line = 0; line < hint.size(); line++) {
             graphics.text(font, hint.get(line), x + PADDING, hintY() + line * 10, HINT);
         }
@@ -295,6 +308,7 @@ public final class SpellbookScreen extends Screen {
             graphics.text(font, Component.translatable(GeneratedTexts.GUI_NO_KNOWN_SPELLS), x + PADDING,
                     listY() + 4, HINT);
         }
+        graphics.fill(dividerX(), listY() - 1, dividerX() + 1, listY() - 1 + visibleRows() * ROW, DIVIDER);
         ScrollBar scrollBar = scrollBar();
         scroll = Math.clamp(scroll, 0, scrollBar.maxScroll());
         if (scrollBar.shown()) {
@@ -306,49 +320,71 @@ public final class SpellbookScreen extends Screen {
             graphics.fill(scrollBarX(), thumbTop, scrollBarX() + SCROLLBAR_WIDTH, thumbTop + scrollBar.thumbHeight(),
                     held ? THUMB_HELD : THUMB);
         }
-        int hoveredRow = rowAt(mouseX, mouseY);
-        for (int row = scroll; row < Math.min(known.size(), scroll + visibleRows()); row++) {
-            Map.Entry<ResourceKey<Spell>, Integer> entry = known.get(row);
-            int rowY = listY() + (row - scroll) * ROW;
-            Optional<Spell> spell = Spells.get(player.registryAccess(), entry.getKey()).map(Holder::value);
-            if (row == hoveredRow) {
-                graphics.fill(x + PADDING - 2, rowY - 1, listRight(), rowY + ROW - 1, HOVER);
+        int hovered = spellAt(mouseX, mouseY);
+        int first = SpellColumns.first(known.size(), visibleRows());
+        for (int row = 0; row < visibleRows(); row++) {
+            int inFirst = scroll + row;
+            if (inFirst < first) {
+                drawSpell(graphics, player, known.get(inFirst), 0, row, inFirst == hovered);
             }
-            SpellSlots.draw(graphics, font, x + PADDING, rowY, LIST_SLOT, new SpellBarView.Slot(
-                    Optional.of(entry.getKey()), spell, entry.getValue(), 0, 0, true, false), Optional.empty());
-            if (entry.getKey().equals(selected)) {
-                graphics.outline(x + PADDING - 1, rowY - 1, LIST_SLOT + 2, LIST_SLOT + 2, SELECTED);
-            }
-            Component name = spell.map(value -> value.maxLevel() > 1
-                    ? Component.translatable(GeneratedTexts.GUI_SPELL_WITH_RANK,
-                    Component.translatable(value.name()), entry.getValue())
-                    : Component.translatable(value.name())).orElse(Component.literal(entry.getKey().identifier()
-                    .toString()));
-            if (spell.map(Spell::isPassive).orElse(false)) {
-                name = name.copy().append(Component.literal(" ")).append(Component.translatable(
-                        GeneratedTexts.SPELL_TOOLTIP_PASSIVE).withStyle(ChatFormatting.GRAY));
-            }
-            // A name too long for the row (Two-Handed Specialization with its rank and "Passive") breaks onto a second
-            // line (Matěj's playtest of 2026-11-03); the row's 20 px hold two lines of text.
-            int nameX = x + PADDING + LIST_SLOT + 6;
-            List<FormattedCharSequence> lines = font.split(name, listRight() - nameX);
-            if (lines.size() <= 1) {
-                graphics.text(font, name, nameX, rowY + 5, HEADING);
-            } else {
-                for (int line = 0; line < Math.min(2, lines.size()); line++) {
-                    graphics.text(font, lines.get(line), nameX, rowY + line * font.lineHeight, HEADING);
-                }
+            int inSecond = first + scroll + row;
+            if (inSecond < known.size()) {
+                drawSpell(graphics, player, known.get(inSecond), 1, row, inSecond == hovered);
             }
         }
 
         tooltip(graphics, player, mouseX, mouseY, bar);
     }
 
+    /** One spell of the list, in {@code column} (0 or 1) and on the visible {@code row}. */
+    private void drawSpell(GuiGraphicsExtractor graphics, LocalPlayer player,
+            Map.Entry<ResourceKey<Spell>, Integer> entry, int column, int row, boolean hovered) {
+        int x = columnX(column);
+        int rowY = listY() + row * ROW;
+        Optional<Spell> spell = Spells.get(player.registryAccess(), entry.getKey()).map(Holder::value);
+        if (hovered) {
+            graphics.fill(x - 2, rowY - 1, x + columnWidth(), rowY + ROW - 1, HOVER);
+        }
+        SpellSlots.draw(graphics, font, x, rowY, LIST_SLOT, new SpellBarView.Slot(
+                Optional.of(entry.getKey()), spell, entry.getValue(), 0, 0, true, false), Optional.empty());
+        if (entry.getKey().equals(selected)) {
+            graphics.outline(x - 1, rowY - 1, LIST_SLOT + 2, LIST_SLOT + 2, SELECTED);
+        }
+        Component name = spell.map(value -> value.maxLevel() > 1
+                ? Component.translatable(GeneratedTexts.GUI_SPELL_WITH_RANK,
+                Component.translatable(value.name()), entry.getValue())
+                : Component.translatable(value.name())).orElse(Component.literal(entry.getKey().identifier()
+                .toString()));
+        if (spell.map(Spell::isPassive).orElse(false)) {
+            name = name.copy().append(Component.literal(" ")).append(Component.translatable(
+                    GeneratedTexts.SPELL_TOOLTIP_PASSIVE).withStyle(ChatFormatting.GRAY));
+        }
+        // A name too long for the row (Two-Handed Specialization with its rank and "Passive") breaks onto a second
+        // line (Matěj's playtest of 2026-11-03); the row's 20 px hold two lines of text.
+        int nameX = x + LIST_SLOT + 6;
+        List<FormattedCharSequence> lines = font.split(name, x + columnWidth() - nameX);
+        if (lines.size() <= 1) {
+            graphics.text(font, name, nameX, rowY + 5, HEADING);
+        } else {
+            for (int line = 0; line < Math.min(2, lines.size()); line++) {
+                graphics.text(font, lines.get(line), nameX, rowY + line * font.lineHeight, HEADING);
+            }
+        }
+    }
+
+    /** "Unspent: 3": white, with the number gold while there are any. */
+    private static Component unspent(LocalPlayer player) {
+        int unspent = SpellTrees.unspent(player);
+        MutableComponent number = Component.literal(Integer.toString(unspent));
+        return Component.translatable(GeneratedTexts.GUI_SPELL_POINTS,
+                unspent > 0 ? number.withColor(UNSPENT_RGB) : number);
+    }
+
     /** The tooltip of the spell or slot under the mouse. */
     private void tooltip(GuiGraphicsExtractor graphics, LocalPlayer player, int mouseX, int mouseY,
             SpellBarView bar) {
         int slot = slotAt(mouseX, mouseY);
-        int row = rowAt(mouseX, mouseY);
+        int row = spellAt(mouseX, mouseY);
         Optional<ResourceKey<Spell>> spell = Optional.empty();
         int level = 1;
         if (slot >= 0) {
@@ -412,12 +448,11 @@ public final class SpellbookScreen extends Screen {
         minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
     }
 
-    /** Shows {@code tab}; the panel's width changes with it, so the gear button moves. */
+    /** Shows {@code tab}. */
     private void select(int tab) {
         selectedTab = tab;
         selected = null;
         grab = null;
-        rebuildWidgets();
     }
 
     private static Component tabName(int tab) {
@@ -460,21 +495,25 @@ public final class SpellbookScreen extends Screen {
         return -1;
     }
 
-    /** The known spell's index under the screen position, or -1. */
-    private int rowAt(double mouseX, double mouseY) {
-        if (mouseX < left() + PADDING || mouseX >= listRight() || mouseY < listY()) {
+    /** The index in the spell list of the spell under the screen position, in either column, or -1. */
+    private int spellAt(double mouseX, double mouseY) {
+        if (mouseY < listY() || mouseY >= listY() + visibleRows() * ROW) {
             return -1;
         }
-        int row = scroll + (int) ((mouseY - listY()) / ROW);
-        return row < Math.min(known().size(), scroll + visibleRows()) ? row : -1;
-    }
-
-    private static int panelWidth() {
-        return selectedTab == TAB_TREE ? SpellTreeTab.WIDTH : BAR_PANEL_WIDTH;
+        int row = (int) ((mouseY - listY()) / ROW);
+        int spells = known().size();
+        int first = SpellColumns.first(spells, visibleRows());
+        if (mouseX >= columnX(0) && mouseX < columnX(0) + columnWidth()) {
+            return scroll + row < first ? scroll + row : -1;
+        }
+        if (mouseX >= columnX(1) && mouseX < columnX(1) + columnWidth()) {
+            return first + scroll + row < spells ? first + scroll + row : -1;
+        }
+        return -1;
     }
 
     private int left() {
-        return (width - panelWidth()) / 2;
+        return (width - PANEL_WIDTH) / 2;
     }
 
     private int top() {
@@ -494,38 +533,52 @@ public final class SpellbookScreen extends Screen {
     }
 
     private int slotX(int slot) {
-        // The HUD's layout on a screen as wide as the bar starts the bar at 0.
-        return left() + (BAR_PANEL_WIDTH - SpellBarLayout.WIDTH) / 2 + SpellBarLayout.slotX(slot, SpellBarLayout.WIDTH);
+        // The HUD's layout on a screen as wide as the bar starts the bar at 0: here, top left in the window.
+        return left() + PADDING + SpellBarLayout.slotX(slot, SpellBarLayout.WIDTH);
     }
 
     private int hintY() {
         return barY() + SpellBarLayout.SLOT + 6;
     }
 
+    private List<FormattedCharSequence> hintLines() {
+        return font.split(Component.translatable(GeneratedTexts.GUI_SPELLBOOK_HINT), PANEL_WIDTH - 2 * PADDING);
+    }
+
     private int listTitleY() {
-        return hintY() + 2 * 10 + 6;
+        return hintY() + hintLines().size() * 10 + 6;
     }
 
     private int listY() {
         return listTitleY() + 12;
     }
 
+    /** The rows a column shows: down to the panel's bottom padding (7 at full size; Matěj, 2026-11-04). */
     private int visibleRows() {
-        return Math.max(1, (bottom() - 30 - listY()) / ROW);
+        return Math.max(1, (bottom() - PADDING - listY()) / ROW);
     }
 
-    /** The Known Spells scrollbar: beside the visible rows, for every known spell. */
+    /** The scrollbar: beside the columns, with a row for each spell of the longer first column. */
     private ScrollBar scrollBar() {
-        return new ScrollBar(listY() - 1, visibleRows() * ROW, known().size(), visibleRows());
+        return new ScrollBar(listY() - 1, visibleRows() * ROW, SpellColumns.first(known().size(), visibleRows()),
+                visibleRows());
     }
 
     /** The scrollbar's left edge, at the panel's right padding. */
     private int scrollBarX() {
-        return left() + BAR_PANEL_WIDTH - PADDING - SCROLLBAR_WIDTH;
+        return left() + PANEL_WIDTH - PADDING - SCROLLBAR_WIDTH;
     }
 
-    /** Where the rows end: before the scrollbar while it shows, at the panel's right padding otherwise. */
-    private int listRight() {
-        return scrollBar().shown() ? scrollBarX() - SCROLLBAR_GAP : left() + BAR_PANEL_WIDTH - PADDING;
+    /** A column's width: both the same, with room left for the scrollbar whether it shows or not. */
+    private static int columnWidth() {
+        return (PANEL_WIDTH - 2 * PADDING - SCROLLBAR_WIDTH - SCROLLBAR_GAP - 2 * DIVIDER_GAP - 1) / 2;
+    }
+
+    private int columnX(int column) {
+        return left() + PADDING + column * (columnWidth() + 2 * DIVIDER_GAP + 1);
+    }
+
+    private int dividerX() {
+        return columnX(0) + columnWidth() + DIVIDER_GAP;
     }
 }

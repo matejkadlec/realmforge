@@ -54,10 +54,9 @@ public final class QaSpellTreeShots {
     private static final int CARD_GAP = 6;
     private static final int CARDS_TOP = 34;
     private static final int HEADER = 14;
-    private static final int ROW_LABEL = 36;
-    private static final int CELL = 20;
-    private static final int CELL_GAP = 4;
-    private static final int ROW = 38;
+    private static final int CELL = 24;
+    private static final int CELL_GAP = 9;
+    private static final int ROW = 31;
     private static final int BUTTON_HEIGHT = 16;
 
     private record Step(BooleanSupplier ready, Runnable action) {
@@ -119,13 +118,13 @@ public final class QaSpellTreeShots {
         when(() -> minecraft.screen instanceof CharacterCreationScreen, () -> command(minecraft,
                 "qa character create realmforge:human realmforge:mage"));
         // Creating the character opens the window by itself, on its Spell Tree tab.
-        when(() -> minecraft.screen instanceof SpellbookScreen, () -> hover(minecraft, 1, 0, 0));
+        when(() -> minecraft.screen instanceof SpellbookScreen, () -> hover(minecraft, 0, 0, 0));
         then(() -> shot(minecraft, "1-new-mage"));
-        then(() -> clickChoose(minecraft, 1));
+        then(() -> clickChoose(minecraft, 0));
         when(() -> SpellTrees.chosen(minecraft.player).isPresent(), () -> {
             check(Spells.knownLevel(minecraft.player, GeneratedSpells.FROSTBOLT).orElse(0) == 1,
                     "Choose teaches Frostbolt");
-            hover(minecraft, 1, 0, 1);
+            hover(minecraft, 0, 0, 1);
         });
         then(() -> shot(minecraft, "2-frost-picked"));
         then(() -> {
@@ -133,18 +132,18 @@ public final class QaSpellTreeShots {
             command(minecraft, "qa level 18");
         });
         when(() -> Characters.level(minecraft.player) == 18, () -> shot(minecraft, "3-frost-level-18"));
-        then(() -> clickCell(minecraft, 1, 0, 1));
-        then(() -> clickCell(minecraft, 1, 0, 1));
-        then(() -> clickCell(minecraft, 1, 1, 0));
-        then(() -> clickCell(minecraft, 1, 0, 0));
-        then(() -> clickCell(minecraft, 1, 2, 1));
+        then(() -> clickCell(minecraft, 0, 0, 1));
+        then(() -> clickCell(minecraft, 0, 0, 1));
+        then(() -> clickCell(minecraft, 0, 1, 0));
+        then(() -> clickCell(minecraft, 0, 0, 0));
+        then(() -> clickCell(minecraft, 0, 2, 1));
         then(() -> {
             check(Spells.knownLevel(minecraft.player, GeneratedSpells.FROSTBOLT).orElse(0) == 3,
                     "two clicks rank Frostbolt up");
             check(Spells.knownLevel(minecraft.player, GeneratedSpells.ICE_LANCE).orElse(0) == 1,
                     "a click teaches Ice Lance");
             check(SpellTrees.unspent(minecraft.player) == 12, "five clicks spend five of 17 points");
-            hover(minecraft, 1, 1, 0);
+            hover(minecraft, 0, 1, 0);
         });
         then(() -> shot(minecraft, "4-frost-spent-tooltip"));
         then(() -> {
@@ -169,6 +168,11 @@ public final class QaSpellTreeShots {
                 "Rend opens Bloodthirst"));
         then(() -> minecraft.screen.keyPressed(new KeyEvent(GLFW.GLFW_KEY_2, 0, 0)));
         then(() -> shot(minecraft, "7-spell-bar-tab"));
+        then(() -> learn(minecraft, "fireball", "frostbolt", "charge", "slam", "deep_wounds", "battle_shout"));
+        then(() -> shot(minecraft, "8-spell-bar-two-columns"));
+        then(() -> learn(minecraft, "execute", "overpower", "victory_rush", "cone_of_cold", "ice_lance", "frost_nova",
+                "shatter", "blizzard"));
+        then(() -> shot(minecraft, "9-spell-bar-scrollbar"));
         then(() -> {
         });
         when(() -> ticks >= WRITE_TICKS, () -> {
@@ -199,6 +203,12 @@ public final class QaSpellTreeShots {
         }
     }
 
+    private static void learn(Minecraft minecraft, String... spells) {
+        for (String spell : spells) {
+            command(minecraft, "qa spell learn realmforge:" + spell);
+        }
+    }
+
     private static void command(Minecraft minecraft, String command) {
         minecraft.player.connection.sendCommand(command);
     }
@@ -217,7 +227,7 @@ public final class QaSpellTreeShots {
     }
 
     private static int cellX(Minecraft minecraft, int card, int column) {
-        return cardX(minecraft, card) + ROW_LABEL + column * (CELL + CELL_GAP) + CELL / 2;
+        return cardX(minecraft, card) + CELL_GAP + column * (CELL + CELL_GAP) + CELL / 2;
     }
 
     private static int cellY(Minecraft minecraft, int row) {

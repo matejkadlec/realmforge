@@ -6,6 +6,7 @@ import io.github.matejkadlec.realmforge.character.SpellTreeView.State;
 import io.github.matejkadlec.realmforge.character.SpellTreeView.Tree;
 import io.github.matejkadlec.realmforge.character.net.PickSpecializationPayload;
 import io.github.matejkadlec.realmforge.character.net.SpendSpellPointPayload;
+import io.github.matejkadlec.realmforge.client.hud.SpellBarLayout;
 import io.github.matejkadlec.realmforge.client.hud.SpellSlots;
 import io.github.matejkadlec.realmforge.generated.GeneratedTexts;
 import io.github.matejkadlec.realmforge.spell.Passives;
@@ -27,7 +28,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.ARGB;
 import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.util.Util;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
 /**
@@ -35,24 +38,29 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
  * specialization, each a tree from top to bottom, as in WoW's talent window but with spells only. Before a pick each
  * playable tree has a Choose button; afterwards a click on a spell spends a point on its next rank. The window only
  * asks: {@link PickSpecializationPayload} and {@link SpendSpellPointPayload} go to the server, which checks them
- * again, and the tab redraws from the synced state ({@link SpellTreeView}). Drawn over the plain panel until the book
- * texture exists (RLM-333's follow-up).
+ * again, and the tab redraws from the synced state ({@link SpellTreeView}). A spell's square is as big as the bar's
+ * and holds its rank in the bottom right corner, and its shade says what it is ({@link SpellShade}; Matěj's playtest of
+ * 2026-11-04). Drawn over the plain panel until the book texture exists (RLM-609).
  */
 final class SpellTreeTab {
-    /** The panel's width on this tab, wider than the Spell Bar tab's for its three rectangles. */
+    /** The spellbook's width on both tabs, which its three rectangles here need. */
     static final int WIDTH = 352;
     private static final int PADDING = 8;
     private static final int CARD_GAP = 6;
-    /** The rectangles' top, below the title and the points line. */
+    /** The rectangles' top, below the title and the line that asks for a specialization. */
     private static final int CARDS_TOP = PADDING + 14 + 12;
     private static final int HEADER = 14;
-    private static final int ROW_LABEL = 36;
-    private static final int CELL = 20;
-    private static final int CELL_GAP = 4;
-    /** The rank's height under a cell. */
-    private static final int RANK = 11;
-    /** A row: its cell, its rank beneath, and the gap an arrow to the next row runs in. */
-    private static final int ROW = CELL + RANK + 7;
+    private static final int CELL = SpellBarLayout.SLOT;
+    /** A row holds this many spells, with the same gap beside each and at the rectangle's edges. */
+    private static final int COLUMNS = 3;
+    /** A row: its cell, and the gap an arrow to the next row runs in. */
+    private static final int ROW = CELL + 7;
+    /** The rank inside a cell, at about half the cell's width, as a slot's key label is scaled. */
+    private static final float RANK_SCALE = 2 / 3F;
+    private static final int RANK_GLYPH_HEIGHT = 8;
+    /** A cell's initials, up and left of its middle, clear of the rank. */
+    private static final int INITIALS_X = -3;
+    private static final int INITIALS_Y = -4;
     private static final int BUTTON_HEIGHT = 16;
     private static final int TOOLTIP_WIDTH = 200;
 
@@ -62,14 +70,11 @@ final class SpellTreeTab {
     private static final int TITLE = 0xFFFFC94A;
     private static final int TEXT = 0xFFFFFFFF;
     private static final int HINT = 0xFFA0A0A0;
-    private static final int LEARNABLE = 0xFF55FF55;
     private static final int ARROW = 0xFFC8C8C8;
     private static final int ARROW_LOCKED = 0xFF606060;
     private static final int BUTTON = 0xFF3A3A3A;
     private static final int BUTTON_HOVER = 0xFF5A5A5A;
     private static final int HOVER = 0x30FFFFFF;
-    /** Over a spell the player does not know yet, which keeps its school's colour, only darker. */
-    private static final int UNKNOWN = 0xA0000000;
 
     private final Minecraft minecraft;
     private final Font font;
@@ -82,10 +87,10 @@ final class SpellTreeTab {
     void extract(GuiGraphicsExtractor graphics, LocalPlayer player, int left, int top, int bottom, int mouseX,
             int mouseY) {
         SpellTreeView view = SpellTreeView.of(player);
-        Component heading = view.picked()
-                ? Component.translatable(GeneratedTexts.GUI_SPELL_POINTS, view.unspent())
-                : Component.translatable(GeneratedTexts.GUI_SPELL_TREE_PICK);
-        graphics.text(font, heading, left + PADDING, top + PADDING + 14, TITLE);
+        if (!view.picked()) {
+            graphics.text(font, Component.translatable(GeneratedTexts.GUI_SPELL_TREE_PICK), left + PADDING,
+                    top + PADDING + 14, TITLE);
+        }
         for (int index = 0; index < view.trees().size(); index++) {
             drawTree(graphics, view, view.trees().get(index), index, left, top, bottom, mouseX, mouseY);
         }
@@ -124,12 +129,8 @@ final class SpellTreeTab {
                     y + HEADER + 8, HINT);
             return;
         }
-        for (int row = 0; row < tree.rowLevels().size(); row++) {
-            graphics.text(font, Component.translatable(GeneratedTexts.GUI_SPELL_TREE_ROW_LEVEL,
-                    tree.rowLevels().get(row)), x + 3, rowY(row, y) + 7, HINT);
-        }
-        tree.cells().forEach(cell -> drawArrow(graphics, tree, cell, x, y));
-        tree.cells().forEach(cell -> drawCell(graphics, cell, x, y, mouseX, mouseY));
+        tree.cells().forEach(cell -> drawArrow(graphics, view, tree, cell, x, y));
+        tree.cells().forEach(cell -> drawCell(graphics, view, cell, x, y, mouseX, mouseY));
         if (showsButton(view, tree)) {
             boolean hovered = onButton(index, view, left, bottom, mouseX, mouseY);
             int buttonY = bottom - PADDING - BUTTON_HEIGHT - 3;
@@ -140,40 +141,46 @@ final class SpellTreeTab {
         }
     }
 
-    private void drawCell(GuiGraphicsExtractor graphics, Cell cell, int cardX, int cardY, int mouseX, int mouseY) {
-        int x = cellX(cell, cardX);
+    private void drawCell(GuiGraphicsExtractor graphics, SpellTreeView view, Cell cell, int cardX, int cardY,
+            int mouseX, int mouseY) {
+        int x = cellX(view, cell, cardX);
         int y = rowY(cell.row(), cardY);
         SpellSlots.draw(graphics, font, x, y, CELL, new SpellBarView.Slot(cell.spell().unwrapKey(),
-                Optional.of(cell.spell().value()), Math.max(cell.rank(), 1), 0, 0, true, false), Optional.empty());
-        if (cell.rank() == 0) {
-            graphics.fill(x + 1, y + 1, x + CELL - 1, y + CELL - 1, UNKNOWN);
-        }
-        if (cell.state() == State.LEARNABLE) {
-            graphics.outline(x - 1, y - 1, CELL + 2, CELL + 2, LEARNABLE);
+                Optional.of(cell.spell().value()), Math.max(cell.rank(), 1), 0, 0, true, false), Optional.empty(),
+                INITIALS_X, INITIALS_Y);
+        int shade = SpellShade.of(cell.rank(), cell.state()).overlayAlpha(Util.getMillis());
+        if (shade > 0) {
+            graphics.fill(x, y, x + CELL, y + CELL, ARGB.color(shade, 0));
         }
         if (mouseX >= x && mouseX < x + CELL && mouseY >= y && mouseY < y + CELL) {
             graphics.fill(x, y, x + CELL, y + CELL, HOVER);
         }
-        int color = switch (cell.state()) {
-            case LEARNABLE -> LEARNABLE;
-            case MAX_RANK -> TITLE;
-            default -> cell.rank() > 0 ? TEXT : HINT;
-        };
-        graphics.centeredText(font, cell.rank() + "/" + cell.spell().value().maxLevel(), x + CELL / 2, y + CELL + 2,
-                color);
+        drawRank(graphics, cell, x, y);
+    }
+
+    /** The rank in the cell's bottom right corner, over its shade: gold at the highest rank, white otherwise. */
+    private void drawRank(GuiGraphicsExtractor graphics, Cell cell, int x, int y) {
+        String rank = cell.rank() + "/" + cell.spell().value().maxLevel();
+        graphics.pose().pushMatrix();
+        graphics.pose().translate(x + CELL - 1 - font.width(rank) * RANK_SCALE,
+                y + CELL - 1 - RANK_GLYPH_HEIGHT * RANK_SCALE);
+        graphics.pose().scale(RANK_SCALE, RANK_SCALE);
+        graphics.text(font, rank, 0, 0, cell.state() == State.MAX_RANK ? TITLE : TEXT);
+        graphics.pose().popMatrix();
     }
 
     /**
-     * The arrow from the spell it needs: from under that spell's rank, across if the columns differ, down to this
-     * spell, with its head on top of it. Lit once the player knows the spell it comes from.
+     * The arrow from the spell it needs: from under that spell, across if the columns differ, down to this spell, with
+     * its head on top of it. Lit once the player knows the spell it comes from.
      */
-    private void drawArrow(GuiGraphicsExtractor graphics, Tree tree, Cell cell, int cardX, int cardY) {
+    private void drawArrow(GuiGraphicsExtractor graphics, SpellTreeView view, Tree tree, Cell cell, int cardX,
+            int cardY) {
         cell.requires().flatMap(required -> tree.cells().stream()
                 .filter(other -> other.spell().is(required.unwrapKey().orElseThrow())).findFirst()).ifPresent(from -> {
                     int color = from.rank() > 0 ? ARROW : ARROW_LOCKED;
-                    int fromX = cellX(from, cardX) + CELL / 2;
-                    int toX = cellX(cell, cardX) + CELL / 2;
-                    int startY = rowY(from.row(), cardY) + CELL + RANK;
+                    int fromX = cellX(view, from, cardX) + CELL / 2;
+                    int toX = cellX(view, cell, cardX) + CELL / 2;
+                    int startY = rowY(from.row(), cardY) + CELL;
                     int endY = rowY(cell.row(), cardY);
                     graphics.fill(fromX, startY, fromX + 1, startY + 1, color);
                     graphics.fill(Math.min(fromX, toX), startY + 1, Math.max(fromX, toX) + 1, startY + 2, color);
@@ -239,7 +246,7 @@ final class SpellTreeTab {
             int cardX = cardX(index, view, left);
             int cardY = top + CARDS_TOP;
             for (Cell cell : view.trees().get(index).cells()) {
-                int x = cellX(cell, cardX);
+                int x = cellX(view, cell, cardX);
                 int y = rowY(cell.row(), cardY);
                 if (mouseX >= x && mouseX < x + CELL && mouseY >= y && mouseY < y + CELL) {
                     return Optional.of(cell);
@@ -269,8 +276,10 @@ final class SpellTreeTab {
         return left + PADDING + index * (cardWidth(view) + CARD_GAP);
     }
 
-    private static int cellX(Cell cell, int cardX) {
-        return cardX + ROW_LABEL + cell.column() * (CELL + CELL_GAP);
+    /** A cell's left edge: the same gap at the rectangle's edges as between the cells. */
+    private static int cellX(SpellTreeView view, Cell cell, int cardX) {
+        int gap = (cardWidth(view) - COLUMNS * CELL) / (COLUMNS + 1);
+        return cardX + gap + cell.column() * (CELL + gap);
     }
 
     private static int rowY(int row, int cardY) {

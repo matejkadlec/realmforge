@@ -155,7 +155,7 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.kit_item} from {@code content/texts/gui.yaml}: "%1$s ×%2$s" */
     public static final String GUI_KIT_ITEM = "gui.realmforge.kit_item";
 
-    /** {@code gui.realmforge.known_spells} from {@code content/texts/gui.yaml}: "Known Spells" */
+    /** {@code gui.realmforge.known_spells} from {@code content/texts/gui.yaml}: "Spells" */
     public static final String GUI_KNOWN_SPELLS = "gui.realmforge.known_spells";
 
     /** {@code gui.realmforge.magic} from {@code content/texts/gui.yaml}: "Magic" */
@@ -260,7 +260,7 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.spell_options} from {@code content/texts/gui.yaml}: "Options" */
     public static final String GUI_SPELL_OPTIONS = "gui.realmforge.spell_options";
 
-    /** {@code gui.realmforge.spell_points} from {@code content/texts/gui.yaml}: "Spell Points: %1$s" */
+    /** {@code gui.realmforge.spell_points} from {@code content/texts/gui.yaml}: "Unspent: %1$s" */
     public static final String GUI_SPELL_POINTS = "gui.realmforge.spell_points";
 
     /** {@code gui.realmforge.spell_tree} from {@code content/texts/gui.yaml}: "Spell Tree" */
@@ -295,9 +295,6 @@ public final class GeneratedTexts {
 
     /** {@code gui.realmforge.spell_tree_pick} from {@code content/texts/gui.yaml}: "Choose your specialization." */
     public static final String GUI_SPELL_TREE_PICK = "gui.realmforge.spell_tree_pick";
-
-    /** {@code gui.realmforge.spell_tree_row_level} from {@code content/texts/gui.yaml}: "Lv. %1$s" */
-    public static final String GUI_SPELL_TREE_ROW_LEVEL = "gui.realmforge.spell_tree_row_level";
 
     /** {@code gui.realmforge.spell_tree_spend} from {@code content/texts/gui.yaml}: "Click to spend a point." */
     public static final String GUI_SPELL_TREE_SPEND = "gui.realmforge.spell_tree_spend";
