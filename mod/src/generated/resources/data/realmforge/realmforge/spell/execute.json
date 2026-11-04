@@ -11,8 +11,8 @@
     "type": "instant"
   },
   "cost": {
-    "amount": 15.0,
-    "per_level": 5.0,
+    "amount": 10.0,
+    "per_level": 10.0,
     "resource": "realmforge:rage",
     "extra": {
       "max": 30.0,
@@ -39,10 +39,10 @@
   "target_health_below": 0.2,
   "effects": [
     {
-      "amount": 8.0,
+      "amount": 10.0,
       "per_level": 2.0,
-      "attack_damage": 1.5,
-      "attack_damage_per_level": 0.25,
+      "attack_damage": 1.9,
+      "attack_damage_per_level": 0.2,
       "type": "realmforge:damage"
     }
   ]

@@ -1,11 +1,11 @@
 # yaml-language-server: $schema=../../tools/schemas/spells.schema.json
 # The Arms Warrior's tree, row 3 (level 12), middle (RLM-543; Matěj, 2026-10-30, "Spell Trees to Level 18", chosen for
-# M1): one of the two spells the tree revolves around, so 5 ranks. A strike of 5/5.5/6/6.5/7 + 100/110/120/130/140 % of
-# Attack Damage with 10/15/20/25/30 % more chance to crit, usable for 5 s after the Warrior blocks a hit with a shield or
-# a raised two-handed weapon (RLM-540), and when Bloodthirst opens its window; its crit chance above 100 % turns
-# into crit damage, as every crit chance does (C4). 10 rage, a 4 s cooldown (Matěj, 2026-11-03, RLM-543's Confluence
-# comments). It needs a melee weapon (RLM-499), and its target must be in the Warrior's melee swing (melee: true).
-# Placeholder look until RLM-545.
+# M1): one of the two spells the tree revolves around, so 5 ranks. A strike of 6/7/8/9/10 + 120/135/150/165/180 % of
+# Attack Damage (Matěj's rebalance of 2026-11-03, RLM-604) with 10/15/20/25/30 % more chance to crit, usable for 5 s
+# after the Warrior blocks a hit with a shield or a raised two-handed weapon (RLM-540), and when Bloodthirst opens its
+# window; its crit chance above 100 % turns into crit damage, as every crit chance does (C4). 20 rage (RLM-604), a 4 s
+# cooldown (Matěj, 2026-11-03, RLM-543's Confluence comments). It needs a melee weapon (RLM-499), and its target must be
+# in the Warrior's melee swing (melee: true). Placeholder look until RLM-545.
 id: overpower
 name: {en_us: Overpower}
 description:
@@ -16,11 +16,11 @@ school: realmforge:physical
 scales_with: attack_damage
 targeting: {type: realmforge:enemy, melee: true}
 cast: {type: instant}
-cost: {resource: realmforge:rage, amount: 10}
+cost: {resource: realmforge:rage, amount: 20}
 cooldown_seconds: 4
 max_level: 5
 requires: [melee_weapon]
 window: {duration_seconds: 5, opened_by: [block]}
 crit: {bonus_chance_percent: 10, bonus_chance_per_level_percent: 5}
 effects:
-  - {type: realmforge:damage, amount: 5, per_level: 0.5, attack_damage_percent: 100, attack_damage_per_level_percent: 10}
+  - {type: realmforge:damage, amount: 6, per_level: 1, attack_damage_percent: 120, attack_damage_per_level_percent: 15}

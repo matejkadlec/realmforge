@@ -365,7 +365,7 @@ public final class ClassKitGameTests {
         learn(helper, player, GeneratedSpells.SLAM, 5);
         float before = husk.getHealth();
         swing(helper, player, GeneratedSpells.SLAM);
-        helper.assertTrue(close(before - husk.getHealth(), 48.5), "Slam rank 5 with 15 Attack Damage: 48.5 expected, "
+        helper.assertTrue(close(before - husk.getHealth(), 43.5), "Slam rank 5 with 15 Attack Damage: 43.5 expected, "
                 + "dealt " + (before - husk.getHealth()));
         logout(player);
         helper.succeed();

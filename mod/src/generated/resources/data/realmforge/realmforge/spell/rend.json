@@ -11,7 +11,7 @@
     "type": "instant"
   },
   "cost": {
-    "amount": 10.0,
+    "amount": 20.0,
     "per_level": 10.0,
     "resource": "realmforge:rage"
   },
@@ -29,16 +29,16 @@
   "castable_while_stunned": false,
   "effects": [
     {
-      "amount": 2.0,
+      "amount": 5.0,
       "per_level": 1.0,
-      "attack_damage": 0.3,
+      "attack_damage": 0.5,
       "attack_damage_per_level": 0.1,
       "type": "realmforge:damage"
     },
     {
-      "amount": 4.0,
+      "amount": 8.0,
       "per_level": 2.0,
-      "attack_damage": 0.6,
+      "attack_damage": 0.9,
       "attack_damage_per_level": 0.2,
       "type": "realmforge:damage_over_time",
       "effect": "realmforge:bleeding",

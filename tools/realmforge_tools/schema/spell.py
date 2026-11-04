@@ -662,9 +662,10 @@ class DashEffectDef(StrictModel):
 
 
 class ChargeEffectDef(StrictModel):
-    """Rushes the caster at its enemy target (RLM-543: the Arms Warrior's Charge) until it stands in front of it, the
-    server steering it every tick, then runs ``effects`` on every enemy within ``landing_radius`` of where it lands
-    (Charge's stun). A charge that cannot get through (a wall) lands where it stopped."""
+    """Rushes the caster at its enemy target (RLM-543: the Arms Warrior's Charge) to the side of the target it came
+    from, the server moving a mob and a player's own client moving them, then runs ``effects`` on every enemy within
+    ``landing_radius`` of where it lands (Charge's stun) and hops the caster a block back. A charge that cannot get
+    through (a wall) lands where it stopped, without the hop."""
 
     type: Literal["realmforge:charge"]
     speed: float = Field(
@@ -685,7 +686,7 @@ class ChargeEffectDef(StrictModel):
 
 
 class GainResourceEffectDef(_LeveledAmount):
-    """Gives the caster an amount of a resource, growing per rank (RLM-543: Charge generates 15/20 rage). Players only,
+    """Gives the caster an amount of a resource, growing per rank (RLM-543: Charge generates 10/20 rage). Players only,
     as only their casts cost anything."""
 
     type: Literal["realmforge:gain_resource"]

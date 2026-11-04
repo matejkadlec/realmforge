@@ -300,9 +300,9 @@ public final class GeneratedSpellExpectations {
                     false,
                     "raise",
                     "shortens",
-                    Optional.of("realmforge:rage"),
-                    15.0,
-                    15.0,
+                    Optional.empty(),
+                    0.0,
+                    0.0,
                     0.0,
                     0.0,
                     1200,
@@ -534,8 +534,8 @@ public final class GeneratedSpellExpectations {
                     "raise",
                     "shortens",
                     Optional.of("realmforge:rage"),
-                    15.0,
-                    5.0,
+                    10.0,
+                    10.0,
                     0.0,
                     0.0,
                     0,
@@ -551,7 +551,7 @@ public final class GeneratedSpellExpectations {
                     false,
                     false,
                     List.of(
-                            new EffectExpectation("realmforge:damage", Map.of("amount", 8.0, "attack_damage", 1.5, "attack_damage_per_level", 0.25, "per_level", 2.0, "spell_power", 0.0, "spell_power_per_level", 0.0), Map.of(), List.of()))),
+                            new EffectExpectation("realmforge:damage", Map.of("amount", 10.0, "attack_damage", 1.9, "attack_damage_per_level", 0.2, "per_level", 2.0, "spell_power", 0.0, "spell_power_per_level", 0.0), Map.of(), List.of()))),
             new SpellExpectation(
                     "realmforge:fireball",
                     "spell.realmforge.fireball.name",
@@ -843,7 +843,7 @@ public final class GeneratedSpellExpectations {
                     "raise",
                     "shortens",
                     Optional.of("realmforge:rage"),
-                    10.0,
+                    20.0,
                     0.0,
                     0.0,
                     0.0,
@@ -860,7 +860,7 @@ public final class GeneratedSpellExpectations {
                     false,
                     false,
                     List.of(
-                            new EffectExpectation("realmforge:damage", Map.of("amount", 5.0, "attack_damage", 1.0, "attack_damage_per_level", 0.1, "per_level", 0.5, "spell_power", 0.0, "spell_power_per_level", 0.0), Map.of(), List.of()))),
+                            new EffectExpectation("realmforge:damage", Map.of("amount", 6.0, "attack_damage", 1.2, "attack_damage_per_level", 0.15, "per_level", 1.0, "spell_power", 0.0, "spell_power_per_level", 0.0), Map.of(), List.of()))),
             new SpellExpectation(
                     "realmforge:reckless_strike",
                     "spell.realmforge.reckless_strike.name",
@@ -920,7 +920,7 @@ public final class GeneratedSpellExpectations {
                     "raise",
                     "shortens",
                     Optional.of("realmforge:rage"),
-                    10.0,
+                    20.0,
                     10.0,
                     0.0,
                     0.0,
@@ -937,8 +937,8 @@ public final class GeneratedSpellExpectations {
                     false,
                     false,
                     List.of(
-                            new EffectExpectation("realmforge:damage", Map.of("amount", 2.0, "attack_damage", 0.3, "attack_damage_per_level", 0.1, "per_level", 1.0, "spell_power", 0.0, "spell_power_per_level", 0.0), Map.of(), List.of()),
-                            new EffectExpectation("realmforge:damage_over_time", Map.of("amount", 4.0, "attack_damage", 0.6, "attack_damage_per_level", 0.2, "duration_ticks", 120.0, "per_level", 2.0, "spell_power", 0.0, "spell_power_per_level", 0.0), Map.of("effect", "realmforge:bleeding"), List.of()))),
+                            new EffectExpectation("realmforge:damage", Map.of("amount", 5.0, "attack_damage", 0.5, "attack_damage_per_level", 0.1, "per_level", 1.0, "spell_power", 0.0, "spell_power_per_level", 0.0), Map.of(), List.of()),
+                            new EffectExpectation("realmforge:damage_over_time", Map.of("amount", 8.0, "attack_damage", 0.9, "attack_damage_per_level", 0.2, "duration_ticks", 120.0, "per_level", 2.0, "spell_power", 0.0, "spell_power_per_level", 0.0), Map.of("effect", "realmforge:bleeding"), List.of()))),
             new SpellExpectation(
                     "realmforge:shatter",
                     "spell.realmforge.shatter.name",
@@ -1054,7 +1054,7 @@ public final class GeneratedSpellExpectations {
                     false,
                     List.of(
                             new EffectExpectation("realmforge:melee", Map.of(), Map.of("shape", "swing"), List.of(
-                                    new EffectExpectation("realmforge:damage", Map.of("amount", 5.0, "armor_shred", 0.05, "armor_shred_per_level", 0.05, "attack_damage", 1.5, "attack_damage_per_level", 0.25, "per_level", 1.5, "spell_power", 0.0, "spell_power_per_level", 0.0), Map.of(), List.of()))))),
+                                    new EffectExpectation("realmforge:damage", Map.of("amount", 5.0, "armor_shred", 0.05, "armor_shred_per_level", 0.05, "attack_damage", 1.5, "attack_damage_per_level", 0.2, "per_level", 1.0, "spell_power", 0.0, "spell_power_per_level", 0.0), Map.of(), List.of()))))),
             new SpellExpectation(
                     "realmforge:stoneform",
                     "spell.realmforge.stoneform.name",
@@ -2676,8 +2676,8 @@ public final class GeneratedSpellExpectations {
                     false,
                     "raise",
                     "shortens",
-                    Optional.empty(),
-                    0.0,
+                    Optional.of("realmforge:rage"),
+                    10.0,
                     0.0,
                     0.0,
                     0.0,

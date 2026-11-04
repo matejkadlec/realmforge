@@ -2268,31 +2268,33 @@ with their trees in M3. Bloodthirst needs Rend in the tree, which C5 checks; the
 - **The loop:** Charge in for rage, Rend to bleed and Slam on cooldown; blocks and Bloodthirst's procs on Rend's
   ticks open Overpower, crits bleed through Deep Wounds, kills open Victory Rush, and Execute finishes, refunding rage
   for a kill.
-- **Numbers** (rank 1 to the highest, AD = Attack Damage; the costs, cooldowns and Victory Rush from Matěj's comments of
-  2026-11-03 on the Warrior design page): **Charge** a rush at an enemy 3 to 10 blocks away (12 at rank 2) at 24 blocks
-  a second that stuns every enemy within 1.5 blocks of the landing for 3 s, 10/20 rage, 10 s. **Rend** 2/3/4 +
-  30/40/50 % AD, then Bleeding of 4/6/8 + 60/80/100 % AD over 6 s, 10/20/30 rage, 6 s. **Overpower** 5/5.5/6/6.5/7 +
-  100 to 140 % AD with +10 to 30 % crit chance (above 100 %, crit damage), for 5 s after a block, 10 rage, 4 s.
+- **Numbers** (rank 1 to the highest, AD = Attack Damage; Matěj's comments of 2026-11-03 on the Warrior design page, and
+  his rebalance of that evening, RLM-604): **Charge** a rush at an enemy 3 to 10 blocks away (12 at rank 2) at 24 blocks
+  a second that stuns every enemy within 1.5 blocks of the landing for 3 s, 10/20 rage, 10 s. **Rend** 5/6/7 +
+  50/60/70 % AD, then Bleeding of 8/10/12 + 90/110/130 % AD over 6 s, 20/30/40 rage, 6 s. **Overpower** 6/7/8/9/10 +
+  120 to 180 % AD with +10 to 30 % crit chance (above 100 %, crit damage), for 5 s after a block, 20 rage, 4 s.
   **Victory Rush** 5/6/7 + 80/90/100 % AD and a heal of 10/15/20 % of max health, for 20 s after a kill that is not
-  gray, free, no cooldown. **Execute** below 20 % health, 8/10/12 + 150/175/200 % AD, 15/20/25 rage and up to 30 more
-  for 3 % more damage each, 5/10/15 rage back for a kill, no cooldown. **Deep Wounds** a crit bleeds for 20/40/60 % of
-  its damage over 6 s. **Bloodthirst** a 15/30 % chance on a tick of Rend's Bleeding to open Overpower, once every
+  gray, 10 rage, no cooldown but the global one, and a cast closes the window. **Execute** below 20 % health, 10/12/14 +
+  190/210/230 % AD, 10/20/30 rage and up to 30 more for 3 % more damage each, 5/10/15 rage back for a kill, no cooldown
+  but the global one. **Deep Wounds** a crit bleeds for 20/40/60 % of its damage over 6 s. **Bloodthirst** a 10/20 % chance on a tick of Rend's Bleeding to open Overpower, once every
   6 s on each target. Slam, Battle Shout and Two-Handed Specialization: below and [11.1](#111-model).
 - **The target** (RLM-503): about 35 damage a second before armor at level 18, against the Frost Mage's about 40, so
   both kill Astone (about 3,000 health in RLM-503's balance; 1,500 since RLM-580) in 2.5 to 3 minutes.
 - `ArmsTreeGameTests` covers every active's damage at rank 1 and its highest rank, Rend's bleed, Overpower only after
   a block, Victory Rush only after a kill that is not gray and its heal, Execute's condition, extra rage, refund and lit
-  slot, Charge's closest point, stun and hop back (from either side) and its distance by rank, Deep Wounds' share,
-  Bloodthirst's proc, the tooltips' next rank, the kit by rows and the handoff's setup line.
+  slot, Charge's closest point, stun and hop back (from either side) and its distance by rank, a player's Charge
+  landing on the server (within a tick of travel, at its timeout and with its target gone, RLM-602), Deep Wounds' share,
+  Bloodthirst's proc, the tooltips' next rank, the kit by rows, the handoff's setup line, and the rage and cooldowns
+  above (RLM-604).
 
-- **Slam:** 5 + 1.5 per rank + 150 % of attack damage and 25 % more per rank, 30 rage, 4 s, needs a melee weapon (RLM-499); armor shred
+- **Slam:** 5 + 1 per rank + 150 % of attack damage and 20 % more per rank, 30 rage, 4 s, needs a melee weapon (RLM-499); armor shred
   5 % per rank. **Reckless Strike:** 2 + 1 per rank + 100 % of attack damage, 20 rage, 4 s, a melee weapon; crit
   chance +10 % and 5 % more per rank. **Shield Bash:** 1 + 0.5 per rank + 60 % of attack damage, 15 rage, 6 s, a
   shield; Stunned 0.5 s and 0.25 s more per rank.
 - **Frostbolt:** 8/9/10/11/12 + 100 to 160 % SP (system C, RLM-534; RLM-572), 10/15/20/25/30 mana; Slowness 4 s, II
   from rank 3 and III at rank 5 (RLM-572). **Fireball** (out of the M1 kit since RLM-542): 8 + 2 per rank, 12 mana; Burning (0.75 fire every 0.5 s, many small ticks, RLM-518) 4 s and 0.5 s more per rank, II from
   rank 5. **Arcane Missiles:** 3 × (5 + 1 per rank), 12 mana a second.
-- **The self-buffs** (Matěj, 2026-10-30): the Warrior's **Battle Shout** (max rank 2, 15/30 rage, 1 minute: +5/10 %
+- **The self-buffs** (Matěj, 2026-10-30): the Warrior's **Battle Shout** (max rank 2, no rage, 1 minute: +5/10 %
   attack damage and +10/20 % attack speed for the Warrior and the allies within 10 blocks for 10 minutes; Matěj,
   2026-11-03) and the Mage's **Ice Barrier** (max rank 3, 25/35/45 mana, 60/45/30 s since RLM-572: +10 / 20 / 30 Magic
   Shield for 10 / 20 / 30 s, filled at once; the Mage survives
