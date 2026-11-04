@@ -120,7 +120,7 @@ Melee armor, melee weapons, bows, tools, shields and tridents keep Apotheosis's 
 
 ### Melee: armor and weapons
 
-Apotheosis's affixes as RLM-232 sets them (68 kept, 31 off, Executing and Runed among them; [the affix set](apotheosis.md#the-affix-set)), remapped to our stats by RLM-272:
+Apotheosis's affixes as RLM-232 sets them (66 kept, 33 off, Executing, Runed, Bloodletting and Devilish among them; [the affix set](apotheosis.md#the-affix-set)), remapped to our stats by RLM-272:
 crit chance (Intricate), crit damage (Lacerating), armor pierce (Piercing), lifesteal (Vampiric), overheal
 (Berserking), cooldown reduction (Timekeeping), and vanilla's attack damage, attack speed, armor and toughness as
 they are. Warrior spells scale with attack damage, so Violent and Murderous are the Warrior's spell power too.

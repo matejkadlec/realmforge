@@ -4016,7 +4016,7 @@ content.
 
 Last resort, only where no event or API exists. Each one sits in `mixin/` (or the access transformer file) with a
 comment saying why, and gets a test. A mod lists its mixins in `<modid>.mixins.json`, which `neoforge.mods.toml`
-names under `[[mixins]]`. The core mod has nine: `RangedAttributeAccessor`, which raises attribute caps
+names under `[[mixins]]`. The core mod has eight: `RangedAttributeAccessor`, which raises attribute caps
 ([8.4](#84-caps)) and caps two of Apothic Attributes' down ([19.4](#194-optional-integrations)),
 `PlayerBlockActionMixin`, which lets Adventure mode break the allowlist inside instances ([15.5](#155-instances)),
 `PlayerExhaustionMixin`, which lowers a player's food exhaustion by their Stamina ([8.1](#81-the-attribute-set);
