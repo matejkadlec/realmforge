@@ -317,7 +317,7 @@ How features cooperate without breaking the direction:
 | Registry | Content | One entry | Synced | Milestone |
 | --- | --- | --- | --- | --- |
 | `realmforge:race` | `content/races/` | playable race: base modifiers, innate spells, allowed classes | yes | M1 |
-| `realmforge:class` | `content/classes/` | class: role (melee, caster, ranged), resource type, starting stats, spells by level, its specializations' spell trees (C5), starting kit | yes | M1 |
+| `realmforge:class` | `content/classes/` | class: role (melee, caster, ranged), resource type, starting stats, its specializations' spell trees (C5), starting kit | yes | M1 |
 | `realmforge:spell_school` | `content/spell_schools/` | school (owned by `combat`): kind (physical or magic), colour, its damage type, and the stats that are its power and resistance (attributes from `content/stats/`, static registrations, so a new school's stats need a game restart) | yes | M1 |
 | `realmforge:spell` | `content/spells/` | spell for players or NPCs: school, what it scales with, targeting, cast, cost, cooldowns, crit rules, typed effects with values per spell level (C3a-1), its name and description with placeholders (C3b) | yes | M1 |
 | `realmforge:talent_tree` | `content/talents/` | WoW-style tree: nodes on a grid, ranks, prerequisites, typed effects per rank | yes | not planned: no talents as of v1.0.0 ([12](#12-talents)) |
@@ -508,7 +508,7 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
 | Attachment | Owner package | On | Holds | Synced to |
 | --- | --- | --- | --- | --- |
 | `realmforge:level` | `stats` | every living entity | the level: derived from XP and the cap for players, set at spawn for mobs, fixed for bosses | the player itself and everyone tracking the entity |
-| `realmforge:character` | `character` | players | race, class (a one-entry list, from when dual class was planned; there is none, [10.1](#101-races-and-classes)), total character XP, cached level cap, the stat points spent on each primary stat | the owner and nearby players (small, nothing secret) |
+| `realmforge:character` | `character` | players | race, class, specialization ([10.1](#101-races-and-classes)), total character XP, cached level cap, the stat points spent on each primary stat | the owner and nearby players (small, nothing secret) |
 | `realmforge:starting_kit` | `character` | players | whether the player has received a class's starting kit, which comes with their first character only, so a new character after a reset brings none (Matěj, 2026-10-30); a login records it for a character older than the attachment; copied on death | not synced |
 | `realmforge:spellbook` | `spell` | players | known spells and their levels, the spell bar's layout: its eight slots and the racial slot beside it (C3b) | owner |
 | `realmforge:combat` | `spell` | players and mobs that cast | resource pools (mana, rage), cooldowns, current cast (transient), whether a cast set Better Combat's disable tag | owner, throttled (players; clients never read a mob's copy) |
@@ -1190,8 +1190,7 @@ the playtest covers it.
     tooltip on the character sheet's Character tab shows the racial ability and passive the same way, each on two lines:
     "Racial Ability" in gold over "Will To Survive" in yellow, and "Sword Specialization" in gold over its line in
     yellow.
-- **A class** gives its role, resource type, starting stats, spells by level, its specializations' spell trees and
-  starting kit. Its role (melee, caster or ranged) decides which role-bound bonuses of the stat rules its players get
+- **A class** gives its role, resource type, starting stats, its specializations' spell trees and starting kit. Its role (melee, caster or ranged) decides which role-bound bonuses of the stat rules its players get
   ([8.3](#83-derived-stats-and-milestones), RLM-170). Race and
   class stats stay the same at every level: each level gives stat points the player spends instead
   ([10.2](#102-leveling); Matěj, 2026-10-15, RLM-196: classes are for skills and abilities, not fixed stat
@@ -1202,8 +1201,8 @@ the playtest covers it.
   spells. The player picks one in game, in a spell trees window, after creating the character (race and class),
   and then spends points in that tree. From a level threshold (proposed: 20) they can pick a secondary
   specialization, a dual spec. M1 has one specialization per class; the other two, and dual spec, come in M3
-  (Matěj, 2026-10-16). The `character` attachment still stores the class in a list from when dual class was
-  planned; the specialization work (the spell tree model, C5, RLM-333) decides what it stores instead.
+  (Matěj, 2026-10-16). The `character` attachment stores the class as one value and the picked specialization's id
+  beside it (C5, RLM-333); a dual spec adds a second id in M3. A save with the old list of classes reads as its first.
   - **The Warrior's** (Matěj, 2026-10-23/24, RLM-392) follow WotLK: **Arms** starts with Slam, **Fury** with
     Reckless Strike and **Protection** with Shield Bash. Each also gets one stance, a little later in its tree.
   - **The Mage's** (Matěj, 2026-10-23/24, RLM-391) are named after their schools: **Fire** (damage over time, the
@@ -1211,7 +1210,25 @@ the playtest covers it.
     mana costs in general) with Arcane Missiles.
   - **Every specialization's first spell has max rank 5**, and every rank raises its damage and its effect, never
     its cooldown. The spells, their stances and the rules that come with them are in
-    [11.7](#117-class-spells-and-stances). Which tree each class gets in M1 is open (C5).
+    [11.7](#117-class-spells-and-stances). M1's trees are Frost for the Mage and Arms for the Warrior (Matěj,
+    2026-10-29).
+- **Spell trees (C5, RLM-333):**
+  - **Shape** (Matěj, 2026-10-30): rows of 1 to 3 spells in three columns, a new row at levels 1, 6, 12, 18 and every 6
+    levels on. A row needs only the character's level and its arrows; no rule counts points spent per row (Matěj,
+    2026-11-04). The only arrow so far is Bloodthirst's, which needs Rend at any rank.
+  - **Points:** exactly 1 per level from level 2 on, so 17 at level 18 (Matěj, 2026-11-03 and 2026-11-04). **A pick
+    gives the tree's first spell free at rank 1** (decision D4: every class starts with one spell), and every other rank
+    costs a point, rank 1 included (Matěj, 2026-11-04). So a level 18 character has 18 ranks of the tree's 31, and class
+    spells no longer come by level. RLM-503 rebalances Astone against that: she was tuned with builds of 26 and 27 ranks.
+  - **In code:** `character/Specialization` and `character/TreeSpell` are the class's `specializations`. A specialization
+    without spells comes later (M3): the window names it, and nobody can pick it. `character/SpellPoints` holds the pure
+    rules. Nothing saves the points: the spellbook's ranks are their only record (spent: the tree's ranks less the free
+    one), so they can never disagree. `character/SpellTrees` applies the rules: `pick` and `spend`, each from a payload
+    (`PickSpecializationPayload`, `SpendSpellPointPayload`) that it checks again, `reset` (the Scroll of Respec's effect
+    to come, RLM-226; `/qa spec reset` until then), and `fit`, which returns every point when the level no longer pays for
+    them or no longer opens a known spell's row, as stat points do.
+  - **Tested by:** `SpellPointsTest` (the rules and refusals), `SpellTreeGameTests` (a spent point changing a cast, each
+    refusal, a fallen level, the window's states). `/qa spec show|pick|spend|reset` reach any state.
 - **Changing race or class:** a QA command in M1, an in-game way later.
 - **In code (C1):** `character/Race` and `character/PlayerClass` are the entries of `realmforge:race` and
   `realmforge:class` (`CharacterRegistries`, both synced). A race names its classes by id, so a missing class fails
@@ -1231,13 +1248,9 @@ the playtest covers it.
   singleplayer like a menu (the server still handles payloads while paused). Its view model is
   `CharacterCreationView`. M1 has one race, Human, and decision D1's classes, Warrior (rage) and Mage (mana)
   ([content/README](../content/README.md)).
-- **In code (C4, RLM-27): the class kits.** A class lists its spells with the level that teaches each (`spells`,
-  `character/ClassSpell`); every class starts with one at level 1 (decision D4), and the pipeline allows 4 × N active
-  spells by the end of chapter N's level cap (passive spells are never on the bar, so they do not count: Matěj,
-  2026-10-30, RLM-333). `character/ClassSpells` teaches the due ones at rank 1 into the spell bar's
-  first empty slot: at creation and level-up with a chat line each, and silently at login and on a quiet level change
-  (commands), so a character made before its class had spells catches up; a known spell keeps its rank, and a level
-  that falls takes nothing away. A race names its racial spell (`racial_spell`), taught at creation into the racial
+- **In code (C4, RLM-27): the kits.** The pipeline allows a tree 4 × N active spells by the end of chapter N's level
+  cap (passive spells are never on the bar, so they do not count: Matěj, 2026-10-30, RLM-333). A race names its racial
+  spell (`racial_spell`), which `character/RacialSpells` teaches at creation and catches up on at login, into the racial
   slot (X, `Spells#learnRacial`), and its racial passive (`racial_passive`, `character/RacialPassive`): a name, a
   description, an item tag the main hand's item must be in, and modifiers that `CharacterBonuses` adds while it is
   (`CharacterBonuses#passiveModifierId`); `character/RacialPassives` writes its tooltip lines, which
@@ -1329,7 +1342,7 @@ the playtest covers it.
     (vanilla's title packets), plays the challenge fanfare to the player alone, bursts totem particles that everyone
     nearby sees, says in chat how many stat points are unspent and which key opens the sheet (a keybind component),
     and fires `realmforge:level_reached`. A level-up that reaches the cap says in chat which chapter raises it.
-    Class spells join with C4 and specialization points with C5; talent points wait with talents (RLM-28). A login
+    Spell points work the same way ([10.1](#101-races-and-classes)); talent points wait with talents (RLM-28). A login
     updates the level quietly and leaves the stat recompute to the player's first tick
     ([8.2](#82-where-modifiers-come-from), RLM-202); every other update (kills, rewards, commands, chapters) recomputes
     at once.
@@ -1463,7 +1476,7 @@ Its name and description are translation keys from C3b, the description's number
   A heal may add a share of the healed entity's max health and heal the caster instead of the target (`on_caster`,
   Victory Rush).
 
-A player knows a spell through their class (by level), race, talents (`grant_spell`) or items (an item component
+A player knows a spell through their specialization's tree (C5), race, talents (`grant_spell`) or items (an item component
 lists spells granted while equipped or on use): the vision's "some from the race or class, some from items".
 
 ### 11.2 Casting (server-authoritative)
@@ -1977,8 +1990,9 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
   key with a modifier as the modifier's label, a hyphen and the key's first character (CTRL + R reads CTR-R, CTRL +
   SHIFT reads CTR-S), drawn smaller when it would leave the slot.
 - **Learning and placing:** `Spells#learn` puts a newly learned spell into the bar's first empty slot, unless it is a
-  mob's. Learning a known spell again, at any level (a class level, C4, or a specialization point, C5), leaves the bar
-  as the player arranged it, so a spell taken off stays off (RLM-374). The spellbook (`client/screen/SpellbookScreen`;
+  mob's. Learning a known spell again, at any level (a spell point, C5), leaves the bar
+  as the player arranged it, so a spell taken off stays off (RLM-374). The spellbook (`client/screen/SpellbookScreen`, whose Spell Bar tab this is, beside the
+  Spell Tree tab, `client/screen/SpellTreeTab`, drawn from `character/SpellTreeView`; C5, RLM-333;
   a scrollbar beside its Known Spells while they do not fit, `client/screen/ScrollBar`, RLM-542; a name too long for
   its row wraps onto a second line, Matěj's playtest of 2026-11-03) moves a known spell into a slot, swapping with the
   one there, or empties one, through `SetSpellBarSlotPayload` and `Spells#placeOnBar`, which refuses another slot or an
@@ -2129,7 +2143,7 @@ switches it off.
 Decided by Matěj (2026-10-23/24, RLM-391 and RLM-392); C4 Class kits (RLM-27) built these spells, the engine parts
 they need (the stun, spell penetration, per-hit armor shred, the crit overflow, ranks that grow an effect) and their
 first balance pass (below); C5 (RLM-333) builds the specialization trees they start ([10.1](#101-races-and-classes)).
-The stances come a little later in each tree, so the specialization trees build them (C5, RLM-333). The hit moment of
+The stances come a little later in each tree, as aura spells (RLM-595, RLM-596). The hit moment of
 the instant Warrior spells (below) comes with their animations (RLM-399, in C6, RLM-29) and changes
 [11.2](#112-casting-server-authoritative) step 3, "Instant spells run now"; until then C4 deals their damage at once,
 to a single target. Damage labels (Low, Medium, High) compare a spell with the other spells; they are not numbers.
@@ -2216,17 +2230,16 @@ aura spell.
   stays on and only its bonuses pause; that neither turns it off nor starts the 5 minutes.
 
 **C4's first balance pass** (RLM-27; the numbers are in `content/spells/`, each file's comment says why; the playtest
-tunes them). A class teaches its spells by level ([10.1](#101-races-and-classes)): four active ones by level 10,
-chapter 1's cap. The M1 specializations' first spells come at level 1 (Arms's Slam, Frost's Frostbolt), and each
-class's kit is its M1 tree (below): the Mage's since RLM-542, the Warrior's since RLM-543. Before its tree, the other
-trees' first spells stood in for the Warrior (Reckless Strike at 3, Shield Bash at 5, Battle Shout at 8; Matěj,
+tunes them). A tree opens four active spells by level 10, chapter 1's cap ([10.1](#101-races-and-classes)). The M1
+specializations' first spells are free with the pick (Arms's Slam, Frost's Frostbolt), and each class's kit is its M1
+tree (below): the Mage's since RLM-542, the Warrior's since RLM-543. Before its tree, the other trees' first spells
+stood in for the Warrior (Reckless Strike at 3, Shield Bash at 5, Battle Shout at 8; Matěj,
 2026-10-30).
 
 **The Frost Mage's "Shatter" tree** (RLM-542; Matěj, 2026-10-30, RLM-333's comment and the "Spell Trees to Level 18"
 document, chosen for M1, version 1 of every spell, balanced by Claude): WotLK-like rows, a new one every 6 levels,
-about one passive for every two actives. Until C5 (RLM-333) spends points in a spell trees window, the Mage's kit
-teaches every spell of the tree at rank 1 at its row's level (`content/classes/mage.yaml`); Fireball and Arcane
-Missiles leave the M1 kit and come back with their trees in M3 (RLM-218).
+about one passive for every two actives. Points buy its ranks in the spell trees window (C5, RLM-333,
+[10.1](#101-races-and-classes)). Fireball and Arcane Missiles come back with their trees in M3 (RLM-218).
 
 | Row (level) | Left | Middle | Right |
 | --- | --- | --- | --- |
@@ -2267,9 +2280,9 @@ Missiles leave the M1 kit and come back with their trees in M3 (RLM-218).
 
 **The Arms Warrior's "Bloodletter" tree** (RLM-543; Matěj, 2026-10-30, RLM-333's comment and the "Spell Trees to Level
 18" document, chosen for M1, version 1 of every spell, balanced by Claude): the same rows, a new one every 6 levels,
-the first two holding four actives (D4). Until C5 (RLM-333), the Warrior's kit teaches every spell of the tree at rank 1
-at its row's level (`content/classes/warrior.yaml`); Reckless Strike and Shield Bash leave the M1 kit and come back
-with their trees in M3. Bloodthirst needs Rend in the tree, which C5 checks; the kit teaches Rend first.
+the first two holding four actives (D4). Points buy its ranks in the spell trees window (C5, RLM-333,
+[10.1](#101-races-and-classes)). Reckless Strike and Shield Bash come back with their trees in M3. Bloodthirst needs Rend
+in the tree.
 
 | Row (level) | Left | Middle | Right |
 | --- | --- | --- | --- |
@@ -2318,7 +2331,7 @@ with their trees in M3. Bloodthirst needs Rend in the tree, which C5 checks; the
   Fireball burns, Arcane Missiles should deal the most damage).
 - **Rage gain** stays at the Warrior's starting numbers ([11.5](#115-resources-cooldowns-modifiers)).
 
-**Open, for C5 and the playtest:** the numbers above; the stance percentages (X); which tree each class gets in M1;
+**Open, for the playtest:** the numbers above; the stance percentages (X);
 whether Frostbolt stays the Mage's D4 starting spell ("a Frostbolt-like fast single-target cast that slows",
 RLM-54), as C4 made it.
 
@@ -3786,7 +3799,9 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   `client/screen/CharacterCreationScreen`), `SpendStatPoint` (exists: `character/net/SpendStatPointPayload`, sent by
   `client/screen/CharacterSheetScreen`), `CastSpell` (exists: `spell/net/CastSpellPayload`, sent by
   `client/spell/SpellBarInput`), `SetSpellBarSlot` (exists: `spell/net/SetSpellBarSlotPayload`, sent by
-  `client/screen/SpellbookScreen`), `HighlightTarget` (exists: `spell/net/HighlightTargetPayload`, the Highlight Spell
+  `client/screen/SpellbookScreen`), `PickSpecialization` and `SpendSpellPoint` (exist:
+  `character/net/PickSpecializationPayload` and `SpendSpellPointPayload`, sent by `client/screen/SpellTreeTab`),
+  `HighlightTarget` (exists: `spell/net/HighlightTargetPayload`, the Highlight Spell
   Target going on or off, sent by `client/spell/TargetCircle`), `CancelCast`, `LearnTalent`, `ToggleNightVision` (exists:
   `world/net/ToggleNightVisionPayload`, sent by `client/input/NightVisionKey`).
 - Server → client: `CastStarted` and `CastEnded` (exist: `spell/net/CastStartedPayload` and `CastEndedPayload`, kept by
@@ -3866,7 +3881,7 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
     - **Character** (RLM-509): on the left the player's model, turning toward the mouse as in the inventory
       (`InventoryScreen#extractEntityInInventoryFollowsMouse`, drawn in screen pixels, as the entity's picture ignores
       the pose). On the right the identity line, race, specialization and class ("Human Frost Mage": the
-      specialization with the most points, a tie alphabetically, none without points, which come with C5), whose race
+      specialization with the most points, a tie alphabetically, none before the pick; C5, RLM-333), whose race
       and class show when hovered what the Origin tab showed (the race's description, what it gives and its racials,
       gold over yellow; the class's description); the XP bar (`XpBarHud#drawBar` at the sheet's size) with "350 / 1200
       XP", or "Level cap reached"; and the primary stats, one compact row each: name, value, a mark for each milestone
