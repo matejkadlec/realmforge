@@ -128,8 +128,11 @@ they are. Warrior spells scale with attack damage, so Violent and Murderous are 
 **Max health on gear: kept as is** (Matěj, 2026-10-30). Apotheosis's **Blessed** affix (armor, 2–8 health) and the
 **Brawler's** and **Warlord's** gems keep their `minecraft:max_health`; no remap to Vitality. Architecture 8.2 forbade
 gear that adds max health directly, because equipment modifiers apply one tick after a login and the saved health is
-cut to the lower maximum first (the item schema refuses it for our gear). That rule predates Apotheosis and changes
-instead: RLM-565 keeps the health across the login, so the clamp no longer cuts it.
+cut to the lower maximum first. That rule predates Apotheosis and now holds for our own gear only (the item schema
+still refuses `minecraft:max_health` on it: our gear gives Vitality). For Apotheosis's gear, RLM-565 found that
+Apotheosis already gives the saved health back on the first tick after a login (its own max health fix); a respawn and
+leaving the End keep it through our health rule, and GameTests check all three
+([architecture 8.2](../architecture.md#82-where-modifiers-come-from)).
 
 ### Caster: robes and wands
 
@@ -350,7 +353,7 @@ These tickets carry the approved design:
 - **RLM-547** and **RLM-548:** the gem bonuses for wands and robes; **RLM-556:** the curio categories, their affixes,
   sockets and gem bonuses.
 - **RLM-550:** the Nether's and the End's gems drop in Ashfire and Unmade Isles, once those realms exist.
-- **RLM-565:** max health from gear survives a login (Blessed and the two gems keep theirs).
+- **RLM-565** (checked): max health from gear survives a login (Apotheosis's own fix), a respawn and leaving the End.
 - **RLM-566:** the netherite upgrades (Ruby, Sapphire, Topaz).
 - **RLM-567** (M2): our own loot names its band through `apotheosis:reforge_item`, and validation keeps loot-only
   uniques within their source's step, once the first uniques exist.
@@ -369,7 +372,7 @@ Matěj's answers to the design's questions (RLM-511, 2026-10-30 and 2026-10-31),
    place on wands. Sorcerous is flat Spell Power under system C (2026-10-31): robes 1–1.5 / 1–1.5 / 1.5–2.5 / 2–3 /
    2.5–4 a piece, wands 2–3 / 2–3 / 3–5 / 4–6 / 5–8.
 5. **Max health on gear:** kept as is; architecture 8.2's rule changes instead, and the login clamp is solved
-   (RLM-565).
+   (RLM-565: by Apotheosis's own fix, which GameTests check).
 6. **Nether and End gems:** re-homed to Ashfire and Unmade Isles once those realms exist (on RLM-536).
 7. **Netherite upgrades:** new values, the table above, and every gem has other uses too.
 8. **Second sources:** yes, in principle: boss drops at 100 %, no low drop chances, and a unique below 100 % goes into

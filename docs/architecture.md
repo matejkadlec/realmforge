@@ -677,18 +677,23 @@ transient because of how vanilla handles health:
   moment (`LivingEntity#readAdditionalSaveData`). Transient bonuses would not exist yet, so health would be cut.
 - **Gear applies one tick later.** Equipment modifiers are transient and are first applied on the player's first
   tick (`LivingEntity#detectEquipmentUpdates`), and lowering max health clamps health at once
-  (`LivingEntity#onAttributeUpdated`). Hence two rules: gear never adds `generic.max_health` directly (a validation
-  rule; max health comes from primary stats through the saved derived modifiers), and the recompute after login
-  waits for that first tick, so it sees the same gear the saved values were computed with. Third-party gear breaks
-  the first rule: Apotheosis's Blessed affix and its Brawler's and Warlord's gems add max health, and Matěj kept them
-  (2026-10-30, RLM-511), so RLM-565 is to keep the health across the login instead of forbidding them; until then such
-  a player logs in with health cut to the maximum without them.
+  (`LivingEntity#onAttributeUpdated`). Hence the recompute after login waits for that first tick, so it sees the same
+  gear the saved values were computed with. **Max health on gear** (RLM-565): our own gear still never adds
+  `minecraft:max_health` (the item schema refuses it; its max health comes from Vitality through the saved derived
+  modifiers), but Apotheosis's gear does: its Blessed affix and its Brawler's and Warlord's gems, which Matěj kept
+  (2026-10-30, RLM-511). Such a player's saved health is cut at load to the maximum without them, and Apotheosis gives
+  it back itself: its `MHFMixinLivingEntity` keeps the saved `Health` when it is above the maximum at load and sets it
+  again at the first `detectEquipmentUpdates`, when the gear's modifiers apply, at most the new maximum. Without
+  Apotheosis no gear adds max health, so the core mod adds nothing of its own for a login;
+  `StatsGameTests#maxHealthFromGearSurvivesRelog` (full, half and without the piece) notices when an Apotheosis update
+  drops that fix. Apotheosis's fix only covers a load; a respawn and leaving the End go through the rules below.
 - **Respawning:** after a death, vanilla copies only base values and sets health before our modifiers exist
   (`ServerPlayer#restoreFrom`), so refill health to the new maximum after the first-tick recompute. Leaving the End
   (`PlayerEvent.Clone#isWasDeath` is false) is not a death: vanilla copies the permanent modifiers (ours, and
   effects', which `MobEffect#addAttributeModifiers` adds as permanent ones) and the health, but clamps the health
-  while transient equipment modifiers are still missing (another mod's gear with max health). So restore the health
-  captured in `PlayerEvent.Clone` after the first-tick recompute instead.
+  while transient equipment modifiers are still missing (Apotheosis's gear with max health). So restore the health
+  captured in `PlayerEvent.Clone` after the first-tick recompute instead
+  (`StatsGameTests#maxHealthFromGearSurvivesRespawnAndLeavingTheEnd`).
 
 **In code (F4):** `CharacterStats` recomputes at the end of a player tick (`PlayerTickEvent.Post`), after vanilla
 applied the tick's equipment changes. Every new player entity (a login, a respawn) starts with a fresh
@@ -2754,8 +2759,9 @@ phases:
   tries its phase's abilities every 5 ticks through `SpellCaster`, the first that is off its own `cooldown_seconds`
   and that the engine lets it cast, so every attack is a readable cast; it aims at its target, unless the spell picks
   its own (`random_player`, `farthest_player`) or acts on itself (`self`). An area round itself (a spell on itself
-  whose first effect is an area: a quake) it casts only while its target stands inside it, measured across the ground
-  as the area measures. Between casts it fights in melee; while a cast runs it stands and faces its target
+  whose first effect is an area: a quake) it casts only while its target stands inside it, measured as the area
+  measures (`SpellArea#reaches`: within its radius across the ground and within its height, half a block below its
+  middle to 3 above, RLM-506), so a target on a ledge or in a pit never makes it channel for nothing. Between casts it fights in melee; while a cast runs it stands and faces its target
   (`BossHoldGoal`). Ground movement only: no flying bosses.
 - **Telegraphs** (research BM-2: heavy area attacks are telegraphed): every ability with a cast time is told by the
   cast (its sound, its animation, a projectile forming in its hands). While a boss casts a spell whose

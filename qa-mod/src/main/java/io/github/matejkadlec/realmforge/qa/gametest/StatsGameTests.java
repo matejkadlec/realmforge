@@ -44,6 +44,9 @@ import net.minecraft.world.item.component.ItemAttributeModifiers;
  * player's movement, so the players do not fall.
  */
 public final class StatsGameTests {
+    /** The max health the test chestplate gives, Blessed's highest roll (RLM-511). */
+    private static final double GEAR_HEALTH = 8;
+
     private StatsGameTests() {
     }
 
@@ -181,6 +184,83 @@ public final class StatsGameTests {
         tick(back, 1);
         helper.assertValueEqual(back.getMaxHealth(), max, "max health after leaving the End");
         helper.assertValueEqual(back.getHealth(), max, "health after leaving the End");
+        server.getPlayerList().remove(back);
+        helper.succeed();
+    }
+
+    /**
+     * RLM-565 (architecture 8.2): max health from gear (Apotheosis's Blessed, the Brawler's and Warlord's gems; here a
+     * chestplate with {@code minecraft:max_health}) survives a relog. Vanilla's load clamps the saved health to the max
+     * health without the gear, whose modifiers come with the first tick; Apotheosis's own fix
+     * ({@code MHFMixinLivingEntity}: the saved {@code Health} above the maximum at load, set again at the first
+     * {@code detectEquipmentUpdates}) gives it back, at most the new maximum. At full health the player is at full
+     * health again, at half health still at half, and without the chestplate at the maximum without it. This test is
+     * what notices when an Apotheosis update drops that fix.
+     */
+    @QaGameTest
+    public static void maxHealthFromGearSurvivesRelog(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        GameProfile profile = new GameProfile(UUID.randomUUID(), "qa-stats-gear-health");
+        ServerPlayer first = QaPlayers.loginOnPlatform(helper, profile);
+        tick(first, 1);
+        float withoutGear = first.getMaxHealth();
+        first.setItemSlot(EquipmentSlot.CHEST, chestplate(GEAR_HEALTH));
+        tick(first, 1);
+        float max = first.getMaxHealth();
+        helper.assertValueEqual(max, withoutGear + (float) GEAR_HEALTH, "the chestplate's max health");
+        first.setHealth(max);
+        server.getPlayerList().remove(first);
+
+        ServerPlayer full = QaPlayers.login(server, profile);
+        helper.assertValueEqual(full.getHealth(), withoutGear, "vanilla's load clamps the health without the gear");
+        tick(full, 1);
+        helper.assertValueEqual(full.getMaxHealth(), max, "max health after the relog's first tick");
+        helper.assertValueEqual(full.getHealth(), max, "full health after a relog at full health");
+        full.setHealth(max / 2);
+        server.getPlayerList().remove(full);
+
+        ServerPlayer half = QaPlayers.login(server, profile);
+        tick(half, 1);
+        helper.assertValueEqual(half.getHealth(), max / 2, "half health after a relog at half health");
+        half.setHealth(max);
+        server.getPlayerList().remove(half);
+
+        ServerPlayer unequipped = QaPlayers.login(server, profile);
+        unequipped.setItemSlot(EquipmentSlot.CHEST, ItemStack.EMPTY);
+        tick(unequipped, 1);
+        helper.assertValueEqual(unequipped.getMaxHealth(), withoutGear, "max health without the chestplate");
+        helper.assertValueEqual(unequipped.getHealth(), withoutGear, "the saved health, at most the new maximum");
+        server.getPlayerList().remove(unequipped);
+        helper.succeed();
+    }
+
+    /**
+     * RLM-565: a respawn after death and leaving the End keep the health with max health from gear, through
+     * {@code CharacterStats}' first-tick health rule (Apotheosis's fix only covers a load). The respawned player (its
+     * chestplate kept, as with keepInventory) gets full health with the gear's maximum; the one leaving the End above
+     * the maximum without its gear keeps exactly the health it had, not only a full one.
+     */
+    @QaGameTest
+    public static void maxHealthFromGearSurvivesRespawnAndLeavingTheEnd(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        ServerPlayer dead = QaPlayers.loginOnPlatform(helper, "qa-stats-gear-respawn");
+        tick(dead, 1);
+        float withoutGear = dead.getMaxHealth();
+        ServerPlayer respawned =
+                QaPlayers.onPlatform(helper, server.getPlayerList().respawn(dead, false, Entity.RemovalReason.KILLED));
+        respawned.setItemSlot(EquipmentSlot.CHEST, chestplate(GEAR_HEALTH));
+        tick(respawned, 1);
+        float max = withoutGear + (float) GEAR_HEALTH;
+        helper.assertValueEqual(respawned.getMaxHealth(), max, "max health with the chestplate after the respawn");
+        helper.assertValueEqual(respawned.getHealth(), max, "a respawn refills to the gear's maximum");
+
+        respawned.setHealth(max - 2);
+        ServerPlayer back = QaPlayers.onPlatform(helper,
+                server.getPlayerList().respawn(respawned, true, Entity.RemovalReason.CHANGED_DIMENSION));
+        helper.assertTrue(back.getHealth() < max - 2, "vanilla clamps the health while the gear is missing");
+        tick(back, 1);
+        helper.assertValueEqual(back.getMaxHealth(), max, "max health after leaving the End");
+        helper.assertValueEqual(back.getHealth(), max - 2, "leaving the End keeps the health it had");
         server.getPlayerList().remove(back);
         helper.succeed();
     }
@@ -356,6 +436,16 @@ public final class StatsGameTests {
     }
 
     /** A stick that adds {@code amount} to {@code attribute} in the main hand, like gear with a fixed stat. */
+    /** An iron chestplate whose only modifier is {@code amount} max health, as Apotheosis's Blessed gives armor. */
+    static ItemStack chestplate(double amount) {
+        ItemStack chestplate = new ItemStack(Items.IRON_CHESTPLATE);
+        chestplate.set(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.builder()
+                .add(Attributes.MAX_HEALTH, new AttributeModifier(Realmforge.id("qa/chestplate"), amount,
+                        AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.CHEST)
+                .build());
+        return chestplate;
+    }
+
     static ItemStack stick(Holder<Attribute> attribute, double amount) {
         ItemStack stick = new ItemStack(Items.STICK);
         stick.set(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.builder()
