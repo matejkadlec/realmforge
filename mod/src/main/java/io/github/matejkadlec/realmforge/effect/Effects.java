@@ -20,7 +20,10 @@ import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
  * forgets them too. Logical server only.
  */
 public final class Effects {
-    /** The application {@link #apply} is making, so its own {@code MobEffectEvent.Added} keeps the source. */
+    /**
+     * The application {@link #apply} is making, so its own {@code MobEffectEvent.Added} keeps the source, and listeners
+     * can read it ({@link #applying}).
+     */
     @Nullable
     private static Pending pending;
 
@@ -35,7 +38,7 @@ public final class Effects {
             EffectSource source) {
         Objects.requireNonNull(source, "source");
         Pending previous = pending;
-        pending = new Pending(target, instance.getEffect());
+        pending = new Pending(target, instance.getEffect(), source);
         boolean changed;
         try {
             changed = target.addEffect(instance, caster);
@@ -47,6 +50,15 @@ public final class Effects {
                     target.getData(EffectAttachments.SOURCES).with(key, source)));
         }
         return changed;
+    }
+
+    /**
+     * The source of the application of {@code effect} to {@code entity} that {@link #apply} is making right now: what a
+     * {@code MobEffectEvent.Added} listener reads to learn who applied it and with what, a proc origin included (RLM-564:
+     * an effect a proc's spell applies sets off no proc, however late it lands). Empty for any other application.
+     */
+    public static Optional<EffectSource> applying(LivingEntity entity, Holder<MobEffect> effect) {
+        return pending != null && pending.matches(entity, effect) ? Optional.of(pending.source()) : Optional.empty();
     }
 
     /** Whether {@code entity} is stunned now ({@link Stuns}). */
@@ -129,7 +141,7 @@ public final class Effects {
         return effect.unwrapKey();
     }
 
-    private record Pending(LivingEntity target, Holder<MobEffect> effect) {
+    private record Pending(LivingEntity target, Holder<MobEffect> effect, EffectSource source) {
         boolean matches(LivingEntity entity, Holder<MobEffect> added) {
             return entity == target && added.equals(effect);
         }

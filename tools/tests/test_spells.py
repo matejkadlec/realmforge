@@ -1567,11 +1567,54 @@ def test_a_passives_proc_is_in_game_units(repo: RepoPaths) -> None:
         (("      effect: minecraft:slowness\n", ""), "a applies_effect proc names the effect it watches"),
         (("trigger: applies_effect", "trigger: crit"), "only an applies_effect or tick proc names an effect"),
         (("realmforge:frozen", "realmforge:no_such_effect"), "passive.procs.0.apply_effect.effect"),
+        # RLM-564: only the ticks of an effect with stacks are hits a proc sees; Burning's are not.
+        (
+            (
+                "trigger: applies_effect\n      effect: minecraft:slowness",
+                "trigger: tick\n      effect: realmforge:burning",
+            ),
+            "realmforge:burning is no effect of content/effects/ with stacks: only their ticks set off a tick proc",
+        ),
+        (
+            (
+                "trigger: applies_effect\n      effect: minecraft:slowness",
+                "trigger: tick\n      effect: minecraft:poison",
+            ),
+            "minecraft:poison is no effect of content/effects/ with stacks",
+        ),
+        (
+            (
+                "trigger: applies_effect\n      effect: minecraft:slowness",
+                "trigger: tick\n      effect: realmforge:bleeding\n      spell: realmforge:fireball",
+            ),
+            "realmforge:fireball gives no damage over time of realmforge:bleeding, so it has no ticks to watch",
+        ),
+        (
+            (
+                "trigger: applies_effect\n      effect: minecraft:slowness",
+                "trigger: tick\n      effect: realmforge:bleeding\n      spell: realmforge:deep_wounds",
+            ),
+            "realmforge:deep_wounds gives no damage over time of realmforge:bleeding",
+        ),
     ],
 )
 def test_invalid_procs_are_rejected(repo: RepoPaths, change: tuple[str, str], expected: str) -> None:
     spell(repo, "test_bite", PASSIVE_PROC.replace(*change))
     assert_problem(repo, expected)
+
+
+def test_a_tick_proc_watches_a_spells_damage_over_time_of_an_effect_with_stacks(repo: RepoPaths) -> None:
+    """RLM-564: the positive side of the tick rule, a passive watching Test Lacerate's Bleeding."""
+    spell(
+        repo,
+        "test_bite",
+        PASSIVE_PROC.replace(
+            "trigger: applies_effect\n      effect: minecraft:slowness",
+            "trigger: tick\n      effect: realmforge:bleeding\n      spell: realmforge:test_lacerate",
+        ),
+    )
+    data = json.loads(generate(repo)[f"{SPELL_DATA}/test_bite.json"])
+    assert data["passive"]["procs"][0]["trigger"] == "tick"
 
 
 def test_a_proc_opens_only_a_spells_window(repo: RepoPaths) -> None:

@@ -18,6 +18,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -35,8 +36,10 @@ import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
  * damage source ({@link SchoolDamageSource#procOrigin}), and this engine ignores every hit and kill that carries one.
  * Otherwise a sure on-hit proc that deals damage would trigger itself until the server's stack overflows. A vanilla
  * status effect's ticks have no attacker, so no proc reacts to them either; our own status effects keep the origin of
- * the proc whose spell applied them ({@code EffectSource#procOrigin}), and their ticks carry it. And nothing a proc's
- * action sets off while it runs (a status effect it gives, a spell it casts) fires another proc.
+ * the proc whose spell applied them ({@code EffectSource#procOrigin}), and their ticks carry it, as does their
+ * application: an effect a proc's spell applies after the proc ran (a bolt's Slowness) fires no applies-effect proc
+ * (RLM-564). And nothing a proc's action sets off while it runs (a status effect it gives, a spell it casts) fires
+ * another proc.
  *
  * <p>Internal cooldowns are transient, by holder and proc id, with weak keys. Logical server only.
  */
@@ -101,15 +104,18 @@ public final class Procs {
 
     /**
      * A status effect another entity gave {@code event}'s entity: its giver's {@link Proc.Trigger#APPLIES_EFFECT} procs
-     * that watch the effect (Frostbite on Slowness). Fires even when the application only refreshes the effect.
+     * that watch the effect (Frostbite on Slowness). Fires even when the application only refreshes the effect, and
+     * never for one a proc's spell or action applied ({@link EffectSource#procOrigin}), however late it lands: a bolt
+     * a proc cast applies its Slowness ticks after the proc ran (RLM-564).
      */
     static void onEffectAdded(MobEffectEvent.Added event) {
         LivingEntity target = event.getEntity();
+        Holder<MobEffect> effect = event.getEffectInstance().getEffect();
         if (target.level() instanceof ServerLevel && event.getEffectSource() instanceof LivingEntity giver
-                && giver != target) {
-            fire(giver, Proc.Trigger.APPLIES_EFFECT, target,
-                    event.getEffectInstance().getEffect().unwrapKey().map(ResourceKey::identifier), Optional.empty(),
-                    0);
+                && giver != target
+                && Effects.applying(target, effect).flatMap(EffectSource::procOrigin).isEmpty()) {
+            fire(giver, Proc.Trigger.APPLIES_EFFECT, target, effect.unwrapKey().map(ResourceKey::identifier),
+                    Optional.empty(), 0);
         }
     }
 
