@@ -41,7 +41,9 @@ public record StackedDamage(ResourceKey<SpellSchool> school, int intervalTicks, 
 
     /**
      * Whether a stack with {@code remainingTicks} left ticks now: at the end of every interval since it was applied,
-     * the last time on its last tick, as {@link Periodic#ticksAt} counts an effect's remaining duration.
+     * the last time on its last tick. A stack counts its own remaining duration, unlike a {@link Periodic}, which counts
+     * from its first application ({@link Periodic#ticksAtAge}, RLM-487): the same spell from the same caster replaces
+     * its stack, with the damage spread over the new stack's ticks, so a refresh starts its pace again.
      */
     public boolean ticksAt(int remainingTicks) {
         return remainingTicks > 0 && remainingTicks % intervalTicks == 1 % intervalTicks;

@@ -31,6 +31,15 @@ public final class EffectAttachments {
                     .build());
 
     /**
+     * {@code realmforge:effect_ages}: how many server ticks each periodic effect of the holder has run since it was
+     * first applied ({@link EffectAges}, RLM-487), which its ticks follow. Saved, never synced, not copied on death.
+     */
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<EffectAges>> AGES =
+            ATTACHMENTS.register("effect_ages", () -> AttachmentType.builder(EffectAges::new)
+                    .serialize(EffectAges.CODEC.fieldOf("value"))
+                    .build());
+
+    /**
      * {@code realmforge:effect_looks}: how clients draw the holder because of its effects ({@link EffectLooks},
      * RLM-539). Saved, synced to every tracking player, not copied on death.
      */

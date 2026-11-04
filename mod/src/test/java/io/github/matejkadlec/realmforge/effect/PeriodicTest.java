@@ -1,7 +1,9 @@
 package io.github.matejkadlec.realmforge.effect;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,15 +13,33 @@ import org.junit.jupiter.api.Test;
 class PeriodicTest {
     private static final double EPSILON = 1e-12;
 
-    /** The remaining durations at which an effect of {@code duration} ticks, counting down as vanilla does. */
+    /** The ages at which an effect of {@code duration}, applied once, ticks: one server tick of age per tick it lasts. */
     private static List<Integer> ticks(Periodic periodic, int duration) {
-        List<Integer> elapsed = new ArrayList<>();
-        for (int remaining = duration; remaining >= 1; remaining--) {
-            if (periodic.ticksAt(remaining)) {
-                elapsed.add(duration - remaining + 1);
+        return ticks(periodic, List.of(new int[] {0, duration}));
+    }
+
+    /**
+     * The ages at which an effect ticks when it is applied at each {@code {age, duration}} of {@code applications}
+     * (the first at age 0), every application setting its remaining duration as vanilla's {@code update} does for a
+     * longer one, and the effect running until its remaining duration is spent.
+     */
+    private static List<Integer> ticks(Periodic periodic, List<int[]> applications) {
+        List<Integer> ticked = new ArrayList<>();
+        int remaining = 0;
+        int next = 0;
+        for (int age = 0; next < applications.size() || remaining > 0; age++) {
+            while (next < applications.size() && applications.get(next)[0] == age) {
+                remaining = Math.max(remaining, applications.get(next)[1]);
+                next++;
+            }
+            if (remaining > 0) {
+                if (periodic.ticksAtAge(age + 1)) {
+                    ticked.add(age + 1);
+                }
+                remaining--;
             }
         }
-        return elapsed;
+        return ticked;
     }
 
     @Test
@@ -31,10 +51,42 @@ class PeriodicTest {
     }
 
     @Test
-    void aDurationOfPartIntervalsTicksOnItsLastTick() {
+    void aDurationOfPartIntervalsLosesThePartAfterItsLastTick() {
         // Validation keeps a spell's durations whole intervals; a command may not.
-        assertEquals(List.of(10, 30, 50), ticks(Periodic.damage("realmforge:fire", 2, 20), 50));
+        assertEquals(List.of(20, 40), ticks(Periodic.damage("realmforge:fire", 2, 20), 50));
         assertEquals(2, Periodic.damage("realmforge:fire", 2, 20).tickCount(50));
+    }
+
+    /**
+     * RLM-487: an application while the effect lasts lengthens it without moving its ticks, so an area or a channel
+     * that applies it again sooner than it ticks (a hasted channel every 16 ticks, areas that pulse out of step) never
+     * keeps it from ticking.
+     */
+    @Test
+    void aFasterReapplicationKeepsThePaceOfTheFirst() {
+        Periodic burning = Periodic.damage("realmforge:fire", 2, 20);
+        List<int[]> hasted = List.of(new int[] {0, 40}, new int[] {16, 40}, new int[] {32, 40}, new int[] {48, 40});
+        assertEquals(List.of(20, 40, 60, 80), ticks(burning, hasted),
+                "applied every 16 ticks for 2 s: it ticks every second, until 2 s after the last application");
+        List<int[]> outOfStep = List.of(new int[] {0, 20}, new int[] {10, 20}, new int[] {20, 20},
+                new int[] {30, 20}, new int[] {40, 20});
+        assertEquals(List.of(20, 40, 60), ticks(burning, outOfStep), "applied every half second: every second");
+    }
+
+    /** A recast loses only the partial interval after the last tick, as in Classic. */
+    @Test
+    void aRecastLosesOnlyThePartialIntervalAtTheEnd() {
+        Periodic burning = Periodic.damage("realmforge:fire", 2, 20);
+        assertEquals(List.of(20, 40, 60, 80), ticks(burning, List.of(new int[] {0, 80}, new int[] {15, 80})),
+                "applied again at 15 for 4 s: it lasts until 95, its last tick at 80");
+    }
+
+    @Test
+    void itNeverTicksBeforeItsFirstServerTick() {
+        Periodic burning = Periodic.damage("realmforge:fire", 2, 20);
+        assertFalse(burning.ticksAtAge(0));
+        assertFalse(burning.ticksAtAge(-20));
+        assertTrue(Periodic.heal("realmforge:arcane", 1, 1).ticksAtAge(1));
     }
 
     @Test

@@ -494,10 +494,10 @@ Rules:
   `duration_seconds` up to 600, a long buff's 10 minutes (Battle Shout), `amplifier`, and for a spell of several
   ranks `duration_per_level_seconds` (added
   for every rank above 1) and `stronger_at_levels` (the ranks from which the amplifier is one higher); an area or a
-  channel applies one of our effects with `periodic` again
-  at every interval, which resets its duration, so validation refuses an area or channel whose interval is shorter
-  than the effect's: it would never tick while applied again; an equal one loses only the partial interval, as in
-  Classic, though Cast Time Reduction shortens a channel's interval below it) and `realmforge:remove_effect`
+  channel may apply one of our effects with `periodic` again at any interval: its ticks keep the pace of its first
+  application, so an application while it lasts only lengthens it and it still ticks at every one of its intervals,
+  however often an area, a channel hastened by Cast Time Reduction or a channel's overlapping areas apply it again, and
+  a recast loses only the partial interval after its last tick, as in Classic, RLM-487) and `realmforge:remove_effect`
   (`effect`) on any entity target; `realmforge:cleanse` (every harmful effect, a stun included, off the caster or an
   ally); `realmforge:knockback` (`strength`,
   0.4 is a melee hit's) on an enemy, which also interrupts its cast; `realmforge:projectile` (`speed` in blocks per

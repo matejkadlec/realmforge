@@ -228,6 +228,59 @@ public final class EffectGameTests {
         });
     }
 
+    /**
+     * RLM-487, case 1: a channel that Cast Time Reduction hastens applies a damage over time again sooner than it ticks
+     * (test_kindle every 8 ticks with 20 % CTR, test_burning a tick every 20), and it still ticks every second while
+     * the channel lasts: its ticks keep the pace of its first application, and each application only lengthens it. It
+     * used to tick only after the channel, as every application reset the remaining duration it counted.
+     */
+    @QaGameTest(timeoutTicks = 140)
+    public static void aHastedChannelsDamageOverTimeTicksWhileItIsAppliedAgain(GameTestHelper helper) {
+        ServerPlayer player = caster(helper, "qa-effect-hasted-channel");
+        StatsCommands.setBase(player, GeneratedStats.SPELL_POWER, 0);
+        StatsCommands.setBase(player, GeneratedStats.FIRE_POWER, 0);
+        StatsCommands.setBase(player, GeneratedStats.CAST_TIME_REDUCTION, 0.2);
+        Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 3));
+        learn(helper, player, GeneratedSpells.TEST_KINDLE);
+        CastResult result = SpellCaster.cast(player, GeneratedSpells.TEST_KINDLE, husk);
+        helper.assertTrue(result.success(), "test_kindle was refused: " + result.failure());
+        // Its 6 ticks every 8 ticks (0.5 s less 20 %) from 8 to 48, each applying 2 s of burning.
+        helper.runAfterDelay(50, () -> assertHealth(helper, husk, HEALTH - 2 * 2,
+                "2 ticks of 2 while the channel applied it every 8 ticks: a second and two after its first application"));
+        helper.runAfterDelay(110, () -> {
+            helper.assertFalse(husk.hasEffect(GeneratedEffects.TEST_BURNING), "the burning ran out");
+            assertHealth(helper, husk, HEALTH - 4 * 2,
+                    "4 ticks of 2: every second from its first application until 2 s after its last one");
+            logout(player);
+            helper.succeed();
+        });
+    }
+
+    /**
+     * RLM-487, case 2: a channel's areas pulse out of step (test_ember_field: an area every half second, each pulsing
+     * as it appears and a second later), so they apply a damage over time again every half second, and it still ticks
+     * every second from its first application.
+     */
+    @QaGameTest(timeoutTicks = 160)
+    public static void aChannelsOverlappingAreasLetTheirDamageOverTimeTick(GameTestHelper helper) {
+        ServerPlayer player = caster(helper, "qa-effect-overlapping-areas");
+        StatsCommands.setBase(player, GeneratedStats.SPELL_POWER, 0);
+        StatsCommands.setBase(player, GeneratedStats.FIRE_POWER, 0);
+        Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 3));
+        learn(helper, player, GeneratedSpells.TEST_EMBER_FIELD);
+        CastResult result = SpellCaster.cast(player, GeneratedSpells.TEST_EMBER_FIELD, husk);
+        helper.assertTrue(result.success(), "test_ember_field was refused: " + result.failure());
+        // Areas from 10 to 40 ticks, each pulsing then and 20 ticks later: burning applied every 10 ticks to about 60.
+        helper.runAfterDelay(65, () -> assertHealth(helper, husk, HEALTH - 2 * 2,
+                "2 ticks of 2 while the areas applied it every half second"));
+        helper.runAfterDelay(130, () -> {
+            helper.assertFalse(husk.hasEffect(GeneratedEffects.TEST_BURNING), "the burning ran out");
+            assertHealth(helper, husk, HEALTH - 4 * 2, "4 ticks of 2, every second from its first application");
+            logout(player);
+            helper.succeed();
+        });
+    }
+
     private static ServerPlayer caster(GameTestHelper helper, String name) {
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, name, new Vec3(2.5, 1, 0.5));
         player.setGameMode(GameType.SURVIVAL);

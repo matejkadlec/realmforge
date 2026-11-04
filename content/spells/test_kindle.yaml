@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Engine test (RLM-487): a channel that sets an enemy burning (test_burning, a tick every second) at every tick, every
+# half second, so it applies the effect again sooner than it ticks; with Cast Time Reduction sooner still. The burning
+# keeps the pace of its first application, so it ticks every second while the channel lasts. Not gameplay content; the
+# GameTests in the QA mod cast it.
+id: test_kindle
+name: {en_us: Test Kindle}
+description: {en_us: "Keeps an enemy burning for {periodic} damage every {interval} sec while you channel."}
+school: realmforge:fire
+scales_with: spell_power
+targeting: {type: realmforge:enemy, range: 16}
+cast: {type: channel, duration_seconds: 3, interval_seconds: 0.5}
+effects:
+  - {type: realmforge:apply_effect, effect: realmforge:test_burning, duration_seconds: 2}

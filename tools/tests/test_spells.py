@@ -1083,55 +1083,25 @@ def reapplying_spell(repo: RepoPaths, cast: str, effect: str) -> None:
 
 
 @pytest.mark.parametrize(
-    ("cast", "effect", "path", "what", "interval"),
+    ("cast", "effect"),
     [
+        # RLM-487: our periodic effects tick at the pace of their first application, so an area or a channel may apply
+        # one again at any interval, sooner than it ticks too (RLM-376 refused that while every application reset it).
         (
             "{type: instant}",
             "{type: realmforge:area, radius: 3, duration_seconds: 4, interval_seconds: 0.5, "
             f"effects: [{BURNING_4S}]}}",
-            "effects.0.effects.0.effect",
-            "the area",
-            "0.5",
         ),
-        (
-            "{type: channel, duration_seconds: 3, interval_seconds: 0.5}",
-            BURNING_4S,
-            "effects.0.effect",
-            "the channel",
-            "0.5",
-        ),
+        ("{type: channel, duration_seconds: 3, interval_seconds: 0.5}", BURNING_4S),
         (
             "{type: channel, duration_seconds: 3, interval_seconds: 0.5}",
             f"{{type: realmforge:projectile, speed: 20, effects: [{BURNING_4S}]}}",
-            "effects.0.effects.0.effect",
-            "the channel",
-            "0.5",
         ),
         (
             "{type: channel, duration_seconds: 2, interval_seconds: 0.25}",
             "{type: realmforge:area, radius: 3, duration_seconds: 4, interval_seconds: 1, "
             f"effects: [{BURNING_4S}]}}",
-            "effects.0.effects.0.effect",
-            "the channel",
-            "0.25",
         ),
-    ],
-)
-def test_an_area_or_channel_does_not_reapply_an_effect_faster_than_it_ticks(
-    repo: RepoPaths, cast: str, effect: str, path: str, what: str, interval: str
-) -> None:
-    reapplying_spell(repo, cast, effect)
-    assert_problem(
-        repo,
-        f"{path}: realmforge:test_burning ticks every 1 s and {what} applies it again every {interval} s: each "
-        f"application resets its duration before it ticks, so it never ticks while {what} keeps applying it; give "
-        f"{what} an interval of at least 1 s",
-    )
-
-
-@pytest.mark.parametrize(
-    ("cast", "effect"),
-    [
         (
             "{type: instant}",
             f"{{type: realmforge:area, radius: 3, duration_seconds: 4, interval_seconds: 1, effects: [{BURNING_4S}]}}",
@@ -1146,7 +1116,6 @@ def test_an_area_or_channel_does_not_reapply_an_effect_faster_than_it_ticks(
             "{type: channel, duration_seconds: 3, interval_seconds: 1}",
             f"{{type: realmforge:projectile, speed: 20, effects: [{BURNING_4S}]}}",
         ),
-        # A projectile of a spell that is not a channel applies it once, and a vanilla effect has no ticks of ours.
         ("{type: instant}", f"{{type: realmforge:projectile, speed: 20, effects: [{BURNING_4S}]}}"),
         (
             "{type: channel, duration_seconds: 3, interval_seconds: 0.5}",
@@ -1154,7 +1123,7 @@ def test_an_area_or_channel_does_not_reapply_an_effect_faster_than_it_ticks(
         ),
     ],
 )
-def test_an_area_or_channel_may_reapply_an_effect_as_often_as_it_ticks(
+def test_an_area_or_channel_may_reapply_an_effect_at_any_interval(
     repo: RepoPaths, cast: str, effect: str
 ) -> None:
     reapplying_spell(repo, cast, effect)
