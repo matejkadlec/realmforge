@@ -435,7 +435,6 @@ public final class StatsGameTests {
                 .anyMatch(modifier -> StatRules.isStatModifier(modifier.id()));
     }
 
-    /** A stick that adds {@code amount} to {@code attribute} in the main hand, like gear with a fixed stat. */
     /** An iron chestplate whose only modifier is {@code amount} max health, as Apotheosis's Blessed gives armor. */
     static ItemStack chestplate(double amount) {
         ItemStack chestplate = new ItemStack(Items.IRON_CHESTPLATE);
@@ -446,6 +445,7 @@ public final class StatsGameTests {
         return chestplate;
     }
 
+    /** A stick that adds {@code amount} to {@code attribute} in the main hand, like gear with a fixed stat. */
     static ItemStack stick(Holder<Attribute> attribute, double amount) {
         ItemStack stick = new ItemStack(Items.STICK);
         stick.set(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.builder()
