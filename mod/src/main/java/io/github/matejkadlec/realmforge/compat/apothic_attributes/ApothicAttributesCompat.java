@@ -11,9 +11,7 @@ import net.minecraft.world.entity.ai.attributes.RangedAttribute;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
-import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
 
 /**
  * Apothic Attributes, which Apotheosis needs, neutralized where it would roll a second crit or dodge next to ours
@@ -53,8 +51,6 @@ public final class ApothicAttributesCompat {
     public static void register(IEventBus modBus) {
         modBus.addListener(EventPriority.LOW, EntityAttributeModificationEvent.class,
                 ApothicAttributesCompat::onAttributeModification);
-        // Its Bleeding becomes ours (RLM-579).
-        NeoForge.EVENT_BUS.addListener(MobEffectEvent.Applicable.class, ApothicBleeds::onApplicable);
         // Its attributes exist from registration on, so their caps are set at common setup, on both sides, as each
         // clamps attribute values itself; deferred work runs serially on the main thread.
         modBus.addListener(FMLCommonSetupEvent.class,

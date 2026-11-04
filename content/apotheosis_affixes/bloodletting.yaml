@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Bloodletting (Apothic Attributes' Bleeding on the melee or trident hit's target): Matěj turned it off (RLM-600,
+# 2026-11-03). Rend and Deep Wounds are the only bleeds, each an effect of its own (RLM-601), so nothing from
+# Apotheosis feeds a third one. A sword that rolled it before keeps the entry in its affixes, but Apotheosis skips an
+# affix its registry no longer holds (AffixHelper#getAffixesImpl): the sword shows and does nothing of it.
+id: bloodletting
+affix: apotheosis:melee/mob_effect/bloodletting
+disabled: true

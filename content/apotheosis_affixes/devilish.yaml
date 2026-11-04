@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_affixes.schema.json
+# Devilish (Apothic Attributes' Bleeding on a shield's blocked attacker): off with Bloodletting (RLM-600). Matěj
+# decided that the Apotheosis bleed leaves the pack (2026-11-03), and Devilish was its third source. Shields keep
+# Reinforcing and Venomous, two basic effects for Legendary's two slots.
+id: devilish
+affix: apotheosis:shield/mob_effect/devilish
+disabled: true
