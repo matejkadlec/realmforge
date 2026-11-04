@@ -66,10 +66,11 @@ PLAYER_ATTACK_DAMAGE = 1.0
 PLAYER_ATTACK_SPEED = 4.0
 # Vanilla's leather armor equip sound, the default for cloth.
 LEATHER_EQUIP_SOUND = "minecraft:item.armor.equip_leather"
-# Attributes gear never modifies directly (architecture 8.2): max health comes from primary stats only, and a wand's
-# attack damage and speed come from its attack_damage and attack_speed.
+# Attributes our gear never modifies directly (architecture 8.2): its max health comes from primary stats only
+# (Apotheosis's gear may add max health, RLM-565), and a wand's attack damage and speed come from its attack_damage and
+# attack_speed.
 GEAR_FORBIDDEN_ATTRIBUTES: dict[str, str] = {
-    "minecraft:max_health": "gear never adds max health directly (architecture 8.2): give vitality instead",
+    "minecraft:max_health": "our gear never adds max health directly (architecture 8.2): give vitality instead",
     "minecraft:attack_damage": "a weapon's attack damage is its attack_damage",
     "minecraft:attack_speed": "a weapon's attack speed is its attack_speed",
 }

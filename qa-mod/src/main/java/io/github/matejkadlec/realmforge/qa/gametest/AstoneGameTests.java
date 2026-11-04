@@ -48,6 +48,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
@@ -196,6 +197,43 @@ public final class AstoneGameTests {
                 })
                 .thenWaitUntil(() -> helper.assertTrue(husk[0].getHealth() < firstSlam[0],
                         "her next slam hurt the husk again"))
+                .thenSucceed();
+    }
+
+    /**
+     * RLM-506: Quake's slams reach from half a block below her feet to 3 blocks above them, so she begins it only while
+     * her target is inside that height too. With the husk on a ledge 4 blocks above her, 3 blocks away and so within
+     * Quake's radius, she never begins it (no 3 s channel standing still for nothing); once the husk stands at her
+     * height, she does. (Unpushable, so her boulders and rockfalls never knock it off the ledge.)
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_17X17, timeoutTicks = 400)
+    public static void astoneNeverQuakesWithHerTargetOnLedge(GameTestHelper helper) {
+        BossMob astone = standingAstone(helper);
+        for (int x = 10; x <= 12; x++) {
+            for (int z = 7; z <= 9; z++) {
+                helper.setBlock(new BlockPos(x, 4, z), Blocks.STONE);
+            }
+        }
+        Husk husk = husk(helper, new Vec3(11.5, 5, 8.5));
+        CombatGameTests.setBase(husk, Attributes.KNOCKBACK_RESISTANCE, 1);
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(astone.home().isPresent(), "Astone took her home"))
+                .thenExecute(() -> astone.enterPhase(1))
+                .thenWaitUntil(() -> helper.assertFalse(astone.changingPhase(), "the phase change is over"))
+                .thenExecute(() -> {
+                    helper.assertTrue(husk.getY() - astone.getY() >= 4, "the husk stands 4 blocks above her");
+                    astone.setTarget(husk);
+                })
+                .thenExecuteFor(80, () -> helper.assertFalse(casting(astone, GeneratedSpells.ASTONE_QUAKE),
+                        "no Quake while her target stands on a ledge above its reach"))
+                .thenExecute(() -> helper.assertTrue(husk.isAlive() && astone.getTarget() == husk,
+                        "the husk on the ledge stayed her target"))
+                .thenExecute(() -> {
+                    Vec3 below = helper.absoluteVec(new Vec3(11.5, 1, 8.5));
+                    husk.teleportTo(below.x, below.y, below.z);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(casting(astone, GeneratedSpells.ASTONE_QUAKE),
+                        "Astone quakes once her target stands at her height"))
                 .thenSucceed();
     }
 

@@ -132,7 +132,7 @@ public final class SpellArea extends Entity {
                 middle.y + ABOVE, middle.z + radius);
         List<LivingEntity> inside = level.getEntitiesOfClass(LivingEntity.class, box, entity -> entity.isAlive()
                 && !entity.isSpectator() && affects(caster, entity, area.affects())
-                && horizontalDistanceSqr(middle, entity.position()) <= radius * radius);
+                && reaches(middle, radius, entity));
         EffectContext through = context.through(level, this);
         for (LivingEntity entity : inside) {
             Vec3 out = entity.position().subtract(middle);
@@ -141,6 +141,17 @@ public final class SpellArea extends Entity {
                 effect.apply(through, target);
             }
         }
+    }
+
+    /**
+     * Whether an area of {@code radius} round {@code middle} reaches {@code entity}: its position within the radius
+     * horizontally, and its hitbox overlapping the area's height, from {@value #BELOW} blocks below the middle to
+     * {@value #ABOVE} above it, as a pulse finds it. A boss asks it before it begins an area round itself (RLM-506).
+     */
+    public static boolean reaches(Vec3 middle, double radius, Entity entity) {
+        AABB hitbox = entity.getBoundingBox();
+        return horizontalDistanceSqr(middle, entity.position()) <= radius * radius
+                && hitbox.maxY > middle.y - BELOW && hitbox.minY < middle.y + ABOVE;
     }
 
     /** Whether an area of {@code caster}'s that affects {@code affects} acts on {@code entity}. */

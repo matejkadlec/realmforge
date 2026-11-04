@@ -14,6 +14,7 @@ import io.github.matejkadlec.realmforge.spell.RandomPlayerTargeting;
 import io.github.matejkadlec.realmforge.spell.SelfTargeting;
 import io.github.matejkadlec.realmforge.spell.Spell;
 import io.github.matejkadlec.realmforge.spell.SpellAim;
+import io.github.matejkadlec.realmforge.spell.SpellArea;
 import io.github.matejkadlec.realmforge.spell.SpellCaster;
 import io.github.matejkadlec.realmforge.spell.SpellEffect;
 import io.github.matejkadlec.realmforge.spell.SpellTarget;
@@ -407,17 +408,14 @@ public class BossMob extends MeleeMob implements MobLevels.FixedLevel {
 
     /**
      * Whether {@code spell} is worth casting at {@code target} now: an area round the boss itself (a quake) only while
-     * the target stands inside it, measured as the area measures; every other spell whenever the engine allows it.
+     * the target stands inside it, measured as the area measures ({@link SpellArea#reaches}: within its radius and its
+     * height, so a target on a ledge or in a pit is outside, RLM-506); every other spell whenever the engine allows it.
      */
     private boolean worthCasting(Spell spell, LivingEntity target) {
         if (!(spell.targeting() instanceof SelfTargeting)) {
             return true;
         }
-        return landingArea(spell).map(area -> {
-            double dx = target.getX() - getX();
-            double dz = target.getZ() - getZ();
-            return dx * dx + dz * dz <= area.radius() * area.radius();
-        }).orElse(true);
+        return landingArea(spell).map(area -> SpellArea.reaches(position(), area.radius(), target)).orElse(true);
     }
 
     /** What a cast aims at: its target, unless the spell picks its own target or acts on the caster. */
