@@ -100,16 +100,8 @@
       "additionalProperties": false,
       "description": "How a rage class gains and loses rage (architecture 11.5): from melee hits it deals and damage it takes, decaying\nout of combat. The pool holds 100.",
       "properties": {
-        "decay_after_seconds": {
-          "description": "How long after the last hit dealt or taken the holder is out of combat and its rage decays.",
-          "exclusiveMinimum": 0,
-          "maximum": 60,
-          "minimum": 0,
-          "title": "Decay After Seconds",
-          "type": "number"
-        },
         "decay_per_second": {
-          "description": "Rage lost every second out of combat.",
+          "description": "Rage lost every second once the holder is out of combat, 10 s after the last hit dealt or taken (the shared in-combat state, RLM-348 and RLM-594).",
           "maximum": 100,
           "minimum": 0,
           "title": "Decay Per Second",
@@ -133,8 +125,7 @@
       "required": [
         "per_hit_dealt",
         "per_max_health_taken",
-        "decay_per_second",
-        "decay_after_seconds"
+        "decay_per_second"
       ],
       "title": "RageDef",
       "type": "object"

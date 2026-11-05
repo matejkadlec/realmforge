@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Literal
 
 from realmforge_tools.content import Content
-from realmforge_tools.generate.datapack import seconds_to_ticks, translation_key
+from realmforge_tools.generate.datapack import translation_key
 from realmforge_tools.generate.javagen import header, java_file_path, string_literal
 from realmforge_tools.project import MOD_ID, QA_JAVA_PACKAGE, RepoPaths
 from realmforge_tools.schema.character import (
@@ -52,7 +52,7 @@ def _rage(rage: RageDef | None) -> str:
         return "Optional.empty()"
     return (
         f"Optional.of(new Rage({_double(rage.per_hit_dealt)}, {_double(rage.per_max_health_taken)}, "
-        f"{_double(rage.decay_per_second)}, {seconds_to_ticks(rage.decay_after_seconds)}))"
+        f"{_double(rage.decay_per_second)}))"
     )
 
 
@@ -187,9 +187,8 @@ def _classes(content: Content) -> bytes:
         "/** What {@code content/classes/} says about every class, so GameTests can check that the game agrees. */\n"
         "public final class GeneratedClassExpectations {\n"
         + _BONUS_RECORDS
-        + "    /** How a rage class gains and loses rage, in game units (the decay's delay in ticks). */\n"
-        "    public record Rage(double perHitDealt, double perMaxHealthTaken, double decayPerSecond,\n"
-        "            int decayAfterTicks) {\n"
+        + "    /** How a rage class gains and loses rage, in game units. */\n"
+        "    public record Rage(double perHitDealt, double perMaxHealthTaken, double decayPerSecond) {\n"
         "    }\n"
         "\n"
         "    /** One item of the starting kit. */\n"

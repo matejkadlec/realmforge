@@ -13,7 +13,6 @@ from realmforge_tools.schema.common import (
     ContentId,
     LocalizedText,
     ResourceId,
-    Seconds,
     StrictModel,
     UniqueResourceIds,
 )
@@ -162,12 +161,11 @@ class RageDef(StrictModel):
         "gives a tenth.",
     )
     decay_per_second: float = Field(
-        ge=0, le=100, allow_inf_nan=False, description="Rage lost every second out of combat."
-    )
-    decay_after_seconds: Seconds = Field(
-        gt=0,
-        le=60,
-        description="How long after the last hit dealt or taken the holder is out of combat and its rage decays.",
+        ge=0,
+        le=100,
+        allow_inf_nan=False,
+        description="Rage lost every second once the holder is out of combat, 10 s after the last hit dealt or taken "
+        "(the shared in-combat state, RLM-348 and RLM-594).",
     )
 
 

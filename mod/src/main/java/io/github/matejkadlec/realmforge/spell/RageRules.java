@@ -10,16 +10,15 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
  * @param perHitDealt rage for a full-strength melee hit dealt; a weaker swing gives its share
  * @param perMaxHealthTaken rage for taking damage equal to the whole max health from an attacker; a hit for a tenth of
  *        it gives a tenth
- * @param decayPerSecond rage lost every second out of combat
- * @param decayAfterTicks how long after the last hit dealt or taken the holder is out of combat
+ * @param decayPerSecond rage lost every second once the holder is out of combat ({@code combat/InCombat}: 10 s after the
+ *        last hit dealt or taken; RLM-594)
  */
-public record RageRules(double perHitDealt, double perMaxHealthTaken, double decayPerSecond, int decayAfterTicks) {
+public record RageRules(double perHitDealt, double perMaxHealthTaken, double decayPerSecond) {
     public static final Codec<RageRules> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                     Codec.doubleRange(0, 100).fieldOf("per_hit_dealt").forGetter(RageRules::perHitDealt),
                     Codec.doubleRange(0, 1000).fieldOf("per_max_health_taken")
                             .forGetter(RageRules::perMaxHealthTaken),
-                    Codec.doubleRange(0, 100).fieldOf("decay_per_second").forGetter(RageRules::decayPerSecond),
-                    Codec.intRange(1, 1200).fieldOf("decay_after_ticks").forGetter(RageRules::decayAfterTicks))
+                    Codec.doubleRange(0, 100).fieldOf("decay_per_second").forGetter(RageRules::decayPerSecond))
             .apply(instance, RageRules::new));
 
     /** The rage a melee hit dealt at {@code strength} (vanilla's attack strength, 0 to 1) gives. */
