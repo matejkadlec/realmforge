@@ -84,7 +84,7 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   the character attachment stores one class and the specialization, and the ranks are the only record of the points;
   each class's M1 tree (C4, RLM-27): the Warrior's, the Arms Warrior's "Bloodletter" tree (RLM-543: Slam, Charge,
   Deep Wounds; Rend, Battle Shout, Two-Handed
-  Specialization; Bloodthirst, Overpower, Victory Rush; Execute), with a charge a player's own client runs, which stops
+  Specialization; Bloodthirst, Overpower, Victory Rush; Execute, Battle Stance), with a charge a player's own client runs, which stops
   a block from its target on the near side, stuns round that point and hops a block back, a target distance by rank, a
   heal of a share of max health, a refund for a kill, a crit's bleed and Execute lit while the current target is low, and
   no bleed from Apotheosis (RLM-600: Bloodletting and Devilish off, no Tyrannical bow bonus);
@@ -107,7 +107,10 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   Spells scale by system C (RLM-534): an amount plus a coefficient of the caster's Spell Power (points) or Attack
   Damage, both per rank, × (1 + School Power + passives); passive spells
   (RLM-541) are learned with ranks but never cast: modifiers, more damage for named spells, crit chance against Frozen
-  targets, a shorter two-handed block cooldown.
+  targets, a shorter two-handed block cooldown; aura spells (RLM-595) are toggled from the spell bar, free and off the
+  global cooldown, one of a group on at a time, on a 3 minute cooldown every aura shares that Cooldown Reduction never
+  shortens, on through death and relog, and while on they work as passives, paused by an unmet weapon condition: the
+  Warrior's Battle Stance (RLM-596: +5 Armor Pierce and +10 % Armor Shred with a two-handed weapon).
   Casters have their gear (RLM-172, RLM-197), from an item's `gear` in YAML: seven two-handed wands from wood to
   netherite whose stats count in the main hand, which every cast wears and which lock shields, and four robe sets (Apprentice's, Spellweave, Arcane Silk,
   Netherite) with magic shield, flat Spell Power and mana instead of armor; Arcane Dust drops from witches, evokers and
@@ -119,9 +122,10 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   channel's again every second, RLM-403), instantly, with a cast time or as a channel, halving the caster's speed while
   it moves (moving never interrupts, ADR 0039, ADR 0047), interrupted by death, a dimension change or logout, with no
   melee during a cast, and synced to clients as cast payloads; at an entity, a ground point or a direction, with damage,
-  heals, projectiles, areas, status effects, teleports, dashes and knockback; rage that hits fill and that decays out of
-  combat, procs that never trigger procs, and mobs choosing their target (their current target, a random or the farthest
-  player). Players cast from the spell bar (C3b): eight slots on R, T, F, G, C, Y, Ů and §, the racial slot on X, the
+  heals, projectiles, areas, status effects, teleports, dashes and knockback; rage that hits fill and that drops 5 a
+  second once out of combat (RLM-594), procs that never trigger procs, and mobs choosing their target (their current
+  target, a random or the farthest player). Players cast from the spell bar (C3b): eight slots on R, T, F, G, C, Y, Ů
+  and §, the racial slot on X, the
   class resource's bar (mana, rage) under it (RLM-400), the two in one place on the screen, a WoW-style cast bar, a
   cooldown sweep, a spellbook (P) whose tooltips fill a spell's numbers from data, a 0.5 s global cooldown that every
   spell is on (RLM-402) and an optional spell queue (client options). Our own status effects come from
