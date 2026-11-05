@@ -30,8 +30,9 @@ import net.minecraft.world.phys.Vec3;
 /**
  * Crowd control on a boss (RLM-615; Matěj, 2026-11-04, architecture 14.3): a 4 s stun or freeze lasts 2 s on Astone,
  * then her Stun Immunity or Frozen Immunity runs for 10 s, shown on her bar with its time left, during which a new one
- * does nothing; each immunity blocks only its own effect, a freeze that breaks early still gives its immunity, a reset
- * leaves none, and an ordinary mob keeps the full duration. And Astone's Spell Resistance (RLM-616): a Frostbolt deals
+ * does nothing; each immunity blocks only its own effect, a freeze that breaks early still gives its immunity, one
+ * applied again while she has it (or in the tick it broke) is refused, a reset leaves none, and an ordinary mob keeps
+ * the full duration. And Astone's Spell Resistance (RLM-616): a Frostbolt deals
  * her 10 % less than it would without it, at the same Spell Power.
  *
  * <p>Astone stands in the middle of a 17x17 platform without AI or target goals, so nothing but the test touches her
@@ -117,6 +118,49 @@ public final class BossControlGameTests {
                             "the reset gave Stun Immunity");
                     helper.assertValueEqual(astone.bossBar().title().getString(), TITLE, "her bar after the reset");
                 })
+                .thenSucceed();
+    }
+
+    /**
+     * Applying a stun again while she is stunned never lengthens it (vanilla's update would): it is refused, and her
+     * Stun Immunity still follows when the first one ends. So nobody keeps a boss stunned by taking turns.
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_17X17, timeoutTicks = 80)
+    public static void aStunAgainWhileStunnedIsRefused(GameTestHelper helper) {
+        BossMob astone = astone(helper);
+        astone.addEffect(new MobEffectInstance(GeneratedEffects.STUNNED, FOUR_SECONDS));
+        helper.startSequence()
+                .thenExecuteAfter(20, () -> {
+                    int left = astone.getEffect(GeneratedEffects.STUNNED).getDuration();
+                    helper.assertFalse(astone.addEffect(new MobEffectInstance(GeneratedEffects.STUNNED,
+                            FOUR_SECONDS)), "a second stun landed on a stunned boss");
+                    helper.assertValueEqual(astone.getEffect(GeneratedEffects.STUNNED).getDuration(), left,
+                            "the stun's time left after the refused one");
+                })
+                .thenExecuteAfter(TWO_SECONDS - 20 + 2, () -> {
+                    helper.assertFalse(astone.hasEffect(GeneratedEffects.STUNNED), "the first stun ended on time");
+                    helper.assertTrue(astone.hasEffect(GeneratedEffects.STUN_IMMUNITY), "Stun Immunity followed it");
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * A freeze that breaks and is applied again in the same tick (Frost Nova's damage breaks it, then its own freeze
+     * lands) is refused, and Frozen Immunity follows on the next tick, as for any end of a freeze.
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_17X17, timeoutTicks = 60)
+    public static void aFreezeAgainInTheTickItBrokeIsRefused(GameTestHelper helper) {
+        BossMob astone = astone(helper);
+        astone.addEffect(new MobEffectInstance(GeneratedEffects.FROZEN, FOUR_SECONDS));
+        helper.startSequence()
+                .thenExecuteAfter(5, () -> {
+                    astone.removeEffect(GeneratedEffects.FROZEN);
+                    helper.assertFalse(astone.addEffect(new MobEffectInstance(GeneratedEffects.FROZEN,
+                            FOUR_SECONDS)), "a freeze landed in the tick the last one broke");
+                    helper.assertFalse(astone.hasEffect(GeneratedEffects.FROZEN), "she is frozen again");
+                })
+                .thenExecuteAfter(2, () -> helper.assertTrue(astone.hasEffect(GeneratedEffects.FROZEN_IMMUNITY),
+                        "Frozen Immunity followed the broken freeze"))
                 .thenSucceed();
     }
 

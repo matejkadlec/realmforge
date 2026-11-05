@@ -23,8 +23,11 @@ import net.minecraft.world.entity.LivingEntity;
  * stun-locked or kept frozen, and its crowd control still counts. This works on top of a boss's own
  * {@code immune_to} (RLM-539), which refuses the effect for good.
  *
- * <p>A {@link BossMob} shortens what it takes in {@code addEffect} and asks {@link #follow} every server tick, after its
- * effects ticked, for the effects that ended; its reset clears its effects and {@link #forget}s them, so a reset never
+ * <p>A {@link BossMob} shortens what it takes in {@code addEffect}, notes what lands ({@link #landed}), and refuses
+ * one it still {@link #holds}: an application while the boss has the effect would only lengthen it (vanilla's
+ * {@code MobEffectInstance#update}), and one in the tick that ended it would land before its immunity, so either would
+ * keep the boss stunned or frozen without ever giving the immunity. Every server tick, after its effects ticked, it asks
+ * {@link #follow} for the effects that ended; its reset clears its effects and {@link #forget}s them, so a reset never
  * leaves an immunity. Its bar shows each immunity with its time left ({@link #withImmunities}).
  */
 final class BossControl {
@@ -36,6 +39,21 @@ final class BossControl {
         return onBosses(effect.getEffect())
                 .map(rule -> effect.withScaledDuration((float) rule.durationFraction()))
                 .orElse(effect);
+    }
+
+    /**
+     * Whether the boss still holds {@code effect} as far as its immunity goes: it has it, or it ended since the last
+     * {@link #follow}, which has yet to give its immunity. A boss refuses such an effect.
+     */
+    boolean holds(Holder<MobEffect> effect) {
+        return held.contains(effect);
+    }
+
+    /** Notes {@code effect}, which just landed on the boss, when it has {@code on_bosses}. */
+    void landed(Holder<MobEffect> effect) {
+        if (onBosses(effect).isPresent()) {
+            held.add(effect);
+        }
     }
 
     /**

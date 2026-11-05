@@ -359,12 +359,23 @@ public class BossMob extends MeleeMob implements MobLevels.FixedLevel {
     }
 
     /**
-     * A stun or a freeze lands shorter on a boss (RLM-615, {@link BossControl}); an immunity it has, or its own
-     * {@code immune_to}, refuses it ({@code MobEffectEvent.Applicable}).
+     * A stun or a freeze lands shorter on a boss (RLM-615, {@link BossControl}), and never while it still holds one, so
+     * nobody keeps it stunned or frozen by applying it again; an immunity it has, or its own {@code immune_to}, refuses
+     * it ({@code MobEffectEvent.Applicable}).
      */
     @Override
     public boolean addEffect(MobEffectInstance effect, @Nullable Entity source) {
-        return super.addEffect(definition().isPresent() ? BossControl.shortened(effect) : effect, source);
+        if (definition().isEmpty()) {
+            return super.addEffect(effect, source);
+        }
+        if (control.holds(effect.getEffect())) {
+            return false;
+        }
+        boolean landed = super.addEffect(BossControl.shortened(effect), source);
+        if (landed) {
+            control.landed(effect.getEffect());
+        }
+        return landed;
     }
 
     /** Its death gives back the flight its arena took (RLM-559). */

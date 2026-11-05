@@ -2831,15 +2831,18 @@ phases:
   Lance still count): on every boss, an effect with `on_bosses` ([11.4](#114-status-effects): Stunned and Frozen) lasts
   half as long, and when it ends, however it ends (it runs out, damage breaks a freeze), the boss gets that effect's
   immunity for 10 s, Stun Immunity or Frozen Immunity, which refuses a new one; each blocks only its own effect, so a
-  stun never blocks a freeze. `boss/BossControl` does it: `BossMob#addEffect` shortens what lands, and every server tick
-  after its effects ticked the boss compares the effects with `on_bosses` it holds with the last tick's and gives the
-  immunity of each that ended. Its reset clears its effects and forgets them, so a reset leaves no immunity. A per-boss
+  stun never blocks a freeze. `boss/BossControl` does it: `BossMob#addEffect` shortens what lands and refuses one the
+  boss still holds (vanilla's `MobEffectInstance#update` would only lengthen it, and one in the tick that broke it
+  would land before its immunity: either would keep the boss stunned or frozen without an immunity), and every server
+  tick after its effects ticked the boss compares the effects with `on_bosses` it holds with the last tick's and gives
+  the immunity of each that ended. Its reset clears its effects and forgets them, so a reset leaves no immunity. A per-boss
   `immune_to` still refuses an effect for good. Players never see a mob's effects, so the **boss bar** shows each
   immunity after the phase with its time left, as vanilla formats an effect's: "Astone, the Unbroken — The Weighing ·
   Stun Immunity (00:10)" (`gui.realmforge.boss_bar_immunity`). `BossControlGameTests` cover a 4 s stun and freeze on
   Astone (2 s, then 10 s of immunity on the bar, a new one refused, the next one landing after it), each immunity
-  blocking only its own effect, a broken freeze's immunity, a reset leaving none, and an ordinary mob keeping the full
-  4 s.
+  blocking only its own effect, a broken freeze's immunity, a stun applied again while she is stunned and a freeze
+  applied again in the tick it broke (both refused, the immunity following), a reset leaving none, and an ordinary mob
+  keeping the full 4 s.
 - **Arena:** its home is where its AI first finds it on the ground (a guard's post, [14.2](#142-custom-mobs)). It
   attacks only what stands within the arena's radius of home (`BossMob#canAttack`, which vanilla's target goals and
   `Mob#getTarget` ask, so a target that leaves the arena is let go and forgotten), and takes no hurt from an attacker
