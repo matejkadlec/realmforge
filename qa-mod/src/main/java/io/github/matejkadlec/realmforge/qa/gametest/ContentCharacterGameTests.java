@@ -99,9 +99,17 @@ public final class ContentCharacterGameTests {
                     CharacterBonuses.bonuses(CharacterBonuses.CLASS_PREFIX, id, playerClass.modifiers()),
                     expected.bonuses().stream().map(b -> new Bonus(b.id(), b.attribute(), b.operation(), b.amount()))
                             .toList(), expected.id() + " bonuses");
-            helper.assertValueEqual(playerClass.spells().stream().map(taught -> taught.spell().getRegisteredName()
-                    + " at " + taught.level()).toList(), expected.spells().stream().map(taught -> taught.spell()
-                    + " at " + taught.level()).toList(), expected.id() + " spells by level");
+            helper.assertValueEqual(playerClass.specializations().stream().map(specialization -> specialization.id()
+                    + " " + specialization.name() + " " + specialization.description() + " "
+                    + specialization.firstSpell().map(Holder::getRegisteredName) + " "
+                    + specialization.spells().stream().map(taught -> taught.spell().getRegisteredName() + " at "
+                    + taught.level() + " in " + taught.column() + " after "
+                    + taught.requires().map(Holder::getRegisteredName)).toList()).toList(),
+                    expected.specializations().stream().map(specialization -> specialization.id() + " "
+                    + specialization.nameKey() + " " + specialization.descriptionKey() + " "
+                    + specialization.firstSpell() + " " + specialization.spells().stream().map(taught -> taught.spell()
+                    + " at " + taught.level() + " in " + taught.column() + " after " + taught.requires()).toList())
+                    .toList(), expected.id() + " specializations");
         }
         helper.succeed();
     }

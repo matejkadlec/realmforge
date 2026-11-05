@@ -16,7 +16,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
  * only offers valid choices, but the server checks every request again: the player has no character yet, the race and
  * the class exist, and the race allows the class. Then it sets the {@code character} attachment, brings the level and
  * level cap up to date ({@link Leveling}), teaches the class's first spells and the racial spell with a chat line each
- * ({@link ClassSpells}, C4), recomputes the stats (race and class modifiers), refills health to the new maximum and
+ * ({@link RacialSpells}, C4), recomputes the stats (race and class modifiers), refills health to the new maximum and
  * gives the class's starting kit with the player's first character only ({@link CharacterAttachments#STARTING_KIT}).
  */
 public final class CharacterCreation {
@@ -86,7 +86,8 @@ public final class CharacterCreation {
         }
         player.setData(CharacterAttachments.CHARACTER, current.create(race, playerClass));
         Leveling.update(player, false);
-        ClassSpells.teach(player, true);
+        RacialSpells.teach(player);
+        SpellTrees.remindToPick(player);
         CharacterStats.recompute(player);
         player.setHealth(player.getMaxHealth());
         // The starting kit comes with the player's first character only (Matěj, 2026-10-30).

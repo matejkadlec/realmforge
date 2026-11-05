@@ -14,6 +14,8 @@ import io.github.matejkadlec.realmforge.combat.HitBonus;
 import io.github.matejkadlec.realmforge.combat.MagicShield;
 import io.github.matejkadlec.realmforge.combat.SpellSchools;
 import io.github.matejkadlec.realmforge.effect.Effects;
+import io.github.matejkadlec.realmforge.character.Specialization;
+import io.github.matejkadlec.realmforge.character.SpellTrees;
 import io.github.matejkadlec.realmforge.generated.GeneratedEffects;
 import io.github.matejkadlec.realmforge.generated.GeneratedItems;
 import io.github.matejkadlec.realmforge.generated.GeneratedSpellSchools;
@@ -76,9 +78,9 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
 /**
- * C4 (RLM-27), RLM-499 and RLM-518: the class kits in a world. Human characters learn their class's spells by level
- * and their racial spell; melee spells need a melee weapon and Shield Bash a shield; a stun stops casts, attacks and a
- * mob's AI, and Will To Survive breaks it; Reckless Strike's crit chance above 100 % turns into crit damage; Slam's
+ * C4 (RLM-27), RLM-499 and RLM-518: the class kits in a world. Human characters get their tree's first spell with the
+ * pick and their racial spell; melee spells need a melee weapon and Shield Bash a shield; a stun stops casts, attacks
+ * and a mob's AI, and Will To Survive breaks it; Reckless Strike's crit chance above 100 % turns into crit damage; Slam's
  * armor shred and a hit's spell penetration grow with the rank; Ice Barrier fills the Magic Shield at once; Battle
  * Shout reaches allies; Sword Specialization raises a Human's attack damage with a sword; spells add their coefficient
  * of the caster's power (scaling system C, RLM-534). Expected numbers follow
@@ -100,56 +102,32 @@ public final class ClassKitGameTests {
     private ClassKitGameTests() {
     }
 
-    /** Creation teaches the class's level 1 spell onto the bar and the race's racial spell into the racial slot. */
+    /**
+     * Creation teaches only the race's racial spell, into the racial slot; the class's first spell waits for the
+     * specialization (C5, RLM-333, {@link SpellTreeGameTests}).
+     */
     @QaGameTest
-    public static void creationTeachesTheFirstSpellAndTheRacialSpell(GameTestHelper helper) {
-        ServerPlayer warrior = character(helper, "qa-kit-warrior", "warrior");
+    public static void creationTeachesOnlyTheRacialSpell(GameTestHelper helper) {
+        ServerPlayer warrior = unspecialized(helper, "qa-kit-warrior", "warrior");
         Spellbook book = warrior.getData(SpellAttachments.SPELLBOOK);
-        helper.assertValueEqual(book.level(GeneratedSpells.SLAM), Optional.of(1), "a new Warrior knows Slam");
-        helper.assertValueEqual(book.slot(0), Optional.of(GeneratedSpells.SLAM), "on the bar's first slot");
-        helper.assertValueEqual(book.level(GeneratedSpells.REND), Optional.empty(), "Rend comes at 6");
+        helper.assertValueEqual(book.level(GeneratedSpells.SLAM), Optional.empty(), "no Slam before the pick");
+        helper.assertValueEqual(book.slot(0), Optional.empty(), "and an empty bar");
         helper.assertValueEqual(book.slot(Spellbook.RACIAL_SLOT), Optional.of(GeneratedSpells.WILL_TO_SURVIVE),
                 "a Human's racial spell beside the bar");
         helper.assertValueEqual(book.barSlotOf(GeneratedSpells.WILL_TO_SURVIVE), -1, "and not on the bar itself");
-
-        ServerPlayer mage = character(helper, "qa-kit-mage", "mage");
-        helper.assertValueEqual(mage.getData(SpellAttachments.SPELLBOOK).slot(0),
-                Optional.of(GeneratedSpells.FROSTBOLT), "a new Mage knows Frostbolt");
         logout(warrior);
-        logout(mage);
         helper.succeed();
     }
 
-    /**
-     * A level teaches its class spells into the bar's next empty slots, its passive spells never; one taken off the bar
-     * stays off. A login catches up on spells a character does not know yet (a character from before its class taught
-     * them). The Warrior's kit is the Arms tree's (RLM-543): Slam and Charge on the bar at level 1 with Deep Wounds
-     * known, Rend and Battle Shout at 6 with Two-Handed Specialization known.
-     */
+    /** A login catches up on the racial spell (a character older than their race's), and teaches nothing else. */
     @QaGameTest
-    public static void levelsAndLoginsTeachTheClassSpells(GameTestHelper helper) {
+    public static void aLoginCatchesUpOnTheRacialSpell(GameTestHelper helper) {
         ServerPlayer player = character(helper, "qa-kit-levels", "warrior");
-        Spellbook book = player.getData(SpellAttachments.SPELLBOOK);
-        helper.assertValueEqual(List.of(book.slot(0), book.slot(1), book.slot(2)), List.of(
-                Optional.of(GeneratedSpells.SLAM), Optional.of(GeneratedSpells.CHARGE), Optional.empty()),
-                "level 1's actives; Deep Wounds is passive");
-        helper.assertValueEqual(book.level(GeneratedSpells.DEEP_WOUNDS), Optional.of(1), "Deep Wounds known");
-        helper.assertTrue(Spells.placeOnBar(player, 1, Optional.empty()), "Charge taken off the bar");
-        reachLevel(helper, player, 6);
-        book = player.getData(SpellAttachments.SPELLBOOK);
-        helper.assertValueEqual(List.of(book.slot(1), book.slot(2), book.slot(3)), List.of(
-                Optional.of(GeneratedSpells.REND), Optional.of(GeneratedSpells.BATTLE_SHOUT), Optional.empty()),
-                "level 6's actives into the first empty slots; the spell taken off stays off");
-        helper.assertValueEqual(book.barSlotOf(GeneratedSpells.CHARGE), -1, "Charge stays off the bar");
-
         player.setData(SpellAttachments.SPELLBOOK, Spellbook.EMPTY);
         NeoForge.EVENT_BUS.post(new PlayerEvent.PlayerLoggedInEvent(player));
-        book = player.getData(SpellAttachments.SPELLBOOK);
-        for (ResourceKey<Spell> spell : List.of(GeneratedSpells.SLAM, GeneratedSpells.CHARGE,
-                GeneratedSpells.DEEP_WOUNDS, GeneratedSpells.REND, GeneratedSpells.BATTLE_SHOUT,
-                GeneratedSpells.TWO_HANDED_WEAPON_SPECIALIZATION, GeneratedSpells.WILL_TO_SURVIVE)) {
-            helper.assertValueEqual(book.level(spell), Optional.of(1), "a login teaches " + spell.identifier());
-        }
+        Spellbook book = player.getData(SpellAttachments.SPELLBOOK);
+        helper.assertValueEqual(book.level(GeneratedSpells.WILL_TO_SURVIVE), Optional.of(1), "the racial spell");
+        helper.assertValueEqual(book.level(GeneratedSpells.SLAM), Optional.empty(), "and no class spell");
         logout(player);
         helper.succeed();
     }
@@ -592,8 +570,26 @@ public final class ClassKitGameTests {
      * crit chance of 0 alone leaves the class's and race's Dexterity's (1.5 % for a Warrior), which made exact damage
      * checks crit now and then, so {@link #NO_CRITS} takes the total to 0; {@link #allowCrits} gives it back.
      */
+    /**
+     * A new Human of the class with its first playable specialization picked, so they know its first spell: the tests
+     * of the class's spells start from it.
+     */
     static ServerPlayer character(GameTestHelper helper, String name, String playerClass) {
-        ServerPlayer player = QaPlayers.loginOnPlatform(helper, name, new Vec3(2.5, 1, 0.5));
+        ServerPlayer player = unspecialized(helper, name, playerClass);
+        String id = Characters.mainClass(player).orElseThrow().value().specializations().stream()
+                .filter(Specialization::playable).findFirst().orElseThrow().id();
+        helper.assertValueEqual(SpellTrees.pick(player, id), SpellTrees.PickResult.PICKED, "the specialization");
+        return player;
+    }
+
+    /** A new Human of the class who has not picked a specialization: they know only their racial spell. */
+    static ServerPlayer unspecialized(GameTestHelper helper, String name, String playerClass) {
+        return unspecialized(helper, name, playerClass, new Vec3(2.5, 1, 0.5));
+    }
+
+    /** {@link #unspecialized(GameTestHelper, String, String)} standing at {@code where}. */
+    static ServerPlayer unspecialized(GameTestHelper helper, String name, String playerClass, Vec3 where) {
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, name, where);
         player.setGameMode(GameType.SURVIVAL);
         // A fake player's client never reports that it loaded, which keeps the player invulnerable.
         player.connection.markClientLoaded();

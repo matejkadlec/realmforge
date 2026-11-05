@@ -32,11 +32,9 @@ import io.github.matejkadlec.realmforge.spell.SpellTooltip;
 import io.github.matejkadlec.realmforge.spell.Spellbook;
 import io.github.matejkadlec.realmforge.spell.Spells;
 import io.github.matejkadlec.realmforge.stats.EntityLevel;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -66,8 +64,8 @@ import net.minecraft.world.phys.Vec3;
  * a fixed Spell Power (system C, RLM-534), Ice Lance's bonus only against a Frozen target, Frostbite's chance, its
  * Frozen of 4/6/8 s and its internal cooldown, Cone of Cold's cone, Frost Nova's freeze round the caster, Blizzard's
  * eight waves at a ground spot with their mana up front and per second, and more waves with Cast Time Reduction,
- * Improved Frostbolt's wider splash at rank 3, the tooltips (the next rank, Blizzard's waves and cost, Shatter's
- * overflow), and the Mage learning the tree by its rows (1, 6, 12, 18).
+ * Improved Frostbolt's wider splash at rank 3, and the tooltips (the next rank, Blizzard's waves and cost, Shatter's
+ * overflow).
  */
 public final class FrostTreeGameTests {
     private static final double HEALTH = SpellGameTests.HEALTH;
@@ -82,9 +80,11 @@ public final class FrostTreeGameTests {
     /**
      * The playtest's setup line against Astone (RLM-542, RLM-503; gear.md's expected gear for Astone, RLM-551): every
      * stat back to its default (RLM-577: no value from an earlier {@code /qa stats set} leaks in), a new Human Mage,
-     * chapter 1's raised cap, level 18, the tree at a 17-point build on top of the kit's rank 1 (Frostbolt 5,
-     * Ice Lance 5, Improved Frostbolt, Frostbite, Shatter and Frost Nova 3, Cone of Cold 2, Ice Barrier and Blizzard 1),
-     * and the Netherite caster set and wand at level V. The handoff gives it to Matěj as
+     * chapter 1's raised cap, level 18, the tree at 26 ranks (Frostbolt 5, Ice Lance 5, Improved Frostbolt, Frostbite,
+     * Shatter and Frost Nova 3, Cone of Cold 2, Ice Barrier and Blizzard 1), and the Netherite caster set and wand at
+     * level V. Since C5 a real level 18 character has 18 ranks; this line skips the rules to keep the state Astone was
+     * balanced with, which has no affixes, gems or curios, and Matěj expects those to match the missing ranks
+     * (2026-11-04, RLM-503). The handoff gives it to Matěj as
      * {@code execute as @p at @p run} and this line.
      */
     static final String ASTONE_SETUP = "qa run qa stats reset; qa character reset; "
@@ -93,7 +93,8 @@ public final class FrostTreeGameTests {
             + "qa spell learn realmforge:frostbolt 5; qa spell learn realmforge:ice_lance 5; "
             + "qa spell learn realmforge:improved_frostbolt 3; qa spell learn realmforge:frostbite 3; "
             + "qa spell learn realmforge:shatter 3; qa spell learn realmforge:frost_nova 3; "
-            + "qa spell learn realmforge:cone_of_cold 2; "
+            + "qa spell learn realmforge:cone_of_cold 2; qa spell learn realmforge:ice_barrier; "
+            + "qa spell learn realmforge:blizzard; "
             + "give @s realmforge:netherite_cap" + LEVEL_V + "; give @s realmforge:netherite_robes" + LEVEL_V + "; "
             + "give @s realmforge:netherite_pants" + LEVEL_V + "; give @s realmforge:netherite_sandals" + LEVEL_V + "; "
             + "give @s realmforge:netherite_wand[enchantments={\"minecraft:unbreaking\":5}]";
@@ -461,40 +462,6 @@ public final class FrostTreeGameTests {
     }
 
     /**
-     * The Mage learns the tree at rank 1 by its rows: Frostbolt, Improved Frostbolt and Cone of Cold at level 1,
-     * Ice Lance, Frost Nova and Frostbite at 6, Shatter and Ice Barrier at 12, Blizzard at 18 (once chapter 1 raised
-     * the cap); the bar holds the actives in that order, never the passives, and Fireball and Arcane Missiles never come.
-     */
-    @QaGameTest(timeoutTicks = 100)
-    public static void theMageLearnsTheTreeByItsRows(GameTestHelper helper) {
-        ServerPlayer player = ClassKitGameTests.character(helper, "qa-frost-kit", "mage");
-        assertKnows(helper, player, List.of(GeneratedSpells.FROSTBOLT, GeneratedSpells.IMPROVED_FROSTBOLT,
-                GeneratedSpells.CONE_OF_COLD), List.of(GeneratedSpells.ICE_LANCE), 1);
-        reachLevel(helper, player, 6);
-        assertKnows(helper, player, List.of(GeneratedSpells.ICE_LANCE, GeneratedSpells.FROST_NOVA,
-                GeneratedSpells.FROSTBITE), List.of(GeneratedSpells.SHATTER, GeneratedSpells.ICE_BARRIER), 6);
-        AdvancementHolder chapter = helper.getLevel().getServer().getAdvancements()
-                .get(Identifier.parse("realmforge:chapter/chapter_1"));
-        helper.assertTrue(player.getAdvancements().award(chapter, "completed"), "chapter 1 raises the cap to 18");
-        reachLevel(helper, player, 12);
-        assertKnows(helper, player, List.of(GeneratedSpells.SHATTER, GeneratedSpells.ICE_BARRIER),
-                List.of(GeneratedSpells.BLIZZARD), 12);
-        reachLevel(helper, player, 18);
-        assertKnows(helper, player, List.of(GeneratedSpells.BLIZZARD),
-                List.of(GeneratedSpells.FIREBALL, GeneratedSpells.ARCANE_MISSILES), 18);
-        Spellbook book = player.getData(SpellAttachments.SPELLBOOK);
-        List<ResourceKey<Spell>> bar = new ArrayList<>();
-        for (int slot = 0; slot < 8; slot++) {
-            book.slot(slot).ifPresent(bar::add);
-        }
-        helper.assertValueEqual(bar, List.of(GeneratedSpells.FROSTBOLT, GeneratedSpells.CONE_OF_COLD,
-                GeneratedSpells.ICE_LANCE, GeneratedSpells.FROST_NOVA, GeneratedSpells.ICE_BARRIER,
-                GeneratedSpells.BLIZZARD), "the bar holds the six actives in the tree's order");
-        logout(player);
-        helper.succeed();
-    }
-
-    /**
      * The handoff's setup line ({@link #ASTONE_SETUP}) reaches its state: a Human Mage at level 18 knowing the tree at
      * the build's ranks, holding the Netherite caster set with Protection V and Unbreaking V and the wand.
      */
@@ -518,7 +485,7 @@ public final class FrostTreeGameTests {
         build.forEach((spell, rank) -> helper.assertValueEqual(book.level(spell), Optional.of(rank),
                 spell.identifier() + "'s rank"));
         helper.assertValueEqual(build.values().stream().mapToInt(Integer::intValue).sum(), 9 + 17,
-                "the kit's 9 ranks and 17 points");
+                "the 26 ranks Astone was balanced with");
         Holder<Enchantment> protection = helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT)
                 .getOrThrow(Enchantments.PROTECTION);
         for (Item piece : List.of(GeneratedItems.NETHERITE_CAP.get(), GeneratedItems.NETHERITE_ROBES.get(),
@@ -556,25 +523,6 @@ public final class FrostTreeGameTests {
             }
         }
         return false;
-    }
-
-    private static void assertKnows(GameTestHelper helper, ServerPlayer player, List<ResourceKey<Spell>> known,
-            List<ResourceKey<Spell>> notYet, int level) {
-        Spellbook book = player.getData(SpellAttachments.SPELLBOOK);
-        for (ResourceKey<Spell> spell : known) {
-            helper.assertValueEqual(book.level(spell), Optional.of(1), "level " + level + " knows "
-                    + spell.identifier() + " at rank 1");
-        }
-        for (ResourceKey<Spell> spell : notYet) {
-            helper.assertValueEqual(book.level(spell), Optional.empty(), "level " + level + " does not know "
-                    + spell.identifier());
-        }
-    }
-
-    private static void reachLevel(GameTestHelper helper, ServerPlayer player, int level) {
-        long xp = Characters.xpToReach(player, level).orElseThrow();
-        helper.assertTrue(Characters.setTotalXp(player, xp), "the XP for level " + level + " was set");
-        helper.assertValueEqual(Characters.level(player), level, "the level reached");
     }
 
     /** The first damage effect of {@code effects}, a projectile's, an area's or a cone's included. */

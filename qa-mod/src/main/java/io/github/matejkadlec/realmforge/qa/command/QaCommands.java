@@ -29,6 +29,7 @@ public final class QaCommands {
                 .then(MobCommands.build())
                 .then(BossCommands.build())
                 .then(CharacterCommands.build())
+                .then(SpecCommands.build())
                 .then(DummyCommands.build())
                 .then(SpellCommands.build())
                 .then(ResourceCommands.build())

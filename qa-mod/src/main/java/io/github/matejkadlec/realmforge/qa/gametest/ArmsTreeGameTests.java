@@ -36,18 +36,15 @@ import io.github.matejkadlec.realmforge.spell.Spells;
 import io.github.matejkadlec.realmforge.spell.Windows;
 import io.github.matejkadlec.realmforge.stats.EntityLevel;
 import io.github.matejkadlec.realmforge.stats.StatsAttachments;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.PermissionSet;
@@ -72,8 +69,8 @@ import net.minecraft.world.phys.Vec3;
  * after a block, Victory Rush only after a kill that is not gray and its heal, Execute only below 20 % with its extra
  * rage, its refund and its lit window, Charge's rush to the near side and stun round the landing and its distance by
  * rank, a player's Charge landing on the server (RLM-602), Deep Wounds' bleed of a share of the crit, Bloodthirst's
- * proc, the tooltips' next rank, the Warrior learning the tree by its rows (1, 6, 12, 18), the handoff's setup line
- * against Astone, and the rage and cooldowns of Matěj's rebalance (RLM-604).
+ * proc, the tooltips' next rank, the handoff's setup line against Astone, and the rage and cooldowns of Matěj's
+ * rebalance (RLM-604).
  */
 public final class ArmsTreeGameTests {
     private static final double HEALTH = SpellGameTests.HEALTH;
@@ -89,10 +86,12 @@ public final class ArmsTreeGameTests {
     private static final String ARMOR_V = "[enchantments={\"minecraft:protection\":5,\"minecraft:unbreaking\":5}]";
     /**
      * The playtest's setup line against Astone (RLM-543, RLM-503; gear.md's expected gear for Astone, RLM-551): a new
-     * Human Warrior, chapter 1's raised cap, level 18, the tree at a 17-point build on top of the kit's rank 1 (Slam and
-     * Overpower 5, Deep Wounds, Rend and Execute 3, Bloodthirst, Charge and Victory Rush 2, Battle Shout and
-     * Two-Handed Specialization 1), full netherite armor with Protection V and Unbreaking V, and a netherite
-     * sword with Sharpness V and Unbreaking V; the kit's shield stays for Overpower's blocks. The handoff gives it to
+     * Human Warrior, chapter 1's raised cap, level 18, the tree at 27 ranks (Slam and Overpower 5, Deep Wounds, Rend
+     * and Execute 3, Bloodthirst, Charge and Victory Rush 2, Battle Shout and Two-Handed Specialization 1), which since
+     * C5 is more than a real level 18 character's 18 and skips the rules, to keep the state Astone was balanced with,
+     * which has no affixes, gems or curios, and Matěj expects those to match the missing ranks (2026-11-04, RLM-503);
+     * full netherite armor with Protection V and Unbreaking V, and a netherite sword with Sharpness V and Unbreaking V;
+     * the kit's shield stays for Overpower's blocks. The handoff gives it to
      * Matěj as {@code execute as @p at @p run} and this line.
      */
     static final String ASTONE_SETUP = "qa run qa character reset; "
@@ -102,6 +101,7 @@ public final class ArmsTreeGameTests {
             + "qa spell learn realmforge:deep_wounds 3; qa spell learn realmforge:rend 3; "
             + "qa spell learn realmforge:execute 3; qa spell learn realmforge:bloodthirst 2; "
             + "qa spell learn realmforge:charge 2; qa spell learn realmforge:victory_rush 2; "
+            + "qa spell learn realmforge:battle_shout; qa spell learn realmforge:two_handed_weapon_specialization; "
             + "give @s minecraft:netherite_helmet" + ARMOR_V + "; give @s minecraft:netherite_chestplate" + ARMOR_V
             + "; give @s minecraft:netherite_leggings" + ARMOR_V + "; give @s minecraft:netherite_boots" + ARMOR_V
             + "; give @s minecraft:netherite_sword[enchantments={\"minecraft:sharpness\":5,\"minecraft:unbreaking\":5}]";
@@ -671,42 +671,6 @@ public final class ArmsTreeGameTests {
     }
 
     /**
-     * The Warrior learns the tree at rank 1 by its rows: Slam, Charge and Deep Wounds at level 1; Rend, Battle Shout and
-     * Two-Handed Specialization at 6; Bloodthirst, Overpower and Victory Rush at 12; Execute at 18 (once
-     * chapter 1 raised the cap); the bar holds the actives in that order, never the passives, and Reckless Strike and
-     * Shield Bash never come.
-     */
-    @QaGameTest(timeoutTicks = 100)
-    public static void theWarriorLearnsTheTreeByItsRows(GameTestHelper helper) {
-        ServerPlayer player = ClassKitGameTests.character(helper, "qa-arms-kit", "warrior");
-        assertKnows(helper, player, List.of(GeneratedSpells.SLAM, GeneratedSpells.CHARGE, GeneratedSpells.DEEP_WOUNDS),
-                List.of(GeneratedSpells.REND), 1);
-        reachLevel(helper, player, 6);
-        assertKnows(helper, player, List.of(GeneratedSpells.REND, GeneratedSpells.BATTLE_SHOUT,
-                GeneratedSpells.TWO_HANDED_WEAPON_SPECIALIZATION), List.of(GeneratedSpells.BLOODTHIRST,
-                GeneratedSpells.OVERPOWER), 6);
-        AdvancementHolder chapter = helper.getLevel().getServer().getAdvancements()
-                .get(Identifier.parse("realmforge:chapter/chapter_1"));
-        helper.assertTrue(player.getAdvancements().award(chapter, "completed"), "chapter 1 raises the cap to 18");
-        reachLevel(helper, player, 12);
-        assertKnows(helper, player, List.of(GeneratedSpells.BLOODTHIRST, GeneratedSpells.OVERPOWER,
-                GeneratedSpells.VICTORY_RUSH), List.of(GeneratedSpells.EXECUTE), 12);
-        reachLevel(helper, player, 18);
-        assertKnows(helper, player, List.of(GeneratedSpells.EXECUTE),
-                List.of(GeneratedSpells.RECKLESS_STRIKE, GeneratedSpells.SHIELD_BASH), 18);
-        Spellbook book = player.getData(SpellAttachments.SPELLBOOK);
-        List<ResourceKey<Spell>> bar = new ArrayList<>();
-        for (int slot = 0; slot < 8; slot++) {
-            book.slot(slot).ifPresent(bar::add);
-        }
-        helper.assertValueEqual(bar, List.of(GeneratedSpells.SLAM, GeneratedSpells.CHARGE, GeneratedSpells.REND,
-                GeneratedSpells.BATTLE_SHOUT, GeneratedSpells.OVERPOWER, GeneratedSpells.VICTORY_RUSH,
-                GeneratedSpells.EXECUTE), "the bar holds the seven actives in the tree's order");
-        logout(player);
-        helper.succeed();
-    }
-
-    /**
      * The handoff's setup line ({@link #ASTONE_SETUP}) reaches its state: a Human Warrior at level 18 knowing the tree
      * at the build's ranks, holding full netherite armor with Protection V and a netherite sword with Sharpness V.
      */
@@ -755,25 +719,6 @@ public final class ArmsTreeGameTests {
             }
         }
         return ItemStack.EMPTY;
-    }
-
-    private static void assertKnows(GameTestHelper helper, ServerPlayer player, List<ResourceKey<Spell>> known,
-            List<ResourceKey<Spell>> notYet, int level) {
-        Spellbook book = player.getData(SpellAttachments.SPELLBOOK);
-        for (ResourceKey<Spell> spell : known) {
-            helper.assertValueEqual(book.level(spell), Optional.of(1), "level " + level + " knows "
-                    + spell.identifier() + " at rank 1");
-        }
-        for (ResourceKey<Spell> spell : notYet) {
-            helper.assertValueEqual(book.level(spell), Optional.empty(), "level " + level + " does not know "
-                    + spell.identifier());
-        }
-    }
-
-    private static void reachLevel(GameTestHelper helper, ServerPlayer player, int level) {
-        long xp = Characters.xpToReach(player, level).orElseThrow();
-        helper.assertTrue(Characters.setTotalXp(player, xp), "the XP for level " + level + " was set");
-        helper.assertValueEqual(Characters.level(player), level, "the level reached");
     }
 
     /** The first damage effect of {@code effects}, a melee shape's included. */

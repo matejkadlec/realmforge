@@ -404,16 +404,25 @@ def test_a_stun_reaches_the_registration() -> None:
 # Classes and races
 
 
-CLASS_SPELL = "spells:\n  - {spell: realmforge:slam, level: 1}\n"
+TREE = """specializations:
+  - id: test_tree
+    name: {en_us: Test Tree}
+    description: {en_us: Only for this test.}
+    first_spell: realmforge:slam
+    spells:
+"""
+
+
+def _swap_tree(repo: RepoPaths, spells: str, tree: str = TREE) -> None:
+    """Gives the Warrior one tree: ``tree``'s head and these ``spells`` lines (each ``      - {...}``)."""
+    warrior = repo.content / "classes" / "warrior.yaml"
+    text = warrior.read_text()
+    warrior.write_text(text[: text.index("specializations:\n")] + tree + spells)
 
 
 def test_class_spells_cost_the_class_resource(repo: RepoPaths) -> None:
     mage = repo.content / "classes" / "mage.yaml"
-    mage.write_text(
-        mage.read_text().replace(
-            "  - {spell: realmforge:frostbolt, level: 1}", "  - {spell: realmforge:slam, level: 1}"
-        )
-    )
+    mage.write_text(mage.read_text().replace("realmforge:cone_of_cold", "realmforge:slam"))
     assert_problem(repo, "realmforge:slam costs realmforge:rage, and the class's resource is realmforge:mana")
 
 
@@ -427,27 +436,85 @@ def test_class_spells_are_players_spells_that_exist(repo: RepoPaths) -> None:
 
 def test_a_chapter_allows_four_spells_a_chapter(repo: RepoPaths) -> None:
     warrior = repo.content / "classes" / "warrior.yaml"
-    warrior.write_text(warrior.read_text() + "  - {spell: realmforge:will_to_survive, level: 9}\n")
+    warrior.write_text(
+        warrior.read_text().replace(
+            "realmforge:deep_wounds, level: 1, column: 3", "realmforge:will_to_survive, level: 1, column: 3"
+        )
+    )
     assert_problem(repo, "5 active spells by level 10, the end of chapter 1, which allows 4")
 
 
 @pytest.mark.parametrize(
     ("spells", "expected"),
     [
-        ("  - {spell: realmforge:slam, level: 3}\n", "every class starts with one spell"),
+        ("      - {spell: realmforge:slam, level: 6, column: 1}\n", "must be in the tree's level 1 row"),
         (
-            "  - {spell: realmforge:slam, level: 1}\n  - {spell: realmforge:slam, level: 2}\n",
-            "each spell once",
+            "      - {spell: realmforge:slam, level: 1, column: 1}\n"
+            "      - {spell: realmforge:slam, level: 6, column: 1}\n",
+            "a tree holds each spell once",
+        ),
+        (
+            "      - {spell: realmforge:slam, level: 1, column: 1}\n"
+            "      - {spell: realmforge:rend, level: 1, column: 1}\n",
+            "two spells share a place",
+        ),
+        (
+            "      - {spell: realmforge:slam, level: 1, column: 1}\n"
+            "      - {spell: realmforge:rend, level: 5, column: 1}\n",
+            "a row opens at level 1 or every 6 levels, not 5",
+        ),
+        (
+            "      - {spell: realmforge:slam, level: 1, column: 1}\n"
+            "      - {spell: realmforge:rend, level: 6, column: 4}\n",
+            "column",
+        ),
+        (
+            "      - {spell: realmforge:slam, level: 1, column: 1}\n"
+            "      - {spell: realmforge:rend, level: 6, column: 1, requires: realmforge:charge}\n",
+            "requires realmforge:charge, which is not in this tree",
+        ),
+        (
+            "      - {spell: realmforge:slam, level: 1, column: 1}\n"
+            "      - {spell: realmforge:rend, level: 6, column: 1, requires: realmforge:charge}\n"
+            "      - {spell: realmforge:charge, level: 6, column: 2}\n",
+            "requires realmforge:charge, which is not in an earlier row",
         ),
     ],
 )
-def test_class_spell_lists_start_at_level_1_and_name_each_spell_once(
-    repo: RepoPaths, spells: str, expected: str
-) -> None:
-    warrior = repo.content / "classes" / "warrior.yaml"
-    text = warrior.read_text()
-    warrior.write_text(text[: text.index("spells:\n")] + "spells:\n" + spells)
+def test_a_tree_stands_in_rows_and_columns(repo: RepoPaths, spells: str, expected: str) -> None:
+    _swap_tree(repo, spells)
     assert_problem(repo, expected)
+
+
+def test_a_tree_needs_its_first_spell(repo: RepoPaths) -> None:
+    _swap_tree(
+        repo,
+        "      - {spell: realmforge:rend, level: 1, column: 1}\n",
+        TREE.replace("    first_spell: realmforge:slam\n", ""),
+    )
+    assert_problem(repo, "every class starts with one spell (decision D4): set first_spell")
+
+
+def test_a_first_spell_is_one_to_cast(repo: RepoPaths) -> None:
+    _swap_tree(
+        repo,
+        "      - {spell: realmforge:deep_wounds, level: 1, column: 1}\n",
+        TREE.replace("realmforge:slam", "realmforge:deep_wounds"),
+    )
+    assert_problem(repo, "realmforge:deep_wounds is passive: a class starts with a spell it can cast")
+
+
+def test_a_specialization_without_spells_comes_later(repo: RepoPaths) -> None:
+    _swap_tree(repo, "", TREE.replace("    spells:\n", ""))
+    assert_problem(repo, "a specialization without spells has no first_spell")
+    _swap_tree(repo, "", TREE.replace("    first_spell: realmforge:slam\n    spells:\n", ""))
+    assert_problem(repo, "every class starts with one spell (decision D4): give a specialization spells")
+
+
+def test_a_class_names_each_specialization_once(repo: RepoPaths) -> None:
+    warrior = repo.content / "classes" / "warrior.yaml"
+    warrior.write_text(warrior.read_text().replace("id: fury", "id: arms"))
+    assert_problem(repo, "a class names each specialization once: arms")
 
 
 def test_a_racial_spell_is_a_free_players_spell(repo: RepoPaths) -> None:
@@ -471,7 +538,23 @@ def test_a_racial_passive_description_names_only_bonus(repo: RepoPaths) -> None:
 def test_class_spells_and_racials_reach_the_data_and_expectations() -> None:
     files = generate(RepoPaths())
     warrior = json.loads(files[f"{DATA}/realmforge/class/warrior.json"])
-    assert warrior["spells"][0] == {"spell": "realmforge:slam", "level": 1}
+    arms = warrior["specializations"][0]
+    assert arms["id"] == "arms"
+    assert arms["name"] == "class.realmforge.warrior.specializations.0.name"
+    assert arms["first_spell"] == "realmforge:slam"
+    assert arms["spells"][1] == {"spell": "realmforge:slam", "level": 1, "column": 2}
+    assert arms["spells"][6] == {
+        "spell": "realmforge:bloodthirst",
+        "level": 12,
+        "column": 1,
+        "requires": "realmforge:rend",
+    }
+    assert warrior["specializations"][1] == {
+        "id": "fury",
+        "name": "class.realmforge.warrior.specializations.1.name",
+        "description": "class.realmforge.warrior.specializations.1.description",
+        "spells": [],
+    }
     human = json.loads(files[f"{DATA}/realmforge/race/human.json"])
     assert human["racial_spell"] == "realmforge:will_to_survive"
     assert human["racial_passive"] == {
@@ -486,7 +569,9 @@ def test_class_spells_and_racials_reach_the_data_and_expectations() -> None:
     assert 'Optional.of("realmforge:will_to_survive")' in races
     assert 'new Bonus("realmforge:race/realmforge/passive/0/human", "minecraft:attack_damage"' in races
     classes = files[f"{QA}/GeneratedClassExpectations.java"].decode()
-    assert 'new ClassSpell("realmforge:frostbolt", 1)' in classes
+    assert 'new TreeSpell("realmforge:frostbolt", 1, 2, Optional.empty())' in classes
+    assert 'new TreeSpell("realmforge:bloodthirst", 12, 1, Optional.of("realmforge:rend"))' in classes
+    assert 'new Specialization("frost", "class.realmforge.mage.specializations.0.name"' in classes
 
 
 def test_passive_modifier_ids_name_the_race() -> None:

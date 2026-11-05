@@ -3,6 +3,9 @@ package io.github.matejkadlec.realmforge.network;
 import io.github.matejkadlec.realmforge.character.CharacterCreation;
 import io.github.matejkadlec.realmforge.character.StatPoints;
 import io.github.matejkadlec.realmforge.character.net.CreateCharacterPayload;
+import io.github.matejkadlec.realmforge.character.SpellTrees;
+import io.github.matejkadlec.realmforge.character.net.PickSpecializationPayload;
+import io.github.matejkadlec.realmforge.character.net.SpendSpellPointPayload;
 import io.github.matejkadlec.realmforge.character.net.SpendStatPointPayload;
 import io.github.matejkadlec.realmforge.combat.net.CombatTextPayload;
 import io.github.matejkadlec.realmforge.combat.net.HitDirectionPayload;
@@ -67,6 +70,18 @@ public final class RealmforgeNetwork {
                 (payload, context) -> {
                     if (context.player() instanceof ServerPlayer player) {
                         StatPoints.spend(player, payload.stat());
+                    }
+                });
+        registrar.playToServer(PickSpecializationPayload.TYPE, PickSpecializationPayload.STREAM_CODEC,
+                (payload, context) -> {
+                    if (context.player() instanceof ServerPlayer player) {
+                        SpellTrees.pick(player, payload.specialization());
+                    }
+                });
+        registrar.playToServer(SpendSpellPointPayload.TYPE, SpendSpellPointPayload.STREAM_CODEC,
+                (payload, context) -> {
+                    if (context.player() instanceof ServerPlayer player) {
+                        SpellTrees.spend(player, payload.spell());
                     }
                 });
         registrar.playToServer(CastSpellPayload.TYPE, CastSpellPayload.STREAM_CODEC,

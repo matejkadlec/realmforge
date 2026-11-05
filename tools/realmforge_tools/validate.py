@@ -1803,9 +1803,9 @@ def _check_characters(content: Content, universe: IdUniverse) -> list[Problem]:
     """Races name classes that exist, and every class is open to some race, or no player could take it. Modifiers
     name attributes that exist, in their unit as for stat rules (architecture 8.3), and add their percents to the
     base (architecture 8.2); kit items exist, and every kit holds the starting bread. A race's racial spell and a
-    class's spells are players' spells; a racial spell is free, as a race spans classes of different resources, and a
-    class's spells cost its own resource, at most 4 x N of them by the end of chapter N (decision D4). A racial passive
-    names an item tag that exists, and its modifiers add their percents to the base too."""
+    specialization's spells are players' spells; a racial spell is free, as a race spans classes of different resources,
+    and a tree's spells cost the class's own resource, at most 4 x N of them by the end of chapter N (decision D4). A
+    racial passive names an item tag that exists, and its modifiers add their percents to the base too."""
     problems: list[Problem] = []
     stats = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.stats}
     spells = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.spells}
@@ -1936,61 +1936,71 @@ def _check_racials(
 
 
 def _check_class_spells(entry: Entry, spells: dict[str, SpellDef], content: Content) -> list[Problem]:
-    """A class's spells are our player spells that cost the class's resource (or nothing), and the class teaches at
-    most 4 x N active ones by the last level of chapter N (decision D4: chapter 1 allows 4 spells, chapter 2 eight;
-    passive spells are never on the bar, so they do not count: Matěj, 2026-10-30, RLM-333, "rows 1-2 hold 4 actives,
-    within D4's 4 x N spells for chapter 1")."""
+    """A specialization's tree holds our player spells that cost the class's resource (or nothing), its free first
+    spell is an active one, and it opens at most 4 x N active spells by the last level of chapter N (decision D4:
+    chapter 1 allows 4 spells, chapter 2 eight; passive spells are never on the bar, so they do not count: Matěj,
+    2026-10-30, RLM-333, "rows 1-2 hold 4 actives, within D4's 4 x N spells for chapter 1")."""
     problems: list[Problem] = []
     player_class = entry.model
-    for n, taught in enumerate(player_class.spells):
-        spell = spells.get(taught.spell)
-        if spell is None:
-            problems.append(
-                Problem(
-                    entry.source, f"spells.{n}.spell", f"{taught.spell} is not a spell of content/spells/"
+    for s, specialization in enumerate(player_class.specializations):
+        where = f"specializations.{s}"
+        for n, taught in enumerate(specialization.spells):
+            spell = spells.get(taught.spell)
+            location = f"{where}.spells.{n}.spell"
+            if spell is None:
+                problems.append(
+                    Problem(entry.source, location, f"{taught.spell} is not a spell of content/spells/")
                 )
-            )
-        elif spell.npc_only:
-            problems.append(
-                Problem(entry.source, f"spells.{n}.spell", f"{taught.spell} is a mob's spell (npc_only)")
-            )
-        elif spell.cost is not None and spell.cost.resource != player_class.resource:
-            problems.append(
-                Problem(
-                    entry.source,
-                    f"spells.{n}.spell",
-                    f"{taught.spell} costs {spell.cost.resource}, and the class's resource is {player_class.resource}",
+            elif spell.npc_only:
+                problems.append(
+                    Problem(entry.source, location, f"{taught.spell} is a mob's spell (npc_only)")
                 )
-            )
-        else:
-            gained = spell.first_effect(GAIN_RESOURCE)
-            if gained is not None and gained.resource != player_class.resource:
+            elif spell.cost is not None and spell.cost.resource != player_class.resource:
                 problems.append(
                     Problem(
                         entry.source,
-                        f"spells.{n}.spell",
-                        f"{taught.spell} gives {gained.resource}, and the class's resource is "
+                        location,
+                        f"{taught.spell} costs {spell.cost.resource}, and the class's resource is "
                         f"{player_class.resource}",
                     )
                 )
-    for chapter in sorted((entry.model for entry in content.chapters), key=lambda chapter: chapter.order):
-        known = sum(
-            1
-            for taught in player_class.spells
-            if taught.level <= chapter.level_cap
-            and not (taught.spell in spells and spells[taught.spell].is_passive)
-        )
-        allowed = 4 * chapter.order
-        if known > allowed:
+            else:
+                gained = spell.first_effect(GAIN_RESOURCE)
+                if gained is not None and gained.resource != player_class.resource:
+                    problems.append(
+                        Problem(
+                            entry.source,
+                            location,
+                            f"{taught.spell} gives {gained.resource}, and the class's resource is "
+                            f"{player_class.resource}",
+                        )
+                    )
+        first = spells.get(specialization.first_spell or "")
+        if first is not None and first.is_passive:
             problems.append(
                 Problem(
                     entry.source,
-                    "spells",
-                    f"{known} active spells by level {chapter.level_cap}, the end of chapter {chapter.order}, which "
-                    "allows "
-                    f"{allowed} (decision D4: 4 x N)",
+                    f"{where}.first_spell",
+                    f"{specialization.first_spell} is passive: a class starts with a spell it can cast (decision D4)",
                 )
             )
+        for chapter in sorted((entry.model for entry in content.chapters), key=lambda chapter: chapter.order):
+            known = sum(
+                1
+                for taught in specialization.spells
+                if taught.level <= chapter.level_cap
+                and not (taught.spell in spells and spells[taught.spell].is_passive)
+            )
+            allowed = 4 * chapter.order
+            if known > allowed:
+                problems.append(
+                    Problem(
+                        entry.source,
+                        f"{where}.spells",
+                        f"{known} active spells by level {chapter.level_cap}, the end of chapter {chapter.order}, "
+                        f"which allows {allowed} (decision D4: 4 x N)",
+                    )
+                )
     return problems
 
 

@@ -5,7 +5,7 @@ import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.character.CharacterAttachments;
 import io.github.matejkadlec.realmforge.character.CharacterData;
 import io.github.matejkadlec.realmforge.character.CharacterRegistries;
-import io.github.matejkadlec.realmforge.character.ClassSpells;
+import io.github.matejkadlec.realmforge.character.RacialSpells;
 import io.github.matejkadlec.realmforge.qa.command.StateCommands;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedChapterExpectations;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedLevelingExpectations;
@@ -63,7 +63,7 @@ public final class PlayerStateGameTests {
     private static final EntityLevel PLAYER_LEVEL = new EntityLevel(Math.min(8, FIRST_CAP));
     private static final CharacterData CHARACTER = new CharacterData(
             Optional.of(ResourceKey.create(CharacterRegistries.RACE, Realmforge.id("human"))),
-            List.of(ResourceKey.create(CharacterRegistries.CLASS, Realmforge.id("mage"))),
+            Optional.of(ResourceKey.create(CharacterRegistries.CLASS, Realmforge.id("mage"))),
             GeneratedLevelingExpectations.LEVELS.get(PLAYER_LEVEL.value() - 1).toReach(), Optional.of(FIRST_CAP));
     private static final Spellbook SPELLBOOK = new Spellbook(Map.of(FIREBOLT, 2, FROSTBOLT, 1),
             Map.of(0, FIREBOLT, 1, FROSTBOLT));
@@ -80,9 +80,8 @@ public final class PlayerStateGameTests {
         GameProfile profile = new GameProfile(UUID.randomUUID(), "qa-state-save");
         ServerPlayer first = QaPlayers.loginOnPlatform(helper, profile);
         fill(first);
-        // A login teaches the class's spells by level (C4): the saved spellbook holds them already, as the level
-        // agrees with the XP, so the relog changes nothing.
-        ClassSpells.teach(first, false);
+        // A login catches up on the racial spell (C4): the saved spellbook holds it, so the relog changes nothing.
+        RacialSpells.teach(first);
         Spellbook saved = first.getData(SpellAttachments.SPELLBOOK);
         helper.assertValueEqual(saved.level(FIREBOLT), Optional.of(2), "a taught spell keeps the rank it had");
         // A character from before the starting kit was recorded: the login records it (Matěj, 2026-10-30).

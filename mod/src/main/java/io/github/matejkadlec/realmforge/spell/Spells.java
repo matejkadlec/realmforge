@@ -26,9 +26,9 @@ public final class Spells {
      * Teaches {@code player} {@code spell} at {@code level}, replacing the level they knew. A spell they did not know
      * goes into the spell bar's first empty slot (C3b, RLM-25); learning a known one again, at any level, leaves the
      * bar as the player arranged it (RLM-374), so a rank-up never brings back a spell they took off. The level must lie
-     * between 1 and the spell's {@code max_level}. Character (C4: spells by class level) and the specialization spell
-     * trees (C5) call this. A passive spell (RLM-541) never goes onto the bar; its modifiers apply at the end of the
-     * player's tick ({@link Passives#SOURCE}).
+     * between 1 and the spell's {@code max_level}. Character's specialization spell trees (C5) call this. A passive
+     * spell (RLM-541) never goes onto the bar; its modifiers apply at the end of the player's tick
+     * ({@link Passives#SOURCE}).
      */
     public static void learn(Player player, Holder.Reference<Spell> spell, int level) {
         if (level < 1 || level > spell.value().maxLevel()) {
@@ -40,6 +40,21 @@ public final class Spells {
         boolean placed = old.level(spell.key()).isEmpty() && !spell.value().npcOnly() && !spell.value().isPassive();
         player.setData(SpellAttachments.SPELLBOOK, placed ? book.withSpellOnBar(spell.key()) : book);
         if (spell.value().isPassive()) {
+            CharacterStats.markDirty(player);
+        }
+    }
+
+    /**
+     * Makes {@code player} forget {@code spell}: it leaves the spellbook and the bar (a spell tree's points came
+     * back, C5). Nothing for a spell they do not know.
+     */
+    public static void forget(Player player, ResourceKey<Spell> spell) {
+        Spellbook book = player.getData(SpellAttachments.SPELLBOOK);
+        if (book.level(spell).isEmpty()) {
+            return;
+        }
+        player.setData(SpellAttachments.SPELLBOOK, book.withoutSpell(spell));
+        if (get(player.registryAccess(), spell).map(holder -> holder.value().isPassive()).orElse(false)) {
             CharacterStats.markDirty(player);
         }
     }

@@ -73,10 +73,9 @@ public final class CharacterBonuses {
             entry.value().racialPassive().filter(passive -> passive.appliesWith(mainHand)).ifPresent(passive ->
                     bonuses.addAll(passiveBonuses(race.identifier(), passive.modifiers())));
         });
-        for (ResourceKey<PlayerClass> playerClass : character.classes()) {
-            registries.lookupOrThrow(CharacterRegistries.CLASS).get(playerClass).ifPresent(entry ->
-                    bonuses.addAll(bonuses(CLASS_PREFIX, playerClass.identifier(), entry.value().modifiers())));
-        }
+        character.playerClass().ifPresent(playerClass -> registries.lookupOrThrow(CharacterRegistries.CLASS)
+                .get(playerClass).ifPresent(entry ->
+                        bonuses.addAll(bonuses(CLASS_PREFIX, playerClass.identifier(), entry.value().modifiers()))));
         return bonuses;
     }
 

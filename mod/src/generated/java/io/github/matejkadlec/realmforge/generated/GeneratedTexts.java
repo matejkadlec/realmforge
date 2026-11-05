@@ -155,7 +155,7 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.kit_item} from {@code content/texts/gui.yaml}: "%1$s ×%2$s" */
     public static final String GUI_KIT_ITEM = "gui.realmforge.kit_item";
 
-    /** {@code gui.realmforge.known_spells} from {@code content/texts/gui.yaml}: "Known Spells" */
+    /** {@code gui.realmforge.known_spells} from {@code content/texts/gui.yaml}: "Spells" */
     public static final String GUI_KNOWN_SPELLS = "gui.realmforge.known_spells";
 
     /** {@code gui.realmforge.magic} from {@code content/texts/gui.yaml}: "Magic" */
@@ -259,6 +259,45 @@ public final class GeneratedTexts {
 
     /** {@code gui.realmforge.spell_options} from {@code content/texts/gui.yaml}: "Options" */
     public static final String GUI_SPELL_OPTIONS = "gui.realmforge.spell_options";
+
+    /** {@code gui.realmforge.spell_points} from {@code content/texts/gui.yaml}: "Unspent: %1$s" */
+    public static final String GUI_SPELL_POINTS = "gui.realmforge.spell_points";
+
+    /** {@code gui.realmforge.spell_tree} from {@code content/texts/gui.yaml}: "Spell Tree" */
+    public static final String GUI_SPELL_TREE = "gui.realmforge.spell_tree";
+
+    /** {@code gui.realmforge.spell_tree_choose} from {@code content/texts/gui.yaml}: "Choose" */
+    public static final String GUI_SPELL_TREE_CHOOSE = "gui.realmforge.spell_tree_choose";
+
+    /** {@code gui.realmforge.spell_tree_first_free} from {@code content/texts/gui.yaml}: "Free when you choose this specialization." */
+    public static final String GUI_SPELL_TREE_FIRST_FREE = "gui.realmforge.spell_tree_first_free";
+
+    /** {@code gui.realmforge.spell_tree_later} from {@code content/texts/gui.yaml}: "Coming later" */
+    public static final String GUI_SPELL_TREE_LATER = "gui.realmforge.spell_tree_later";
+
+    /** {@code gui.realmforge.spell_tree_max_rank} from {@code content/texts/gui.yaml}: "Highest rank reached." */
+    public static final String GUI_SPELL_TREE_MAX_RANK = "gui.realmforge.spell_tree_max_rank";
+
+    /** {@code gui.realmforge.spell_tree_needs_level} from {@code content/texts/gui.yaml}: "Opens at level %1$s." */
+    public static final String GUI_SPELL_TREE_NEEDS_LEVEL = "gui.realmforge.spell_tree_needs_level";
+
+    /** {@code gui.realmforge.spell_tree_needs_pick} from {@code content/texts/gui.yaml}: "Choose this specialization to learn it." */
+    public static final String GUI_SPELL_TREE_NEEDS_PICK = "gui.realmforge.spell_tree_needs_pick";
+
+    /** {@code gui.realmforge.spell_tree_needs_spell} from {@code content/texts/gui.yaml}: "Learn %1$s first." */
+    public static final String GUI_SPELL_TREE_NEEDS_SPELL = "gui.realmforge.spell_tree_needs_spell";
+
+    /** {@code gui.realmforge.spell_tree_no_points} from {@code content/texts/gui.yaml}: "You have no spell points left." */
+    public static final String GUI_SPELL_TREE_NO_POINTS = "gui.realmforge.spell_tree_no_points";
+
+    /** {@code gui.realmforge.spell_tree_other_tree} from {@code content/texts/gui.yaml}: "Belongs to another specialization." */
+    public static final String GUI_SPELL_TREE_OTHER_TREE = "gui.realmforge.spell_tree_other_tree";
+
+    /** {@code gui.realmforge.spell_tree_pick} from {@code content/texts/gui.yaml}: "Choose your specialization." */
+    public static final String GUI_SPELL_TREE_PICK = "gui.realmforge.spell_tree_pick";
+
+    /** {@code gui.realmforge.spell_tree_spend} from {@code content/texts/gui.yaml}: "Click to spend a point." */
+    public static final String GUI_SPELL_TREE_SPEND = "gui.realmforge.spell_tree_spend";
 
     /** {@code gui.realmforge.spell_with_rank} from {@code content/texts/gui.yaml}: "%1$s (Rank %2$s)" */
     public static final String GUI_SPELL_WITH_RANK = "gui.realmforge.spell_with_rank";
@@ -503,8 +542,20 @@ public final class GeneratedTexts {
     /** {@code message.realmforge.shield_locked} from {@code content/texts/message.yaml}: "You can't use this now." */
     public static final String MESSAGE_SHIELD_LOCKED = "message.realmforge.shield_locked";
 
+    /** {@code message.realmforge.specialization_pick} from {@code content/texts/message.yaml}: "Press %1$s to choose your specialization in your spellbook." */
+    public static final String MESSAGE_SPECIALIZATION_PICK = "message.realmforge.specialization_pick";
+
     /** {@code message.realmforge.spell_learned} from {@code content/texts/message.yaml}: "You have learned a new spell: %1$s" */
     public static final String MESSAGE_SPELL_LEARNED = "message.realmforge.spell_learned";
+
+    /** {@code message.realmforge.spell_points_returned} from {@code content/texts/message.yaml}: "Your level fell, so your spell points are unspent again. Unspent spell points: %1$s." */
+    public static final String MESSAGE_SPELL_POINTS_RETURNED = "message.realmforge.spell_points_returned";
+
+    /** {@code message.realmforge.spell_points_unspent} from {@code content/texts/message.yaml}: "Unspent spell points: %1$s. Press %2$s to spend them in your spellbook." */
+    public static final String MESSAGE_SPELL_POINTS_UNSPENT = "message.realmforge.spell_points_unspent";
+
+    /** {@code message.realmforge.spell_tree_row_open} from {@code content/texts/message.yaml}: "A new row of your spell tree is open." */
+    public static final String MESSAGE_SPELL_TREE_ROW_OPEN = "message.realmforge.spell_tree_row_open";
 
     /** {@code message.realmforge.stat_points_none_spent} from {@code content/texts/message.yaml}: "You have no spent stat points to unlearn." */
     public static final String MESSAGE_STAT_POINTS_NONE_SPENT = "message.realmforge.stat_points_none_spent";

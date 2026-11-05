@@ -29,11 +29,11 @@ public final class Characters {
     }
 
     /**
-     * The player's first class (the only one in M1), resolved in the player's registries: synced, so this works on
-     * the client too. Empty without a character, or when the class's entry no longer exists.
+     * The player's class, resolved in the player's registries: synced, so this works on the client too. Empty without
+     * a character, or when the class's entry no longer exists.
      */
     public static Optional<Holder.Reference<PlayerClass>> mainClass(Player player) {
-        return data(player).classes().stream().findFirst()
+        return data(player).playerClass()
                 .flatMap(key -> player.registryAccess().lookupOrThrow(CharacterRegistries.CLASS).get(key));
     }
 

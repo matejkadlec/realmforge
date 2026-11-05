@@ -116,7 +116,7 @@ texts:
   spellbook:
     en_us: Spellbook
   known_spells:
-    en_us: Known Spells
+    en_us: Spells
   spell_bar:
     en_us: Spell Bar
   no_known_spells:
@@ -126,6 +126,39 @@ texts:
   # A known spell in the list: "Test Bolt (Rank 2)" (%1$s the name, %2$s the rank).
   spell_with_rank:
     en_us: "%1$s (Rank %2$s)"
+  # The spellbook's Spell Tree tab (C5, RLM-333; client/screen/SpellTreeTab). The Spell Bar tab's name is spell_bar.
+  spell_tree:
+    en_us: Spell Tree
+  # At the end of the spellbook's top line, on both tabs (%1$s the unspent points, gold while there are any).
+  spell_points:
+    en_us: "Unspent: %1$s"
+  spell_tree_pick:
+    en_us: Choose your specialization.
+  # The button under a specialization's tree, before the player has picked one.
+  spell_tree_choose:
+    en_us: Choose
+  # A specialization whose tree does not exist yet (M3).
+  spell_tree_later:
+    en_us: Coming later
+  # The last line of a tree spell's tooltip, saying what a click does or why it does nothing.
+  spell_tree_spend:
+    en_us: Click to spend a point.
+  spell_tree_no_points:
+    en_us: You have no spell points left.
+  spell_tree_max_rank:
+    en_us: Highest rank reached.
+  # %1$s the level.
+  spell_tree_needs_level:
+    en_us: Opens at level %1$s.
+  # %1$s the spell its arrow names.
+  spell_tree_needs_spell:
+    en_us: Learn %1$s first.
+  spell_tree_needs_pick:
+    en_us: Choose this specialization to learn it.
+  spell_tree_other_tree:
+    en_us: Belongs to another specialization.
+  spell_tree_first_free:
+    en_us: Free when you choose this specialization.
   # The tooltip of the spellbook's gear button (RLM-497), which opens the Realmforge config screen.
   spell_options:
     en_us: Options

@@ -56,46 +56,77 @@
       "count": 32
     }
   ],
-  "spells": [
+  "specializations": [
     {
-      "spell": "realmforge:slam",
-      "level": 1
+      "id": "arms",
+      "name": "class.realmforge.warrior.specializations.0.name",
+      "description": "class.realmforge.warrior.specializations.0.description",
+      "first_spell": "realmforge:slam",
+      "spells": [
+        {
+          "spell": "realmforge:charge",
+          "level": 1,
+          "column": 1
+        },
+        {
+          "spell": "realmforge:slam",
+          "level": 1,
+          "column": 2
+        },
+        {
+          "spell": "realmforge:deep_wounds",
+          "level": 1,
+          "column": 3
+        },
+        {
+          "spell": "realmforge:rend",
+          "level": 6,
+          "column": 1
+        },
+        {
+          "spell": "realmforge:battle_shout",
+          "level": 6,
+          "column": 2
+        },
+        {
+          "spell": "realmforge:two_handed_weapon_specialization",
+          "level": 6,
+          "column": 3
+        },
+        {
+          "spell": "realmforge:bloodthirst",
+          "level": 12,
+          "column": 1,
+          "requires": "realmforge:rend"
+        },
+        {
+          "spell": "realmforge:overpower",
+          "level": 12,
+          "column": 2
+        },
+        {
+          "spell": "realmforge:victory_rush",
+          "level": 12,
+          "column": 3
+        },
+        {
+          "spell": "realmforge:execute",
+          "level": 18,
+          "column": 1
+        }
+      ]
     },
     {
-      "spell": "realmforge:charge",
-      "level": 1
+      "id": "fury",
+      "name": "class.realmforge.warrior.specializations.1.name",
+      "description": "class.realmforge.warrior.specializations.1.description",
+      "spells": []
     },
     {
-      "spell": "realmforge:deep_wounds",
-      "level": 1
-    },
-    {
-      "spell": "realmforge:rend",
-      "level": 6
-    },
-    {
-      "spell": "realmforge:battle_shout",
-      "level": 6
-    },
-    {
-      "spell": "realmforge:two_handed_weapon_specialization",
-      "level": 6
-    },
-    {
-      "spell": "realmforge:bloodthirst",
-      "level": 12
-    },
-    {
-      "spell": "realmforge:overpower",
-      "level": 12
-    },
-    {
-      "spell": "realmforge:victory_rush",
-      "level": 12
-    },
-    {
-      "spell": "realmforge:execute",
-      "level": 18
+      "id": "protection",
+      "name": "class.realmforge.warrior.specializations.2.name",
+      "description": "class.realmforge.warrior.specializations.2.description",
+      "spells": []
     }
   ]
 }

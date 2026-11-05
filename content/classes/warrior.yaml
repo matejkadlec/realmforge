@@ -1,12 +1,10 @@
 # yaml-language-server: $schema=../../tools/schemas/classes.schema.json
 # The M1 melee class (decision D1, RLM-51): strength and vitality. The stats stay the same at every level: each level
 # gives a stat point to spend instead, and the class keeps these as its starting identity until Matěj decides on them
-# (2026-10-15, RLM-196). Its kit is the Arms Warrior's "Bloodletter" tree (RLM-543; Matěj, 2026-10-30, RLM-333): until
-# the spell trees window (C5) spends points, the kit teaches every spell of the tree at rank 1 at its row's level, a row
-# every 6 levels: Slam (decision D4's starting spell), Charge and Deep Wounds at 1; Rend, Battle Shout and Two-Handed
-# Weapon Specialization at 6; Bloodthirst, Overpower and Victory Rush at 12; Execute at 18. Four active spells by
-# the end of chapter 1 (D4: 4 x N, passives aside). Reckless Strike and Shield Bash leave the kit and return with their
-# trees in M3.
+# (2026-10-15, RLM-196). M1's tree is the Arms Warrior's "Bloodletter" (RLM-543; Matěj, 2026-10-30, RLM-333), a new row
+# every 6 levels; four active spells by the end of chapter 1 (D4: 4 x N, passives aside). Picking the specialization
+# gives Slam free at rank 1, and every other rank costs a spell point (C5, Matěj, 2026-11-04). Fury and Protection come
+# with their trees in M3 (RLM-218), and Reckless Strike and Shield Bash with them.
 id: warrior
 name:
   en_us: Warrior
@@ -36,14 +34,25 @@ starting_kit:
   - {item: minecraft:leather_leggings}
   - {item: minecraft:leather_boots}
   - {item: minecraft:bread, count: 32}
-spells:
-  - {spell: realmforge:slam, level: 1}
-  - {spell: realmforge:charge, level: 1}
-  - {spell: realmforge:deep_wounds, level: 1}
-  - {spell: realmforge:rend, level: 6}
-  - {spell: realmforge:battle_shout, level: 6}
-  - {spell: realmforge:two_handed_weapon_specialization, level: 6}
-  - {spell: realmforge:bloodthirst, level: 12}
-  - {spell: realmforge:overpower, level: 12}
-  - {spell: realmforge:victory_rush, level: 12}
-  - {spell: realmforge:execute, level: 18}
+specializations:
+  - id: arms
+    name: {en_us: Arms}
+    description: {en_us: "Cut deep, let the wounds bleed, and finish what you start."}
+    first_spell: realmforge:slam
+    spells:
+      - {spell: realmforge:charge, level: 1, column: 1}
+      - {spell: realmforge:slam, level: 1, column: 2}
+      - {spell: realmforge:deep_wounds, level: 1, column: 3}
+      - {spell: realmforge:rend, level: 6, column: 1}
+      - {spell: realmforge:battle_shout, level: 6, column: 2}
+      - {spell: realmforge:two_handed_weapon_specialization, level: 6, column: 3}
+      - {spell: realmforge:bloodthirst, level: 12, column: 1, requires: realmforge:rend}
+      - {spell: realmforge:overpower, level: 12, column: 2}
+      - {spell: realmforge:victory_rush, level: 12, column: 3}
+      - {spell: realmforge:execute, level: 18, column: 1}
+  - id: fury
+    name: {en_us: Fury}
+    description: {en_us: "Swing fast and hard, and let your rage carry you."}
+  - id: protection
+    name: {en_us: Protection}
+    description: {en_us: "Raise your shield and stand where others fall."}

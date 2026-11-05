@@ -56,42 +56,71 @@
       "count": 32
     }
   ],
-  "spells": [
+  "specializations": [
     {
-      "spell": "realmforge:frostbolt",
-      "level": 1
+      "id": "frost",
+      "name": "class.realmforge.mage.specializations.0.name",
+      "description": "class.realmforge.mage.specializations.0.description",
+      "first_spell": "realmforge:frostbolt",
+      "spells": [
+        {
+          "spell": "realmforge:improved_frostbolt",
+          "level": 1,
+          "column": 1
+        },
+        {
+          "spell": "realmforge:frostbolt",
+          "level": 1,
+          "column": 2
+        },
+        {
+          "spell": "realmforge:cone_of_cold",
+          "level": 1,
+          "column": 3
+        },
+        {
+          "spell": "realmforge:ice_lance",
+          "level": 6,
+          "column": 1
+        },
+        {
+          "spell": "realmforge:frost_nova",
+          "level": 6,
+          "column": 2
+        },
+        {
+          "spell": "realmforge:frostbite",
+          "level": 6,
+          "column": 3
+        },
+        {
+          "spell": "realmforge:shatter",
+          "level": 12,
+          "column": 1
+        },
+        {
+          "spell": "realmforge:ice_barrier",
+          "level": 12,
+          "column": 2
+        },
+        {
+          "spell": "realmforge:blizzard",
+          "level": 18,
+          "column": 1
+        }
+      ]
     },
     {
-      "spell": "realmforge:improved_frostbolt",
-      "level": 1
+      "id": "fire",
+      "name": "class.realmforge.mage.specializations.1.name",
+      "description": "class.realmforge.mage.specializations.1.description",
+      "spells": []
     },
     {
-      "spell": "realmforge:cone_of_cold",
-      "level": 1
-    },
-    {
-      "spell": "realmforge:ice_lance",
-      "level": 6
-    },
-    {
-      "spell": "realmforge:frost_nova",
-      "level": 6
-    },
-    {
-      "spell": "realmforge:frostbite",
-      "level": 6
-    },
-    {
-      "spell": "realmforge:shatter",
-      "level": 12
-    },
-    {
-      "spell": "realmforge:ice_barrier",
-      "level": 12
-    },
-    {
-      "spell": "realmforge:blizzard",
-      "level": 18
+      "id": "arcane",
+      "name": "class.realmforge.mage.specializations.2.name",
+      "description": "class.realmforge.mage.specializations.2.description",
+      "spells": []
     }
   ]
 }

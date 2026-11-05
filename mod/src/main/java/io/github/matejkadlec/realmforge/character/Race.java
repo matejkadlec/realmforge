@@ -22,7 +22,7 @@ import net.minecraft.util.ExtraCodecs;
  *     fails the world load
  * @param modifiers attribute modifiers it gives its players
  * @param racialSpell its racial active: a free spell every player of the race knows, in the racial slot beside the
- *     spell bar ({@link ClassSpells}); a spell that does not exist fails the world load
+ *     spell bar ({@link RacialSpells}); a spell that does not exist fails the world load
  * @param racialPassive its racial passive, if it has one
  */
 public record Race(String name, String description, List<Holder<PlayerClass>> classes,

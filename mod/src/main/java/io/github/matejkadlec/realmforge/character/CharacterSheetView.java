@@ -141,12 +141,12 @@ public record CharacterSheetView(Component title, CharacterTab character, List<S
     }
 
     /**
-     * A specialization of the player's class and the points the player has in it. The specialization trees come with C5;
-     * until then no player has points in any, and the line names race and class only.
+     * A specialization of the player's class and the ranks the player has in it. Until they pick one (C5, RLM-333), the
+     * line names race and class only; the free first spell counts, so a pick alone names it.
      *
      * @param id its id, which names it in English, so the alphabetical order of a tie is the names' order
      * @param name its name
-     * @param points the points the player has in it
+     * @param points the ranks the player knows in its tree
      */
     public record Specialization(String id, Component name, int points) {
     }
@@ -288,9 +288,10 @@ public record CharacterSheetView(Component title, CharacterTab character, List<S
         Optional<XpBarView> xp = character.exists() ? xp(player.registryAccess(), character, Characters.level(player))
                 : Optional.empty();
         EnchantmentProtection protection = EnchantmentProtection.of(player);
-        // C5 brings the specialization trees and the player's points in them.
+        List<Specialization> specializations = SpellTrees.chosen(player).map(tree -> List.of(new Specialization(
+                tree.id(), Component.translatable(tree.name()), SpellTrees.ranks(player)))).orElse(List.of());
         return build(title, player::getAttributeValue, player::getAttributeBaseValue, player.registryAccess(),
-                character, StatPoints.unspent(player), xp, List.of(), protection::share);
+                character, StatPoints.unspent(player), xp, specializations, protection::share);
     }
 
     /**
@@ -325,7 +326,7 @@ public record CharacterSheetView(Component title, CharacterTab character, List<S
         });
         listed().forEach(entry -> placed.add(key(entry.attribute())));
         // The rules' bonuses the player's main class's role gets; without a character, the role-free ones.
-        Optional<ClassRole> role = character.classes().stream().findFirst()
+        Optional<ClassRole> role = character.playerClass()
                 .flatMap(key -> registries.lookupOrThrow(CharacterRegistries.CLASS).get(key))
                 .map(entry -> entry.value().role());
 
@@ -497,7 +498,7 @@ public record CharacterSheetView(Component title, CharacterTab character, List<S
 
     /** The class's part: its name, and its description in its tooltip. */
     private static Optional<Part> playerClass(CharacterData character, HolderLookup.Provider registries) {
-        return character.classes().stream().findFirst()
+        return character.playerClass()
                 .flatMap(key -> registries.lookupOrThrow(CharacterRegistries.CLASS).get(key)).map(Holder::value)
                 .map(entry -> new Part(Component.translatable(entry.name()),
                         List.of(colored(Component.translatable(entry.description()), TEXT))));

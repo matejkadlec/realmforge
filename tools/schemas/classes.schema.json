@@ -54,31 +54,6 @@
       "title": "CharacterModifierDef",
       "type": "object"
     },
-    "ClassSpellDef": {
-      "additionalProperties": false,
-      "description": "A spell a class teaches its players at a level (C4): they learn it at rank 1 once they reach the level, and\nkeep it.",
-      "properties": {
-        "level": {
-          "description": "The character level that teaches it.",
-          "maximum": 1000,
-          "minimum": 1,
-          "title": "Level",
-          "type": "integer"
-        },
-        "spell": {
-          "description": "The spell, e.g. realmforge:slam.",
-          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
-          "title": "Spell",
-          "type": "string"
-        }
-      },
-      "required": [
-        "spell",
-        "level"
-      ],
-      "title": "ClassSpellDef",
-      "type": "object"
-    },
     "KitItemDef": {
       "additionalProperties": false,
       "description": "One item of a class's starting kit.",
@@ -163,11 +138,110 @@
       ],
       "title": "RageDef",
       "type": "object"
+    },
+    "SpecializationDef": {
+      "additionalProperties": false,
+      "description": "A specialization and its spell tree (C5, RLM-333; Matěj, 2026-10-15, RLM-218): the player picks one in the spell\ntrees window and spends points there. One without spells comes later: the window names it, and nobody can pick it\nyet (M1 has one tree per class, the other two come in M3).",
+      "properties": {
+        "description": {
+          "$ref": "#/$defs/LocalizedText",
+          "description": "One short sentence on how it plays, in its tooltip."
+        },
+        "first_spell": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The tree's first spell, in its level 1 row: free at rank 1 when the player picks the specialization (decision D4: every class starts with one spell; Matěj, 2026-11-04). Set exactly when the tree has spells.",
+          "title": "First Spell"
+        },
+        "id": {
+          "description": "Lowercase snake_case id, unique in the class, e.g. frost. Characters save it.",
+          "maxLength": 64,
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/LocalizedText",
+          "description": "Its name above the tree (Title Case), e.g. Frost."
+        },
+        "spells": {
+          "description": "The tree's spells. Every rank costs a point, but first_spell's first.",
+          "items": {
+            "$ref": "#/$defs/TreeSpellDef"
+          },
+          "title": "Spells",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description"
+      ],
+      "title": "SpecializationDef",
+      "type": "object"
+    },
+    "TreeSpellDef": {
+      "additionalProperties": false,
+      "description": "One spell of a specialization's spell tree (C5, RLM-333): where it stands, and what it needs besides points.",
+      "properties": {
+        "column": {
+          "description": "Its column in the row: 1 (left), 2 or 3 (right).",
+          "maximum": 3,
+          "minimum": 1,
+          "title": "Column",
+          "type": "integer"
+        },
+        "level": {
+          "description": "The character level that opens its row: 1, then every 6 levels (6, 12, 18, ...).",
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Level",
+          "type": "integer"
+        },
+        "requires": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The arrow: a spell of an earlier row of this tree that the player must know at any rank first.",
+          "title": "Requires"
+        },
+        "spell": {
+          "description": "The spell, e.g. realmforge:slam.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Spell",
+          "type": "string"
+        }
+      },
+      "required": [
+        "spell",
+        "level",
+        "column"
+      ],
+      "title": "TreeSpellDef",
+      "type": "object"
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "A class: its role, its resource, the stats it gives, its spells by level and its starting kit (architecture\n10.1). The specialization spell trees come with C5.",
+  "description": "A class: its role, its resource, the stats it gives, its specializations' spell trees and its starting kit\n(architecture 10.1).",
   "properties": {
     "description": {
       "$ref": "#/$defs/LocalizedText",
@@ -223,12 +297,12 @@
       "title": "Role",
       "type": "string"
     },
-    "spells": {
-      "description": "The spells the class teaches by level (C4): one at level 1, and at most 4 per chapter in all (decision D4: chapter N allows 4 x N spells).",
+    "specializations": {
+      "description": "Its specializations with their spell trees (C5). A tree holds at most 4 active spells per chapter (decision D4: chapter N allows 4 x N spells).",
       "items": {
-        "$ref": "#/$defs/ClassSpellDef"
+        "$ref": "#/$defs/SpecializationDef"
       },
-      "title": "Spells",
+      "title": "Specializations",
       "type": "array"
     },
     "starting_kit": {

@@ -242,23 +242,28 @@ def test_splash_placeholders_need_a_splash_bonus(repo: RepoPaths) -> None:
 # The Mage's kit (RLM-542)
 
 
-def test_the_mage_learns_the_shatter_tree_by_its_rows() -> None:
+def test_the_frost_tree_stands_in_its_rows() -> None:
     content, _ = load_and_validate(RepoPaths())
     mage = next(entry.model for entry in content.classes if entry.model.id == "mage")
-    assert [(taught.spell.removeprefix("realmforge:"), taught.level) for taught in mage.spells] == [
-        ("frostbolt", 1),
-        ("improved_frostbolt", 1),
-        ("cone_of_cold", 1),
-        ("ice_lance", 6),
-        ("frost_nova", 6),
-        ("frostbite", 6),
-        ("shatter", 12),
-        ("ice_barrier", 12),
-        ("blizzard", 18),
+    frost = next(entry for entry in mage.specializations if entry.id == "frost")
+    assert frost.first_spell == "realmforge:frostbolt"
+    assert [
+        (taught.spell.removeprefix("realmforge:"), taught.level, taught.column) for taught in frost.spells
+    ] == [
+        ("improved_frostbolt", 1, 1),
+        ("frostbolt", 1, 2),
+        ("cone_of_cold", 1, 3),
+        ("ice_lance", 6, 1),
+        ("frost_nova", 6, 2),
+        ("frostbite", 6, 3),
+        ("shatter", 12, 1),
+        ("ice_barrier", 12, 2),
+        ("blizzard", 18, 1),
     ]
+    assert [entry.id for entry in mage.specializations if not entry.spells] == ["fire", "arcane"]
     ranks = {entry.model.id: entry.model.max_level for entry in content.spells}
     assert {
-        spell: ranks[spell] for spell, _ in [(t.spell.removeprefix("realmforge:"), t) for t in mage.spells]
+        spell: ranks[spell] for spell, _ in [(t.spell.removeprefix("realmforge:"), t) for t in frost.spells]
     } == {
         "frostbolt": 5,
         "improved_frostbolt": 3,
@@ -274,13 +279,23 @@ def test_the_mage_learns_the_shatter_tree_by_its_rows() -> None:
 
 def test_passive_spells_do_not_count_against_d4(repo: RepoPaths) -> None:
     mage = repo.content / "classes" / "mage.yaml"
+    text = mage.read_text()
+    frostbite = "{spell: realmforge:frostbite, level: 6, column: 3}"
+    # A passive in row 2's third place keeps chapter 1 at 4 actives, whichever passive it is.
     mage.write_text(
-        mage.read_text().replace("realmforge:shatter, level: 12", "realmforge:shatter, level: 2"),
+        text.replace(frostbite, "{spell: realmforge:shatter, level: 6, column: 3}").replace(
+            "{spell: realmforge:shatter, level: 12, column: 1}",
+            "{spell: realmforge:frostbite, level: 12, column: 1}",
+        ),
         encoding="utf-8",
     )
     load_and_validate(repo)
+    # An active spell in that place makes 5.
     mage.write_text(
-        mage.read_text().replace("realmforge:ice_barrier, level: 12", "realmforge:ice_barrier, level: 2"),
+        text.replace(frostbite, "{spell: realmforge:ice_barrier, level: 6, column: 3}").replace(
+            "{spell: realmforge:ice_barrier, level: 12, column: 2}",
+            "{spell: realmforge:frostbite, level: 12, column: 2}",
+        ),
         encoding="utf-8",
     )
     assert_problem(repo, "5 active spells by level 10, the end of chapter 1, which allows 4")
