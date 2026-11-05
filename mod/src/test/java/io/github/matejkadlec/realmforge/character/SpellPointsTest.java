@@ -65,7 +65,7 @@ class SpellPointsTest {
         assertEquals(SpellPoints.Result.MAX_RANK, SpellPoints.check(18, 5, 5, 5, 1, true));
     }
 
-    /** A row opens exactly at its level, with no rule on points spent in the tree (Matěj, 2026-11-04). */
+    /** A row opens exactly at its level; RLM-631 replaces that with points spent in the tree (Matěj, 2026-11-04). */
     @Test
     void aRowOpensAtItsLevel() {
         assertEquals(SpellPoints.Result.LEVEL_TOO_LOW, SpellPoints.check(5, 4, 0, 5, 6, true));

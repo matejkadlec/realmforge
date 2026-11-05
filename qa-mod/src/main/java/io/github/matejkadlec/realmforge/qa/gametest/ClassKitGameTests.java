@@ -78,9 +78,9 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
 /**
- * C4 (RLM-27), RLM-499 and RLM-518: the class kits in a world. Human characters learn their class's spells by level
- * and their racial spell; melee spells need a melee weapon and Shield Bash a shield; a stun stops casts, attacks and a
- * mob's AI, and Will To Survive breaks it; Reckless Strike's crit chance above 100 % turns into crit damage; Slam's
+ * C4 (RLM-27), RLM-499 and RLM-518: the class kits in a world. Human characters get their tree's first spell with the
+ * pick and their racial spell; melee spells need a melee weapon and Shield Bash a shield; a stun stops casts, attacks
+ * and a mob's AI, and Will To Survive breaks it; Reckless Strike's crit chance above 100 % turns into crit damage; Slam's
  * armor shred and a hit's spell penetration grow with the rank; Ice Barrier fills the Magic Shield at once; Battle
  * Shout reaches allies; Sword Specialization raises a Human's attack damage with a sword; spells add their coefficient
  * of the caster's power (scaling system C, RLM-534). Expected numbers follow

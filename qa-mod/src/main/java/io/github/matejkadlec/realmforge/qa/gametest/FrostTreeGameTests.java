@@ -32,11 +32,9 @@ import io.github.matejkadlec.realmforge.spell.SpellTooltip;
 import io.github.matejkadlec.realmforge.spell.Spellbook;
 import io.github.matejkadlec.realmforge.spell.Spells;
 import io.github.matejkadlec.realmforge.stats.EntityLevel;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -525,25 +523,6 @@ public final class FrostTreeGameTests {
             }
         }
         return false;
-    }
-
-    private static void assertKnows(GameTestHelper helper, ServerPlayer player, List<ResourceKey<Spell>> known,
-            List<ResourceKey<Spell>> notYet, int level) {
-        Spellbook book = player.getData(SpellAttachments.SPELLBOOK);
-        for (ResourceKey<Spell> spell : known) {
-            helper.assertValueEqual(book.level(spell), Optional.of(1), "level " + level + " knows "
-                    + spell.identifier() + " at rank 1");
-        }
-        for (ResourceKey<Spell> spell : notYet) {
-            helper.assertValueEqual(book.level(spell), Optional.empty(), "level " + level + " does not know "
-                    + spell.identifier());
-        }
-    }
-
-    private static void reachLevel(GameTestHelper helper, ServerPlayer player, int level) {
-        long xp = Characters.xpToReach(player, level).orElseThrow();
-        helper.assertTrue(Characters.setTotalXp(player, xp), "the XP for level " + level + " was set");
-        helper.assertValueEqual(Characters.level(player), level, "the level reached");
     }
 
     /** The first damage effect of {@code effects}, a projectile's, an area's or a cone's included. */

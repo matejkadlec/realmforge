@@ -1215,8 +1215,9 @@ the playtest covers it.
     2026-10-29).
 - **Spell trees (C5, RLM-333):**
   - **Shape** (Matěj, 2026-10-30): rows of 1 to 3 spells in three columns, a new row at levels 1, 6, 12, 18 and every 6
-    levels on. A row needs only the character's level and its arrows; no rule counts points spent per row (Matěj,
-    2026-11-04). The only arrow so far is Bloodthirst's, which needs Rend at any rank.
+    levels on. A row needs only the character's level and its arrows. Matěj has since decided that rows open by points
+    spent in the tree instead, and reordered both trees (2026-11-04): RLM-631 brings that. The only arrow so far is
+    Bloodthirst's, which needs Rend at any rank.
   - **Points:** exactly 1 per level from level 2 on, so 17 at level 18 (Matěj, 2026-11-03 and 2026-11-04). **A pick
     gives the tree's first spell free at rank 1** (decision D4: every class starts with one spell), and every other rank
     costs a point, rank 1 included (Matěj, 2026-11-04). So a level 18 character has 18 ranks of the tree's 31, and class
@@ -1441,8 +1442,7 @@ Its name and description are translation keys from C3b, the description's number
   its internal cooldown per target ([12](#12-talents)). The first are
   Improved Frostbolt, Frostbite, Shatter and Two-Handed Specialization (Attack Damage +4/8/12 % with
   `#realmforge:two_handed_weapons` in hand, as the Human's Sword Specialization gives its +10 %), which the M1 spell
-  trees teach (the Frost Mage's kit by its rows since RLM-542, [11.7](#117-class-spells-and-stances); the Arms
-  Warrior's with RLM-543).
+  trees teach ([11.7](#117-class-spells-and-stances)).
 - **Knockback:** a spell's damage is school damage, which never knocks back ([9.1](#91-damage-pipeline), RLM-214);
   a spell pushes its target only through a `realmforge:knockback` effect (C3a-3).
 - **Crits** (Matěj, 2026-10-15): every spell can crit, heals too, on the caster's crit chance for 1 + the caster's

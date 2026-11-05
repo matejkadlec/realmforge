@@ -36,18 +36,15 @@ import io.github.matejkadlec.realmforge.spell.Spells;
 import io.github.matejkadlec.realmforge.spell.Windows;
 import io.github.matejkadlec.realmforge.stats.EntityLevel;
 import io.github.matejkadlec.realmforge.stats.StatsAttachments;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.PermissionSet;
@@ -72,8 +69,8 @@ import net.minecraft.world.phys.Vec3;
  * after a block, Victory Rush only after a kill that is not gray and its heal, Execute only below 20 % with its extra
  * rage, its refund and its lit window, Charge's rush to the near side and stun round the landing and its distance by
  * rank, a player's Charge landing on the server (RLM-602), Deep Wounds' bleed of a share of the crit, Bloodthirst's
- * proc, the tooltips' next rank, the Warrior learning the tree by its rows (1, 6, 12, 18), the handoff's setup line
- * against Astone, and the rage and cooldowns of Matěj's rebalance (RLM-604).
+ * proc, the tooltips' next rank, the handoff's setup line against Astone, and the rage and cooldowns of Matěj's
+ * rebalance (RLM-604).
  */
 public final class ArmsTreeGameTests {
     private static final double HEALTH = SpellGameTests.HEALTH;
@@ -722,25 +719,6 @@ public final class ArmsTreeGameTests {
             }
         }
         return ItemStack.EMPTY;
-    }
-
-    private static void assertKnows(GameTestHelper helper, ServerPlayer player, List<ResourceKey<Spell>> known,
-            List<ResourceKey<Spell>> notYet, int level) {
-        Spellbook book = player.getData(SpellAttachments.SPELLBOOK);
-        for (ResourceKey<Spell> spell : known) {
-            helper.assertValueEqual(book.level(spell), Optional.of(1), "level " + level + " knows "
-                    + spell.identifier() + " at rank 1");
-        }
-        for (ResourceKey<Spell> spell : notYet) {
-            helper.assertValueEqual(book.level(spell), Optional.empty(), "level " + level + " does not know "
-                    + spell.identifier());
-        }
-    }
-
-    private static void reachLevel(GameTestHelper helper, ServerPlayer player, int level) {
-        long xp = Characters.xpToReach(player, level).orElseThrow();
-        helper.assertTrue(Characters.setTotalXp(player, xp), "the XP for level " + level + " was set");
-        helper.assertValueEqual(Characters.level(player), level, "the level reached");
     }
 
     /** The first damage effect of {@code effects}, a melee shape's included. */
