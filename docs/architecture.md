@@ -4052,7 +4052,7 @@ content.
 
 Last resort, only where no event or API exists. Each one sits in `mixin/` (or the access transformer file) with a
 comment saying why, and gets a test. A mod lists its mixins in `<modid>.mixins.json`, which `neoforge.mods.toml`
-names under `[[mixins]]`. The core mod has eight: `RangedAttributeAccessor`, which raises attribute caps
+names under `[[mixins]]`. The core mod has nine: `RangedAttributeAccessor`, which raises attribute caps
 ([8.4](#84-caps)) and caps two of Apothic Attributes' down ([19.4](#194-optional-integrations)),
 `PlayerBlockActionMixin`, which lets Adventure mode break the allowlist inside instances ([15.5](#155-instances)),
 `PlayerExhaustionMixin`, which lowers a player's food exhaustion by their Stamina ([8.1](#81-the-attribute-set);
@@ -4065,7 +4065,14 @@ stunned mob's AI step, as vanilla skips an immobile one's, so goals without cont
 ([13](#13-items-gear-and-loot), RLM-537; `MagicProtectionGameTests`): `EnchantmentSelectionMixin` after vanilla's
 `EnchantmentHelper#filterCompatibleEnchantments`, and `ApothicTableSelectionMixin` after Apothic Enchanting's
 `ApothEnchantmentHelper#pickEnchantment` with `ArcanaEnchantmentDataAccessor` for its candidates' package-private
-enchantment, the last two `@Pseudo` as above. The QA mod has two, for dev runs only: `GameTestServerMixin` gives the
+enchantment, the last two `@Pseudo` as above. `HolderSetNamedMixin` gives every named tag (`HolderSet.Named`) a
+`CopyOnWriteArrayList` for the invalidation listeners that NeoForge patches in as a plain `ArrayList` (RLM-612;
+`HolderSetListenersTest`). Vanilla parses a registry's entries on worker threads that share each tag through
+`ConcurrentHolderGetter`, and every `neoforge:not`, `and` or `or` holder set they build adds a listener to the tag it
+wraps, outside that getter's lock. Two structures whose biomes negate one tag raced on that list: a lost race threw
+(`apotheosis:tower_sand` stayed unbound and the registry freeze failed the load, about one GameTest server start in
+six), left a null that crashed the tag's bind, or dropped a listener. NeoForge's newest 26.1.2 build (26.1.2.126)
+still has the plain list; once a pinned build fixes it, the mixin can be removed. The QA mod has two, for dev runs only: `GameTestServerMixin` gives the
 GameTest world the data pack dimensions, which vanilla leaves out ([20](#20-tests-per-layer)), and
 `MinecraftProfileLookupMixin`, a client mixin (the config's `client` list), retries the dev client's one profile
 lookup at startup up to three times, 1 s and then 2 s apart (`ProfileLookupRetry`, RLM-570;
