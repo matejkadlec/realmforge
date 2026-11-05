@@ -15,9 +15,8 @@ public final class GeneratedClassExpectations {
     public record Bonus(String id, String attribute, String operation, double amount) {
     }
 
-    /** How a rage class gains and loses rage, in game units (the decay's delay in ticks). */
-    public record Rage(double perHitDealt, double perMaxHealthTaken, double decayPerSecond,
-            int decayAfterTicks) {
+    /** How a rage class gains and loses rage, in game units. */
+    public record Rage(double perHitDealt, double perMaxHealthTaken, double decayPerSecond) {
     }
 
     /** One item of the starting kit. */
@@ -59,7 +58,7 @@ public final class GeneratedClassExpectations {
                     "class.realmforge.warrior.name",
                     "class.realmforge.warrior.description",
                     "realmforge:rage",
-                    Optional.of(new Rage(10.0, 50.0, 2.0, 100)),
+                    Optional.of(new Rage(10.0, 50.0, 5.0)),
                     List.of(new KitItem("minecraft:stone_sword", 1), new KitItem("minecraft:shield", 1), new KitItem("minecraft:leather_helmet", 1), new KitItem("minecraft:leather_chestplate", 1), new KitItem("minecraft:leather_leggings", 1), new KitItem("minecraft:leather_boots", 1), new KitItem("minecraft:bread", 32)),
                     List.of(new Bonus("realmforge:class/realmforge/0/warrior", "realmforge:strength", "add_value", 5.0), new Bonus("realmforge:class/realmforge/1/warrior", "realmforge:vitality", "add_value", 4.0), new Bonus("realmforge:class/realmforge/2/warrior", "realmforge:dexterity", "add_value", 2.0)),
                     List.of(new Specialization("arms", "class.realmforge.warrior.specializations.0.name", "class.realmforge.warrior.specializations.0.description", Optional.of("realmforge:slam"), List.of(new TreeSpell("realmforge:charge", 1, 1, Optional.empty()), new TreeSpell("realmforge:slam", 1, 2, Optional.empty()), new TreeSpell("realmforge:deep_wounds", 1, 3, Optional.empty()), new TreeSpell("realmforge:rend", 6, 1, Optional.empty()), new TreeSpell("realmforge:battle_shout", 6, 2, Optional.empty()), new TreeSpell("realmforge:two_handed_weapon_specialization", 6, 3, Optional.empty()), new TreeSpell("realmforge:bloodthirst", 12, 1, Optional.of("realmforge:rend")), new TreeSpell("realmforge:overpower", 12, 2, Optional.empty()), new TreeSpell("realmforge:victory_rush", 12, 3, Optional.empty()), new TreeSpell("realmforge:execute", 18, 1, Optional.empty()))),

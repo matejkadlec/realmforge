@@ -1127,8 +1127,8 @@ one state every rule reads, instead of a timer of its own:
   one.
 - **The window** is the common config's `combat.inCombatSeconds`, 10 by default (`combat/CombatConfig`,
   [19.2](#192-configuration)); a hit's combat ends at its time plus the window as it was then.
-- **Its users:** rage decays measured from the same last hit ([11.5](#115-resources-cooldowns-modifiers)), so the
-  two never disagree about the fight; every scroll (`character/Scrolls`, [10.2](#102-leveling)) refuses to start in
+- **Its users:** rage decays once its holder is out of combat ([11.5](#115-resources-cooldowns-modifiers), RLM-594),
+  so the two never disagree about the fight; every scroll (`character/Scrolls`, [10.2](#102-leveling)) refuses to start in
   combat, is kept and says "You can't use this in combat." (`message.realmforge.cannot_use_in_combat`), on both sides,
   so the client swings no arm, and a hit dealt or taken during its 3 s charge stops the charge. The Scroll of Oblivion
   (RLM-196) is the first; the Scroll of Respec (RLM-226) and the Scroll of Rebirth (RLM-228) refuse the same way, and
@@ -1928,12 +1928,13 @@ boss, Will To Survive, Bleeding's 12 ticks through armor, two stacks and a refre
   Vanilla hurts a sword's target before its sweep, and Better Combat ([9.2](#92-better-combat)) attacks a swing's
   targets one after another in the same tick, each with its own full-strength `Player#attack`, so neither the sweep
   nor Better Combat's further targets add rage; when the target's hit is dodged, the first hit that lands counts. The
-  pool holds while the last hit dealt or taken (a dodged or fully blocked one included) is less than
-  `decay_after_seconds` ago; after that it loses `decay_per_second` every second, as rage's regeneration
-  ([`ResourceType`](#115-resources-cooldowns-modifiers)) is negative then. The last hit is the shared in-combat
-  state's ([9.4](#94-in-combat), RLM-348), so rage and being in combat never disagree about the fight; a new player
-  entity starts with no hit. The Warrior's starting numbers are 10
-  a hit, 50 for the whole max health and 2 a second after 5 s, until the class kits (C4) tune them. Mobs pay no cost
+  pool holds while its holder is in combat, the shared in-combat state ([9.4](#94-in-combat), RLM-348: 10 s after the
+  last hit dealt or taken, a dodged or fully blocked one included), and once it is out of combat it loses
+  `decay_per_second` every second, as rage's regeneration ([`ResourceType`](#115-resources-cooldowns-modifiers)) is
+  negative then (RLM-594; Matěj, 2026-11-03), so rage and being in combat never disagree about the fight; a new player
+  entity starts out of combat. The Warrior's numbers are 10 a hit, 50 for the whole max health and 5 a second, so a
+  full pool holds for 10 s after the fight and is empty 20 s later (until RLM-594 it lost 2 a second from 5 s after the
+  last hit, about 55 s for a full pool). Mobs pay no cost
   ([11.2](#112-casting-server-authoritative)), so no mob gains rage. `RageGameTests` and `RageRulesTest` cover it.
 - **Cooldowns:** a spell's own cooldown at its rank (a cooldown may change per rank, `cooldown_per_level_seconds`,
   `Spell#cooldownTicksAt`: Frost Nova's 20/15/10 s, Ice Barrier's 60/45/30 s, RLM-572), shortened by Cooldown
@@ -2349,7 +2350,8 @@ Rend in the tree.
 - **Will To Survive** (the Human's racial): free, 1 minute, cast while stunned, of no school.
 - **Arcane Missiles' damage per second** stays above Frostbolt's and Fireball's (Matěj, 2026-10-30: Frostbolt slows,
   Fireball burns, Arcane Missiles should deal the most damage).
-- **Rage gain** stays at the Warrior's starting numbers ([11.5](#115-resources-cooldowns-modifiers)).
+- **Rage gain** stays at the Warrior's starting numbers, and the pool loses 5 a second once out of combat (RLM-594;
+  [11.5](#115-resources-cooldowns-modifiers)).
 
 **Open, for the playtest:** the numbers above; the stance percentages (X);
 whether Frostbolt stays the Mage's D4 starting spell ("a Frostbolt-like fast single-target cast that slows",

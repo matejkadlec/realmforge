@@ -26,8 +26,7 @@ classes: [realmforge:warrior]
 RAGE = """rage:
   per_hit_dealt: 10
   per_max_health_taken: 50
-  decay_per_second: 2
-  decay_after_seconds: 5
+  decay_per_second: 5
 """
 CLASS = (
     """id: rogue
@@ -198,9 +197,7 @@ def test_only_a_rage_class_sets_rage_numbers(repo: RepoPaths) -> None:
         ("per_hit_dealt", "101"),
         ("per_max_health_taken", "-1"),
         ("decay_per_second", "-1"),
-        ("decay_after_seconds", "0"),
-        ("decay_after_seconds", "61"),
-        ("decay_after_seconds", "0.01"),
+        ("decay_per_second", "101"),
     ],
 )
 def test_rage_numbers_are_bounded(repo: RepoPaths, field: str, value: str) -> None:
@@ -219,12 +216,11 @@ def test_rage_numbers_are_in_game_units(repo: RepoPaths) -> None:
     assert data["rage"] == {
         "per_hit_dealt": 10.0,
         "per_max_health_taken": 50.0,
-        "decay_per_second": 2.0,
-        "decay_after_ticks": 100,
+        "decay_per_second": 5.0,
     }
     assert "rage" not in json.loads(out[f"{DATA}/class/mage.json"])
     expectations = out[f"{QA}/GeneratedClassExpectations.java"].decode()
-    assert "Optional.of(new Rage(10.0, 50.0, 2.0, 100))" in expectations
+    assert "Optional.of(new Rage(10.0, 50.0, 5.0))" in expectations
 
 
 def test_kit_items_exist(repo: RepoPaths) -> None:
@@ -299,8 +295,7 @@ def test_generated_data_and_lang(repo: RepoPaths) -> None:
         "rage": {
             "per_hit_dealt": 10.0,
             "per_max_health_taken": 50.0,
-            "decay_per_second": 2.0,
-            "decay_after_ticks": 100,
+            "decay_per_second": 5.0,
         },
         "modifiers": [
             {

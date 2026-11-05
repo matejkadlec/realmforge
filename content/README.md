@@ -313,8 +313,8 @@ Rules:
   stat rule bonuses its players get) and its `resource` (`realmforge:mana` or `realmforge:rage`), and a rage class, and only a
   rage class, sets its `rage` numbers: `per_hit_dealt` (rage for a full-strength melee hit dealt, a weaker swing
   giving its share, and a swing giving it once however many mobs it hits), `per_max_health_taken` (rage for losing
-  the whole max health to attackers, a hit for a tenth of it giving a tenth), `decay_per_second` and
-  `decay_after_seconds` (how long after the last hit dealt or taken the pool starts to decay;
+  the whole max health to attackers, a hit for a tenth of it giving a tenth) and `decay_per_second` (what the pool loses
+  every second once its holder is out of combat, 10 s after the last hit dealt or taken, RLM-594;
   [architecture 11.5](../docs/architecture.md#115-resources-cooldowns-modifiers)). A class
   gives `modifiers` and a `starting_kit` (items with a `count` of 1 to 64, given once, when the player's first character is created; every class's kit
   holds Bread ×32, Matěj, 2026-10-14, which validation checks), and its `specializations` (C5, RLM-333), each with an

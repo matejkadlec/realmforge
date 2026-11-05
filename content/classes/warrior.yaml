@@ -12,16 +12,16 @@ description:
   en_us: Fights up close with steel and a stubborn heart. Rage builds as you trade blows.
 role: melee
 resource: realmforge:rage
-# A full-strength hit gives 10 rage, losing half the max health to attackers 25, and 5 s after the last hit dealt or
-# taken the pool loses 2 a second (C3a-4, RLM-212). C4's first balance pass keeps them: a Stone Sword's full-strength
-# hits every 0.625 s give 16 a second, about what Slam, Rend and Overpower cost on cooldown together (7.5 + 3.3 to 6.7
-# by Rend's rank + 5 a second, RLM-604), so a Warrior who keeps swinging casts all three with little left to bank for
-# Execute; Charge gives 10/20 more.
+# A full-strength hit gives 10 rage and losing half the max health to attackers 25 (C3a-4, RLM-212). Once the Warrior
+# is out of combat, 10 s after the last hit dealt or taken, the pool loses 5 a second, so a full pool is empty 30 s after
+# a fight (Matěj, 2026-11-03, RLM-594; it was 2 a second from 5 s after the last hit, which took about 55 s). C4's first
+# balance pass keeps the gain: a Stone Sword's full-strength hits every 0.625 s give 16 a second, about what Slam, Rend
+# and Overpower cost on cooldown together (7.5 + 3.3 to 6.7 by Rend's rank + 5 a second, RLM-604), so a Warrior who
+# keeps swinging casts all three with little left to bank for Execute; Charge gives 10/20 more.
 rage:
   per_hit_dealt: 10
   per_max_health_taken: 50
-  decay_per_second: 2
-  decay_after_seconds: 5
+  decay_per_second: 5
 modifiers:
   - {attribute: realmforge:strength, operation: add_value, amount: 5}
   - {attribute: realmforge:vitality, operation: add_value, amount: 4}
