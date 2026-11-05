@@ -13,10 +13,15 @@ from realmforge_tools.generate import generate_all
 from realmforge_tools.generate.effect_icons import ICONS, PIXELS, drawn_icon
 from realmforge_tools.id_universe import load_vanilla
 from realmforge_tools.problems import ValidationFailed
-from realmforge_tools.project import REPO_ROOT, RepoPaths
+from realmforge_tools.project import MOD_ID, REPO_ROOT, RepoPaths
 from realmforge_tools.schema.character import passive_bonuses, passive_modifier_id
 from realmforge_tools.schema.effect import EffectDef
-from realmforge_tools.schema.item import FIXED_ITEM_TAGS, MELEE_WEAPONS_TAG, SWORD_LIKE_TAG
+from realmforge_tools.schema.item import (
+    FIXED_ITEM_TAGS,
+    MELEE_WEAPONS_TAG,
+    NETHERITE_UPGRADABLE_CASTER_TAG,
+    SWORD_LIKE_TAG,
+)
 from realmforge_tools.schema.spell import SpellDef
 from realmforge_tools.validate import load_and_validate
 from tests.conftest import write
@@ -627,7 +632,10 @@ def test_the_fixed_tags_name_vanilla_ids_that_exist() -> None:
     vanilla = load_vanilla(RepoPaths())
     for members in FIXED_ITEM_TAGS.values():
         for member in members:
-            if member.startswith("#"):
+            if member.startswith(f"#{MOD_ID}:"):
+                # One of our own tags (the netherite pieces, RLM-566): generate/items.py writes it.
+                assert member[1:] in FIXED_ITEM_TAGS or member[1:] == NETHERITE_UPGRADABLE_CASTER_TAG, member
+            elif member.startswith("#"):
                 assert vanilla.contains_tag("minecraft:item", member[1:]), member
             else:
                 assert vanilla.contains("minecraft:item", member), member

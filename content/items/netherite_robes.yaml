@@ -5,6 +5,7 @@
 # as vanilla's netherite armor. The generated placeholder textures until A1's art.
 # Upgraded from the Arcane Silk piece at the smithing table, as vanilla's netherite armor (Matěj, 2026-10-15).
 # The set's Spell Power is flat points (Matěj, 2026-10-30, RLM-534), split over its pieces like its Magic Shield.
+# Each piece takes one netherite upgrade, a caster piece's bonus (RLM-566, content/netherite_upgrades/).
 id: netherite_robes
 name:
   en_us: Netherite Robes
@@ -19,6 +20,7 @@ gear:
   repair_with: "#minecraft:repairs_netherite_armor"
   look: netherite
   equip_sound: minecraft:item.armor.equip_netherite
+  netherite_upgradable: true
   modifiers:
     - {attribute: realmforge:magic_shield, operation: add_value, amount: 8}
     - {attribute: realmforge:spell_power, operation: add_value, amount: 2.4}

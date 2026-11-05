@@ -50,7 +50,9 @@ def test_repository_content_is_valid() -> None:
         "netherite_wand",
         "oblivion_scroll",
         "ruby",
+        "ruby_upgrade",
         "sapphire",
+        "sapphire_upgrade",
         "spellweave",
         "spellweave_cap",
         "spellweave_pants",
@@ -62,6 +64,7 @@ def test_repository_content_is_valid() -> None:
         "test_dungeon_key",
         "test_item",
         "topaz",
+        "topaz_upgrade",
         "undervault_signet",
         "wooden_wand",
     ]

@@ -32,6 +32,7 @@ import io.github.matejkadlec.realmforge.client.spell.ClientCharges;
 import io.github.matejkadlec.realmforge.client.spell.SpellBarInput;
 import io.github.matejkadlec.realmforge.client.spell.TargetCircle;
 import io.github.matejkadlec.realmforge.client.spell.WandCasting;
+import io.github.matejkadlec.realmforge.client.tooltip.NetheriteUpgradeTooltip;
 import io.github.matejkadlec.realmforge.client.tooltip.RacialPassiveTooltip;
 import io.github.matejkadlec.realmforge.client.tooltip.RightAlignedLines;
 import net.neoforged.api.distmarker.Dist;
@@ -63,6 +64,7 @@ public final class RealmforgeClient {
         CastBarHud.register(modBus);
         RightAlignedLines.register(modBus);
         RacialPassiveTooltip.register();
+        NetheriteUpgradeTooltip.register();
         // Optional integrations (architecture 19.4); Jade finds its plugin itself (compat/jade/JadeCompat).
         NeatCompat.register(modBus);
         TwoHandedWeaponsClient.register();

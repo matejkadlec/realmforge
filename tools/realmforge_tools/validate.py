@@ -294,6 +294,7 @@ def validate_content(content: Content, universe: IdUniverse) -> list[Problem]:
     problems += _check_recipes(content, universe)
     problems += _check_gear(content, universe)
     problems += _check_item_drops(content, universe)
+    problems += _check_netherite_upgrades(content, universe)
     problems += _check_chapters(content)
     problems += _check_quests(content, universe)
     problems += _check_leveling_curves(content)
@@ -2317,6 +2318,48 @@ def _check_gear(content: Content, universe: IdUniverse) -> list[Problem]:
                         f"{seen[0] or 'none'}, this one {entry.model.color or 'none'}",
                     )
                 )
+    return problems
+
+
+def _check_netherite_upgrades(content: Content, universe: IdUniverse) -> list[Problem]:
+    """A netherite upgrade (RLM-566) is carried by one of our items that is no gear, each item by one upgrade; its
+    template exists; and its bonuses are stat bonuses as gear's (architecture 8.2, 8.3): attributes that exist, in
+    their unit, adding their percents to the base, never max health (a percent of attack damage is the Ruby's)."""
+    problems: list[Problem] = []
+    stats = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.stats}
+    items = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.items}
+    carriers: dict[str, str] = {}
+    for entry in content.netherite_upgrades:
+        upgrade = entry.model
+        item = items.get(upgrade.item)
+        if item is None:
+            problems.append(
+                Problem(entry.source, "item", f"{upgrade.item} is not one of our items (content/items/)")
+            )
+        elif item.gear is not None:
+            problems.append(
+                Problem(entry.source, "item", f"{upgrade.item} is gear: an upgrade item is no gear")
+            )
+        other = carriers.setdefault(upgrade.item, entry.source)
+        if other != entry.source:
+            problems.append(
+                Problem(entry.source, "item", f"{upgrade.item} already carries {other}'s upgrade")
+            )
+        unknown = _unknown_ingredient(upgrade.template, universe)
+        if unknown is not None:
+            problems.append(Problem(entry.source, "template", unknown))
+        for archetype, modifiers in upgrade.archetypes():
+            for n, modifier in enumerate(modifiers):
+                path = f"{archetype}.{n}"
+                problems += _check_adds_percents(entry.source, path, modifier.operation)
+                if modifier.attribute == "minecraft:max_health":
+                    problems.append(
+                        Problem(
+                            entry.source, f"{path}.attribute", GEAR_FORBIDDEN_ATTRIBUTES[modifier.attribute]
+                        )
+                    )
+                else:
+                    problems += _check_modifier(entry.source, path, modifier, stats, universe)
     return problems
 
 
