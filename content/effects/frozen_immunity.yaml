@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../tools/schemas/effects.schema.json
+# A boss's 10 s after Frozen ends or breaks (Matěj, 2026-11-04, RLM-615): a new freeze does nothing until it wears off,
+# so a boss is never kept frozen. Frozen's on_bosses gives it; it blocks nothing else, so a stun still lands. The boss
+# bar shows it with its time left, "Frozen Immunity (00:10)", as players never see a mob's effects otherwise.
+id: frozen_immunity
+name: {en_us: Frozen Immunity}
+category: beneficial
+color: "#DDF4FF"
+immune_to: realmforge:frozen

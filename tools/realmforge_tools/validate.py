@@ -931,10 +931,12 @@ INSTANT_MOB_EFFECTS: dict[str, str] = {
 
 
 def _check_effects(content: Content, universe: IdUniverse) -> list[Problem]:
-    """A status effect's periodic school exists, and its modifiers name attributes that exist, in their unit."""
+    """A status effect's periodic school exists, its modifiers name attributes that exist, in their unit, its immunity
+    names an effect that exists, and its rule on bosses names an immunity of ours to it (RLM-615)."""
     problems: list[Problem] = []
     stats = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.stats}
     schools = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.spell_schools}
+    ours = {effect_id(entry.model.id): entry.model for entry in content.effects}
     for entry in content.effects:
         effect = entry.model
         if effect.stacks is not None and not universe.contains(SPELL_SCHOOL_REGISTRY, effect.stacks.school):
@@ -966,6 +968,29 @@ def _check_effects(content: Content, universe: IdUniverse) -> list[Problem]:
             )
         for n, modifier in enumerate(effect.modifiers):
             problems += _check_modifier(entry.source, f"modifiers.{n}", modifier, stats, universe)
+        if effect.immune_to is not None and not universe.contains(MOB_EFFECT_REGISTRY, effect.immune_to):
+            problems.append(
+                Problem(entry.source, "immune_to", _unknown(effect.immune_to, MOB_EFFECT_REGISTRY, universe))
+            )
+        if effect.on_bosses is not None:
+            immunity = ours.get(effect.on_bosses.immunity)
+            if immunity is None:
+                problems.append(
+                    Problem(
+                        entry.source,
+                        "on_bosses.immunity",
+                        f"{effect.on_bosses.immunity} is no effect of content/effects/",
+                    )
+                )
+            elif immunity.immune_to != effect_id(effect.id):
+                problems.append(
+                    Problem(
+                        entry.source,
+                        "on_bosses.immunity",
+                        f"{effect.on_bosses.immunity} is no immunity to {effect_id(effect.id)}: its immune_to "
+                        f"names {immunity.immune_to or 'nothing'}",
+                    )
+                )
     return problems
 
 

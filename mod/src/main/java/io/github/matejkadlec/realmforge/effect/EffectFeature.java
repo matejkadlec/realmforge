@@ -9,7 +9,7 @@ import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
 /**
  * Our status effects (architecture 11.4): the generated registrations from {@code content/effects/}, their damage and
  * healing over time at the pace of their first application (RLM-487), the stacks of damage over time spells keep
- * (RLM-539), stuns, how clients draw their holders, and who applied each one.
+ * (RLM-539), stuns, immunities (RLM-615), how clients draw their holders, and who applied each one.
  */
 public final class EffectFeature {
     private EffectFeature() {
@@ -33,5 +33,6 @@ public final class EffectFeature {
                 EffectLooks::onEffectExpired);
         Stuns.register();
         DamageBreaks.register();
+        Immunities.register();
     }
 }

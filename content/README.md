@@ -175,8 +175,9 @@ Rules:
   its walking speed: the quick step it takes between casts) under `caster`. `attributes` are its numbers at level 1,
   which its level scales like every hostile mob's, and may add `armor_shred_percent` (the share of a player's armor
   its hits ignore), `magic_shield_damage_percent` (how much more of a magic shield they drain; both RLM-580, Astone's
-  15, which her spells add their own to) and `armor_wear_reduction_percent` (how much less they wear a target's armor,
-  RLM-580, Astone's 50); `idle` is `stroll` (the default: wanders as vanilla's mobs do, at the
+  15, which her spells add their own to), `armor_wear_reduction_percent` (how much less they wear a target's armor,
+  RLM-580, Astone's 50) and `spell_resistance_percent` (how much less every magic school deals it, up to 75, RLM-616,
+  Astone's 10); `idle` is `stroll` (the default: wanders as vanilla's mobs do, at the
   Zombified Piglin's speed, so its `movement_speed` is how fast it fights) or `guard` (stands at the spot where it first
   stood and walks back to it); `sounds` name sound events, ours from `sounds/` (`realmforge:entity.<mob>.<name>`) or
   vanilla's, and `step: silent` walks without a sound; `death_particles` names the block it breaks apart into when it
@@ -414,7 +415,11 @@ Rules:
   Packed Ice and shivering (Frozen, RLM-539). `stacks` (`school`, `interval_seconds`, `ignores_armor`; instead of
   `periodic`, harmful only) makes it damage over time kept per caster's spell (Bleeding, RLM-539): the spell that applies
   it through `realmforge:damage_over_time` names the damage, fixed when applied; two spells or casters stack, the same
-  spell from the same caster refreshes its stack, and its ticks are never dodged or blocked. A spell applies one through `realmforge:apply_effect`, for a whole number of its intervals. The
+  spell from the same caster refreshes its stack, and its ticks are never dodged or blocked. `immune_to` names an
+  effect its holder never takes while it lasts (Stun Immunity's `realmforge:stunned`, RLM-615; beneficial or neutral,
+  and it needs no modifiers). `on_bosses` (`duration_percent`, `immunity`, `immunity_seconds`) makes it last that share
+  on every boss and then gives the boss the `immunity`, an effect of ours whose `immune_to` names this one, for that
+  time (Stunned and Frozen: 50 % and 10 s, RLM-615). A spell applies one through `realmforge:apply_effect`, for a whole number of its intervals. The
   `test_*` effects are engine tests, not gameplay content.
 - `spells/` holds the spells of players, mobs and bosses ([architecture 11](../docs/architecture.md#11-spells-and-status-effects)):
   a `name` and a `description` (what it does in a sentence or two, shown in its tooltip; numbers come from data

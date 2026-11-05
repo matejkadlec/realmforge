@@ -97,6 +97,38 @@
       "title": "LocalizedText",
       "type": "object"
     },
+    "OnBossesDef": {
+      "additionalProperties": false,
+      "description": "How the effect works on a boss (RLM-615; Matěj, 2026-11-04): shorter, then an immunity, so a boss is never\nstun-locked or kept frozen but its holder's crowd control still counts. Every boss of ``content/bosses/`` follows\nit, on top of its own ``immune_to``.",
+      "properties": {
+        "duration_percent": {
+          "description": "How long it lasts on a boss, in percent of its normal duration (Stunned and Frozen: 50).",
+          "exclusiveMinimum": 0,
+          "maximum": 100,
+          "title": "Duration Percent",
+          "type": "number"
+        },
+        "immunity": {
+          "description": "The effect a boss gets when this one ends, one of ours whose immune_to names this effect (realmforge:stun_immunity).",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Immunity",
+          "type": "string"
+        },
+        "immunity_seconds": {
+          "description": "How long that immunity lasts (10 s).",
+          "minimum": 0,
+          "title": "Immunity Seconds",
+          "type": "number"
+        }
+      },
+      "required": [
+        "duration_percent",
+        "immunity",
+        "immunity_seconds"
+      ],
+      "title": "OnBossesDef",
+      "type": "object"
+    },
     "PeriodicDef": {
       "additionalProperties": false,
       "description": "Damage or healing of a spell school at the end of every interval while the effect lasts (damage or healing\nover time). One tick is (amount + its share of the caster's Spell Power) times (1 + the school's power), scaling\nsystem C (RLM-534): a damage over time splits its spell's coefficient over its ticks. Each amplifier level adds the\ntick again. The caster's stats count as each tick lands. Ticks never crit.",
@@ -226,6 +258,21 @@
       "title": "Id",
       "type": "string"
     },
+    "immune_to": {
+      "anyOf": [
+        {
+          "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "An effect its holder never takes while it lasts (RLM-615: Stun Immunity's realmforge:stunned). An immunity needs no modifiers.",
+      "title": "Immune To"
+    },
     "look": {
       "anyOf": [
         {
@@ -251,6 +298,18 @@
     "name": {
       "$ref": "#/$defs/LocalizedText",
       "description": "The effect's name, shown with its icon."
+    },
+    "on_bosses": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/OnBossesDef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Shorter on a boss, then an immunity to it there (RLM-615: Stunned and Frozen, 50 % and 10 s)."
     },
     "periodic": {
       "anyOf": [

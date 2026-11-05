@@ -339,7 +339,7 @@ names any gear to take off before the line runs.
 
 | Content | Level | Melee (Warrior) | Caster (Mage) | Enchantments | Rarity and sockets | Source |
 | --- | --- | --- | --- | --- | --- | --- |
-| Astone, Undervault's final boss | 18 | full netherite armor and a netherite sword | the Netherite set (cap, robes, pants, sandals) and the Netherite Wand | level V for every enchantment, Protection and Unbreaking included: Apothic Enchanting raises vanilla's maximum levels (RLM-552) | Rare, every socket filled with a Flawed gem | Matěj, 2026-10-30: "full netherite, enchantments at about level V, rare gems"; gems have purities, not rarities, so "rare gems" reads as Rare pieces with Flawed gems until a playtest says otherwise. RLM-534's target: such a player deals about 50 per spell to her |
+| Astone, Undervault's final boss | 18 | full netherite armor and a netherite sword | the Netherite set (cap, robes, pants, sandals) and the Netherite Wand | level V for every enchantment, Protection and Unbreaking included: Apothic Enchanting raises vanilla's maximum levels (RLM-552) | Rare, every socket filled with a Flawed gem | Matěj, 2026-10-30: "full netherite, enchantments at about level V, rare gems"; gems have purities, not rarities, so "rare gems" reads as Rare pieces with Flawed gems until a playtest says otherwise. RLM-534's target: such a player deals about 50 per spell to her, before her 10 % Spell Resistance (RLM-616) |
 
 ## What follows from it
 

@@ -7,6 +7,7 @@ import io.github.matejkadlec.realmforge.generated.GeneratedEffects;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedEffectExpectations;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedEffectExpectations.EffectExpectation;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedEffectExpectations.ModifierExpectation;
+import io.github.matejkadlec.realmforge.qa.generated.GeneratedEffectExpectations.OnBossesExpectation;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedEffectExpectations.PeriodicExpectation;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedEffectExpectations.StacksExpectation;
 import java.util.ArrayList;
@@ -24,7 +25,8 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 /**
  * C3c (RLM-26): every status effect of {@code content/effects/} is registered as its YAML says
  * ({@link GeneratedEffectExpectations}): category, particle colour, modifiers at the first level, damage or healing
- * over time, stacks of damage over time (RLM-539), and a name in the lang file.
+ * over time, stacks of damage over time (RLM-539), the immunities and the rules on bosses (RLM-615), and a name in
+ * the lang file.
  */
 public final class ContentEffectGameTests {
     private ContentEffectGameTests() {
@@ -51,6 +53,14 @@ public final class ContentEffectGameTests {
                     id + " stacks");
             helper.assertValueEqual(status.isStun(), expected.stun(), id + " stuns");
             helper.assertValueEqual(status.breakChance(), expected.breaksOnDamage(), id + " breaks on damage");
+            helper.assertValueEqual(status.immuneTo().map(Identifier::toString), expected.immuneTo(),
+                    id + " immune to");
+            helper.assertValueEqual(status.onBosses().map(ContentEffectGameTests::onBosses), expected.onBosses(),
+                    id + " on bosses");
+            status.onBosses().ifPresent(rule -> helper.assertTrue(
+                    rule.immunityEffect().value() instanceof StatusEffect immunity
+                            && immunity.blocks(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(status)),
+                    id + "'s immunity on bosses blocks it"));
             List<ModifierExpectation> modifiers = new ArrayList<>();
             status.createModifiers(0, (attribute, modifier) -> modifiers.add(new ModifierExpectation(
                     attribute.getRegisteredName(), modifier.id().toString(), modifier.amount(),
@@ -72,6 +82,10 @@ public final class ContentEffectGameTests {
             }
         });
         return amount[0];
+    }
+
+    private static OnBossesExpectation onBosses(StatusEffect.OnBosses rule) {
+        return new OnBossesExpectation(rule.durationFraction(), rule.immunity().toString(), rule.immunityTicks());
     }
 
     private static StacksExpectation stacks(StackedDamage stacks) {

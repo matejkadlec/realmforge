@@ -1,7 +1,9 @@
 # yaml-language-server: $schema=../../tools/schemas/effects.schema.json
 # A stun (C4; Shield Bash, RLM-392): its holder stands still, neither attacks nor casts, and a mob's AI waits until it
 # ends; a cast in progress is interrupted. Ordinary mobs have no stun immunity or diminishing returns for now (Matěj,
-# 2026-10-24); bosses get theirs one by one. The Human's Will To Survive breaks it.
+# 2026-10-24). On a boss it lasts half as long, and when it ends the boss is immune to it for 10 s (Matěj, 2026-11-04,
+# RLM-615: never stun-locked, but a stun still counts); a boss may also be immune for good (immune_to in
+# content/bosses/). The Human's Will To Survive breaks it.
 id: stunned
 name: {en_us: Stunned}
 category: harmful
@@ -10,3 +12,4 @@ stun: true
 modifiers:
   - {attribute: minecraft:movement_speed, operation: add_multiplied_total, amount_percent: -100}
   - {attribute: minecraft:jump_strength, operation: add_multiplied_total, amount_percent: -100}
+on_bosses: {duration_percent: 50, immunity: realmforge:stun_immunity, immunity_seconds: 10}
