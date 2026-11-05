@@ -307,10 +307,12 @@ Rules:
   A race lists the classes it may take (each must exist, and every class must be open to some race) and gives
   `modifiers`, its `racial_spell` (a spell taught at creation into the racial slot beside the bar, X; free, so it has
   no `cost`, as a race spans classes of different resources; never a passive spell, which the slot could not cast) and
-  its `racial_passive` (C4: a `name`, a `description` whose `{bonus}` reads its one modifier, `weapons`, an item tag
-  the main hand's item must be in, and `modifiers`
-  that apply while it is, adding their percents to the base as every stat bonus does; the weapon's tooltip shows the
-  name and the description); a class names its `role` (`melee`, `caster` or `ranged`, assassins too: which role-bound
+  its `racial_passive` (C4: a `name`, a `description` whose `{bonus}` reads its one modifier, an optional shorter
+  `tooltip_description` with the same `{bonus}` for the weapon's own tooltip (RLM-563: "+{bonus}% Damage" there,
+  "+{bonus}% Damage With Sword-like Weapons" on the character sheet), `weapons`, an item tag the main hand's item must
+  be in, and `modifiers` that apply while it is, adding their percents to the base as every stat bonus does; the
+  weapon's tooltip shows the name and the tooltip line, indented, and the character sheet the name and the
+  description); a class names its `role` (`melee`, `caster` or `ranged`, assassins too: which role-bound
   stat rule bonuses its players get) and its `resource` (`realmforge:mana` or `realmforge:rage`), and a rage class, and only a
   rage class, sets its `rage` numbers: `per_hit_dealt` (rage for a full-strength melee hit dealt, a weaker swing
   giving its share, and a swing giving it once however many mobs it hits), `per_max_health_taken` (rage for losing

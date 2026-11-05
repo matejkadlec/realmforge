@@ -31,6 +31,7 @@
   "racial_passive": {
     "name": "race.realmforge.human.racial_passive.name",
     "description": "race.realmforge.human.racial_passive.description",
+    "tooltip_description": "race.realmforge.human.racial_passive.tooltip_description",
     "weapons": "realmforge:sword_like",
     "modifiers": [
       {
