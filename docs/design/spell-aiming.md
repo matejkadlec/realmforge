@@ -123,10 +123,10 @@ For a cast-time or channelled spell that lands on its target:
    target, or the mob a bolt would be assisted to if it left now, so it follows the crosshair through Fireball's cast.
 2. **The Highlight Spell Target key** (RLM-468; Left Alt by default, rebindable; named so in Matěj's playtest of
    2026-10-29): while it is on, the circle shows under the mob an enemy spell would pick now, without a cast and without
-   a targeted spell on the bar. A press switches it on until the next press, or, with the option Highlight Spell
-   Target: Hold, it is on while the key is held. In Matěj's words, it "can also help player to understand how the
-   targeting works, or to be sure that their targeted spell will land at the target they want, and not e.g. a mob close
-   next to it".
+   a targeted spell on the bar. A press switches it on until the next press (a lone press: Alt in Alt+T, Alt+K or
+   Alt+Tab is none, RLM-522), or, with the option Highlight Spell Target: Hold, it is on while the key is held. In
+   Matěj's words, it "can also help player to understand how the targeting works, or to be sure that their targeted
+   spell will land at the target they want, and not e.g. a mob close next to it".
 3. The circle is purely visual (Matěj's playtest of 2026-10-29): a thin, smooth, very light yellow circle lying flat
    under the mob, as wide as its hitbox and more, with no particles and no animation, the same for every spell, as easy
    to see in the dark as in daylight but lighting nothing around it

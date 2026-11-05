@@ -19,7 +19,7 @@ import net.minecraft.util.ExtraCodecs;
  *
  * @param spells known spell to its level (1 or more)
  * @param bar    spell bar slot to the spell in it; empty slots are absent. Slots 0 to 7 are the bar's (C3b, RLM-25:
- *               R, T, F, G, H and C, then two the player binds; Matěj, 2026-10-15 and 2026-10-16), slot
+ *               R, T, F, G, C, Y, Ů and § by default; Matěj, 2026-10-15 to 2026-11-01, RLM-573), slot
  *               {@value #RACIAL_SLOT} the racial ability's beside it (X), which the race fills, not the player
  */
 public record Spellbook(Map<ResourceKey<Spell>, Integer> spells, Map<Integer, ResourceKey<Spell>> bar) {

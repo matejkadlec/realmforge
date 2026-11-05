@@ -121,7 +121,7 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   melee during a cast, and synced to clients as cast payloads; at an entity, a ground point or a direction, with damage,
   heals, projectiles, areas, status effects, teleports, dashes and knockback; rage that hits fill and that decays out of
   combat, procs that never trigger procs, and mobs choosing their target (their current target, a random or the farthest
-  player). Players cast from the spell bar (C3b): eight slots on R, T, F, G, H, C, Ů and §, the racial slot on X, the
+  player). Players cast from the spell bar (C3b): eight slots on R, T, F, G, C, Y, Ů and §, the racial slot on X, the
   class resource's bar (mana, rage) under it (RLM-400), the two in one place on the screen, a WoW-style cast bar, a
   cooldown sweep, a spellbook (P) whose tooltips fill a spell's numbers from data, a 0.5 s global cooldown that every
   spell is on (RLM-402) and an optional spell queue (client options). Our own status effects come from

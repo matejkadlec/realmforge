@@ -1,10 +1,12 @@
 package io.github.matejkadlec.realmforge.client.spell;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.client.ClientConfig;
 import io.github.matejkadlec.realmforge.client.ClientConfig.HighlightMode;
+import io.github.matejkadlec.realmforge.client.input.LonePress;
 import io.github.matejkadlec.realmforge.client.input.SpellKeys;
 import io.github.matejkadlec.realmforge.spell.net.CastEndedPayload;
 import io.github.matejkadlec.realmforge.spell.net.CastTargetPayload;
@@ -25,6 +27,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.ExtractLevelRenderStateEvent;
+import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.SubmitCustomGeometryEvent;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import net.neoforged.neoforge.common.NeoForge;
@@ -74,6 +77,8 @@ public final class TargetCircle {
     private static boolean highlightOn;
     /** Whether the key toggled the highlight on, in Toggle mode. */
     private static boolean toggled;
+    /** The key's lone presses, which alone flip the toggle (RLM-522). */
+    private static final LonePress PRESS = new LonePress();
 
     private TargetCircle() {
     }
@@ -81,6 +86,9 @@ public final class TargetCircle {
     /** Called once from {@code RealmforgeClient}. */
     public static void register() {
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, event -> onClientTick());
+        NeoForge.EVENT_BUS.addListener(InputEvent.Key.class,
+                event -> onInput(event.getAction() == InputConstants.PRESS));
+        NeoForge.EVENT_BUS.addListener(InputEvent.MouseButton.Post.class, event -> onInput(false));
         NeoForge.EVENT_BUS.addListener(ExtractLevelRenderStateEvent.class, TargetCircle::extract);
         NeoForge.EVENT_BUS.addListener(SubmitCustomGeometryEvent.class, TargetCircle::submit);
         NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingOut.class, event -> {
@@ -88,6 +96,7 @@ public final class TargetCircle {
             highlighted = Optional.empty();
             highlightOn = false;
             toggled = false;
+            PRESS.reset();
         });
     }
 
@@ -113,7 +122,28 @@ public final class TargetCircle {
         }
     }
 
-    /** Reads the Highlight Spell Target key: each press flips the toggle in Toggle mode; Hold follows the key. */
+    /**
+     * Counts the Highlight Spell Target key's lone presses (RLM-522) after every key and mouse event, which NeoForge
+     * fires once vanilla updated the key mappings: the mapping going down (in game, no screen open) arms it, whatever
+     * it is bound to (a key, a mouse button, Better Key Binds' secondary key); another key going down meanwhile makes
+     * it a modifier (Left Alt in the pack's Alt+T and Alt+K); its release flips the toggle only when it was a lone
+     * press and the window still has its focus and no screen (Alt+Tab ends in a release after the focus is gone).
+     */
+    private static void onInput(boolean keyPressed) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null) {
+            return;
+        }
+        boolean counts = minecraft.isWindowActive() && minecraft.screen == null;
+        if (PRESS.input(SpellKeys.HIGHLIGHT_SPELL_TARGET.get().isDown(), keyPressed, counts)) {
+            toggled = !toggled;
+        }
+    }
+
+    /**
+     * Reads the Highlight Spell Target key: in Toggle mode {@link #onInput} flips it on a lone press; Hold follows the
+     * key. A release no event announced (a screen opening) is no press.
+     */
     private static void onClientTick() {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || minecraft.level == null) {
@@ -121,8 +151,9 @@ public final class TargetCircle {
         }
         KeyMapping key = SpellKeys.HIGHLIGHT_SPELL_TARGET.get();
         HighlightMode mode = ClientConfig.HIGHLIGHT_SPELL_TARGET.get();
+        PRESS.tick(key.isDown());
         while (key.consumeClick()) {
-            toggled = !toggled;
+            // Presses count in onInput, on their release; clicks only pile up here.
         }
         if (mode != HighlightMode.TOGGLE) {
             toggled = false;

@@ -154,7 +154,8 @@ bar's of RLM-25 ([ADR 0046](../docs/decisions/0046-spell-bar-default-keys-amend-
 backpack's of RLM-501 ([ADR 0062](../docs/decisions/0062-backpack-keys-and-alt-k-amend-the-pack-defaults.md)):
 
 - free for spells (RLM-25): Quick Actions and Swap Offhand; the spell bar (our
-  code) takes R, T, F, G, H, C, `ů` and `§` (right of L on a Czech keyboard),
+  code) takes R, T, F, G, C, Y (`key.keyboard.z`, so Xaero's Enlarge Minimap
+  goes unbound, RLM-573), `ů` and `§` (right of L on a Czech keyboard),
   X for the racial ability and P for the spellbook, so vanilla's Chat moves
   from T to Enter, and its creative toolbar
   keys (C and X) and Social Interactions (P; the pause menu's Player Reporting

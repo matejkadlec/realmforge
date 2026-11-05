@@ -1979,16 +1979,18 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
 
 **In code (C3b, RLM-25): the spell bar.**
 
-- **Slots and keys** (Matěj, 2026-10-15, 2026-10-16 and his playtest of 2026-10-21): the spellbook attachment's bar
-  has eight slots, keyed R, T, F, G, H, C, Ů and § (the two keys right of L on a Czech QWERTZ keyboard, `;` and `'`
-  on a US one), and the racial slot beside them on X, which the race fills (C4, `Spells#setRacialSpell`), never the
-  player. `client/input/SpellKeys` registers them under Realmforge Spell Bar, and P for the spellbook. GLFW names
-  keys by their US position. The pack's default keys (`pack/config/defaultoptions/keybindings.txt`,
+- **Slots and keys** (Matěj, 2026-10-15, 2026-10-16, his playtest of 2026-10-21 and 2026-11-01): the spellbook
+  attachment's bar has eight slots, keyed R, T, F, G, C, Y, Ů and § (Y as a Czech QWERTZ keyboard labels GLFW's `Z`,
+  and Ů and § the two keys right of L there, `;` and `'` on a US one;
+  [ADR 0069](decisions/0069-spell-slots-5-and-6-on-c-and-y-and-a-lone-alt-press-toggles-the-highlight.md)), and the
+  racial slot beside them on X, which the race fills (C4, `Spells#setRacialSpell`), never the player.
+  `client/input/SpellKeys` registers them under Realmforge Spell Bar, and P for the spellbook. GLFW names keys by
+  their US position. The pack's default keys (`pack/config/defaultoptions/keybindings.txt`,
   [ADR 0046](decisions/0046-spell-bar-default-keys-amend-the-pack-defaults.md)) move vanilla's chat to Enter and
-  unbind the keys the bar takes, Apotheosis's Open World Tier Select moves from Ctrl+T to Alt+T (a held sprint key
-  would otherwise steal T), and Night Vision moved from H to ¨ (`\` on a US keyboard). Our keys are
-  `client/input/RealmforgeKeyMapping`s, labelled through `KeyLabels`: Minecraft reads `§` in any text as a formatting
-  code, so a key on § would show an empty label; ours draws it from the font `realmforge:keys`
+  unbind the keys the bar takes (Xaero's Enlarge Minimap's Z too), Apotheosis's Open World Tier Select moves from
+  Ctrl+T to Alt+T (a held sprint key would otherwise steal T), and Night Vision moved from H to ¨ (`\` on a US
+  keyboard). Our keys are `client/input/RealmforgeKeyMapping`s, labelled through `KeyLabels`: Minecraft reads `§` in any
+  text as a formatting code, so a key on § would show an empty label; ours draws it from the font `realmforge:keys`
   (`assets/realmforge/font/keys.json`), which maps a private codepoint to the section sign of vanilla's font sheet.
   NeoForge's Key Binds screen marks a key yellow when any other mapping shares it, even one that works only in a
   screen (JEI's Show Recipe on R) or with F3 held; in game only the spell bar's key acts. A slot's corner shows its
@@ -2138,10 +2140,19 @@ between two ticks with the level's render state (`ExtractLevelRenderStateEvent`)
 size) of three bands, a 1/16 block core and a 0.1 block glow fading out on each side (`SubmitCustomGeometryEvent`),
 through vanilla's `RenderTypes#debugQuads`: translucent position and colour quads with no lightmap, no fog and no depth
 write, so neither night nor a torch changes it, every frame, also while paused. **The Highlight Spell Target key**
-(RLM-468, `SpellKeys#HIGHLIGHT_SPELL_TARGET`, Left Alt by default, which no key of the pack takes, under Realmforge
-Spell Bar) shows it without a cast. The client option Highlight Spell Target (`ClientConfig#HIGHLIGHT_SPELL_TARGET`, a
-row of the Realmforge config screen) makes it a toggle (the default: a press switches the highlight on until the next press) or
-Hold (on while the key is held). While the highlight is on, `TargetCircle` draws the ring under the mob the server names
+(RLM-468, `SpellKeys#HIGHLIGHT_SPELL_TARGET`, Left Alt by default, which no key of the pack binds alone, under
+Realmforge Spell Bar) shows it without a cast. The client option Highlight Spell Target
+(`ClientConfig#HIGHLIGHT_SPELL_TARGET`, a row of the Realmforge config screen) makes it a toggle (the default: a press
+switches the highlight on until the next press) or Hold (on while the key is held). Alt is also a modifier (the pack's
+Alt+T and Alt+K, Windows' Alt+Tab), so a toggle counts only a lone press (RLM-522,
+[ADR 0069](decisions/0069-spell-slots-5-and-6-on-c-and-y-and-a-lone-alt-press-toggles-the-highlight.md)), as vanilla's
+F3 counts its overlay: after every NeoForge `InputEvent.Key` and `InputEvent.MouseButton.Post` (fired once vanilla set
+the key mappings), `TargetCircle` hands the mapping's own `isDown()` to `client/input/LonePress` (`LonePressTest`), so
+a mouse button or Better Key Binds' secondary key bound to it counts as well. It flips the toggle on the mapping's
+release only when it went down in game with no screen open, no other key went down in between, and the window still
+has its focus (GLFW releases held keys after the focus is lost, which is how Alt+Tab ends); a release no event
+announced (a screen opening releases every mapping) is caught on the client tick and counts for nothing. While the
+highlight is on, `TargetCircle` draws the ring under the mob the server names
 in `HighlightedTargetPayload` ([11.2](#112-casting-server-authoritative)), unless the local player's cast names its own
 mob, which wins (`TargetCircle#under`, `TargetCircleTest`). It tells the server when the highlight goes on and off,
 forgets the highlighted mob at once when it goes off, and drops a pick that arrives while it is off (RLM-521); a logout
