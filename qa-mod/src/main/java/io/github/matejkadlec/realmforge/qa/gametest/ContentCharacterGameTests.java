@@ -61,6 +61,8 @@ public final class ContentCharacterGameTests {
                 helper.assertValueEqual(passive.name(), wanted.nameKey(), expected.id() + " passive name");
                 helper.assertValueEqual(passive.description(), wanted.descriptionKey(),
                         expected.id() + " passive description");
+                helper.assertValueEqual(passive.tooltipDescription(), wanted.tooltipDescriptionKey(),
+                        expected.id() + " passive tooltip description");
                 helper.assertValueEqual(passive.weapons().location().toString(), wanted.weapons(),
                         expected.id() + " passive weapons");
                 ContentStatGameTests.assertBonuses(helper, CharacterBonuses.passiveBonuses(id, passive.modifiers()),

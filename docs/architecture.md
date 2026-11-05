@@ -1186,10 +1186,11 @@ the playtest covers it.
     weapons: the item tag `#realmforge:sword_like`, vanilla's swords today, and katanas and rapiers once RLM-617 adds
     them, never hammers (Matěj, 2026-11-04, RLM-563, RLM-624). For a Human, the tooltip of every such weapon (hover,
     JEI) shows two lines below the weapon's stats and above the Apotheosis affixes, where Apotheosis puts "Heavenly
-    Implements": "Sword Specialization" in gold and "+10% damage with swords" in yellow (Matěj, 2026-10-30). The race's
-    tooltip on the character sheet's Character tab shows the racial ability and passive the same way, each on two lines:
-    "Racial Ability" in gold over "Will To Survive" in yellow, and "Sword Specialization" in gold over its line in
-    yellow.
+    Implements": "Sword Specialization" in gold and " +10% Damage" in yellow, indented by one space as vanilla indents
+    the attribute lines under "When in Main Hand:" (Matěj, 2026-10-30; 2026-11-04, RLM-563). The race's tooltip on the
+    character sheet's Character tab shows the racial ability and passive the same way, each on two lines: "Racial
+    Ability" in gold over "Will To Survive" in yellow, and "Sword Specialization" in gold over "+10% Damage With
+    Sword-like Weapons" in yellow: the sheet names the weapons, the weapon's own tooltip needs only the bonus.
 - **A class** gives its role, resource type, starting stats, its specializations' spell trees and starting kit. Its
   role (melee, caster or ranged) decides which role-bound bonuses of the stat rules its players get
   ([8.3](#83-derived-stats-and-milestones), RLM-170). Race and
@@ -1261,8 +1262,9 @@ the playtest covers it.
   cap (passive spells are never on the bar, so they do not count: Matěj, 2026-10-30, RLM-333). A race names its racial
   spell (`racial_spell`), which `character/RacialSpells` teaches at creation and catches up on at login, into the racial
   slot (X, `Spells#learnRacial`), and its racial passive (`racial_passive`, `character/RacialPassive`): a name, a
-  description, an item tag the main hand's item must be in, and modifiers that `CharacterBonuses` adds while it is
-  (`CharacterBonuses#passiveModifierId`); `character/RacialPassives` writes its tooltip lines, which
+  description for the sheet, an optional shorter line for the weapon's tooltip (`tooltip_description`, RLM-563; the
+  description when unset), an item tag the main hand's item must be in, and modifiers that `CharacterBonuses` adds
+  while it is (`CharacterBonuses#passiveModifierId`); `character/RacialPassives` writes its tooltip lines, which
   `client/tooltip/RacialPassiveTooltip` adds to the weapon's (`AddAttributeTooltipsEvent`). The race's tooltip on the
   character sheet lists both. The Human's Will To Survive is free, as a race spans classes of different resources, and casts
   while stunned (`castable_while_stunned`). `ClassKitGameTests` covers the kits.

@@ -9,7 +9,7 @@ import net.neoforged.neoforge.event.AddAttributeTooltipsEvent;
 
 /**
  * The racial passive's lines in a weapon's tooltip (C4, RLM-219; architecture 10.1): for a Human, every sword-like
- * weapon (hover, JEI) shows "Sword Specialization" in gold and "+10% damage with swords" in yellow right below its
+ * weapon (hover, JEI) shows "Sword Specialization" in gold and an indented "+10% Damage" in yellow right below its
  * stats, where Apotheosis puts "Heavenly Implements". NeoForge's {@code AddAttributeTooltipsEvent} adds lines after the
  * attribute lines; the lines themselves come from {@link RacialPassives}.
  */

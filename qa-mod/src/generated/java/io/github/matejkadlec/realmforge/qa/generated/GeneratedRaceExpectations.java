@@ -16,10 +16,11 @@ public final class GeneratedRaceExpectations {
     }
 
     /**
-     * A racial passive: its name and description keys, the item tag the main hand needs, and the bonuses it
-     * gives meanwhile.
+     * A racial passive: its name and description keys, its weapon tooltip's key when it has one of its own, the
+     * item tag the main hand needs, and the bonuses it gives meanwhile.
      */
-    public record Passive(String nameKey, String descriptionKey, String weapons, List<Bonus> bonuses) {
+    public record Passive(String nameKey, String descriptionKey, Optional<String> tooltipDescriptionKey,
+            String weapons, List<Bonus> bonuses) {
     }
 
     /**
@@ -42,6 +43,7 @@ public final class GeneratedRaceExpectations {
                     Optional.of(new Passive(
                             "race.realmforge.human.racial_passive.name",
                             "race.realmforge.human.racial_passive.description",
+                            Optional.of("race.realmforge.human.racial_passive.tooltip_description"),
                             "realmforge:sword_like",
                             List.of(new Bonus("realmforge:race/realmforge/passive/0/human", "minecraft:attack_damage", "add_multiplied_base", 0.1))))));
 

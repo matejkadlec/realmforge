@@ -1918,20 +1918,16 @@ def _check_racials(
         problems += _check_adds_percents(entry.source, path, modifier.operation)
     first = passive.modifiers[0]
     stat = stats.get(first.attribute)
-    if (
-        "{bonus}" in passive.description.en_us
-        and first.operation == "add_value"
-        and stat is not None
-        and stat.percent
-    ):
-        problems.append(
-            Problem(
-                entry.source,
-                "racial_passive.description",
-                f"{{bonus}} reads the first modifier, add_value on the share {first.attribute}: give it a multiplied "
-                "operation or describe the number another way",
+    for field, text in passive.texts():
+        if "{bonus}" in text.en_us and first.operation == "add_value" and stat is not None and stat.percent:
+            problems.append(
+                Problem(
+                    entry.source,
+                    f"racial_passive.{field}",
+                    f"{{bonus}} reads the first modifier, add_value on the share {first.attribute}: give it a "
+                    "multiplied operation or describe the number another way",
+                )
             )
-        )
     return problems
 
 

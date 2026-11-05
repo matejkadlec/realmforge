@@ -98,8 +98,13 @@ class RacialPassiveDef(StrictModel):
         description="The passive's name, e.g. Sword Specialization (gold in tooltips)."
     )
     description: LocalizedText = Field(
-        description='What it gives, one short line in tooltips, e.g. "+{bonus}% damage": {bonus} is its first '
-        "modifier's amount (in percent for a multiplied operation)."
+        description='What it gives, one line under its name on the character sheet, e.g. "+{bonus}% Damage With '
+        "Sword-like Weapons\": {bonus} is its first modifier's amount (in percent for a multiplied operation)."
+    )
+    tooltip_description: LocalizedText | None = Field(
+        default=None,
+        description="A shorter line for the weapon's own tooltip, where the item already says which weapon it is, "
+        'e.g. "+{bonus}% Damage" (Matěj, 2026-11-04, RLM-563); the description when unset. Takes {bonus} too.',
     )
     weapons: ResourceId = Field(
         description="An item tag, e.g. realmforge:sword_like: the passive applies while an item of it is in the main "
@@ -111,12 +116,20 @@ class RacialPassiveDef(StrictModel):
 
     @model_validator(mode="after")
     def _placeholders(self) -> RacialPassiveDef:
-        for name in _PLACEHOLDER.findall(self.description.en_us):
-            if name not in PASSIVE_PLACEHOLDERS:
-                raise ValueError(
-                    f"description: unknown placeholder {{{name}}}; known: {', '.join(PASSIVE_PLACEHOLDERS)}"
-                )
+        for field, text in self.texts():
+            for name in _PLACEHOLDER.findall(text.en_us):
+                if name not in PASSIVE_PLACEHOLDERS:
+                    raise ValueError(
+                        f"{field}: unknown placeholder {{{name}}}; known: {', '.join(PASSIVE_PLACEHOLDERS)}"
+                    )
         return self
+
+    def texts(self) -> list[tuple[str, LocalizedText]]:
+        """The passive's lines that may name ``{bonus}``, by field name: the description, and the tooltip's line."""
+        texts = [("description", self.description)]
+        if self.tooltip_description is not None:
+            texts.append(("tooltip_description", self.tooltip_description))
+        return texts
 
 
 class RaceDef(StrictModel):

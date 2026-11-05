@@ -40,8 +40,9 @@ TWO_HANDED_TAG = f"{MOD_ID}:two_handed"
 # spears, the trident and the mace; our own melee weapon types (katana, hammer, dagger) join it once they exist. Bows,
 # crossbows, wands and tools such as pickaxes are no melee weapons.
 MELEE_WEAPONS_TAG = f"{MOD_ID}:melee_weapons"
-# The item tag of sword-like weapons (Matěj, 2026-10-15, RLM-219): the Human's Sword Specialization. Vanilla's swords
-# today; katanas, longswords and maybe rapiers once the pack has them.
+# The item tag of sword-like weapons (Matěj, 2026-10-15, RLM-219): the Human's Sword Specialization. Swords, katanas
+# and rapiers, never hammers (Matěj, 2026-11-04, RLM-563): vanilla's swords today, and RLM-617 adds its Katana and
+# Rapier.
 SWORD_LIKE_TAG = f"{MOD_ID}:sword_like"
 # The item tag of two-handed weapons (RLM-541): Two-Handed Specialization applies while one is in the main hand.
 # Every weapon Better Combat calls two-handed, spears included; Better Combat decides that at run time, so the data
