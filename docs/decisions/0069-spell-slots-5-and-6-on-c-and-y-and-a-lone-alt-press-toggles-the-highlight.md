@@ -28,9 +28,10 @@ keeps Matěj's decisions: Left Alt, a toggle by default.
    Czech keyboard).
 3. **A toggle counts only a lone press** of the Highlight Spell Target key: it goes down in game, with no screen open,
    and comes up with no other key going down in between, while the window keeps its focus (`client/input/LonePress`,
-   read by `client/spell/TargetCircle`). The toggle flips on that release. Keys already held when it went down don't
-   count, so tapping Alt while walking still toggles; mouse buttons don't count either. Hold mode is unchanged: the
-   highlight is on while the key is held. Vanilla's F3 counts its debug overlay the same way.
+   read by `client/spell/TargetCircle`). The toggle flips on that release. It follows the key mapping, not a key code,
+   so a mouse button or a Better Key Binds secondary key bound to it works too. Keys already held when it went down
+   don't count, so tapping Alt while walking still toggles; mouse buttons pressed meanwhile don't count either. Hold
+   mode is unchanged: the highlight is on while the key is held. Vanilla's F3 counts its debug overlay the same way.
 
 ## Consequences
 

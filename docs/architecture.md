@@ -2123,10 +2123,13 @@ Realmforge Spell Bar) shows it without a cast. The client option Highlight Spell
 switches the highlight on until the next press) or Hold (on while the key is held). Alt is also a modifier (the pack's
 Alt+T and Alt+K, Windows' Alt+Tab), so a toggle counts only a lone press (RLM-522,
 [ADR 0069](decisions/0069-spell-slots-5-and-6-on-c-and-y-and-a-lone-alt-press-toggles-the-highlight.md)), as vanilla's
-F3 counts its overlay: `TargetCircle` reads NeoForge's `InputEvent.Key`, and `client/input/LonePress` (`LonePressTest`)
-flips the toggle on the key's release only when it went down in game with no screen open, no other key went down in
-between, and the window still has its focus (GLFW releases held keys after the focus is lost, which is how Alt+Tab
-ends). While the highlight is on, `TargetCircle` draws the ring under the mob the server names
+F3 counts its overlay: after every NeoForge `InputEvent.Key` and `InputEvent.MouseButton.Post` (fired once vanilla set
+the key mappings), `TargetCircle` hands the mapping's own `isDown()` to `client/input/LonePress` (`LonePressTest`), so
+a mouse button or Better Key Binds' secondary key bound to it counts as well. It flips the toggle on the mapping's
+release only when it went down in game with no screen open, no other key went down in between, and the window still
+has its focus (GLFW releases held keys after the focus is lost, which is how Alt+Tab ends); a release no event
+announced (a screen opening releases every mapping) is caught on the client tick and counts for nothing. While the
+highlight is on, `TargetCircle` draws the ring under the mob the server names
 in `HighlightedTargetPayload` ([11.2](#112-casting-server-authoritative)), unless the local player's cast names its own
 mob, which wins (`TargetCircle#under`, `TargetCircleTest`). It tells the server when the highlight goes on and off,
 forgets the highlighted mob at once when it goes off, and drops a pick that arrives while it is off (RLM-521); a logout
