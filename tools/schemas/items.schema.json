@@ -121,6 +121,12 @@
           "title": "Modifiers",
           "type": "array"
         },
+        "netherite_upgradable": {
+          "default": false,
+          "description": "Armor only: a netherite caster piece that takes one netherite upgrade at the smithing table (content/netherite_upgrades/, RLM-566), whose caster bonus it then gives while worn.",
+          "title": "Netherite Upgradable",
+          "type": "boolean"
+        },
         "repair_with": {
           "anyOf": [
             {

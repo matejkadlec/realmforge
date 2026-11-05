@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=../../tools/schemas/items.schema.json
+# The Sapphire netherite upgrade (RLM-566; gear design, "Netherite upgrades"): eight Sapphires around one diamond, and a
+# smithing table puts it on one netherite piece with a Netherite Upgrade Smithing Template
+# (content/netherite_upgrades/sapphire.yaml). The diamond as the base item is Claude's pick for Matěj's playtest. The
+# generated placeholder texture until the A* textures.
+id: sapphire_upgrade
+name:
+  en_us: Sapphire Upgrade
+creative_tabs:
+  - minecraft:ingredients
+color: "#2F64D6"
+recipe:
+  pattern: ["SSS", "SDS", "SSS"]
+  key:
+    S: realmforge:sapphire
+    D: minecraft:diamond

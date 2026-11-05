@@ -46,6 +46,7 @@ from realmforge_tools.schema import (
     ItemDef,
     KillXpMultiplierDef,
     MobDef,
+    NetheriteUpgradeDef,
     QuestDef,
     RaceDef,
     RealmDef,
@@ -221,6 +222,7 @@ class Content:
     apotheosis_stat_remaps: tuple[Entry[ApotheosisStatRemapDef], ...]
     recipes: tuple[Entry[RecipeOverrideDef], ...]
     recipe_removals: tuple[Entry[RecipeRemovalDef], ...]
+    netherite_upgrades: tuple[Entry[NetheriteUpgradeDef], ...]
     worldgen: tuple[WorldgenFile, ...]
     rooms: tuple[RoomEntry, ...] = ()
     room_reviews: tuple[RoomReview, ...] = ()
@@ -325,6 +327,7 @@ def load_content(
         apotheosis_stat_remaps=by_id(loaded["apotheosis_stat_remaps"]),
         recipes=by_id(loaded["recipes"]),
         recipe_removals=by_id(loaded["recipe_removals"]),
+        netherite_upgrades=by_id(loaded["netherite_upgrades"]),
         worldgen=tuple(sorted(worldgen, key=lambda f: (f.directory, f.id))),
         rooms=rooms,
         room_reviews=reviews,

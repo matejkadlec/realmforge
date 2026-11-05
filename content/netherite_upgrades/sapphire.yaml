@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../tools/schemas/netherite_upgrades.schema.json
+# The defense upgrade (Matěj, 2026-10-30, RLM-511): +2 armor and +1 armor toughness on a melee piece, +3 Magic Shield
+# on a caster piece. Later, on a ranged piece: +1 armor and +2 % Dodge Chance (Claude's suggestion, M3).
+id: sapphire
+name:
+  en_us: Sapphire Upgrade
+color: "#2F64D6"
+item: realmforge:sapphire_upgrade
+template: minecraft:netherite_upgrade_smithing_template
+melee:
+  - {attribute: minecraft:armor, operation: add_value, amount: 2}
+  - {attribute: minecraft:armor_toughness, operation: add_value, amount: 1}
+caster:
+  - {attribute: realmforge:magic_shield, operation: add_value, amount: 3}

@@ -112,7 +112,10 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   Casters have their gear (RLM-172, RLM-197), from an item's `gear` in YAML: seven two-handed wands from wood to
   netherite whose stats count in the main hand, which every cast wears and which lock shields, and four robe sets (Apprentice's, Spellweave, Arcane Silk,
   Netherite) with magic shield, flat Spell Power and mana instead of armor; Arcane Dust drops from witches, evokers and
-  illusioners through a NeoForge loot modifier.
+  illusioners through a NeoForge loot modifier. A netherite piece takes one netherite upgrade at a smithing table
+  (RLM-566, `content/netherite_upgrades/`): a Ruby, Sapphire or Topaz Upgrade (eight gems around a diamond) gives
+  offense, defense or utility by the piece's archetype (melee: vanilla's netherite armor; caster: the Netherite robes)
+  while worn, through a data component of ours that names the upgrade's registry entry.
   Characters level up (C2): character XP from kills (by the victim's level and rank) and `/realmforge xp`, an XP
   bar, and a level cap from chapter advancements (10, then 18 after chapter 1 and 30 after chapter 2). The spell
   engine is done (C3a): spells as data in `content/spells/`, cast by players and mobs through one `SpellCaster` (from

@@ -98,6 +98,7 @@ public final class QaGameTests {
             LevelingGameTests.class,
             MagicProtectionGameTests.class,
             MobLevelGameTests.class,
+            NetheriteUpgradeGameTests.class,
             NpcCastGameTests.class,
             PassiveSpellGameTests.class,
             PlayerStateGameTests.class,
