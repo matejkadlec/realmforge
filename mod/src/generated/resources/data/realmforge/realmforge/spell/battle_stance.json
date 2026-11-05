@@ -1,0 +1,42 @@
+{
+  "name": "spell.realmforge.battle_stance.name",
+  "description": "spell.realmforge.battle_stance.description",
+  "school": "realmforge:physical",
+  "scales_with": "spell_power",
+  "targeting": {
+    "type": "realmforge:self"
+  },
+  "cast": {
+    "type": "instant"
+  },
+  "cooldown_ticks": 0,
+  "global_cooldown_ticks": 10,
+  "max_level": 1,
+  "crit": {
+    "can_crit": true,
+    "bonus_chance": 0.0
+  },
+  "npc_only": false,
+  "requires": [],
+  "castable_while_stunned": false,
+  "effects": [],
+  "aura": {
+    "while_wielding": "realmforge:two_handed_weapons",
+    "modifiers": [
+      {
+        "attribute": "realmforge:armor_pierce",
+        "operation": "add_value",
+        "amount": 5.0
+      },
+      {
+        "attribute": "realmforge:armor_shred",
+        "operation": "add_value",
+        "amount": 0.1
+      }
+    ],
+    "spell_damage": [],
+    "procs": [],
+    "splash_radius": [],
+    "group": "stance"
+  }
+}

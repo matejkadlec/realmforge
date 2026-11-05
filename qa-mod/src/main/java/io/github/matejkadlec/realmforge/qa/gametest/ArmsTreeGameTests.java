@@ -34,6 +34,7 @@ import io.github.matejkadlec.realmforge.spell.SpellTooltip;
 import io.github.matejkadlec.realmforge.spell.Spellbook;
 import io.github.matejkadlec.realmforge.spell.Spells;
 import io.github.matejkadlec.realmforge.spell.Windows;
+import io.github.matejkadlec.realmforge.stats.CharacterStats;
 import io.github.matejkadlec.realmforge.stats.EntityLevel;
 import io.github.matejkadlec.realmforge.stats.StatsAttachments;
 import java.util.List;
@@ -69,8 +70,8 @@ import net.minecraft.world.phys.Vec3;
  * after a block, Victory Rush only after a kill that is not gray and its heal, Execute only below 20 % with its extra
  * rage, its refund and its lit window, Charge's rush to the near side and stun round the landing and its distance by
  * rank, a player's Charge landing on the server (RLM-602), Deep Wounds' bleed of a share of the crit, Bloodthirst's
- * proc, the tooltips' next rank, the handoff's setup line against Astone, and the rage and cooldowns of Matěj's
- * rebalance (RLM-604).
+ * proc, the tooltips' next rank, the handoff's setup line against Astone, the rage and cooldowns of Matěj's
+ * rebalance (RLM-604), and Battle Stance's bonus with a two-handed weapon only (RLM-596).
  */
 public final class ArmsTreeGameTests {
     private static final double HEALTH = SpellGameTests.HEALTH;
@@ -80,8 +81,11 @@ public final class ArmsTreeGameTests {
     private static final int BLEED_TICKS = 12;
     /** Charge's rush: 24 blocks a second is 1.2 blocks a tick. */
     private static final double CHARGE_PER_TICK = 1.2;
-    /** Charge's landing at a target 7.5 blocks away: 6 ticks of travel for its 6.9 blocks' gap, and the 10 of slack. */
-    private static final int CHARGE_TIMEOUT_TICKS = 16;
+    /**
+     * Charge's landing at a target 8 blocks away (the player at z 1.5, the husk {@code GameTestHelper#spawn} puts at its
+     * block's bottom centre, z 9.5): 7 ticks of travel for its 7.4 blocks' gap, and the 10 of slack (RLM-611).
+     */
+    private static final int CHARGE_TIMEOUT_TICKS = 17;
     /** The protection and durability every netherite piece gets for the Astone check: level V (gear.md). */
     private static final String ARMOR_V = "[enchantments={\"minecraft:protection\":5,\"minecraft:unbreaking\":5}]";
     /**
@@ -636,6 +640,42 @@ public final class ArmsTreeGameTests {
     }
 
     /**
+     * RLM-596: Battle Stance, the Arms stance, is an aura of the tree's level 18 row: toggled from the spell bar, it gives
+     * +5 Armor Pierce and +10 % Armor Shred while a two-handed weapon (the test greatsword, a spear) is in the main
+     * hand, nothing with a one-handed sword or an empty hand while it stays on, and nothing once it is off.
+     */
+    @QaGameTest
+    public static void battleStanceGivesItsBonusOnlyWithATwoHandedWeapon(GameTestHelper helper) {
+        ServerPlayer player = fighter(helper, "qa-arms-battle-stance", QaPlayers.PLATFORM_MIDDLE);
+        learn(helper, player, GeneratedSpells.BATTLE_STANCE, 1);
+        Spellbook book = player.getData(SpellAttachments.SPELLBOOK);
+        helper.assertTrue(book.barSlotOf(GeneratedSpells.BATTLE_STANCE) >= 0, "it goes onto the bar");
+        player.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(QaItems.TEST_GREATSWORD.get()));
+        assertStance(helper, player, 0, 0, "off: nothing");
+
+        helper.assertTrue(SpellCaster.cast(player, GeneratedSpells.BATTLE_STANCE, (LivingEntity) null).success(),
+                "the bar turns it on");
+        helper.assertTrue(player.getData(SpellAttachments.SPELLBOOK).isOn(GeneratedSpells.BATTLE_STANCE), "on");
+        assertStance(helper, player, 5, 0.1, "on with the greatsword: +5 Armor Pierce, +10 % Armor Shred");
+        player.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SPEAR));
+        assertStance(helper, player, 5, 0.1, "a spear is two-handed too");
+        player.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD));
+        assertStance(helper, player, 0, 0, "a one-handed sword pauses it");
+        player.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+        assertStance(helper, player, 0, 0, "and so does an empty hand");
+        helper.assertTrue(player.getData(SpellAttachments.SPELLBOOK).isOn(GeneratedSpells.BATTLE_STANCE),
+                "paused, the stance stays on");
+
+        player.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(QaItems.TEST_GREATSWORD.get()));
+        Spells.resetCooldowns(player);
+        helper.assertTrue(SpellCaster.cast(player, GeneratedSpells.BATTLE_STANCE, (LivingEntity) null).success(),
+                "the bar turns it off");
+        assertStance(helper, player, 0, 0, "off again: nothing, even with the greatsword");
+        logout(player);
+        helper.succeed();
+    }
+
+    /**
      * The tooltips show the next rank's numbers below a spell's own: Charge's reach and rage, Rend's hit and bleed,
      * Execute's refund, Deep Wounds' share; and the range line follows Charge's rank.
      */
@@ -744,6 +784,16 @@ public final class ArmsTreeGameTests {
     private static List<String> tooltip(GameTestHelper helper, ServerPlayer player, Spell spell, int level) {
         return SpellTooltip.lines(spell, level, SpellText.statsOf(player),
                 SpellText.schoolsOf(helper.getLevel().registryAccess())).stream().map(Component::getString).toList();
+    }
+
+    /** Battle Stance's Armor Pierce and Armor Shred after a recompute, with the base of both at 0. */
+    private static void assertStance(GameTestHelper helper, ServerPlayer player, double pierce, double shred,
+            String what) {
+        CharacterStats.recompute(player);
+        helper.assertTrue(Math.abs(DamagePipeline.stat(player, GeneratedStats.ARMOR_PIERCE) - pierce) <= TOLERANCE
+                && Math.abs(DamagePipeline.stat(player, GeneratedStats.ARMOR_SHRED) - shred) <= TOLERANCE,
+                what + ": Armor Pierce " + DamagePipeline.stat(player, GeneratedStats.ARMOR_PIERCE) + ", Armor Shred "
+                        + DamagePipeline.stat(player, GeneratedStats.ARMOR_SHRED));
     }
 
     /**

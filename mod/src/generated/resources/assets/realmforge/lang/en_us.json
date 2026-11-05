@@ -392,6 +392,8 @@
   "spell.realmforge.astone_shockwave.name": "Shockwave",
   "spell.realmforge.battle_shout.description": "Lets out a war cry that raises your attack damage by {bonus_attack_damage}% and your attack speed by {bonus_attack_speed}%, and your allies' within {radius} blocks, for {duration} sec.",
   "spell.realmforge.battle_shout.name": "Battle Shout",
+  "spell.realmforge.battle_stance.description": "While you wield a two-handed weapon: +{bonus_armor_pierce} Armor Pierce and +{bonus_armor_shred}% Armor Shred.",
+  "spell.realmforge.battle_stance.name": "Battle Stance",
   "spell.realmforge.blizzard.description": "Calls down {ticks} waves of ice on the ground while you channel, each dealing {damage} damage to every enemy within {radius} blocks and slowing them.",
   "spell.realmforge.blizzard.name": "Blizzard",
   "spell.realmforge.bloodthirst.description": "Your Rend's ticks have a {proc_chance}% chance to make Overpower usable, at most once every {proc_cooldown} sec on each target.",
