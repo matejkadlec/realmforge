@@ -112,6 +112,11 @@
           "spell": "realmforge:execute",
           "level": 18,
           "column": 1
+        },
+        {
+          "spell": "realmforge:battle_stance",
+          "level": 18,
+          "column": 2
         }
       ]
     },

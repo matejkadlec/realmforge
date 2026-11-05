@@ -354,6 +354,23 @@ def test_proc_damage_placeholders(repo: RepoPaths) -> None:
 # The Warrior's kit (RLM-543)
 
 
+def test_battle_stance_is_the_arms_stance() -> None:
+    """RLM-596: Battle Stance is an aura of the group stance, rank 1, +5 Armor Pierce and +10 % Armor Shred while a
+    two-handed weapon is in the main hand, and no Attack Damage."""
+    content, _ = load_and_validate(RepoPaths())
+    stance = next(entry.model for entry in content.spells if entry.model.id == "battle_stance")
+    assert stance.aura is not None
+    assert (stance.max_level, stance.aura.group, stance.aura.while_wielding) == (
+        1,
+        "stance",
+        "realmforge:two_handed_weapons",
+    )
+    assert [(m.attribute, m.operation, m.amount_at(1)) for m in stance.aura.modifiers] == [
+        ("realmforge:armor_pierce", "add_value", 5),
+        ("realmforge:armor_shred", "add_value", 10),
+    ]
+
+
 def test_the_arms_tree_stands_in_its_rows() -> None:
     content, _ = load_and_validate(RepoPaths())
     warrior = next(entry.model for entry in content.classes if entry.model.id == "warrior")
@@ -372,6 +389,7 @@ def test_the_arms_tree_stands_in_its_rows() -> None:
         ("overpower", 12, 2),
         ("victory_rush", 12, 3),
         ("execute", 18, 1),
+        ("battle_stance", 18, 2),
     ]
     assert [taught.requires for taught in arms.spells if taught.requires] == ["realmforge:rend"]
     assert [entry.id for entry in warrior.specializations if not entry.spells] == ["fury", "protection"]
@@ -389,6 +407,7 @@ def test_the_arms_tree_stands_in_its_rows() -> None:
         "overpower": 5,
         "victory_rush": 3,
         "execute": 3,
+        "battle_stance": 1,
     }
 
 

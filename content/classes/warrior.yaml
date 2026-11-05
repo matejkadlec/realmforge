@@ -2,7 +2,8 @@
 # The M1 melee class (decision D1, RLM-51): strength and vitality. The stats stay the same at every level: each level
 # gives a stat point to spend instead, and the class keeps these as its starting identity until Matěj decides on them
 # (2026-10-15, RLM-196). M1's tree is the Arms Warrior's "Bloodletter" (RLM-543; Matěj, 2026-10-30, RLM-333), a new row
-# every 6 levels; four active spells by the end of chapter 1 (D4: 4 x N, passives aside). Picking the specialization
+# every 6 levels; four active spells by the end of chapter 1 (D4: 4 x N, passives aside), and Battle Stance, the Arms
+# stance, an aura (RLM-596). Picking the specialization
 # gives Slam free at rank 1, and every other rank costs a spell point (C5, Matěj, 2026-11-04). Fury and Protection come
 # with their trees in M3 (RLM-218), and Reckless Strike and Shield Bash with them.
 id: warrior
@@ -50,6 +51,8 @@ specializations:
       - {spell: realmforge:overpower, level: 12, column: 2}
       - {spell: realmforge:victory_rush, level: 12, column: 3}
       - {spell: realmforge:execute, level: 18, column: 1}
+      # RLM-596: the free place until RLM-631's layout puts Battle Stance at R3, left (Matěj, 2026-11-04).
+      - {spell: realmforge:battle_stance, level: 18, column: 2}
   - id: fury
     name: {en_us: Fury}
     description: {en_us: "Swing fast and hard, and let your rage carry you."}

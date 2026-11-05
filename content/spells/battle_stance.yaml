@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# The Arms Warrior's stance (RLM-596; Matěj, 2026-11-03, the Confluence "Class overview" page and chat), an aura spell
+# (RLM-595): turned on from the spell bar, free and off the global cooldown, on the 3 minute cooldown every aura shares,
+# one stance at a time (group stance), and on through death and relog. While it is on and a two-handed weapon
+# (realmforge:two_handed_weapons, Better Combat's) is in the main hand it gives +5 Armor Pierce and +10 % Armor Shred;
+# any other main hand pauses it without turning it off. No Attack Damage: RLM-392's draft "+ % Attack Damage" is
+# replaced. Named after WoW's (earlier drafts called it "Fighter"); Berserker Stance (Fury) and Defensive Stance
+# (Protection) come with their trees. Max rank 1. Physical, so its frame is the physical school's, as Two-Handed
+# Specialization's is. In the tree: row 4 (level 18), middle, the free place until RLM-631's layout puts it at R3, left
+# (Matěj, 2026-11-04, RLM-333's comment 23656).
+id: battle_stance
+name: {en_us: Battle Stance}
+description:
+  en_us: >-
+    While you wield a two-handed weapon: +{bonus_armor_pierce} Armor Pierce and +{bonus_armor_shred}% Armor Shred.
+school: realmforge:physical
+aura:
+  group: stance
+  while_wielding: realmforge:two_handed_weapons
+  modifiers:
+    - {attribute: realmforge:armor_pierce, operation: add_value, amount: 5}
+    - {attribute: realmforge:armor_shred, operation: add_value, amount_percent: 10}
