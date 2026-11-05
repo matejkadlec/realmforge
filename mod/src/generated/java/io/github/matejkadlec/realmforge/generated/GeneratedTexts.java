@@ -617,6 +617,12 @@ public final class GeneratedTexts {
     /** {@code resource.realmforge.rage} from {@code content/texts/resource.yaml}: "Rage" */
     public static final String RESOURCE_RAGE = "resource.realmforge.rage";
 
+    /** {@code spell.tooltip.realmforge.aura} from {@code content/texts/spell.tooltip.yaml}: "Aura" */
+    public static final String SPELL_TOOLTIP_AURA = "spell.tooltip.realmforge.aura";
+
+    /** {@code spell.tooltip.realmforge.aura_cooldown} from {@code content/texts/spell.tooltip.yaml}: "%1$s min cooldown, shared by every aura" */
+    public static final String SPELL_TOOLTIP_AURA_COOLDOWN = "spell.tooltip.realmforge.aura_cooldown";
+
     /** {@code spell.tooltip.realmforge.cast_time} from {@code content/texts/spell.tooltip.yaml}: "%1$s sec cast" */
     public static final String SPELL_TOOLTIP_CAST_TIME = "spell.tooltip.realmforge.cast_time";
 

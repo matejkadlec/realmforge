@@ -34,6 +34,42 @@ class SpellBarViewTest {
                 SpellConditions.NONE);
     }
 
+    private static final ResourceKey<Spell> STANCE = ResourceKey.create(SpellRegistries.SPELL,
+            Realmforge.id("stance"));
+
+    /** An aura (RLM-595) of the group {@code stance}, with a bonus and nothing else. */
+    private static Spell aura() {
+        return new Spell("n", "d", Optional.empty(), Scaling.SPELL_POWER, SelfTargeting.INSTANCE, SpellCast.INSTANT,
+                Optional.empty(), 0, Spell.DEFAULT_GLOBAL_COOLDOWN_TICKS, 1, CritRule.DEFAULT, false, List.of(),
+                false, List.of(), Optional.empty(), SpellConditions.NONE, 0,
+                Optional.of(new Aura("stance", new Passive(Optional.empty(), List.of(), List.of(), Optional.empty(),
+                        Optional.empty(), List.of()))));
+    }
+
+    /**
+     * RLM-595: an aura's slot shows it off, on, or paused by its weapon condition; its sweep runs over the cooldown
+     * every aura shares, whatever the Cooldown Reduction, and never over the global cooldown.
+     */
+    @Test
+    void anAurasSlotShowsItsStateAndTheSharedCooldown() {
+        Spellbook book = new Spellbook(Map.of(STANCE, 1), Map.of(0, STANCE));
+        CombatState combat = new CombatState();
+        combat.setGlobalCooldownEnd(1000 + 5);
+        SpellBarView off = SpellBarView.of(book, combat, 1000, key -> Optional.of(aura()), 0.5, 10);
+        assertEquals(SpellBarView.AuraState.OFF, off.slots().get(0).aura());
+        assertEquals(0F, off.slots().get(0).cooldown(), "the global cooldown never sweeps an aura");
+
+        Spellbook on = book.withAura(STANCE, true);
+        combat.setCooldownEnd(STANCE, 1000 + Aura.COOLDOWN_TICKS / 2);
+        SpellBarView view = SpellBarView.of(on, combat, 1000, key -> Optional.of(aura()), 0.5, 10);
+        assertEquals(SpellBarView.AuraState.ON, view.slots().get(0).aura());
+        assertEquals(0.5F, view.slots().get(0).cooldown(), 1e-6, "half of the 3 minutes, Cooldown Reduction or not");
+        SpellBarView paused = SpellBarView.of(on, combat, 1000, key -> Optional.of(aura()), 0, 10, aura -> false);
+        assertEquals(SpellBarView.AuraState.PAUSED, paused.slots().get(0).aura());
+        assertEquals(SpellBarView.AuraState.NONE, SpellBarView.of(new Spellbook(Map.of(BOLT, 1), Map.of(0, BOLT)),
+                combat, 1000, key -> Optional.of(spell(key)), 0, 10).slots().get(0).aura(), "an active spell");
+    }
+
     @Test
     void emptySlotsStayEmpty() {
         SpellBarView view = SpellBarView.of(Spellbook.EMPTY, new CombatState(), 0, key -> Optional.empty(), 0, 10);

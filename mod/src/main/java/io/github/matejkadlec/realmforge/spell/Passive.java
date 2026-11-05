@@ -2,6 +2,7 @@ package io.github.matejkadlec.realmforge.spell;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import java.util.List;
 import java.util.Optional;
@@ -37,7 +38,8 @@ import net.minecraft.world.item.ItemStack;
 public record Passive(Optional<TagKey<Item>> whileWielding, List<Modifier> modifiers, List<SpellDamage> spellDamage,
         Optional<CritChance> critChance, Optional<BlockCooldown> blockCooldown, List<Proc> procs,
         List<SplashRadius> splashRadius) {
-    public static final Codec<Passive> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+    /** Its fields, so an aura (RLM-595) can name them beside its own. */
+    public static final MapCodec<Passive> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                     TagKey.codec(Registries.ITEM).optionalFieldOf("while_wielding")
                             .forGetter(Passive::whileWielding),
                     Modifier.CODEC.listOf().optionalFieldOf("modifiers", List.of()).forGetter(Passive::modifiers),
@@ -49,6 +51,7 @@ public record Passive(Optional<TagKey<Item>> whileWielding, List<Modifier> modif
                     SplashRadius.CODEC.listOf().optionalFieldOf("splash_radius", List.of())
                             .forGetter(Passive::splashRadius))
             .apply(instance, Passive::new));
+    public static final Codec<Passive> CODEC = MAP_CODEC.codec();
 
     public Passive {
         modifiers = List.copyOf(modifiers);

@@ -230,6 +230,94 @@
       "title": "AreaEffectDef",
       "type": "object"
     },
+    "AuraDef": {
+      "additionalProperties": false,
+      "description": "What an aura spell does (RLM-595; Matěj, 2026-11-03): a spell with ranks that the player turns on and off from\nthe spell bar, free and off the global cooldown. While it is on it works as a passive spell does, at its rank: its\nweapon condition (while_wielding) pauses it, never turns it off. One aura of a group is on at a time (the Warrior's\nstances), and turning any aura on, off or switching starts a 3 minute cooldown that every aura shares, which\nCooldown Reduction never shortens. It stays on through death and relog.",
+      "properties": {
+        "block_cooldown": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BlockCooldownDef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A two-handed block's cooldown, shorter from a rank on."
+        },
+        "crit_chance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CritChanceDef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "More crit chance for the player's spell hits on a target with a status effect."
+        },
+        "group": {
+          "description": "The auras of which only one is on at a time, e.g. stance: turning one on turns the others off.",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "title": "Group",
+          "type": "string"
+        },
+        "modifiers": {
+          "description": "Attribute modifiers it gives, growing per rank.",
+          "items": {
+            "$ref": "#/$defs/PassiveModifierDef"
+          },
+          "title": "Modifiers",
+          "type": "array"
+        },
+        "procs": {
+          "description": "What fires on the player's hits, crits, kills, effects and ticks (RLM-540): Frostbite, Bloodthirst, Deep Wounds.",
+          "items": {
+            "$ref": "#/$defs/ProcDef"
+          },
+          "title": "Procs",
+          "type": "array"
+        },
+        "spell_damage": {
+          "description": "More damage for named spells, growing per rank.",
+          "items": {
+            "$ref": "#/$defs/SpellDamageDef"
+          },
+          "title": "Spell Damage",
+          "type": "array"
+        },
+        "splash_radius": {
+          "description": "A wider splash for named spells' bolts from a rank on.",
+          "items": {
+            "$ref": "#/$defs/SplashRadiusDef"
+          },
+          "title": "Splash Radius",
+          "type": "array"
+        },
+        "while_wielding": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "An item tag, e.g. realmforge:two_handed_weapons: the whole passive applies only while the main hand holds an item of it.",
+          "title": "While Wielding"
+        }
+      },
+      "required": [
+        "group"
+      ],
+      "title": "AuraDef",
+      "type": "object"
+    },
     "BlockCooldownDef": {
       "additionalProperties": false,
       "description": "A raised two-handed weapon's cooldown after a block or after lowering it (architecture 9.3), shorter from a rank\non (RLM-541: Two-Handed Specialization's 0.25 s at rank 3).",
@@ -2556,6 +2644,18 @@
   "additionalProperties": false,
   "description": "A spell for players or NPCs: its school, what it scales with, its targeting, cast, cost, cooldowns, crit\nrules and typed effects, with numbers per spell level up to ``max_level`` (architecture 11.1).",
   "properties": {
+    "aura": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AuraDef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Makes the spell an aura (RLM-595): learned with ranks and put on the spell bar, which turns it on and off, free and off the global cooldown, on a 3 minute cooldown every aura shares; while it is on it does what a passive does. An aura spell names no targeting, cast, cost, cooldowns, crit, effects or scales_with."
+    },
     "cast": {
       "description": "How it is cast: {type: instant}, {type: cast_time, duration_seconds: 2} or {type: channel, duration_seconds: 3, interval_seconds: 1}. Required for an active spell; a passive one leaves it out.",
       "discriminator": {

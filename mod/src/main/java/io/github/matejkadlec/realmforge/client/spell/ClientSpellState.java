@@ -36,7 +36,13 @@ final class ClientSpellState implements CastQueue.State {
 
     @Override
     public boolean onGlobalCooldown(ResourceKey<Spell> spell) {
+        // RLM-595: an aura's toggle is off the global cooldown.
         return combat.isOnGlobalCooldown(now) && Spells.get(player.registryAccess(), spell)
-                .map(holder -> holder.value().globalCooldownTicks() > 0).orElse(true);
+                .map(holder -> holder.value().globalCooldownTicks() > 0 && !holder.value().isAura()).orElse(true);
+    }
+
+    @Override
+    public boolean toggles(ResourceKey<Spell> spell) {
+        return Spells.get(player.registryAccess(), spell).map(holder -> holder.value().isAura()).orElse(false);
     }
 }

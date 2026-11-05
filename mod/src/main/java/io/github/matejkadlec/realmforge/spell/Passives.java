@@ -17,7 +17,8 @@ import net.minecraft.world.entity.player.Player;
 
 /**
  * What a player's passive spells do now (RLM-541; architecture 11.1): each passive spell the player knows, at its
- * rank, while its weapon condition holds ({@link Passive#appliesWith}). Its modifiers reach the player's attributes
+ * rank, while its weapon condition holds ({@link Passive#appliesWith}), and each aura spell they have on (RLM-595), its
+ * bonus as a passive's. Its modifiers reach the player's attributes
  * through {@link #SOURCE}, which {@code stats} recomputes like race and class (architecture 8.2): a held item changes
  * them at the end of the same tick, and learning a spell marks the stats for a recompute. The damage engine reads the
  * rest per hit: {@link #damageBonus} for a spell's hit (the passives of system C's (1 + School Power + passives)),
@@ -27,7 +28,7 @@ import net.minecraft.world.entity.player.Player;
  * from the synced spellbook, for the tooltips.
  *
  * <p>Modifier ids are unique per spell and position: {@code realmforge:spell/<namespace>/<n>/<path>} for the n-th
- * modifier of the passive spell {@code <namespace>:<path>}, its path last as in the stat rules' ids.
+ * modifier of the passive or aura spell {@code <namespace>:<path>}, its path last as in the stat rules' ids.
  */
 public final class Passives {
     /** The path prefix of every modifier passive spells write, in our namespace. */
@@ -53,24 +54,39 @@ public final class Passives {
     private record Known(Holder.Reference<Spell> spell, Passive passive, int level) {
     }
 
-    /** The passive spells {@code entity} knows whose condition holds now, in the spellbook's order; none for a mob. */
+    /**
+     * The passive spells {@code entity} knows, and the aura spells it has on (RLM-595), whose condition holds now, in
+     * the spellbook's order; none for a mob.
+     */
     private static List<Known> active(LivingEntity entity) {
         if (!(entity instanceof Player player)) {
             return List.of();
         }
+        Spellbook book = player.getData(SpellAttachments.SPELLBOOK);
         List<Known> known = new ArrayList<>();
-        for (Map.Entry<ResourceKey<Spell>, Integer> entry : player.getData(SpellAttachments.SPELLBOOK).spells()
-                .entrySet()) {
+        for (Map.Entry<ResourceKey<Spell>, Integer> entry : book.spells().entrySet()) {
             Optional<Holder.Reference<Spell>> spell = Spells.get(player.registryAccess(), entry.getKey());
-            if (spell.isEmpty() || spell.get().value().passive().isEmpty()) {
+            if (spell.isEmpty()) {
                 continue;
             }
-            Passive passive = spell.get().value().passive().get();
-            if (passive.appliesWith(player.getMainHandItem())) {
-                known.add(new Known(spell.get(), passive, Math.min(entry.getValue(), spell.get().value().maxLevel())));
+            Optional<Passive> passive = spell.get().value().passive()
+                    .or(() -> spell.get().value().aura().filter(aura -> book.isOn(entry.getKey())).map(Aura::bonus));
+            if (passive.isPresent() && passive.get().appliesWith(player.getMainHandItem())) {
+                known.add(new Known(spell.get(), passive.get(),
+                        Math.min(entry.getValue(), spell.get().value().maxLevel())));
             }
         }
         return known;
+    }
+
+    /**
+     * Whether the aura spell {@code spell}'s bonus applies for {@code player} now (RLM-595): it is on and its weapon
+     * condition holds. An aura that is on with its condition unmet is paused, not off.
+     */
+    public static boolean auraApplies(Player player, ResourceKey<Spell> spell) {
+        return player.getData(SpellAttachments.SPELLBOOK).isOn(spell)
+                && Spells.get(player.registryAccess(), spell).flatMap(holder -> holder.value().aura())
+                        .map(aura -> aura.bonus().appliesWith(player.getMainHandItem())).orElse(false);
     }
 
     /** The share {@code caster}'s passive spells add to {@code spell}'s hits: Improved Frostbolt's 15 % at rank 3. */

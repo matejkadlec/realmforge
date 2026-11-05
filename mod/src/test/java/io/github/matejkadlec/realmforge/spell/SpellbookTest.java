@@ -1,6 +1,7 @@
 package io.github.matejkadlec.realmforge.spell;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -8,6 +9,7 @@ import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.testing.RoundTrip;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import net.minecraft.resources.ResourceKey;
 import org.junit.jupiter.api.Test;
 
@@ -28,6 +30,22 @@ class SpellbookTest {
     void streamCodecRoundTrips() {
         assertEquals(BOOK, RoundTrip.stream(Spellbook.STREAM_CODEC, BOOK));
         assertEquals(Spellbook.EMPTY, RoundTrip.stream(Spellbook.STREAM_CODEC, Spellbook.EMPTY));
+    }
+
+    /** RLM-595: the auras that are on are saved, synced, switched and forgotten with their spell. */
+    @Test
+    void aurasThatAreOnRoundTripAndLeaveWithTheirSpell() {
+        Spellbook on = BOOK.withAura(FIREBOLT, true);
+        assertTrue(on.isOn(FIREBOLT));
+        assertEquals(on, RoundTrip.nbt(Spellbook.CODEC, on));
+        assertEquals(on, RoundTrip.json(Spellbook.CODEC, on));
+        assertEquals(on, RoundTrip.stream(Spellbook.STREAM_CODEC, on));
+        assertFalse(on.withAura(FIREBOLT, false).isOn(FIREBOLT), "off again");
+        assertTrue(on.withSpell(FIREBOLT, 2).isOn(FIREBOLT), "a new rank keeps it on");
+        assertTrue(on.withSlot(3, Optional.of(FROSTBOLT)).isOn(FIREBOLT), "a bar change keeps it on");
+        assertFalse(on.withoutSpell(FIREBOLT).isOn(FIREBOLT), "forgetting it turns it off");
+        assertEquals(Set.of(), new Spellbook(Map.of(), Map.of(), Set.of(FIREBOLT)).auras(),
+                "an aura that is not known is dropped, never on");
     }
 
     @Test

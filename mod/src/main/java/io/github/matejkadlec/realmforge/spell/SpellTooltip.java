@@ -24,8 +24,8 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
  * Reduction, its cooldown after Cooldown Reduction, and its description with the placeholders filled
  * ({@link SpellText}): its damage numbers with their school's icon and colour; below its highest rank, "Next rank:" with
  * the description at the next rank, from the same stats (RLM-542). A passive spell (RLM-541) shows its rank's
- * description and the next rank's instead of cost, range and cast. A view model in common code, so the screen only
- * draws it.
+ * description and the next rank's instead of cost, range and cast; an aura spell (RLM-595) "Aura", "Instant" and the
+ * cooldown every aura shares above them. A view model in common code, so the screen only draws it.
  */
 public final class SpellTooltip {
     private static final double TICKS_PER_SECOND = 20;
@@ -59,6 +59,10 @@ public final class SpellTooltip {
         }
         if (spell.passive().isPresent()) {
             lines.addAll(passiveLines(spell, spell.passive().get(), level));
+            return lines;
+        }
+        if (spell.aura().isPresent()) {
+            lines.addAll(auraLines(spell, spell.aura().get(), level));
             return lines;
         }
         spell.cost().ifPresent(cost -> cost.resource().unwrapKey().ifPresent(type -> lines.add(
@@ -96,6 +100,27 @@ public final class SpellTooltip {
         if (level < spell.maxLevel()) {
             lines.add(Component.translatable(GeneratedTexts.SPELL_TOOLTIP_NEXT_RANK).withStyle(ChatFormatting.GRAY));
             lines.add(SpellText.fill(description, SpellText.passiveValues(passive, level + 1), Map.of(),
+                    school -> Optional.empty()).withStyle(ChatFormatting.YELLOW));
+        }
+        return lines;
+    }
+
+    /**
+     * An aura spell's lines below its rank (RLM-595): "Aura", "Instant", the cooldown every aura shares, which Cooldown
+     * Reduction never shortens, its description at {@code level} and, below its highest rank, the next rank's.
+     */
+    static List<Component> auraLines(Spell spell, Aura aura, int level) {
+        List<Component> lines = new ArrayList<>();
+        String description = Language.getInstance().getOrDefault(spell.description());
+        lines.add(Component.translatable(GeneratedTexts.SPELL_TOOLTIP_AURA).withStyle(ChatFormatting.GRAY));
+        lines.add(Component.translatable(GeneratedTexts.SPELL_TOOLTIP_INSTANT));
+        lines.add(Component.translatable(GeneratedTexts.SPELL_TOOLTIP_AURA_COOLDOWN,
+                SpellText.decimal(Aura.COOLDOWN_TICKS / TICKS_PER_SECOND / 60)));
+        lines.add(SpellText.fill(description, SpellText.passiveValues(aura.bonus(), level), Map.of(),
+                school -> Optional.empty()).withStyle(ChatFormatting.YELLOW));
+        if (level < spell.maxLevel()) {
+            lines.add(Component.translatable(GeneratedTexts.SPELL_TOOLTIP_NEXT_RANK).withStyle(ChatFormatting.GRAY));
+            lines.add(SpellText.fill(description, SpellText.passiveValues(aura.bonus(), level + 1), Map.of(),
                     school -> Optional.empty()).withStyle(ChatFormatting.YELLOW));
         }
         return lines;

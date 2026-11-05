@@ -358,6 +358,10 @@ public final class SpellbookScreen extends Screen {
         if (spell.map(Spell::isPassive).orElse(false)) {
             name = name.copy().append(Component.literal(" ")).append(Component.translatable(
                     GeneratedTexts.SPELL_TOOLTIP_PASSIVE).withStyle(ChatFormatting.GRAY));
+        } else if (spell.map(Spell::isAura).orElse(false)) {
+            // RLM-595: an aura goes onto the bar like an active spell; "Aura" tells it from one.
+            name = name.copy().append(Component.literal(" ")).append(Component.translatable(
+                    GeneratedTexts.SPELL_TOOLTIP_AURA).withStyle(ChatFormatting.GRAY));
         }
         // A name too long for the row (Two-Handed Specialization with its rank and "Passive") breaks onto a second
         // line (Matěj's playtest of 2026-11-03); the row's 20 px hold two lines of text.

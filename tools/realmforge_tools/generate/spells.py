@@ -47,6 +47,8 @@ def _comment(spell: SpellDef) -> str:
     school = spell.school.removeprefix(f"{MOD_ID}:") if spell.school is not None else "no school"
     if spell.is_passive:
         return f"{school}, passive"
+    if spell.aura is not None:
+        return f"{school}, aura ({spell.aura.group})"
     effects = ", ".join(effect.type.removeprefix(f"{MOD_ID}:") for effect in spell.effects)
     return f"{school}, {spell.targeting.type.removeprefix(f'{MOD_ID}:')}, {effects}"
 
@@ -184,6 +186,7 @@ def _expectation(spell: SpellDef) -> str:
         f"                    List.of({', '.join(string_literal(requirement) for requirement in spell.requires)}),\n"
         f"                    {_bool(spell.castable_while_stunned)},\n"
         f"                    {_bool(spell.is_passive)},\n"
+        f"                    {_optional_string(spell.aura.group if spell.aura is not None else None)},\n"
         f"                    {effect_list})"
     )
 
@@ -221,7 +224,8 @@ def _expectations(content: Content) -> bytes:
         "     * {@code adds_ticks}, RLM-572), {@code shortens} for every other cast; the up-front cost is a channel's\n"
         "     * cost when it begins, 0 without one; {@code cooldownPerLevelTicks} is added for every rank above 1;\n"
         "     * {@code requires} names what a player's cast needs in hand ({@code melee_weapon}, {@code shield});\n"
-        "     * {@code passive} marks a passive spell (RLM-541), which has no effects and the defaults of its cast.\n"
+        "     * {@code passive} marks a passive spell (RLM-541), which has no effects and the defaults of its cast;\n"
+        "     * {@code auraGroup} an aura spell's group (RLM-595), empty for any other spell.\n"
         "     */\n"
         "    public record SpellExpectation(String id, String name, String description, Optional<String> school,\n"
         "            String scalesWith,\n"
@@ -233,7 +237,8 @@ def _expectations(content: Content) -> bytes:
         "            int cooldownPerLevelTicks, int globalCooldownTicks, int maxLevel, boolean canCrit,\n"
         "            Optional<Double> critMultiplier,\n"
         "            double critBonusChance, double critBonusChancePerLevel, boolean npcOnly, List<String> requires,\n"
-        "            boolean castableWhileStunned, boolean passive, List<EffectExpectation> effects) {\n"
+        "            boolean castableWhileStunned, boolean passive, Optional<String> auraGroup,\n"
+        "            List<EffectExpectation> effects) {\n"
         "    }\n"
         "\n"
         f"    public static final List<SpellExpectation> SPELLS = {spells};\n"

@@ -8,6 +8,7 @@ import io.github.matejkadlec.realmforge.qa.generated.GeneratedSpellExpectations.
 import io.github.matejkadlec.realmforge.spell.AllyTargeting;
 import io.github.matejkadlec.realmforge.spell.ApplyEffectEffect;
 import io.github.matejkadlec.realmforge.spell.AreaEffect;
+import io.github.matejkadlec.realmforge.spell.Aura;
 import io.github.matejkadlec.realmforge.spell.ChargeEffect;
 import io.github.matejkadlec.realmforge.spell.Coefficient;
 import io.github.matejkadlec.realmforge.spell.ConeEffect;
@@ -123,6 +124,7 @@ public final class ContentSpellGameTests {
             helper.assertValueEqual(spell.castableWhileStunned(), expected.castableWhileStunned(),
                     id + " castable while stunned");
             helper.assertValueEqual(spell.isPassive(), expected.passive(), id + " passive");
+            helper.assertValueEqual(spell.aura().map(Aura::group), expected.auraGroup(), id + " aura group");
             helper.assertValueEqual(spell.effects().stream().map(ContentSpellGameTests::effect).toList(),
                     expected.effects(), id + " effects");
         }

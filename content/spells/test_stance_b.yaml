@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Engine test (RLM-595): a second aura of the group test_stance, without a weapon condition (+10 % Armor Shred), so
+# turning it on switches Test Stance A off. Not gameplay content; the GameTests toggle it.
+id: test_stance_b
+name: {en_us: Test Stance B}
+description: {en_us: "+{bonus_armor_shred}% Armor Shred."}
+school: realmforge:physical
+aura:
+  group: test_stance
+  modifiers:
+    - {attribute: realmforge:armor_shred, operation: add_value, amount_percent: 10}

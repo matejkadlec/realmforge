@@ -35,6 +35,13 @@ texts:
   # A passive spell's tooltip (RLM-541) in place of its cost, range and cast: it works while it is known.
   passive:
     en_us: Passive
+  # An aura spell's tooltip (RLM-595) and its tag in the spellbook: a spell the spell bar turns on and off.
+  aura:
+    en_us: Aura
+  # The cooldown every aura shares (RLM-595), started by turning one on, off or switching; Cooldown Reduction never
+  # shortens it. %1$s in minutes.
+  aura_cooldown:
+    en_us: "%1$s min cooldown, shared by every aura"
   # Above a passive spell's description at its next rank, below the one at its rank.
   next_rank:
     en_us: "Next rank:"
