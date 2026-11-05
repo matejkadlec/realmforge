@@ -289,7 +289,10 @@ public final class SpellTreeGameTests {
         helper.succeed();
     }
 
-    /** The two M1 trees stand in the rows and columns of Matěj's decision of 2026-10-30, with Bloodthirst's arrow. */
+    /**
+     * The two M1 trees stand in the rows and columns of Matěj's decision of 2026-10-30, with Bloodthirst's arrow, and
+     * Battle Stance in the Arms tree's free place at level 18 (RLM-596) until RLM-631's layout.
+     */
     @QaGameTest
     public static void theTreesStandAsDecided(GameTestHelper helper) {
         ServerPlayer warrior = ClassKitGameTests.unspecialized(helper, "qa-tree-arms", "warrior");
@@ -298,7 +301,7 @@ public final class SpellTreeGameTests {
                 List.of(GeneratedSpells.REND, GeneratedSpells.BATTLE_SHOUT,
                         GeneratedSpells.TWO_HANDED_WEAPON_SPECIALIZATION),
                 List.of(GeneratedSpells.BLOODTHIRST, GeneratedSpells.OVERPOWER, GeneratedSpells.VICTORY_RUSH),
-                List.of(GeneratedSpells.EXECUTE)));
+                List.of(GeneratedSpells.EXECUTE, GeneratedSpells.BATTLE_STANCE)));
         helper.assertTrue(cell(helper, SpellTreeView.of(warrior), GeneratedSpells.BLOODTHIRST).requires()
                 .filter(required -> required.is(GeneratedSpells.REND)).isPresent(), "Bloodthirst needs Rend");
         ServerPlayer mage = ClassKitGameTests.unspecialized(helper, "qa-tree-frost", "mage");

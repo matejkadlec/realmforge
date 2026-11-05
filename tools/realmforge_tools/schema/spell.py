@@ -1605,7 +1605,11 @@ class SpellDef(StrictModel):
             return self
         named = [name for name in ACTIVE_FIELDS if name in self.model_fields_set]
         if named:
-            kind = "a passive spell is never cast" if self.passive is not None else "an aura spell is only toggled"
+            kind = (
+                "a passive spell is never cast"
+                if self.passive is not None
+                else "an aura spell is only toggled"
+            )
             raise ValueError(f"{kind}, so it names no {', '.join(named)}")
         return self
 

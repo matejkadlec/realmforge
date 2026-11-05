@@ -101,6 +101,8 @@ def test_repository_spells_are_the_class_kits_engine_tests_stoneform_and_astones
         "overpower",
         "victory_rush",
         "execute",
+        # The Arms stance, an aura (RLM-596).
+        "battle_stance",
         # The rest of the Frost Mage's tree (RLM-542).
         "cone_of_cold",
         "ice_lance",
@@ -158,6 +160,9 @@ def test_repository_spells_are_the_class_kits_engine_tests_stoneform_and_astones
         # A periodic effect applied again by a hasted channel and by a channel's overlapping areas (RLM-487).
         "test_kindle",
         "test_ember_field",
+        # Two auras of one group (RLM-595).
+        "test_stance_a",
+        "test_stance_b",
     }
     assert universe.contains("realmforge:spell", "realmforge:test_bolt")
 
@@ -466,7 +471,7 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
     assert 'public static final ResourceKey<Spell> TEST_BOLT = key("test_bolt");' in keys
     assert (
         "ALL = List.of(ARCANE_MISSILES, ASTONE_BOULDER, ASTONE_CRACKED_STONE, ASTONE_QUAKE, ASTONE_ROCKFALL, "
-        "ASTONE_SHOCKWAVE, BATTLE_SHOUT, BLIZZARD, BLOODTHIRST, CHARGE, CONE_OF_COLD, DEEP_WOUNDS, EXECUTE, FIREBALL, FROST_NOVA, "
+        "ASTONE_SHOCKWAVE, BATTLE_SHOUT, BATTLE_STANCE, BLIZZARD, BLOODTHIRST, CHARGE, CONE_OF_COLD, DEEP_WOUNDS, EXECUTE, FIREBALL, FROST_NOVA, "
         "FROSTBITE, FROSTBOLT, ICE_BARRIER, ICE_LANCE, IMPROVED_FROSTBOLT, OVERPOWER, RECKLESS_STRIKE, REND, "
         "SHATTER, SHIELD_BASH, SLAM, STONEFORM, TEST_BLINK, TEST_BLOODTHIRST, TEST_BOLT, TEST_CHARGE, TEST_CHILL, "
         "TEST_CLEANSE, "
@@ -475,7 +480,7 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
         "TEST_LACERATE, TEST_MEND, TEST_MENDING_RING, "
         "TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_OVERPOWER, "
         "TEST_PROC_SPARK, TEST_REGROW, TEST_REND, TEST_SAP, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, TEST_SLOW_MISSILE, "
-        "TEST_STRIKE, TEST_SURE_CRIT, TEST_TARGETED_MISSILE, TEST_TITAN_HARDEN, TEST_VICTORY_RUSH, "
+        "TEST_STANCE_A, TEST_STANCE_B, TEST_STRIKE, TEST_SURE_CRIT, TEST_TARGETED_MISSILE, TEST_TITAN_HARDEN, TEST_VICTORY_RUSH, "
         "TWO_HANDED_WEAPON_SPECIALIZATION, VICTORY_RUSH, WILL_TO_SURVIVE);"
     ) in keys
     expectations = files[EXPECTATIONS].decode()
@@ -516,6 +521,7 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
         "                    List.of(),\n"
         "                    false,\n"
         "                    false,\n"
+        "                    Optional.empty(),\n"
         "                    List.of(\n"
         '                            new EffectExpectation("realmforge:damage", '
         'Map.of("amount", 6.0, "attack_damage", 0.0, "attack_damage_per_level", 0.0, "per_level", 2.0, '
@@ -1327,7 +1333,91 @@ def test_invalid_passive_spells_are_rejected(repo: RepoPaths, body: str, message
 
 def test_an_active_spell_still_names_its_cast(repo: RepoPaths) -> None:
     spell(repo, "fireball", FIREBALL.replace("cast: {type: instant}\n", ""))
-    assert_problem(repo, "an active spell names cast; a passive one names passive instead")
+    assert_problem(repo, "an active spell names cast; a passive one names passive, an aura aura instead")
+
+
+# RLM-595: aura spells
+
+AURA = (
+    "school: realmforge:physical\n"
+    "max_level: 2\n"
+    "aura:\n"
+    "  group: stance\n"
+    "  while_wielding: realmforge:two_handed_weapons\n"
+    "  modifiers:\n"
+    "    - {attribute: realmforge:armor_pierce, operation: add_value, amount: 5, per_level: 1}\n"
+    "    - {attribute: realmforge:armor_shred, operation: add_value, amount_percent: 10}\n"
+)
+
+
+def test_an_aura_names_no_cast_and_writes_its_group_and_bonus(repo: RepoPaths) -> None:
+    spell(
+        repo,
+        "keen_stance",
+        "name: {en_us: Keen Stance}\n"
+        "description: {en_us: '+{bonus_armor_pierce} Armor Pierce, +{bonus_armor_shred}% Armor Shred'}\n"
+        + AURA,
+    )
+    content, _ = load_and_validate(repo)
+    aura = next(entry.model for entry in content.spells if entry.model.id == "keen_stance")
+    assert aura.is_aura and not aura.is_passive and not aura.is_cast
+    files = generate(repo)
+    data = json.loads(files[f"{SPELL_DATA}/keen_stance.json"])
+    assert data["effects"] == [] and data["targeting"] == {"type": "realmforge:self"}
+    assert data["aura"]["group"] == "stance"
+    assert data["aura"]["while_wielding"] == "realmforge:two_handed_weapons"
+    assert data["aura"]["modifiers"][1] == {
+        "attribute": "realmforge:armor_shred",
+        "operation": "add_value",
+        "amount": 0.1,
+    }
+    assert "passive" not in data
+    expectations = files[EXPECTATIONS].decode()
+    assert 'Optional.of("stance"),' in expectations
+    assert "aura (stance)" in files[KEYS_JAVA].decode()
+
+
+@pytest.mark.parametrize(
+    ("body", "message"),
+    [
+        (AURA + "cooldown_seconds: 3\n", "an aura spell is only toggled, so it names no cooldown_seconds"),
+        (
+            AURA
+            + "passive:\n  modifiers: [{attribute: realmforge:armor_pierce, operation: add_value, amount: 1}]\n",
+            "a spell is passive or an aura, not both",
+        ),
+        (AURA.replace("group: stance", "group: Stance"), "aura.group"),
+        (AURA.replace("realmforge:two_handed_weapons", "realmforge:greatswords"), "aura.while_wielding"),
+        (
+            AURA.replace("max_level: 2\n", ""),
+            "nothing grows with the level at max_level 1 (aura)",
+        ),
+        (
+            "name: {en_us: Keen Stance}\ndescription: {en_us: '{bonus_attack_damage}'}\n" + AURA,
+            "{bonus_attack_damage} reads the aura's modifier on attack_damage, and it has none",
+        ),
+        (
+            "name: {en_us: Keen Stance}\ndescription: {en_us: '{damage}'}\n" + AURA,
+            "unknown placeholder {damage} for a aura spell",
+        ),
+    ],
+)
+def test_invalid_auras_are_rejected(repo: RepoPaths, body: str, message: str) -> None:
+    spell(repo, "keen_stance", body)
+    assert_problem(repo, message)
+
+
+def test_a_proc_never_casts_an_aura(repo: RepoPaths) -> None:
+    spell(repo, "keen_stance", AURA)
+    spell(
+        repo,
+        "test_bite",
+        PASSIVE_PROC.replace(
+            "      apply_effect: {effect: realmforge:frozen, duration_seconds: 2}\n",
+            "      cast: realmforge:keen_stance\n",
+        ).replace("max_level: 3\n", "max_level: 2\n"),
+    )
+    assert_problem(repo, "realmforge:keen_stance is no spell a player casts")
 
 
 # RLM-539, RLM-540, RLM-399: damage over time, windows, procs, conditions, melee shapes, swings and splash

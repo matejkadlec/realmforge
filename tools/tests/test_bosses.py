@@ -325,6 +325,16 @@ def test_a_boss_casts_no_passive_spell(repo: RepoPaths, old: str, new: str, path
     assert_problem(repo, f"{path}: realmforge:test_frostbite is passive")
 
 
+def test_a_boss_casts_no_aura(repo: RepoPaths) -> None:
+    # RLM-595: only a player turns an aura on; a mob's cast of one is refused.
+    body(repo)
+    fight(
+        repo,
+        text=FIGHT.replace("realmforge:test_npc_target_bolt, cooldown", "realmforge:test_stance_a, cooldown"),
+    )
+    assert_problem(repo, "phases.0.abilities.0.spell: realmforge:test_stance_a is an aura")
+
+
 def test_generation_writes_the_fight_the_body_and_the_expectations(repo: RepoPaths) -> None:
     body(repo)
     fight(repo)
