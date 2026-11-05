@@ -310,10 +310,12 @@ again. A performance mod must not change gameplay.
 
 **Tried and left out:**
 
-- **Fast Item Frames and Fast Paintings** turn those entities into blocks as they load or tick. The rooms of our
-  instances keep them as entities that hits and explosions cannot break, and an item lock reads the framed items
-  (`AttachedEntityProcessor`, `InstanceRules`), so `dungeon_room/a_rooms_item_frames_come_with_it` fails with them.
-- **Moonrise 1.0.3** replaces the chunk system, entity tracking and light engine, and it failed the GameTests: entities
+- **Fast Item Frames and Fast Paintings** turn those entities into blocks: frames as they load, paintings as they
+  tick. The rooms of our instances keep them as entities that hits and explosions cannot break, and an item lock reads
+  the framed items (`AttachedEntityProcessor`, `InstanceRules`). `dungeon_room/a_rooms_item_frames_come_with_it` fails
+  in a run with both. Fast Paintings has no test of its own: it stays out for what its code does to a room's paintings.
+- **Moonrise 1.0.3** replaces the chunk system, entity tracking and light engine, and as the only added mod it fails
+  the GameTests (RLM-633 looks into it): entities
   arrive two blocks and more from a realm portal, a boss bar still lists a player just moved out of its range, and
   `ThreadedLevelLightEngine#waitForPendingTasks`, which our light test waits on, throws. It mainly helps a server's
   ticks, not a client's frames. C2ME and ScalableLux, the alternatives, have no release build.
