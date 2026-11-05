@@ -1027,7 +1027,7 @@ def _check_spells(content: Content, universe: IdUniverse) -> list[Problem]:
                 Problem(entry.source, "school", _unknown(spell.school, SPELL_SCHOOL_REGISTRY, universe))
             )
         elif (
-            school is not None and not spell.is_passive and SCALING_OF_KIND[school.kind] != spell.scales_with
+            school is not None and spell.is_cast and SCALING_OF_KIND[school.kind] != spell.scales_with
         ):
             problems.append(
                 Problem(
@@ -1069,7 +1069,7 @@ def _check_spells(content: Content, universe: IdUniverse) -> list[Problem]:
         problems += _check_bonus_placeholder(entry.source, spell, content, universe)
         problems += _check_damage_over_time(entry.source, spell, content, universe)
         problems += _check_conditions(entry.source, spell, content, universe)
-        if spell.passive is not None:
+        if spell.bonus is not None:
             problems += _check_passive(entry.source, spell, content, universe)
     return problems
 
@@ -1178,37 +1178,38 @@ def _check_conditions(source: str, spell: SpellDef, content: Content, universe: 
 
 
 def _check_passive(source: str, spell: SpellDef, content: Content, universe: IdUniverse) -> list[Problem]:
-    """A passive spell (RLM-541): its weapon tag exists; its modifiers name attributes that exist, in their unit, and add
-    their percents (architecture 8.2); the spells it raises exist, are active and deal damage; its crit chance names a
-    status effect that exists."""
-    passive = spell.passive
-    assert passive is not None
+    """A passive spell (RLM-541), or what an aura gives while it is on (RLM-595): its weapon tag exists; its modifiers
+    name attributes that exist, in their unit, and add their percents (architecture 8.2); the spells it raises exist,
+    are active and deal damage; its crit chance names a status effect that exists. A description reads a modifier on
+    one of our shares (add_value on a percent stat) in percent, as spell/SpellText does."""
+    assert spell.bonus is not None
+    field, passive = spell.bonus
     problems: list[Problem] = []
     if passive.while_wielding is not None and not universe.contains_tag(
         ITEM_REGISTRY, passive.while_wielding
     ):
         problems.append(
-            Problem(source, "passive.while_wielding", f"unknown item tag {passive.while_wielding!r}")
+            Problem(source, f"{field}.while_wielding", f"unknown item tag {passive.while_wielding!r}")
         )
     stats = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.stats}
     for n, modifier in enumerate(passive.modifiers):
-        path = f"passive.modifiers.{n}"
+        path = f"{field}.modifiers.{n}"
         problems += _check_modifier(source, path, modifier, stats, universe)
         problems += _check_adds_percents(source, path, modifier.operation)
     spells = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.spells}
     for n, bonus in enumerate(passive.spell_damage):
         for m, named in enumerate(bonus.spells):
-            path = f"passive.spell_damage.{n}.spells.{m}"
+            path = f"{field}.spell_damage.{n}.spells.{m}"
             target = spells.get(named)
             if target is None:
                 problems.append(Problem(source, path, _unknown(named, SPELL_REGISTRY, universe)))
-            elif target.is_passive or target.first_effect(DAMAGE) is None:
+            elif not target.is_cast or target.first_effect(DAMAGE) is None:
                 problems.append(
                     Problem(source, path, f"{named} deals no damage, so more damage does nothing")
                 )
     for n, bonus in enumerate(passive.splash_radius):
         for m, named in enumerate(bonus.spells):
-            path = f"passive.splash_radius.{n}.spells.{m}"
+            path = f"{field}.splash_radius.{n}.spells.{m}"
             target = spells.get(named)
             if target is None:
                 problems.append(Problem(source, path, _unknown(named, SPELL_REGISTRY, universe)))
@@ -1227,7 +1228,7 @@ def _check_passive(source: str, spell: SpellDef, content: Content, universe: IdU
         problems.append(
             Problem(
                 source,
-                "passive.crit_chance.against",
+                f"{field}.crit_chance.against",
                 _unknown(critical.against, MOB_EFFECT_REGISTRY, universe),
             )
         )
@@ -1237,27 +1238,11 @@ def _check_passive(source: str, spell: SpellDef, content: Content, universe: IdU
         if entry.model.stacks is not None
     }
     for n, proc in enumerate(passive.procs):
-        problems += _check_proc(source, f"passive.procs.{n}", proc, spell, spells, stacked, universe)
+        problems += _check_proc(source, f"{field}.procs.{n}", proc, spell, spells, stacked, universe)
         if proc.damage_over_time is not None:
             problems += _check_proc_damage_over_time(
-                source, f"passive.procs.{n}.damage_over_time", proc.damage_over_time, stacked
+                source, f"{field}.procs.{n}.damage_over_time", proc.damage_over_time, stacked
             )
-    first = passive.modifiers[0] if passive.modifiers else None
-    stat = stats.get(first.attribute) if first is not None else None
-    if (
-        "{bonus}" in spell.description.en_us
-        and first is not None
-        and first.operation == "add_value"
-        and (stat is not None and stat.percent)
-    ):
-        problems.append(
-            Problem(
-                source,
-                "description",
-                f"{{bonus}} reads the first modifier, add_value on the share {first.attribute}: give it a multiplied "
-                "operation or describe the number another way",
-            )
-        )
     return problems
 
 
@@ -1315,7 +1300,7 @@ def _check_proc(
         cast = spells.get(proc.cast)
         if cast is None:
             problems.append(Problem(source, f"{path}.cast", _unknown(proc.cast, SPELL_REGISTRY, universe)))
-        elif cast.is_passive or cast.npc_only:
+        elif not cast.is_cast or cast.npc_only:
             problems.append(Problem(source, f"{path}.cast", f"{proc.cast} is no spell a player casts"))
         elif cast.max_level < spell.max_level:
             problems.append(
@@ -1430,7 +1415,7 @@ def _check_bonus_placeholder(
     multiplied operation or in the attribute's points (not add_value on one of our shares, which the description could
     not tell from points)."""
     names = [name for name in spell.placeholders() if name == "bonus" or ATTRIBUTE_BONUS.fullmatch(name)]
-    if spell.is_passive or not names:
+    if not spell.is_cast or not names:
         return []
     applied = spell.first_effect(APPLY_EFFECT)
     ours = {effect_id(entry.model.id): entry.model for entry in content.effects}
@@ -1678,6 +1663,14 @@ def _check_bosses(content: Content, universe: IdUniverse) -> list[Problem]:
                             entry.source,
                             path,
                             f"{spell_id} is passive: a boss casts it, and a passive is never cast",
+                        )
+                    )
+                elif spell.is_aura:
+                    problems.append(
+                        Problem(
+                            entry.source,
+                            path,
+                            f"{spell_id} is an aura: a boss casts it, and only a player turns an aura on (RLM-595)",
                         )
                     )
                 elif spell.targeting.type not in BOSS_SPELL_TARGETING:

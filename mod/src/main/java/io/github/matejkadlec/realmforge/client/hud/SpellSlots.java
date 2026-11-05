@@ -17,7 +17,8 @@ import net.minecraft.util.ARGB;
  * sweep ({@link CooldownSweep}) with the seconds left of a long cooldown, a gold frame while it is being cast, and the
  * slot's key in the corner. A spell usable only in its window (RLM-540: Overpower, Victory Rush) is greyed out while the
  * window is closed, and glows with the seconds left in its lower corner while it is open; a spell with a target health
- * condition (Execute, RLM-543) the same while the player's current target meets it, without seconds.
+ * condition (Execute, RLM-543) the same while the player's current target meets it, without seconds. An aura spell that
+ * is on (RLM-595) has a bright green frame inside its own, grey-green while its weapon condition pauses it.
  */
 public final class SpellSlots {
     private static final int BACKGROUND = 0xA0101010;
@@ -30,6 +31,10 @@ public final class SpellSlots {
     private static final int UNAFFORDABLE = 0x903048C8;
     /** A closed window (RLM-540): grey over the slot. */
     private static final int WINDOW_CLOSED = 0xA0303030;
+    /** An aura that is on (RLM-595): a bright green frame two pixels wide inside the school's. */
+    private static final int AURA_ON = 0xFF7CFF5C;
+    /** An aura that is on but paused by its weapon condition: the same frame, dimmed to grey-green. */
+    private static final int AURA_PAUSED = 0xFF6A7F64;
     /** An open window: a bright frame inside the school's, and its seconds left. */
     private static final int WINDOW_GLOW = 0xFFFFF27A;
     private static final int WINDOW_TEXT = 0xFFFFF27A;
@@ -86,6 +91,11 @@ public final class SpellSlots {
             }
         }
         graphics.outline(x, y, size, size, slot.casting() ? CASTING_FRAME : frame);
+        if (slot.aura() == SpellBarView.AuraState.ON || slot.aura() == SpellBarView.AuraState.PAUSED) {
+            int aura = slot.aura() == SpellBarView.AuraState.ON ? AURA_ON : AURA_PAUSED;
+            graphics.outline(x + 1, y + 1, size - 2, size - 2, aura);
+            graphics.outline(x + 2, y + 2, size - 4, size - 4, aura);
+        }
         if (slot.windowTicks() > 0) {
             graphics.outline(x + 1, y + 1, size - 2, size - 2, WINDOW_GLOW);
             // A target health condition (Execute) glows while the target meets it: no seconds to count down.

@@ -63,6 +63,9 @@ import net.minecraft.world.item.ItemStack;
  * {@link CastResult#queued}). Two spells never cast at once.
  *
  * <p>A proc casts its spell through {@link #castProc}: at once and for free, whatever the caster is doing.
+ *
+ * <p>An aura spell (RLM-595) is not cast: a player's cast toggles it ({@link Auras}), at no cost and off the global
+ * cooldown, after only the checks that it exists and is known; a mob's is refused.
  */
 public final class SpellCaster {
     /**
@@ -142,6 +145,11 @@ public final class SpellCaster {
             return CastResult.refused(CastFailure.CANNOT_CAST);
         }
         Spell value = spell.value();
+        if (value.isAura()) {
+            // RLM-595: an aura is toggled, not cast: free, off the global cooldown, beside any cast in progress.
+            return caster instanceof Player player ? Auras.toggle(player, spell)
+                    : CastResult.refused(CastFailure.CANNOT_CAST);
+        }
         CombatState state = caster.getData(SpellAttachments.COMBAT);
         Optional<CombatState.Cast> current = state.currentCast();
         if (current.isPresent() && (!replaceCast || current.get().spell().equals(spell.key()))) {

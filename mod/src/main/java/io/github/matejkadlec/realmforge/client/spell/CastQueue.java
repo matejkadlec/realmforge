@@ -24,6 +24,8 @@ import net.minecraft.resources.ResourceKey;
  *   does nothing.</li>
  *   <li><b>A held key</b> casts its spell again and again, as its cooldown and cast time allow, at most every
  *   {@value #REPEAT_TICKS} ticks (half a second), and never cancels a cast.</li>
+ *   <li><b>An aura</b> (RLM-595) is toggled by a press only, never by a held key; it is off the global cooldown, and
+ *   with spell queueing its press does not wait for a cast in progress, which its toggle leaves running.</li>
  *   <li><b>After each send</b> the client waits {@value #AWAIT_TICKS} ticks for the server's answer (the cast, the
  *   cooldowns, a refusal) before it sends again, so it does not ask twice for the same cast.</li>
  * </ul>
@@ -46,6 +48,14 @@ public final class CastQueue {
 
         /** Whether the global cooldown runs and the spell is on it. */
         boolean onGlobalCooldown(ResourceKey<Spell> spell);
+
+        /**
+         * Whether the spell is an aura (RLM-595), which a press toggles: a held key never sends it again, so holding it
+         * never turns the aura back once its cooldown ends.
+         */
+        default boolean toggles(ResourceKey<Spell> spell) {
+            return false;
+        }
     }
 
     /**
@@ -103,7 +113,7 @@ public final class CastQueue {
                 queue.removeFirst();
                 return Optional.empty();
             }
-            if (options.queue() && casting.isPresent()
+            if (options.queue() && casting.isPresent() && !state.toggles(head.spell())
                     || state.onGlobalCooldown(head.spell()) && !state.onCooldown(head.spell())) {
                 return Optional.empty();
             }
@@ -116,7 +126,8 @@ public final class CastQueue {
         for (Map.Entry<Integer, ResourceKey<Spell>> entry : held.entrySet()) {
             ResourceKey<Spell> spell = entry.getValue();
             Long last = lastSend.get(entry.getKey());
-            if (state.onCooldown(spell) || state.onGlobalCooldown(spell) || last != null && now - last < REPEAT_TICKS) {
+            if (state.toggles(spell) || state.onCooldown(spell) || state.onGlobalCooldown(spell)
+                    || last != null && now - last < REPEAT_TICKS) {
                 continue;
             }
             return Optional.of(sent(now, entry.getKey(), new Send(spell, false)));

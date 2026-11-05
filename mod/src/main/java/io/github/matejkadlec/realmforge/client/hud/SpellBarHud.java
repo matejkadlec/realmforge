@@ -68,7 +68,8 @@ public final class SpellBarHud {
         }
         return SpellBarView.of(player.getData(SpellAttachments.SPELLBOOK), combat, now,
                 key -> Spells.get(player.registryAccess(), key).map(Holder::value),
-                DamagePipeline.stat(player, GeneratedStats.COOLDOWN_REDUCTION), globalCooldownTicks);
+                DamagePipeline.stat(player, GeneratedStats.COOLDOWN_REDUCTION), globalCooldownTicks,
+                aura -> aura.bonus().appliesWith(player.getMainHandItem()));
     }
 
     /**
