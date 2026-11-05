@@ -119,6 +119,27 @@ class StacksDef(StrictModel):
         return self
 
 
+class OnBossesDef(StrictModel):
+    """How the effect works on a boss (RLM-615; Matěj, 2026-11-04): shorter, then an immunity, so a boss is never
+    stun-locked or kept frozen but its holder's crowd control still counts. Every boss of ``content/bosses/`` follows
+    it, on top of its own ``immune_to``."""
+
+    duration_percent: Annotated[float, Field(gt=0, le=100, allow_inf_nan=False)] = Field(
+        description="How long it lasts on a boss, in percent of its normal duration (Stunned and Frozen: 50)."
+    )
+    immunity: ResourceId = Field(
+        description="The effect a boss gets when this one ends, one of ours whose immune_to names this effect "
+        "(realmforge:stun_immunity)."
+    )
+    immunity_seconds: Seconds = Field(description="How long that immunity lasts (10 s).")
+
+    @model_validator(mode="after")
+    def _immunity_lasts(self) -> OnBossesDef:
+        if self.immunity_seconds <= 0:
+            raise ValueError("immunity_seconds is above 0")
+        return self
+
+
 class EffectDef(StrictModel):
     """A status effect of ours, ``realmforge:<id>``: harmful, beneficial or neutral, with attribute modifiers, damage
     or healing over time, or both. Its name is the effect's translation, ``effect.realmforge.<id>``, shown in the
@@ -151,6 +172,15 @@ class EffectDef(StrictModel):
         description="The chance that any damage its holder takes ends it, in percent (Frozen: 50, Matěj, 2026-11-01, "
         "RLM-542). The hit that deals the damage still sees it.",
     )
+    immune_to: ResourceId | None = Field(
+        default=None,
+        description="An effect its holder never takes while it lasts (RLM-615: Stun Immunity's realmforge:stunned). "
+        "An immunity needs no modifiers.",
+    )
+    on_bosses: OnBossesDef | None = Field(
+        default=None,
+        description="Shorter on a boss, then an immunity to it there (RLM-615: Stunned and Frozen, 50 % and 10 s).",
+    )
     stun: bool = Field(
         default=False,
         description="A stun (C4): its holder neither attacks nor casts, a mob's AI stands still, and a cast in "
@@ -160,8 +190,10 @@ class EffectDef(StrictModel):
 
     @model_validator(mode="after")
     def _does_something(self) -> EffectDef:
-        if not self.modifiers and self.periodic is None and self.stacks is None:
-            raise ValueError("an effect gives modifiers, periodic damage or healing, stacks, or both")
+        if not self.modifiers and self.periodic is None and self.stacks is None and self.immune_to is None:
+            raise ValueError("an effect gives modifiers, periodic damage or healing, stacks or an immunity")
+        if self.immune_to is not None and self.category == "harmful":
+            raise ValueError("an immunity protects its holder, so it is beneficial or neutral")
         if self.periodic is not None and self.stacks is not None:
             raise ValueError("an effect's ticks come from periodic or from stacks, not both")
         if self.stacks is not None and self.category != "harmful":

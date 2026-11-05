@@ -1891,7 +1891,8 @@ of 2026-11-01, RLM-542): an effect with `breaks_on_damage_percent` (`StatusEffec
 Frost freeze's) ends at that chance whenever its holder takes damage of any kind, rolled for each hit after it lands
 (`effect/DamageBreaks`, `LivingDamageEvent.Post`), so the hit itself still sees it: Ice Lance's bonus and Shatter's crit
 chance count on the hit that may break it, and a spell that damages and then freezes (Frost Nova) freezes after its own
-damage. Bosses are immune boss by boss ([14.3](#143-bosses)). **Its look** (Matěj, 2026-10-30): an effect's `look` (`StatusEffect.Look`, Frozen's `ice`) reaches
+damage. Bosses are immune boss by boss ([14.3](#143-bosses)), and every boss takes it shorter, then an immunity
+(below). **Its look** (Matěj, 2026-10-30): an effect's `look` (`StatusEffect.Look`, Frozen's `ice`) reaches
 clients through the synced `realmforge:effect_looks` attachment (`effect/EffectLooks`), as vanilla tells clients only of
 a player's own effects; `client/render/FrozenLook` makes an iced entity shake as a fully frozen one does in powder snow
 and draws its model again in vanilla's Packed Ice texture (referenced where it lies, never copied), for every vanilla
@@ -1909,6 +1910,16 @@ gone) that carries `SchoolDamageSource.Tick` (the effect, the spell, whether it 
 dodges it, a raised weapon or a shield never blocks it, and armor stops none of a Bleeding tick; it never crits, and it
 carries the stack's proc origin. `FrozenAndBleedingGameTests` covers a Frozen zombie that stays and still hits, an immune
 boss, Will To Survive, Bleeding's 12 ticks through armor, two stacks and a refresh.
+
+**In code (RLM-615): immunities and crowd control on bosses.** An effect with `immune_to` (`StatusEffect#blocks`;
+Stun Immunity's `realmforge:stunned`, Frozen Immunity's `realmforge:frozen`) keeps its holder from taking the effect it
+names while it lasts: `effect/Immunities` refuses it at `MobEffectEvent.Applicable`, so `addEffect` returns false and
+changes nothing. Such an effect needs no modifiers and is never harmful. An effect with `on_bosses`
+(`StatusEffect.OnBosses`: Stunned's and Frozen's, Matěj, 2026-11-04) works differently on a boss: it lasts
+`duration_percent` of its duration (50 %), and when it ends the boss gets its `immunity` for `immunity_seconds` (10 s),
+an effect of ours whose `immune_to` names it (validation checks the pair). The boss framework applies it
+([14.3](#143-bosses)). `ContentEffectGameTests` checks both fields against the content, and `BossControlGameTests` the
+rule on Astone.
 
 ### 11.5 Resources, cooldowns, modifiers
 
@@ -2815,7 +2826,20 @@ phases:
   spell visuals are C6 (RLM-29).
 - **Immunities** (RLM-539): a boss's `immune_to` lists the status effects it never takes (`MobEffectEvent.Applicable`
   refuses them, `boss/BossFeature`), boss by boss, as ordinary mobs have no stun or root immunity (Matěj, 2026-10-24).
-  The test titan is immune to Frozen; Astone to nothing yet.
+  The test titan is immune to Frozen; Astone to nothing.
+- **Crowd control** (RLM-615; Matěj, 2026-11-04: a boss is never stun-locked or kept frozen, but Frost Nova and Ice
+  Lance still count): on every boss, an effect with `on_bosses` ([11.4](#114-status-effects): Stunned and Frozen) lasts
+  half as long, and when it ends, however it ends (it runs out, damage breaks a freeze), the boss gets that effect's
+  immunity for 10 s, Stun Immunity or Frozen Immunity, which refuses a new one; each blocks only its own effect, so a
+  stun never blocks a freeze. `boss/BossControl` does it: `BossMob#addEffect` shortens what lands, and every server tick
+  after its effects ticked the boss compares the effects with `on_bosses` it holds with the last tick's and gives the
+  immunity of each that ended. Its reset clears its effects and forgets them, so a reset leaves no immunity. A per-boss
+  `immune_to` still refuses an effect for good. Players never see a mob's effects, so the **boss bar** shows each
+  immunity after the phase with its time left, as vanilla formats an effect's: "Astone, the Unbroken — The Weighing ·
+  Stun Immunity (00:10)" (`gui.realmforge.boss_bar_immunity`). `BossControlGameTests` cover a 4 s stun and freeze on
+  Astone (2 s, then 10 s of immunity on the bar, a new one refused, the next one landing after it), each immunity
+  blocking only its own effect, a broken freeze's immunity, a reset leaving none, and an ordinary mob keeping the full
+  4 s.
 - **Arena:** its home is where its AI first finds it on the ground (a guard's post, [14.2](#142-custom-mobs)). It
   attacks only what stands within the arena's radius of home (`BossMob#canAttack`, which vanilla's target goals and
   `Mob#getTarget` ask, so a target that leaves the arena is let go and forgotten), and takes no hurt from an attacker
@@ -2885,7 +2909,8 @@ level-18 classes found her far too weak): 1,500 health at level 18 (it was 800),
 (`armor_shred_percent` and `magic_shield_damage_percent` in her mob data), her spells 30 % (15 % of their own on
 hers). Her hits wear armor half as much (`armor_wear_reduction_percent`: 50, the mob-only stat
 `realmforge:armor_wear_reduction`, `combat/ArmorWear` on NeoForge's `ArmorHurtEvent`; his playtest: she should ignore
-armor, not destroy it).
+armor, not destroy it). Magic spells deal her 10 % less (`spell_resistance_percent`: 10, `realmforge:spell_resistance`;
+Matěj, 2026-11-04, RLM-616: a Mage in full netherite needed about 31 Frostbolts of about 48 damage, about 33 with it).
 
 | Phase | Enters | `on_enter` | Abilities |
 | --- | --- | --- | --- |
@@ -2900,7 +2925,8 @@ with their realms. The altar, her summoning item and the arena dungeon are W6 (R
 cracks), each ability cast through the spell engine at a husk (the boulder formed in her hands, Quake only with its
 target inside and hitting slam after slam, Rockfall where its target stood, dodged by a husk that left the ring,
 Cracked Stone again as an ability), her buff's health, damage, armor shred, magic shield drain (a shield loses
-1.15 times her fist's hit and 1.3 times her boulder's) and armor wear, her three drops on three kills, and the playtest's commands
+1.15 times her fist's hit and 1.3 times her boulder's) and armor wear (`BossControlGameTests` her Spell Resistance: a
+Frostbolt deals her 90 % of what it would without it), her three drops on three kills, and the playtest's commands
 (`/summon`, `/qa boss phase`, `/qa boss reset`, `/kill`); `BossPhaseMachineTest` walks her definition through all three
 phases.
 

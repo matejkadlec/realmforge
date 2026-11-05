@@ -51,6 +51,7 @@ public final class QaGameTests {
             AstoneGameTests.class,
             AutoShootGameTests.class,
             BossBarGameTests.class,
+            BossControlGameTests.class,
             BossGameTests.class,
             CastGameTests.class,
             CharacterGameTests.class,

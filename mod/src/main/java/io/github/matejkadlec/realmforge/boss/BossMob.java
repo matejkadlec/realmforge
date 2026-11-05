@@ -39,6 +39,7 @@ import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -74,7 +75,10 @@ import net.minecraft.world.phys.Vec3;
  *   health, in its first phase, its effects, casts and cooldowns gone. It resets the same way once its fight is
  *   over: it had a target and has none now, and it is out of combat (architecture 9.4). Creative flight is off in its
  *   arena while it lives ({@link ArenaFlight}, RLM-559).</li>
- *   <li><b>Boss bar:</b> its {@link BossBar} in the definition's colour, titled with its name and its phase's.</li>
+ *   <li><b>Crowd control</b> (RLM-615): a stun or a freeze lasts half as long on it, and when it ends the boss is
+ *   immune to it for 10 s ({@link BossControl}).</li>
+ *   <li><b>Boss bar:</b> its {@link BossBar} in the definition's colour, titled with its name and its phase's, and each
+ *   immunity it has with its time left.</li>
  *   <li><b>Level:</b> its definition's, unless a dungeon run gives it the run's ({@link MobLevels.FixedLevel}).</li>
  *   <li><b>Persistence:</b> it never despawns, as vanilla's bosses do not, however far the players are, and it never
  *   goes through a portal, as the Wither does not: its arena and home belong to the dimension it stands in.</li>
@@ -99,6 +103,7 @@ public class BossMob extends MeleeMob implements MobLevels.FixedLevel {
     private static final DustParticleOptions LANDING_RING = new DustParticleOptions(0x4A4A4A, 1.5F);
 
     private final BossBar bossBar = new BossBar(this, BossEvent.BossBarColor.RED);
+    private final BossControl control = new BossControl();
     /** When each ability may be cast again, in game time; its own cooldown, beside the spell's. */
     private final Map<ResourceKey<Spell>, Long> abilityReady = new HashMap<>();
     private @Nullable Holder.Reference<Boss> definition;
@@ -218,6 +223,10 @@ public class BossMob extends MeleeMob implements MobLevels.FixedLevel {
         super.tick();
         if (level() instanceof ServerLevel level && !isDeadOrDying()) {
             followFight(level);
+            if (definition().isPresent()) {
+                control.follow(this);
+                updateTitle();
+            }
         }
         bossBar.update();
     }
@@ -337,6 +346,7 @@ public class BossMob extends MeleeMob implements MobLevels.FixedLevel {
         setLastHurtByMob(null);
         getNavigation().stop();
         removeAllEffects();
+        control.forget();
         home().ifPresent(home -> teleportTo(home.getX() + 0.5, home.getY(), home.getZ() + 0.5));
         setDeltaMovement(Vec3.ZERO);
         setHealth(getMaxHealth());
@@ -346,6 +356,15 @@ public class BossMob extends MeleeMob implements MobLevels.FixedLevel {
         phaseChangeLeft = 0;
         updateTitle();
         ArenaFlight.releaseAll(this);
+    }
+
+    /**
+     * A stun or a freeze lands shorter on a boss (RLM-615, {@link BossControl}); an immunity it has, or its own
+     * {@code immune_to}, refuses it ({@code MobEffectEvent.Applicable}).
+     */
+    @Override
+    public boolean addEffect(MobEffectInstance effect, @Nullable Entity source) {
+        return super.addEffect(definition().isPresent() ? BossControl.shortened(effect) : effect, source);
     }
 
     /** Its death gives back the flight its arena took (RLM-559). */
@@ -438,8 +457,8 @@ public class BossMob extends MeleeMob implements MobLevels.FixedLevel {
 
     private void updateTitle() {
         Optional<BossPhase> current = Optional.ofNullable(definition).map(boss -> boss.value().phases().get(phase));
-        bossBar.setTitle(current.<Component>map(entered -> Component.translatable(GeneratedTexts.GUI_BOSS_BAR_TITLE,
-                getDisplayName(), entered.displayName())).orElse(null));
+        bossBar.setTitle(current.<Component>map(entered -> BossControl.withImmunities(this, Component.translatable(
+                GeneratedTexts.GUI_BOSS_BAR_TITLE, getDisplayName(), entered.displayName()))).orElse(null));
     }
 
     /** It never goes through a portal, as the Wither does not: its arena and home stay in its own dimension. */

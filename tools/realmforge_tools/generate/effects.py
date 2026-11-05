@@ -96,6 +96,14 @@ def _registration(effect: EffectDef) -> str:
         stun += f"\n                    .looks(StatusEffect.Look.{effect.look.upper()})"
     if effect.breaks_on_damage_percent is not None:
         stun += f"\n                    .breaksOnDamage({_double(effect.breaks_on_damage_percent / 100)})"
+    if effect.immune_to is not None:
+        stun += f"\n                    .immuneTo({string_literal(effect.immune_to)})"
+    on_bosses = effect.on_bosses
+    if on_bosses is not None:
+        stun += (
+            f"\n                    .onBosses({_double(on_bosses.duration_percent / 100)}, "
+            f"{string_literal(on_bosses.immunity)}, {seconds_to_ticks(on_bosses.immunity_seconds)})"
+        )
     stacks = effect.stacks
     if stacks is not None:
         stun += (
@@ -135,7 +143,8 @@ def _registrations(content: Content) -> bytes:
         "\n"
         "/**\n"
         " * Status effects generated from {@code content/effects/} (architecture 11.4): attribute modifiers, damage or\n"
-        " * healing over time ({@link Periodic}), damage over time kept per caster's spell (stacks) and stuns. NeoForge registers attributes before status effects, so a\n"
+        " * healing over time ({@link Periodic}), damage over time kept per caster's spell (stacks), stuns,\n"
+        " * immunities and their rules on bosses. NeoForge registers attributes before status effects, so a\n"
         " * modifier finds its attribute, ours included, when its effect is built.\n"
         " */\n"
         "public final class GeneratedEffects {\n"
@@ -178,6 +187,14 @@ def _expectation(effect: EffectDef) -> str:
         if periodic is not None
         else "Optional.empty()"
     )
+    on_bosses = effect.on_bosses
+    on_bosses_expectation = (
+        f"Optional.of(new OnBossesExpectation({_double(on_bosses.duration_percent / 100)}, "
+        f"{string_literal(on_bosses.immunity)}, {seconds_to_ticks(on_bosses.immunity_seconds)}))"
+        if on_bosses is not None
+        else "Optional.empty()"
+    )
+    immune_to = f"Optional.of({string_literal(effect.immune_to)})" if effect.immune_to else "Optional.empty()"
     return (
         "            new EffectExpectation(\n"
         f"                    {string_literal(f'{MOD_ID}:{effect.id}')},\n"
@@ -188,7 +205,9 @@ def _expectation(effect: EffectDef) -> str:
         f"                    {periodic_expectation},\n"
         f"                    {stacks_expectation},\n"
         f"                    {'true' if effect.stun else 'false'},\n"
-        f"                    {_double((effect.breaks_on_damage_percent or 0) / 100)})"
+        f"                    {_double((effect.breaks_on_damage_percent or 0) / 100)},\n"
+        f"                    {immune_to},\n"
+        f"                    {on_bosses_expectation})"
     )
 
 
@@ -228,12 +247,21 @@ def _expectations(content: Content) -> bytes:
         "    }\n"
         "\n"
         "    /**\n"
+        "     * How it works on a boss (RLM-615): the share of its duration it lasts there, and the immunity a boss gets for\n"
+        "     * {@code immunityTicks} when it ends.\n"
+        "     */\n"
+        "    public record OnBossesExpectation(double durationFraction, String immunity, int immunityTicks) {\n"
+        "    }\n"
+        "\n"
+        "    /**\n"
         "     * Expected state of one effect: its category, particle colour (RGB), modifiers, periodic ticks, stacks,\n"
-        "     * whether it stuns and the chance that damage ends it (a fraction, 0 for none).\n"
+        "     * whether it stuns, the chance that damage ends it (a fraction, 0 for none), the effect its holder is immune\n"
+        "     * to and how it works on a boss.\n"
         "     */\n"
         "    public record EffectExpectation(String id, String descriptionId, String category, int color,\n"
         "            List<ModifierExpectation> modifiers, Optional<PeriodicExpectation> periodic,\n"
-        "            Optional<StacksExpectation> stacks, boolean stun, double breaksOnDamage) {\n"
+        "            Optional<StacksExpectation> stacks, boolean stun, double breaksOnDamage, Optional<String> immuneTo,\n"
+        "            Optional<OnBossesExpectation> onBosses) {\n"
         "    }\n"
         "\n"
         f"    public static final List<EffectExpectation> EFFECTS = {effects};\n"

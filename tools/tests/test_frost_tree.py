@@ -318,7 +318,7 @@ def test_a_break_chance_is_generated(repo: RepoPaths) -> None:
         in files[REGISTRATIONS].decode()
     )
     expectation = files[EFFECT_EXPECTATIONS].decode()
-    assert "Optional.empty(),\n                    false,\n                    0.5)" in expectation
+    assert "Optional.empty(),\n                    false,\n                    0.5,\n" in expectation
 
 
 @pytest.mark.parametrize("chance", ["0", "120"])

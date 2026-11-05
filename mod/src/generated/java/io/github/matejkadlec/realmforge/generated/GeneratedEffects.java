@@ -18,7 +18,8 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
  * Status effects generated from {@code content/effects/} (architecture 11.4): attribute modifiers, damage or
- * healing over time ({@link Periodic}), damage over time kept per caster's spell (stacks) and stuns. NeoForge registers attributes before status effects, so a
+ * healing over time ({@link Periodic}), damage over time kept per caster's spell (stacks), stuns,
+ * immunities and their rules on bosses. NeoForge registers attributes before status effects, so a
  * modifier finds its attribute, ours included, when its effect is built.
  */
 public final class GeneratedEffects {
@@ -57,8 +58,15 @@ public final class GeneratedEffects {
                     Optional.empty())
                     .looks(StatusEffect.Look.ICE)
                     .breaksOnDamage(0.5)
+                    .onBosses(0.5, "realmforge:frozen_immunity", 200)
                     .modifier("minecraft:movement_speed", "realmforge:effect.frozen.minecraft.movement_speed", -1.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)
                     .modifier("minecraft:jump_strength", "realmforge:effect.frozen.minecraft.jump_strength", -1.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+
+    /** {@code realmforge:frozen_immunity} from {@code content/effects/frozen_immunity.yaml}: beneficial, "Frozen Immunity". */
+    public static final DeferredHolder<MobEffect, MobEffect> FROZEN_IMMUNITY =
+            EFFECTS.register("frozen_immunity", () -> new StatusEffect(MobEffectCategory.BENEFICIAL, 0xDDF4FF,
+                    Optional.empty())
+                    .immuneTo("realmforge:frozen"));
 
     /** {@code realmforge:ice_barrier} from {@code content/effects/ice_barrier.yaml}: beneficial, "Ice Barrier". */
     public static final DeferredHolder<MobEffect, MobEffect> ICE_BARRIER =
@@ -66,11 +74,18 @@ public final class GeneratedEffects {
                     Optional.empty())
                     .modifier("realmforge:magic_shield", "realmforge:effect.ice_barrier.realmforge.magic_shield", 10.0, AttributeModifier.Operation.ADD_VALUE));
 
+    /** {@code realmforge:stun_immunity} from {@code content/effects/stun_immunity.yaml}: beneficial, "Stun Immunity". */
+    public static final DeferredHolder<MobEffect, MobEffect> STUN_IMMUNITY =
+            EFFECTS.register("stun_immunity", () -> new StatusEffect(MobEffectCategory.BENEFICIAL, 0xFFF1A8,
+                    Optional.empty())
+                    .immuneTo("realmforge:stunned"));
+
     /** {@code realmforge:stunned} from {@code content/effects/stunned.yaml}: harmful, "Stunned". */
     public static final DeferredHolder<MobEffect, MobEffect> STUNNED =
             EFFECTS.register("stunned", () -> new StatusEffect(MobEffectCategory.HARMFUL, 0xF4D35E,
                     Optional.empty())
                     .stuns()
+                    .onBosses(0.5, "realmforge:stun_immunity", 200)
                     .modifier("minecraft:movement_speed", "realmforge:effect.stunned.minecraft.movement_speed", -1.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)
                     .modifier("minecraft:jump_strength", "realmforge:effect.stunned.minecraft.jump_strength", -1.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
 
@@ -92,7 +107,7 @@ public final class GeneratedEffects {
                     .modifier("realmforge:spell_power", "realmforge:effect.test_sapped.realmforge.spell_power", -1.0, AttributeModifier.Operation.ADD_VALUE));
 
     /** Every effect above, in id order. */
-    public static final List<DeferredHolder<MobEffect, MobEffect>> ALL = List.of(BATTLE_SHOUT, BLEEDING, BURNING, CRACKED_STONE, FROZEN, ICE_BARRIER, STUNNED, TEST_BURNING, TEST_REGROWTH, TEST_SAPPED);
+    public static final List<DeferredHolder<MobEffect, MobEffect>> ALL = List.of(BATTLE_SHOUT, BLEEDING, BURNING, CRACKED_STONE, FROZEN, FROZEN_IMMUNITY, ICE_BARRIER, STUN_IMMUNITY, STUNNED, TEST_BURNING, TEST_REGROWTH, TEST_SAPPED);
 
     private GeneratedEffects() {
     }

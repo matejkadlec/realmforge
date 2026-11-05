@@ -7,6 +7,11 @@ texts:
   # boss's name, %2$s its phase's name).
   boss_bar_title:
     en_us: "%1$s — %2$s"
+  # An immunity a boss has after a stun or a freeze (RLM-615), added to its bar's title with its time left, so players
+  # know when it works again: "Astone, the Unbroken — The Weighing · Stun Immunity (00:10)" (%1$s the title so far,
+  # %2$s the immunity's name, %3$s its time left).
+  boss_bar_immunity:
+    en_us: "%1$s · %2$s (%3$s)"
   # The screen's title, for the narrator; the sheet itself shows character_title.
   character_sheet:
     en_us: Character Sheet

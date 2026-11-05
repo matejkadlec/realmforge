@@ -211,6 +211,28 @@ def test_a_mob_may_ignore_armor_and_drain_magic_shields(repo: RepoPaths) -> None
     assert_problem(repo, "armor_shred_percent")
 
 
+def test_a_mob_may_resist_spells(repo: RepoPaths) -> None:
+    # RLM-616: Astone takes 10 % less from magic spells; the stat stops at 75 %.
+    mob(
+        repo,
+        "hewn_brute",
+        MELEE.replace("movement_speed: 0.2}", "movement_speed: 0.2, spell_resistance_percent: 10}"),
+    )
+    assert ".add(GeneratedStats.SPELL_RESISTANCE, 0.1)" in generate(repo)[REGISTRATIONS].decode()
+    mob(
+        repo,
+        "hewn_brute",
+        MELEE.replace("movement_speed: 0.2}", "movement_speed: 0.2, spell_resistance_percent: 80}"),
+    )
+    assert_problem(repo, "spell_resistance_percent")
+
+
+def test_astone_resists_spells_by_ten_percent() -> None:
+    content, _ = load_and_validate(RepoPaths())
+    astone = next(entry.model for entry in content.mobs if entry.model.id == "astone")
+    assert astone.attributes.spell_resistance_percent == 10
+
+
 def test_death_particles_name_a_block(repo: RepoPaths) -> None:
     mob(repo, "hewn_brute", MELEE + "death_particles: realmforge:vaultstones\n")
     assert_problem(repo, "death_particles: unknown id 'realmforge:vaultstones'")

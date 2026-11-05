@@ -126,6 +126,7 @@ public final class GeneratedMobs {
                 .add(GeneratedStats.ARMOR_SHRED, 0.15)
                 .add(GeneratedStats.MAGIC_SHIELD_DAMAGE, 0.15)
                 .add(GeneratedStats.ARMOR_WEAR_REDUCTION, 0.5)
+                .add(GeneratedStats.SPELL_RESISTANCE, 0.1)
                 .build());
         event.put(HEWN_CHANTER.get(), Monster.createMonsterAttributes()
                 .add(Attributes.MAX_HEALTH, 18.0)
