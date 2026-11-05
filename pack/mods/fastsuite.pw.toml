@@ -1,0 +1,13 @@
+name = "FastSuite"
+filename = "FastSuite-26.1.2-7.0.0.jar"
+side = "both"
+
+[download]
+url = "https://cdn.modrinth.com/data/roccmqou/versions/EpILnClf/FastSuite-26.1.2-7.0.0.jar"
+hash-format = "sha512"
+hash = "231a0ea6c58b82d1ec84d877e2fcbc71cfdfab2115fb43c749afd9eb7d0ec565340fa33080253de2e63267667b3190685f2d36726e4e8db84deefd4d5f54b194"
+
+[update]
+[update.modrinth]
+mod-id = "roccmqou"
+version = "EpILnClf"

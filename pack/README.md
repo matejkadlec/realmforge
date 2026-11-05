@@ -41,6 +41,9 @@ These are pinned (`pin = true`), so `packwiz update --all` skips them:
 To move the render stack, update all three (`packwiz unpin`, `packwiz update`,
 `packwiz pin`) and run that shaderpack test.
 
+**Sodium Extra 0.9.5** is pinned with them (RLM-613): its jar accepts exactly Sodium
+0.9.2, so it moves when Sodium does.
+
 ### Release builds
 
 packwiz picks a project's newest file whatever its release channel, and some
@@ -287,6 +290,38 @@ players craft are unchanged. NeoForge reads a server config from `config/`; a wo
     unreachable without strongholds ([ADR 0044](../docs/decisions/0044-third-party-mods-by-milestone.md)), until
     [ADR 0034](../docs/decisions/0034-ancient-merchants-and-the-wither-amend-the-nether-and-end-removal.md)'s
     merchants sell them.
+
+## Performance mods
+
+Measured with spark on Matěj's PC before and after (RLM-613). A mod that shows no gain or breaks something leaves
+again. A performance mod must not change gameplay.
+
+- **Client:** More Culling (over Cull Leaves), Sodium Extra (over Chloride), BadOptimizations, Dynamic FPS (over FPS
+  Reducer), Optimized Block Entities (OBE, over Better Block Entities), Smart Particles (over Particle Core, which
+  brings Fzzy Config and Kotlin for Forge, and AsyncParticles, a beta), Gnetum, AsyncLogger.
+- **Both sides:** Quick Pack, Packet Fixer, FastSuite, FastWorkbench, FastFurnace, Structure Layout Optimizer (needs
+  Resourceful Config). FastSuite indexes recipes, FastWorkbench caches a menu's last recipe, so they do not overlap.
+  Structure Layout Optimizer only runs on the server, but is on both sides because singleplayer runs an integrated
+  server.
+- **What a player notices:** Dynamic FPS's defaults drop the game to 1 FPS and 25 % volume while the window is
+  unfocused, and to 10 FPS after 5 minutes without input. Gnetum redraws the HUD at its own rate, not every frame.
+  Smart Particles keeps at most 5,000 particles, the nearest first, and removes those far outside the camera's view;
+  our area rings spawn anew every client tick, so looking back shows them again.
+
+**Tried and left out:**
+
+- **Fast Item Frames and Fast Paintings** turn those entities into blocks as they load or tick. The rooms of our
+  instances keep them as entities that hits and explosions cannot break, and an item lock reads the framed items
+  (`AttachedEntityProcessor`, `InstanceRules`), so `dungeon_room/a_rooms_item_frames_come_with_it` fails with them.
+- **Moonrise 1.0.3** replaces the chunk system, entity tracking and light engine, and it failed the GameTests: entities
+  arrive two blocks and more from a realm portal, a boss bar still lists a player just moved out of its range, and
+  `ThreadedLevelLightEngine#waitForPendingTasks`, which our light test waits on, throws. It mainly helps a server's
+  ticks, not a client's frames. C2ME and ScalableLux, the alternatives, have no release build.
+- **Ksyxis 1.4.6:** its own table rates the effect on 1.21.9 and later "insignificant" (a 7x7 chunk area on join), and
+  it changes how a player's spawn is prepared.
+- **Efficient Hashing and RSLS** join only if a profile shows block position hashing or the sound engine as a cost.
+  Efficient Hashing's own benchmark has its hash slower, and it changes the iteration order of every `BlockPos` hash
+  set.
 
 ## Our mods
 

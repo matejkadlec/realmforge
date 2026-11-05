@@ -11,7 +11,7 @@ by [0038](0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md) (A
 Binds, our own client mod, ships next to the core mod), 2026-10-22; composition updated 2026-10-23 for the M1 pack
 tasks PK1 to PK3 and two-handed blocking (RLM-308, RLM-309, RLM-310, RLM-297); amended by
 [0053](0053-target-dummies-in-the-pack-worldedit-for-building-and-no-ftb-teams-parties.md) (MmmMmmMmmMmm with
-Moonlight Lib, a beta exception; FTB Teams parties off), 2026-10-25
+Moonlight Lib, a beta exception; FTB Teams parties off), 2026-10-25; performance mods added 2026-11-05 (RLM-613)
 
 ## Context
 
@@ -28,7 +28,11 @@ The modpack wraps our core mod with third-party QoL, UI, performance and library
   - Storage: Sophisticated Storage, Sophisticated Backpacks, Tom's Simple Storage.
   - World: Regions Unexplored, Tree Harvester.
   - As-is: Better Combat, Distant Horizons, Iris.
-  - Performance: Sodium, Lithium, FerriteCore, ModernFix, ImmediatelyFast, EntityCulling, spark.
+  - Performance: Sodium, Lithium, FerriteCore, ModernFix, ImmediatelyFast, EntityCulling, spark. Added 2026-11-05 by
+    RLM-613: More Culling, Sodium Extra (pinned with the render stack), BadOptimizations, Dynamic FPS, OBE, Smart
+    Particles, Gnetum, AsyncLogger, Quick Pack, Packet Fixer, FastSuite, FastWorkbench, FastFurnace, Structure Layout
+    Optimizer (needs Resourceful Config). What was tried and left out, and why, is in the
+    [pack README](../../pack/README.md#performance-mods).
   - Quests: FTB Quests, FTB Library, FTB Teams (CurseForge).
   - QoL and UI for M1 (RLM-308, [0044](0044-third-party-mods-by-milestone.md)): Inventory Sorting, Advanced Loot Info
     with Advanced Core Info (betas, pinned), Just Enough Professions, Clumps, Crafting Tweaks, Item Highlighter (needs
@@ -51,7 +55,7 @@ The modpack wraps our core mod with third-party QoL, UI, performance and library
 - **Missing on NeoForge 26.1.2, to be built by us later:** EMI Trades, Damage Numbers, Lightweight Inventory Sorting.
 - **Pinned render stack:** Sodium 0.9.2 + Iris 1.11.4 + Distant Horizons 3.3.3, all releases on 26.1.2 (1.21.1 had Sodium 0.6.13 + Iris 1.8.12, the stable pair of that version). These three change only together and only after a test with a DH-capable shaderpack.
 - **Release channels:** releases only, except Regions Unexplored 0.7.0-beta2 and FTB Teams 26.1.2.4, which have no 26.1.2 release (pack README). Later exceptions, each pinned for the same reason: Advanced Loot Info 26.1.2-2.5.0 and Advanced Core Info 26.1.2-1.5.0 (every 26.1.2 build is a beta; Matěj's pick, RLM-308, [0044](0044-third-party-mods-by-milestone.md)) and Moonlight Lib 26.1.2-4.1.1 (MmmMmmMmmMmm's library, [0053](0053-target-dummies-in-the-pack-worldedit-for-building-and-no-ftb-teams-parties.md)).
-- **Sides are set per mod** in each `.pw.toml`: client for rendering and UI-only mods (Sodium, Iris, Distant Horizons, ImmediatelyFast, EntityCulling, Xaero's maps, Neat, Toast Control, No Recipe Book, Just Zoom, Mouse Tweaks, Overflowing Bars, JEED, Enchantment Descriptions, Yeetus Experimentus, Item Highlighter, Traveler's Titles, Better ModList, BetterF3, Better Key Binds); both for everything that adds content, syncs data or is a library. Tree Harvester and RightClickHarvest only run on the server but are installed on both sides, because singleplayer runs an integrated server.
+- **Sides are set per mod** in each `.pw.toml`: client for rendering and UI-only mods (Sodium, Iris, Distant Horizons, ImmediatelyFast, EntityCulling, Xaero's maps, Neat, Toast Control, No Recipe Book, Just Zoom, Mouse Tweaks, Overflowing Bars, JEED, Enchantment Descriptions, Yeetus Experimentus, Item Highlighter, Traveler's Titles, Better ModList, BetterF3, Better Key Binds, and RLM-613's More Culling, Sodium Extra, BadOptimizations, Dynamic FPS, OBE, Smart Particles, Gnetum and AsyncLogger); both for everything that adds content, syncs data or is a library. Tree Harvester and RightClickHarvest only run on the server but are installed on both sides, because singleplayer runs an integrated server.
 - **Config overrides** go into `pack/config/`, each the mod's own file as the game writes it with only the pack's values changed, listed with their reasons in the [pack README](../../pack/README.md#configuration). The first one (2026-10-13, RLM-132) keeps waystone warps cheap: no warp costs XP (Waystones 26.1.2.16 charges up to 27 XP points by distance, and a flat 27 for a warp to another dimension), and every player may make their own waystone global.
 - `packwiz refresh` must leave the committed index unchanged (CI check).
 

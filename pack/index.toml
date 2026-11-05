@@ -75,6 +75,16 @@ hash = "465c5bb547d0b9f87b7573a64f09571d64d3ff43acf2e632f04bd0a6631faf77"
 metafile = true
 
 [[files]]
+file = "mods/asynclogger.pw.toml"
+hash = "b2913162b16f964f8f2caad5b351149ea612ba72d3bd3d61087aa768daffc10b"
+metafile = true
+
+[[files]]
+file = "mods/badoptimizations.pw.toml"
+hash = "23ae742803c31b4c03add35d3481eead4e01db57df5f25356214d0c0cf57888d"
+metafile = true
+
+[[files]]
 file = "mods/balm.pw.toml"
 hash = "2797e01389385c0ea863f7eec99f89d117c8d2c7a9cf1d1e099a3c65481331cf"
 metafile = true
@@ -135,6 +145,11 @@ hash = "f905f732e894bb3fb798c44002e0ca3a352a9aed6f23e5cabdf1133814c4e73e"
 metafile = true
 
 [[files]]
+file = "mods/dynamic-fps.pw.toml"
+hash = "8fc9632e9c5dfa183fe0327b441c8b4ad52f3f553921553b231fed7de34b4ef5"
+metafile = true
+
+[[files]]
 file = "mods/enchantment-descriptions.pw.toml"
 hash = "659e7d0d3f7c5c3ba1555b344196f8ce5b2d5e87d1319474535abfa6c0f7a4c3"
 metafile = true
@@ -142,6 +157,21 @@ metafile = true
 [[files]]
 file = "mods/entityculling.pw.toml"
 hash = "9c6f1d5dfbf481632b67ec2ecaaf6e935172d46d5dbbf2861ffb274410365536"
+metafile = true
+
+[[files]]
+file = "mods/fastfurnace.pw.toml"
+hash = "46318025627dada911fc9f181ec18e7c88ad95e3796d23a450dbff15ec295c76"
+metafile = true
+
+[[files]]
+file = "mods/fastsuite.pw.toml"
+hash = "6d863a6f26a0377bd860cc0fdd9e0ab68022a9eccdf805b0eda2ba3cdfe22b65"
+metafile = true
+
+[[files]]
+file = "mods/fastworkbench.pw.toml"
+hash = "43d36b6c5560e5582bf7479864ecd5929eaa186fad00af2198f9d98cbe89f0d8"
 metafile = true
 
 [[files]]
@@ -167,6 +197,11 @@ metafile = true
 [[files]]
 file = "mods/geckolib.pw.toml"
 hash = "df8c8eb2779cc3d279a8099eb06549b74bf1341783da3e6bb0ab1341147c6154"
+metafile = true
+
+[[files]]
+file = "mods/gnetum.pw.toml"
+hash = "84b86f4fd3d458a75fc33507b2392c172b6f006dc8eedbd5f7d31fec7e377e72"
 metafile = true
 
 [[files]]
@@ -310,6 +345,11 @@ hash = "51695ccd91e321564a154a7abdc91382f7c1dd9955efc1f463329ada1772760d"
 metafile = true
 
 [[files]]
+file = "mods/moreculling.pw.toml"
+hash = "59e63b9307816b4738f6f807b696984fd9652148e3cf3b20160ac4522dd2d7ce"
+metafile = true
+
+[[files]]
 file = "mods/mouse-tweaks.pw.toml"
 hash = "e4050c6052ef4c4f50f7b49faee15fcbbd13ebe28fdc61e1a4056d69ac4a16d5"
 metafile = true
@@ -325,8 +365,18 @@ hash = "20db2c775b85909b6e0a5fec1c815c9cce0a438f090e3e71dc5997f3aec735b5"
 metafile = true
 
 [[files]]
+file = "mods/obe.pw.toml"
+hash = "8ef2aaf9090d2be95262210b4ee60fa127b24e7fdfad74867a576dbe1afa7fdb"
+metafile = true
+
+[[files]]
 file = "mods/overflowing-bars.pw.toml"
 hash = "d469c3ae1716d172ca22c514ff29e66614ae8850968c5712a0467702d0c1a397"
+metafile = true
+
+[[files]]
+file = "mods/packet-fixer.pw.toml"
+hash = "04df57cb059462cf79bb592f5f96a7e3ed5995ffd189265549aaf7afba40e982"
 metafile = true
 
 [[files]]
@@ -355,8 +405,18 @@ hash = "02d58286bb812b6db5d1954c4734b7d39816d05fe266d98e790f7173a590b73f"
 metafile = true
 
 [[files]]
+file = "mods/quick-pack.pw.toml"
+hash = "10a607baae56a0848c136946b53391056f43fb08b0ded1314c0ba50dd080b06d"
+metafile = true
+
+[[files]]
 file = "mods/regions-unexplored.pw.toml"
 hash = "5588a74d9e970686e0d614b7df750e79c7c13bbc0b2282061535a993dfd12b60"
+metafile = true
+
+[[files]]
+file = "mods/resourceful-config.pw.toml"
+hash = "dd2bac170a3a403930c93f886fd3c172f22fc1b01dc5c39622969603b93eb7cf"
 metafile = true
 
 [[files]]
@@ -372,6 +432,16 @@ metafile = true
 [[files]]
 file = "mods/shogi.pw.toml"
 hash = "2959f9140c59305fc6d394c10afcdc1fb38f08cd8bd500900ca40eb4100b06d2"
+metafile = true
+
+[[files]]
+file = "mods/smart-particles.pw.toml"
+hash = "9ca9a94489a7c1750078952d8f68a68b49c727c04f740dd67562bd733d7e5593"
+metafile = true
+
+[[files]]
+file = "mods/sodium-extra.pw.toml"
+hash = "dd668654b3d14b322317a12d54452160daa309605bdd44486d2cb89d468dbaf1"
 metafile = true
 
 [[files]]
@@ -397,6 +467,11 @@ metafile = true
 [[files]]
 file = "mods/spark.pw.toml"
 hash = "4f849e035ef73fca068136a355b0594250ecaad7a23e36c807046b47e36858d9"
+metafile = true
+
+[[files]]
+file = "mods/structure-layout-optimizer.pw.toml"
+hash = "4de8c31fbdc7293fe328935f8511fc86eb247558d590ea2d5634a07a634f7a0c"
 metafile = true
 
 [[files]]
