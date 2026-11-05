@@ -1026,9 +1026,7 @@ def _check_spells(content: Content, universe: IdUniverse) -> list[Problem]:
             problems.append(
                 Problem(entry.source, "school", _unknown(spell.school, SPELL_SCHOOL_REGISTRY, universe))
             )
-        elif (
-            school is not None and spell.is_cast and SCALING_OF_KIND[school.kind] != spell.scales_with
-        ):
+        elif school is not None and spell.is_cast and SCALING_OF_KIND[school.kind] != spell.scales_with:
             problems.append(
                 Problem(
                     entry.source,
