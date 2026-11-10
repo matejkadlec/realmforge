@@ -84,8 +84,9 @@ public final class SpellVisualsGameTests {
                     expected.colors(), id + " colours");
             helper.assertValueEqual(look.trail().map(trail -> trail.particle().toString()),
                     expected.trailParticle(), id + " trail particle");
-            helper.assertValueEqual(look.trail().map(trail -> (double) trail.perBlock()).orElse(0.0),
-                    expected.trailPerBlock(), id + " trail per block");
+            // Floats against the expectations' doubles: compared as floats, so 1.2 equals 1.2.
+            helper.assertValueEqual(look.trail().map(SpellLook.Trail::perBlock).orElse(0.0F),
+                    (float) expected.trailPerBlock(), id + " trail per block");
             helper.assertValueEqual(look.burst().map(burst -> burst.particle().toString()),
                     expected.burstParticle(), id + " burst particle");
             helper.assertValueEqual(look.burst().map(SpellLook.Burst::count).orElse(0), expected.burstCount(),
@@ -108,10 +109,10 @@ public final class SpellVisualsGameTests {
             SpellModel model = models.getValue(Identifier.parse(expected.id()));
             String id = expected.id();
             helper.assertValueEqual(model.shape().getSerializedName(), expected.shape(), id + " shape");
-            helper.assertValueEqual((double) model.scale(), expected.scale(), id + " scale");
+            helper.assertValueEqual(model.scale(), (float) expected.scale(), id + " scale");
             helper.assertValueEqual(model.orientation().getSerializedName(), expected.orientation(),
                     id + " orientation");
-            helper.assertValueEqual((double) model.spinDegreesPerSecond(), expected.spinDegreesPerSecond(),
+            helper.assertValueEqual(model.spinDegreesPerSecond(), (float) expected.spinDegreesPerSecond(),
                     id + " spin");
         }
 
