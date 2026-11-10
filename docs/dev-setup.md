@@ -220,6 +220,13 @@ there while the game runs. The handoff gives the commands
   use it to check the framing of cast animations (RLM-89, RLM-108). Agents add `-PofflineClient` (3.1), usually
   with `-PleanClient`: `REALMFORGE_QA_CAST_SHOTS=<label> ./gradlew runClient -PofflineClient -PleanClient`.
   Without `-PofflineClient` DevLogin runs first, and without a cached login it waits for the console prompt.
+- **Spell screenshots without input.** `REALMFORGE_QA_SPELL_SHOTS=<label> ./gradlew runClient -PofflineClient
+  -PleanClient` makes the QA mod create a superflat world from the title screen, build a wall 8 blocks ahead and cast
+  a few spells along the player's look: the twin test spells at a villager and at the wall, Arcane Missiles at the
+  wall, one bolt in first person, and a Hewn Chanter's Stoneform at a villager. It saves a frame every tick of each
+  flight, without the HUD, most from a still camera beside the flight, to
+  `run/client/screenshots/<label>-<scene>-t<tick>.png`, and quits, in about three minutes. Agents use it to look at a
+  projectile's model and material, its trail, the burst of its impact and a mob's forming projectile (RLM-639).
 - **Key Binds screenshots without input.** `REALMFORGE_QA_KEY_BINDS_SHOTS=<label> ./gradlew runClient -PofflineClient`
   makes the QA mod open Key Binds from the title screen (Controlling's screen, as a player sees it), save it page by
   page from the top of its list to the bottom, each page sharing a row with the one before, to
