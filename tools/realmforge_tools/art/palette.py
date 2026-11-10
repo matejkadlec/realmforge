@@ -88,6 +88,20 @@ def load_gpl(path: Path) -> Palette:
     return Palette(name, tuple(colors))
 
 
+def ramps(palette: Palette) -> dict[str, tuple[PaletteColor, ...]]:
+    """The palette's ramps: its colours named ``<ramp> <n>``, by ramp, in the order of their numbers (dark to
+    light). A colour with another name (``black``, ``white``) is in no ramp."""
+    members: dict[str, list[tuple[int, PaletteColor]]] = {}
+    for color in palette.colors:
+        name, _, number = color.name.rpartition(" ")
+        if name and number.isdigit():
+            members.setdefault(name, []).append((int(number), color))
+    return {
+        name: tuple(color for _, color in sorted(colors, key=lambda member: member[0]))
+        for name, colors in members.items()
+    }
+
+
 def oklab(rgb: Rgb) -> tuple[float, float, float]:
     """sRGB (0-255) to OKLab (Björn Ottosson, 2020)."""
     r, g, b = (_linear(channel / 255) for channel in rgb)
