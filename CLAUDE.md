@@ -172,9 +172,12 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   icon in the spell bar, the spellbook, its tooltip and the cast bar, a passive's in a medallion with cut corners, the
   four school icons are drawn, and the spellbook's window is a book with one page open (RLM-609); the other item and
   gear icons are A1's second part (RLM-643).
-  The quest pipeline (Q1) writes FTB Quests' quest book from `content/quests/` (no quests yet), with
-  stable ids, tasks of our own (a level, a dungeon, a spell) through our criteria triggers, and every quest's where and
-  with what from data. The pack has M1's QoL, UI and building mods, and vanilla strongholds are off (PK1 to PK3). Next to
+  The quest pipeline (Q1, RLM-37) writes FTB Quests' quest book from `content/quests/` (no quests yet), with
+  stable ids, tasks of our own (a level, a dungeon, a spell) through our criteria triggers, every quest's where and
+  with what from data, a quest's character XP computed from its level and type and paid through
+  `/realmforge xp quest`, which gives less to a player 5 or more levels above the quest (RLM-189), and buy quests for
+  the quest shop: coins for an item, up to a limit, as one quest per purchase (RLM-424). The pack has M1's QoL, UI
+  and building mods, and vanilla strongholds are off (PK1 to PK3). Next to
   the core mod, the pack ships Better Key Binds (RLM-372), our own client mod that gives every key bind a secondary
   key.
 

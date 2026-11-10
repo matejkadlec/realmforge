@@ -406,11 +406,12 @@ Rules:
   (Overworld) 10 → 18, `chapter_2` (Undervault) 18 → 30; the later chapters' caps are in
   [architecture 10.2](../docs/architecture.md#102-leveling). XP stops at the cap: a player holds at most the XP
   of the cap's level, so completing a chapter raises the cap but brings no level by itself. Leveling also reads
-  five curves, which validation requires: `xp_to_next_level` (the XP from a level to the next, at least 1; one
+  six curves, which validation requires: `xp_to_next_level` (the XP from a level to the next, at least 1; one
   point per level from the XP model, 1,500 at level 1 and 98,650 at 59), `kill_xp` (a kill's XP by the victim's
   level, `45 + 5 × level`), `kill_xp_below_player` and `kill_xp_above_player` (the share of it a kill gives, by how
   many levels the victim is below or above the player; the curve's `level` is that difference, and neither curve
-  goes below 0), and `stat_points_per_level` (the primary stat points reaching a level gives, rounded half up, never
+  goes below 0), `quest_xp_below_player` (the share of a quest's XP a player gets, by how many levels the quest is
+  below them: all of it up to 4, then 75, 50 and 25 %, and 10 % from 8; RLM-189), and `stat_points_per_level` (the primary stat points reaching a level gives, rounded half up, never
   below 0; level 1 gives none: 1 a level, Matěj, 2026-10-15, RLM-196).
 - `quests/` holds the quest book ([architecture 16](../docs/architecture.md#16-progression-and-quests), ADR 0006),
   which `rf gen` writes as FTB Quests' JSON5 files into `pack/config/ftbquests/quests/` and then runs
@@ -430,16 +431,29 @@ Rules:
   (Q1-3): its `realm` (of `realms/`, `overworld` for the Overworld) and, optionally, its `place` (a `structure` of
   `minecraft:worldgen/structure` with the `name` the text calls it, as a structure has no name in the game, a `biome`,
   or both); its tasks; and its recommended `level`, the items to `bring` and the items to `craft` (each with a recipe:
-  our item's or block's, a `recipes/` override's, or vanilla's). An errand (any task but a checkmark, a level or a
+  our item's or block's, a `recipes/` override's, or vanilla's, a smithing upgrade included). A biome of ours as the
+  place needs a name: a text `<path>` in `texts/biome.yaml` (`biome.realmforge.<path>`), unless it is a dungeon
+  type's instance biome. An errand (any task but a checkmark, a level or a
   spell) needs the `level`, which lies in the realm's `levels` band and at most at the cap its chapter leaves once
   completed. The generator ends the description with "Where: Undervault, the Trial Chambers in Dripstone Caves",
   "Recommended level: 9", "Bring: ..." and "Craft: ..." lines from these fields, in our `texts/quest.yaml`, so no text
   types a level by hand: validation refuses "level 12", "Lv. 12" or "lvl 12" in a title, subtitle, description, place
   name or task title. A realm's final boss quest says `requires_mandatory: true` (RLM-367): it also waits for every
   mandatory (non-optional) quest of its realm in its chapter, except the quests after it and other such quests, so
-  killing the boss alone opens nothing (it cannot be optional). Rewards: `item` (`item`, `count` up to 8192), `xp` (character XP: `/realmforge xp add`, with the
-  player's XP multiplier) and `advancement` (our own, such as a realm's unlock `realmforge:realm/<id>`; per player
-  and claimed by itself). A chapter's last quest says `completes_chapter: true`, which grants the chapter's
+  killing the boss alone opens nothing (it cannot be optional). Rewards: `item` (`item`, `count` up to 8192) and `advancement` (our own, such as a realm's unlock
+  `realmforge:realm/<id>`; per player and claimed by itself). Character XP is never written as a reward (RLM-189):
+  the pipeline computes it from the quest's `level` and `type` (`small` × 0.5, `standard` × 1, the default, `main`
+  × 1.5, `dungeon` × 2, `finale` × 4; `(10 + 0.25 × level)` kills of a normal mob of that level, to the nearest 10:
+  510 at level 1, 8,630 at 60) and pays it through `/realmforge xp quest`, with the player's XP multiplier and less
+  for a player 5 or more levels above the quest (the curve `quest_xp_below_player`). A quest's `xp` replaces the
+  computed amount (0: none), and a quest without a `level` gives XP only through it. A quest with `buy` is a
+  purchase in the quest shop (Q1-4, RLM-424): `item`, `count`, a `price` in the smallest coin, which the quest takes
+  in the largest coins, and a `limit` of 1 to 9 purchases, then never again. It is `optional: true` and has no tasks,
+  rewards or `xp`; its `dependencies` lock the shop on another quest. The book holds one quest per purchase (`<id>`,
+  `<id>_2`, ...), each a place further right and hidden until the one before it is bought, so keep those places and
+  ids free. `hide_until_dependencies_complete: true` hides any quest until the quests it waits for are done. A
+  realm's signet that a quest gives as a reward also needs a renewable source: its recipe, a `buy` quest, or a boss's
+  drop at 100 % (the signet source check). A chapter's last quest says `completes_chapter: true`, which grants the chapter's
   advancement `realmforge:chapter/<id>`, so each chapter with quests has exactly one (never optional). Every
   chapter, quest, task and reward keeps its FTB Quests id across regenerations, because the id comes from a key:
   the content id, or for a task or reward its `key`, which defaults to its type and target

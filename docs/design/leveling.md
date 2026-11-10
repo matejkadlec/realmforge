@@ -116,15 +116,18 @@ RLM-23 set in `content/kill_xp_multipliers/`:
 
 ## Quests
 
-RLM-189 implements quest XP.
+Quest XP is built (RLM-189): the pipeline computes it and the game pays it.
 
 - **A standard quest** gives `(10 + 0.25 × level) × (45 + 5 × level)` XP at the quest's level: 510 at level 1 (10.25
   KE) and 8,630 at 60 (25 KE).
 - **By type:** small 0.5, standard 1, a main questline step 1.5, a dungeon quest 2, a chapter finale 4.
 - **Done above its level:** full XP up to 4 levels above the quest's level, then 75, 50 and 25 % for 5, 6 and 7
   above, and 10 % from 8 above.
-- Quest XP goes through `/realmforge xp add`, so it is multiplied by the XP Multiplier and stops at the cap like any
-  other gain.
+- Quest XP goes through `/realmforge xp quest` with the quest's level (RLM-189), so the reduction above is applied
+  when the reward is paid, by the player's level then; it is multiplied by the XP Multiplier and stops at the cap
+  like any other gain. The shares are the curve `quest_xp_below_player`.
+- The pipeline computes a quest's XP from its `level` and `type`, to the nearest 10; a quest's `xp` replaces it for
+  a special quest ([architecture 16](../architecture.md#16-progression-and-quests)).
 
 ## Dungeons
 
