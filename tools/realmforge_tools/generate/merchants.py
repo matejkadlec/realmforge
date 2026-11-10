@@ -11,7 +11,9 @@ expectations, from ``content/merchants/`` (the profession names' lang entries: l
   fixed_price.json``: the professions the game trades at fixed prices.
 - ``GeneratedMerchants``: every merchant with its workstation block, work sound and trades in order, from which
   ``mob/merchant/Merchants`` registers the point of interest and the profession (built-in registries, so Java).
-- ``assets/realmforge/textures/entity/villager/profession/<merchant>.png``: a placeholder robe until A1's art.
+- ``assets/realmforge/textures/entity/villager/profession/<merchant>.png`` and the same under ``zombie_villager/``: a
+  placeholder robe until A1's art. A zombie villager wears a profession too: a zombified merchant keeps its own, and
+  a spawned one takes a random profession of the registry, ours included.
 - ``GeneratedMerchantExpectations``: every merchant's trades with their costs, so GameTests can check the game's offers.
 """
 
@@ -39,6 +41,10 @@ from realmforge_tools.schema.merchant import (
 
 GENERATED_PACKAGE = f"{JAVA_PACKAGE}.generated"
 QA_GENERATED_PACKAGE = f"{QA_JAVA_PACKAGE}.generated"
+# The models that wear a profession's layer, each from its own texture folder: a villager, and a zombie villager,
+# which keeps a zombified merchant's profession and takes a random one, ours included, when it spawns. Both read the
+# robe from the same place of the texture (texOffs(0, 38)), so one placeholder fits both.
+PROFESSION_TEXTURE_MODELS = ("villager", "zombie_villager")
 
 
 def costs(trade: MerchantTradeDef, coins: list[ItemDef]) -> list[tuple[str, int]]:
@@ -79,10 +85,10 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
                 "trades": f"#{MOD_ID}:{set_path}",
             }
         )
-        texture = paths.mod_generated / "resources" / "assets" / MOD_ID / "textures" / "entity" / "villager"
-        files[texture / "profession" / f"{merchant.id}.png"] = placeholder_profession_texture(
-            f"{MOD_ID}:{merchant.id}"
-        )
+        textures = paths.mod_generated / "resources" / "assets" / MOD_ID / "textures" / "entity"
+        robe = placeholder_profession_texture(f"{MOD_ID}:{merchant.id}")
+        for model in PROFESSION_TEXTURE_MODELS:
+            files[textures / model / "profession" / f"{merchant.id}.png"] = robe
     if merchants:
         ids = sorted(f"{MOD_ID}:{merchant.id}" for merchant in merchants)
         files[_tag_file(paths, ACQUIRABLE_JOB_SITE_TAG, "point_of_interest_type")] = dump_json(

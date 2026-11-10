@@ -164,6 +164,11 @@ def test_a_profession_gets_a_placeholder_robe(repo: RepoPaths) -> None:
     other = files[f"{ASSETS}/textures/entity/villager/profession/ancient_builder.png"]
     assert texture != other, "coloured by a hash of the profession's id"
     assert generate(repo)[f"{ASSETS}/textures/entity/villager/profession/test_merchant.png"] == texture
+    zombie = files[f"{ASSETS}/textures/entity/zombie_villager/profession/test_merchant.png"]
+    assert zombie == texture, (
+        "a zombie villager wears a profession too: a zombified merchant, or one spawned with it"
+    )
+    assert f"{ASSETS}/textures/entity/zombie_villager/profession/ancient_specialist.png" in files
 
 
 def test_the_shipped_merchants_sell_matejs_lists(repo: RepoPaths) -> None:

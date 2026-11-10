@@ -44,7 +44,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
  * in the one a restock sends while it is open. Vanilla lets a level 1 villager without XP lose its profession with
  * its workstation ({@code ResetProfession}), so the first trade locks it by one point of XP ({@link #onTrade};
  * Matěj, 2026-10-19), as a vanilla villager's first trade does. Everything else about a merchant is vanilla's: how it
- * is clicked, named, leashed, restocked and zombified.
+ * is clicked, named, restocked and zombified.
  */
 public final class Merchants {
     /** {@code #realmforge:fixed_price}: the professions traded with at fixed prices, every merchant of ours. */

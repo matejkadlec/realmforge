@@ -3051,7 +3051,7 @@ Specialist (Ancient Workbench), which sell the Nether's and the End's materials.
   private `updateSpecialPrices`, which takes 30 % and more off every first cost. For a profession in
   `#realmforge:fixed_price` (every merchant, written by the pipeline) `VillagerSpecialPricesMixin` makes that method
   do nothing ([19.3](#193-mixins-and-access-transformers)). Everything else about clicking a merchant stays
-  vanilla's: a name tag names it, a lead ties it, a sleeping or baby one does not trade.
+  vanilla's: a name tag names it, and a sleeping or baby one does not trade.
 - **The trade screen shows no level:** `MerchantScreen` draws the level name and the XP bar only while the offers
   packet says so, and the server takes that flag from `AbstractVillager#showProgressBar`, for the packet that opens
   the screen and for the one a restock sends while it is open. `MerchantProgressBarMixin` makes it false for a
@@ -3059,9 +3059,10 @@ Specialist (Ancient Workbench), which sell the Nether's and the End's materials.
 - **The offers are listed in the written order:** vanilla draws a trade set's offers in a random order, so
   `Merchants#beforeTrading`, which the first mixin calls right before the screen opens, sorts them by the generated
   list (validation allows one trade per stack a merchant gives, which makes the order unambiguous).
-- **Placeholder look:** a profession's layer is `assets/realmforge/textures/entity/villager/profession/<id>.png`; the
-  pipeline writes a checkered robe on the villager model's jacket until A1's art (RLM-645), and the workstations
-  use the blocks' placeholder textures.
+- **Placeholder look:** a profession's layer is `assets/realmforge/textures/entity/villager/profession/<id>.png`, and
+  `zombie_villager/profession/<id>.png` for a zombie villager, which keeps a zombified merchant's profession and
+  takes a random one of the registry, ours included, when it spawns. The pipeline writes one checkered robe on the
+  model's jacket to both until A1's art (RLM-645), and the workstations use the blocks' placeholder textures.
 - `MerchantGameTests` cover the registration, the offers against the content, fixed prices with the best reputation
   and Hero of the Village V next to a vanilla armorer whose prices fall, the flag the screen is told when it opens
   and after a restock, a name tag on a merchant, a purchase of every trade through the trade screen's slots, the

@@ -8,8 +8,9 @@ the profession and its point of interest are registered in Java from the generat
 
 A merchant never levels (ADR 0040, decision 4; ADR 0034): all its trades sit in its level 1 trade set, every trade
 gives the villager no XP (``xp: 0``), and the game locks the profession at the first trade instead (Matěj's correction
-on RLM-285, 2026-10-19). Prices are fixed: ``reputation_discount: 0`` switches demand and reputation off, and the game
-opens our merchants' trading itself, without vanilla's special prices (Hero of the Village).
+on RLM-285, 2026-10-19). Prices are fixed: ``reputation_discount: 0`` switches demand and reputation off, and for a
+profession in ``#realmforge:fixed_price`` two mixins skip vanilla's special prices (Hero of the Village) and turn off
+the trade screen's level name and XP bar (``VillagerSpecialPricesMixin``, ``MerchantProgressBarMixin``).
 
 A trade's cost is a ``price`` in the smallest coin, which the pipeline pays in the largest coins (``schema/coin.py``),
 or explicit ``wants`` for a trade that takes other items (a merchant that buys). A vanilla trade has two cost slots,
