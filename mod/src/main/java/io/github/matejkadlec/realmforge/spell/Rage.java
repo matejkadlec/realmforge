@@ -5,7 +5,6 @@ import io.github.matejkadlec.realmforge.combat.InCombat;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalLong;
 import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import net.minecraft.server.level.ServerLevel;
@@ -21,9 +20,10 @@ import net.minecraft.world.entity.player.Player;
  * {@link Source}s that higher features add: {@code character} gives a rage class's from its data. A swing gives its
  * rage once, however many mobs it hits: only the holder's first melee hit in a game tick counts, so a sword's sweep or
  * Better Combat's swing through several targets (one full-strength {@code Player#attack} each) gives no more. Rage
- * holds while the last hit dealt or taken is within the rules' {@code decayAfterTicks}, measured from the same last hit
- * as the shared in-combat state ({@link InCombat}, RLM-348), so the two never disagree about the fight: a dodged hit
- * and one blocked in full count, a new player entity starts with no hit. Logical server only.
+ * holds while the holder is in combat, the shared in-combat state ({@link InCombat}, RLM-348: 10 s after the last hit
+ * dealt or taken, a dodged hit and one blocked in full included), and decays once it is out of combat (RLM-594;
+ * Matěj, 2026-11-03), so rage and the fight never disagree: a new player entity starts out of combat. Logical server
+ * only.
  */
 public final class Rage {
     /** Gives a holder its rage rules, or nothing when it has none (a mana class, a mob). */
@@ -55,15 +55,9 @@ public final class Rage {
         return Optional.empty();
     }
 
-    /** Whether the holder dealt or took a hit within the last {@code ticks} game ticks ({@link InCombat}). */
-    public static boolean inCombat(LivingEntity holder, int ticks) {
-        OptionalLong since = InCombat.ticksSinceLastHit(holder);
-        return since.isPresent() && since.getAsLong() < ticks;
-    }
-
     /** What the holder's rage pool regains every second ({@link ResourceTypes#RAGE}): minus its decay out of combat. */
     static double regeneration(LivingEntity holder) {
-        return rules(holder).map(rules -> rules.regeneration(inCombat(holder, rules.decayAfterTicks()))).orElse(0.0);
+        return rules(holder).map(rules -> rules.regeneration(InCombat.isInCombat(holder))).orElse(0.0);
     }
 
     static void onHit(CombatEvent.Hit event) {

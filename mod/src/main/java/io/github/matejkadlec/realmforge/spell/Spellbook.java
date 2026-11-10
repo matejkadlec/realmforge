@@ -5,8 +5,12 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.matejkadlec.realmforge.core.Codecs;
 import io.netty.buffer.ByteBuf;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceKey;
@@ -14,15 +18,18 @@ import net.minecraft.util.ExtraCodecs;
 
 /**
  * The value of a player's {@code realmforge:spellbook} attachment (architecture 7 and 11): the spells they know
- * with their levels, and the spell bar layout. Spells are named by their keys in {@code realmforge:spell}, saved as
+ * with their levels, the spell bar layout, and the aura spells that are on (RLM-595). Spells are named by their keys in {@code realmforge:spell}, saved as
  * their ids; a known spell whose entry is gone (content removed) simply cannot be cast.
  *
  * @param spells known spell to its level (1 or more)
  * @param bar    spell bar slot to the spell in it; empty slots are absent. Slots 0 to 7 are the bar's (C3b, RLM-25:
  *               R, T, F, G, C, Y, Ů and § by default; Matěj, 2026-10-15 to 2026-11-01, RLM-573), slot
  *               {@value #RACIAL_SLOT} the racial ability's beside it (X), which the race fills, not the player
+ * @param auras  the aura spells that are on (RLM-595), saved with the player and copied on death, so an aura stays on
+ *               through death and relog; only known spells (any other is dropped)
  */
-public record Spellbook(Map<ResourceKey<Spell>, Integer> spells, Map<Integer, ResourceKey<Spell>> bar) {
+public record Spellbook(Map<ResourceKey<Spell>, Integer> spells, Map<Integer, ResourceKey<Spell>> bar,
+        Set<ResourceKey<Spell>> auras) {
     public static final Spellbook EMPTY = new Spellbook(Map.of(), Map.of());
     /** The spell bar's slots for class spells: 0 to 7. */
     public static final int BAR_SLOTS = 8;
@@ -35,7 +42,9 @@ public record Spellbook(Map<ResourceKey<Spell>, Integer> spells, Map<Integer, Re
             Codec.unboundedMap(ResourceKey.codec(SpellRegistries.SPELL), ExtraCodecs.POSITIVE_INT)
                     .optionalFieldOf("spells", Map.of()).forGetter(Spellbook::spells),
             Codec.unboundedMap(Codecs.INDEX_KEY, ResourceKey.codec(SpellRegistries.SPELL))
-                    .optionalFieldOf("bar", Map.of()).forGetter(Spellbook::bar)
+                    .optionalFieldOf("bar", Map.of()).forGetter(Spellbook::bar),
+            ResourceKey.codec(SpellRegistries.SPELL).listOf().<Set<ResourceKey<Spell>>>xmap(Set::copyOf, List::copyOf)
+                    .optionalFieldOf("auras", Set.of()).forGetter(Spellbook::auras)
     ).apply(instance, Spellbook::new));
 
     public static final StreamCodec<ByteBuf, Spellbook> STREAM_CODEC = StreamCodec.composite(
@@ -43,11 +52,15 @@ public record Spellbook(Map<ResourceKey<Spell>, Integer> spells, Map<Integer, Re
                     ResourceKey.streamCodec(SpellRegistries.SPELL), ByteBufCodecs.VAR_INT), Spellbook::spells,
             ByteBufCodecs.<ByteBuf, Integer, ResourceKey<Spell>, Map<Integer, ResourceKey<Spell>>>map(HashMap::new,
                     ByteBufCodecs.VAR_INT, ResourceKey.streamCodec(SpellRegistries.SPELL)), Spellbook::bar,
+            ByteBufCodecs.<ByteBuf, ResourceKey<Spell>, Set<ResourceKey<Spell>>>collection(HashSet::new,
+                    ResourceKey.streamCodec(SpellRegistries.SPELL)), Spellbook::auras,
             Spellbook::new);
 
     public Spellbook {
         spells = Map.copyOf(spells);
         bar = Map.copyOf(bar);
+        // An aura that is on is known; one that is not, from older data, is simply off.
+        auras = auras.stream().filter(spells::containsKey).collect(Collectors.toUnmodifiableSet());
         spells.forEach((spell, level) -> {
             if (level < 1) {
                 throw new IllegalArgumentException("A known spell has level 1 or more: " + spell + " = " + level);
@@ -58,6 +71,27 @@ public record Spellbook(Map<ResourceKey<Spell>, Integer> spells, Map<Integer, Re
                 throw new IllegalArgumentException("Spell bar slots are 0 to " + (SLOT_COUNT - 1) + ": " + slot);
             }
         });
+    }
+
+    /** A book with no aura on. */
+    public Spellbook(Map<ResourceKey<Spell>, Integer> spells, Map<Integer, ResourceKey<Spell>> bar) {
+        this(spells, bar, Set.of());
+    }
+
+    /** Whether the aura spell {@code spell} is on (RLM-595). */
+    public boolean isOn(ResourceKey<Spell> spell) {
+        return auras.contains(spell);
+    }
+
+    /** This book with the aura spell {@code spell} on or off; it must be known to be on. */
+    public Spellbook withAura(ResourceKey<Spell> spell, boolean on) {
+        Set<ResourceKey<Spell>> changed = new HashSet<>(auras);
+        if (on) {
+            changed.add(spell);
+        } else {
+            changed.remove(spell);
+        }
+        return new Spellbook(spells, bar, changed);
     }
 
     /** The level of a known spell, empty when the player does not know it. */
@@ -84,7 +118,7 @@ public record Spellbook(Map<ResourceKey<Spell>, Integer> spells, Map<Integer, Re
     public Spellbook withSlot(int slot, Optional<ResourceKey<Spell>> spell) {
         Map<Integer, ResourceKey<Spell>> changed = new HashMap<>(bar);
         spell.ifPresentOrElse(value -> changed.put(slot, value), () -> changed.remove(slot));
-        return new Spellbook(spells, changed);
+        return new Spellbook(spells, changed, auras);
     }
 
     /**
@@ -114,19 +148,21 @@ public record Spellbook(Map<ResourceKey<Spell>, Integer> spells, Map<Integer, Re
         return this;
     }
 
-    /** This book without {@code spell}: not known, and in no slot. */
+    /** This book without {@code spell}: not known, in no slot, and not on as an aura. */
     public Spellbook withoutSpell(ResourceKey<Spell> spell) {
         Map<ResourceKey<Spell>, Integer> known = new HashMap<>(spells);
         known.remove(spell);
         Map<Integer, ResourceKey<Spell>> slots = new HashMap<>(bar);
         slots.values().removeIf(spell::equals);
-        return new Spellbook(known, slots);
+        Set<ResourceKey<Spell>> on = new HashSet<>(auras);
+        on.remove(spell);
+        return new Spellbook(known, slots, on);
     }
 
     /** This book with {@code spell} known at {@code level} (1 or more), replacing the level it had. */
     public Spellbook withSpell(ResourceKey<Spell> spell, int level) {
         Map<ResourceKey<Spell>, Integer> known = new HashMap<>(spells);
         known.put(spell, level);
-        return new Spellbook(known, bar);
+        return new Spellbook(known, bar, auras);
     }
 }

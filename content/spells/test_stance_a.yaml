@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# Engine test (RLM-595): an aura spell with ranks, of the group test_stance, whose bonus (+1/2/3 Armor Pierce) applies
+# while it is on and a melee weapon is in the main hand, and pauses without one. Not gameplay content; the GameTests
+# toggle it.
+id: test_stance_a
+name: {en_us: Test Stance A}
+description: {en_us: "+{bonus_armor_pierce} Armor Pierce while you wield a melee weapon."}
+school: realmforge:physical
+max_level: 3
+aura:
+  group: test_stance
+  while_wielding: realmforge:melee_weapons
+  modifiers:
+    - {attribute: realmforge:armor_pierce, operation: add_value, amount: 1, per_level: 1}

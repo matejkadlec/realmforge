@@ -28,7 +28,8 @@ public final class Spells {
      * bar as the player arranged it (RLM-374), so a rank-up never brings back a spell they took off. The level must lie
      * between 1 and the spell's {@code max_level}. Character's specialization spell trees (C5) call this. A passive
      * spell (RLM-541) never goes onto the bar; its modifiers apply at the end of the player's tick
-     * ({@link Passives#SOURCE}).
+     * ({@link Passives#SOURCE}). An aura spell (RLM-595) goes onto the bar like an active one, off until the player
+     * turns it on; a new rank of one that is on changes its bonus at the end of the tick.
      */
     public static void learn(Player player, Holder.Reference<Spell> spell, int level) {
         if (level < 1 || level > spell.value().maxLevel()) {
@@ -39,14 +40,14 @@ public final class Spells {
         Spellbook book = old.withSpell(spell.key(), level);
         boolean placed = old.level(spell.key()).isEmpty() && !spell.value().npcOnly() && !spell.value().isPassive();
         player.setData(SpellAttachments.SPELLBOOK, placed ? book.withSpellOnBar(spell.key()) : book);
-        if (spell.value().isPassive()) {
+        if (spell.value().isPassive() || spell.value().isAura()) {
             CharacterStats.markDirty(player);
         }
     }
 
     /**
-     * Makes {@code player} forget {@code spell}: it leaves the spellbook and the bar (a spell tree's points came
-     * back, C5). Nothing for a spell they do not know.
+     * Makes {@code player} forget {@code spell}: it leaves the spellbook and the bar, and an aura that was on is off
+     * (a spell tree's points came back, C5). Nothing for a spell they do not know.
      */
     public static void forget(Player player, ResourceKey<Spell> spell) {
         Spellbook book = player.getData(SpellAttachments.SPELLBOOK);
@@ -54,7 +55,8 @@ public final class Spells {
             return;
         }
         player.setData(SpellAttachments.SPELLBOOK, book.withoutSpell(spell));
-        if (get(player.registryAccess(), spell).map(holder -> holder.value().isPassive()).orElse(false)) {
+        if (get(player.registryAccess(), spell).map(holder -> holder.value().isPassive() || holder.value().isAura())
+                .orElse(false)) {
             CharacterStats.markDirty(player);
         }
     }

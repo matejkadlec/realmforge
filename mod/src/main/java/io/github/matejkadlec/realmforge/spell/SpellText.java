@@ -31,6 +31,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.neoforged.neoforge.common.PercentageAttribute;
 
 /**
  * Fills the placeholders of a spell's description with live numbers (architecture 6.3, 11.6; C3b, RLM-25): numbers
@@ -180,6 +181,9 @@ public final class SpellText {
         if (spell.passive().isPresent()) {
             return passiveValues(spell.passive().get(), level);
         }
+        if (spell.aura().isPresent()) {
+            return passiveValues(spell.aura().get().bonus(), level);
+        }
         Map<String, String> values = new LinkedHashMap<>();
         List<SpellEffect> effects = allEffects(spell.effects());
         Optional<SpellSchool> school = spell.school().map(Holder::value);
@@ -284,8 +288,9 @@ public final class SpellText {
     }
 
     /**
-     * A passive spell's placeholders at rank {@code level} (RLM-541): {@code bonus}, its first modifier (in percent for
-     * a multiplied operation, in the attribute's unit otherwise); {@code spell_damage}, its first spell damage bonus in
+     * A passive spell's placeholders at rank {@code level} (RLM-541), an aura spell's too (RLM-595): {@code bonus}, its
+     * first modifier (in percent for a multiplied operation or a percentage stat, in the attribute's unit otherwise),
+     * and {@code bonus_<attribute>} its modifier on each attribute, by the id's path; {@code spell_damage}, its first spell damage bonus in
      * percent; {@code crit_chance}, its crit chance against its condition in percent; {@code block_cooldown} and
      * {@code block_cooldown_rank}, a two-handed block's shorter cooldown in seconds and the rank it starts at;
      * {@code splash_radius} and {@code splash_radius_rank}, its first splash bonus in blocks and the rank it starts at;
@@ -295,9 +300,11 @@ public final class SpellText {
      */
     public static Map<String, String> passiveValues(Passive passive, int level) {
         Map<String, String> values = new LinkedHashMap<>();
-        passive.modifiers().stream().findFirst().ifPresent(modifier -> values.put("bonus", decimal(
-                modifier.operation() == AttributeModifier.Operation.ADD_VALUE ? modifier.amountAt(level)
-                        : modifier.amountAt(level) * PERCENT)));
+        passive.modifiers().stream().findFirst().ifPresent(modifier -> values.put("bonus",
+                decimal(shown(modifier, level))));
+        // {bonus_<attribute>} (RLM-596): the modifier on each attribute, by the id's path (Battle Stance's two).
+        passive.modifiers().forEach(modifier -> modifier.attribute().unwrapKey().ifPresent(key -> values.putIfAbsent(
+                "bonus_" + key.identifier().getPath(), decimal(shown(modifier, level)))));
         passive.spellDamage().stream().findFirst().ifPresent(bonus -> values.put("spell_damage",
                 decimal(bonus.damageAt(level) * PERCENT)));
         passive.critChance().ifPresent(bonus -> values.put("crit_chance", decimal(bonus.chanceAt(level) * PERCENT)));
@@ -320,6 +327,16 @@ public final class SpellText {
             values.put("proc_cooldown", decimal(proc.cooldownTicks() / TICKS_PER_SECOND));
         });
         return values;
+    }
+
+    /**
+     * A passive's modifier at rank {@code level} as a description shows it: in percent for a multiplied operation or a
+     * percentage stat (Armor Shred's 0.1 reads 10), in the attribute's unit otherwise (Armor Pierce's 5).
+     */
+    private static double shown(Passive.Modifier modifier, int level) {
+        double amount = modifier.amountAt(level);
+        return modifier.operation() != AttributeModifier.Operation.ADD_VALUE
+                || modifier.attribute().value() instanceof PercentageAttribute ? amount * PERCENT : amount;
     }
 
     /** An attribute modifier {@code effect} gives at {@code amplifier}, if any: its only one for {@code bonus}. */

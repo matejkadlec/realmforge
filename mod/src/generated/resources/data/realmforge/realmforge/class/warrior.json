@@ -23,8 +23,7 @@
   "rage": {
     "per_hit_dealt": 10.0,
     "per_max_health_taken": 50.0,
-    "decay_per_second": 2.0,
-    "decay_after_ticks": 100
+    "decay_per_second": 5.0
   },
   "starting_kit": [
     {
@@ -113,6 +112,11 @@
           "spell": "realmforge:execute",
           "level": 18,
           "column": 1
+        },
+        {
+          "spell": "realmforge:battle_stance",
+          "level": 18,
+          "column": 2
         }
       ]
     },

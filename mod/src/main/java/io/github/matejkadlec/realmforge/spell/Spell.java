@@ -42,12 +42,15 @@ import net.minecraft.util.ExtraCodecs;
  * @param conditions when it may be cast beyond its cooldowns and cost (RLM-540): its window, a target health share
  * @param cooldownPerLevelTicks added to its own cooldown for every rank above 1, usually less than 0 (RLM-572: Frost
  *     Nova's 20/15/10 s); its cooldown never goes below 0
+ * @param aura what it does while it is on, for an aura spell (RLM-595): turned on and off from the spell bar, free and
+ *     off the global cooldown, on the cooldown every aura shares ({@link Aura}). Like a passive spell's, its data names
+ *     no targeting, cast or effects
  */
 public record Spell(String name, String description, Optional<Holder<SpellSchool>> school, Scaling scalesWith,
         SpellTargeting targeting, SpellCast cast,
         Optional<SpellCost> cost, int cooldownTicks, int globalCooldownTicks, int maxLevel, CritRule crit,
         boolean npcOnly, List<SpellRequirement> requires, boolean castableWhileStunned, List<SpellEffect> effects,
-        Optional<Passive> passive, SpellConditions conditions, int cooldownPerLevelTicks) {
+        Optional<Passive> passive, SpellConditions conditions, int cooldownPerLevelTicks, Optional<Aura> aura) {
     /** The global cooldown of a spell that names none: half a second, as in WoW (Matěj, 2026-10-19, RLM-25). */
     public static final int DEFAULT_GLOBAL_COOLDOWN_TICKS = 10;
 
@@ -58,11 +61,12 @@ public record Spell(String name, String description, Optional<Holder<SpellSchool
     public static final int NO_SCHOOL_COLOR = 0x555555;
 
     /**
-     * What it does: its effects, or its passive (RLM-541). One field of the codec for both, since a record codec takes
-     * at most 15.
+     * What it does: its effects, its passive (RLM-541) or its aura (RLM-595). One field of the codec for all three,
+     * since a record codec takes at most 15.
      */
-    private static final MapCodec<Pair<List<SpellEffect>, Optional<Passive>>> BEHAVIOUR = Codec.mapPair(
-            SpellEffect.CODEC.listOf().optionalFieldOf("effects", List.of()), Passive.CODEC.optionalFieldOf("passive"));
+    private static final MapCodec<Pair<List<SpellEffect>, Pair<Optional<Passive>, Optional<Aura>>>> BEHAVIOUR =
+            Codec.mapPair(SpellEffect.CODEC.listOf().optionalFieldOf("effects", List.of()),
+                    Codec.mapPair(Passive.CODEC.optionalFieldOf("passive"), Aura.CODEC.optionalFieldOf("aura")));
 
     /** Its own cooldown at rank 1 and its change per rank (RLM-572), one field of the codec for the same reason. */
     private static final MapCodec<Pair<Integer, Integer>> COOLDOWN = Codec.mapPair(
@@ -97,6 +101,17 @@ public record Spell(String name, String description, Optional<Holder<SpellSchool
         effects = List.copyOf(effects);
     }
 
+    /** A spell that is no aura (RLM-595). */
+    public Spell(String name, String description, Optional<Holder<SpellSchool>> school, Scaling scalesWith,
+            SpellTargeting targeting, SpellCast cast, Optional<SpellCost> cost, int cooldownTicks,
+            int globalCooldownTicks, int maxLevel, CritRule crit, boolean npcOnly, List<SpellRequirement> requires,
+            boolean castableWhileStunned, List<SpellEffect> effects, Optional<Passive> passive,
+            SpellConditions conditions, int cooldownPerLevelTicks) {
+        this(name, description, school, scalesWith, targeting, cast, cost, cooldownTicks, globalCooldownTicks,
+                maxLevel, crit, npcOnly, requires, castableWhileStunned, effects, passive, conditions,
+                cooldownPerLevelTicks, Optional.empty());
+    }
+
     /** A spell whose cooldown is the same at every rank. */
     public Spell(String name, String description, Optional<Holder<SpellSchool>> school, Scaling scalesWith,
             SpellTargeting targeting, SpellCast cast, Optional<SpellCost> cost, int cooldownTicks,
@@ -108,9 +123,13 @@ public record Spell(String name, String description, Optional<Holder<SpellSchool
     }
 
     private static DataResult<Spell> validate(Spell spell) {
-        if (spell.isPassive() != spell.effects().isEmpty()) {
-            return DataResult.error(() -> spell.isPassive() ? "A passive spell has no effects: " + spell.name()
-                    : "An active spell has at least one effect: " + spell.name());
+        if (spell.isPassive() && spell.isAura()) {
+            return DataResult.error(() -> "A spell is passive or an aura, not both: " + spell.name());
+        }
+        boolean active = !spell.isPassive() && !spell.isAura();
+        if (active == spell.effects().isEmpty()) {
+            return DataResult.error(() -> active ? "An active spell has at least one effect: " + spell.name()
+                    : "A passive or aura spell has no effects: " + spell.name());
         }
         return DataResult.success(spell);
     }
@@ -119,14 +138,14 @@ public record Spell(String name, String description, Optional<Holder<SpellSchool
             Scaling scalesWith, SpellTargeting targeting, SpellCast cast, Optional<SpellCost> cost,
             Pair<Integer, Integer> cooldown, int globalCooldownTicks, int maxLevel, CritRule crit, boolean npcOnly,
             List<SpellRequirement> requires, boolean castableWhileStunned,
-            Pair<List<SpellEffect>, Optional<Passive>> behaviour, SpellConditions conditions) {
+            Pair<List<SpellEffect>, Pair<Optional<Passive>, Optional<Aura>>> behaviour, SpellConditions conditions) {
         return new Spell(name, description, school, scalesWith, targeting, cast, cost, cooldown.getFirst(),
                 globalCooldownTicks, maxLevel, crit, npcOnly, requires, castableWhileStunned, behaviour.getFirst(),
-                behaviour.getSecond(), conditions, cooldown.getSecond());
+                behaviour.getSecond().getFirst(), conditions, cooldown.getSecond(), behaviour.getSecond().getSecond());
     }
 
-    private Pair<List<SpellEffect>, Optional<Passive>> behaviour() {
-        return Pair.of(effects, passive);
+    private Pair<List<SpellEffect>, Pair<Optional<Passive>, Optional<Aura>>> behaviour() {
+        return Pair.of(effects, Pair.of(passive, aura));
     }
 
     private Pair<Integer, Integer> cooldown() {
@@ -144,6 +163,11 @@ public record Spell(String name, String description, Optional<Holder<SpellSchool
     /** Whether it is a passive spell (RLM-541): never cast, never on the spell bar. */
     public boolean isPassive() {
         return passive.isPresent();
+    }
+
+    /** Whether it is an aura spell (RLM-595): turned on and off from the spell bar instead of cast. */
+    public boolean isAura() {
+        return aura.isPresent();
     }
 
     /** Its colour as RGB: its school's, or {@link #NO_SCHOOL_COLOR} for a spell of no school. */

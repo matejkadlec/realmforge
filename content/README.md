@@ -329,8 +329,8 @@ Rules:
   stat rule bonuses its players get) and its `resource` (`realmforge:mana` or `realmforge:rage`), and a rage class, and only a
   rage class, sets its `rage` numbers: `per_hit_dealt` (rage for a full-strength melee hit dealt, a weaker swing
   giving its share, and a swing giving it once however many mobs it hits), `per_max_health_taken` (rage for losing
-  the whole max health to attackers, a hit for a tenth of it giving a tenth), `decay_per_second` and
-  `decay_after_seconds` (how long after the last hit dealt or taken the pool starts to decay;
+  the whole max health to attackers, a hit for a tenth of it giving a tenth) and `decay_per_second` (what the pool loses
+  every second once its holder is out of combat, 10 s after the last hit dealt or taken, RLM-594;
   [architecture 11.5](../docs/architecture.md#115-resources-cooldowns-modifiers)). A class
   gives `modifiers` and a `starting_kit` (items with a `count` of 1 to 64, given once, when the player's first character is created; every class's kit
   holds Bread ×32, Matěj, 2026-10-14, which validation checks), and its `specializations` (C5, RLM-333), each with an
@@ -595,11 +595,20 @@ Rules:
   `damage_over_time` (RLM-543: `effect`, one of ours with `stacks`, `damage_percent` of the hit's damage with
   `damage_per_level_percent`, over `duration_seconds`; a new one refreshes the stack and adds what it had left: Deep
   Wounds)). Its description's placeholders are its own, at the player's rank and, in the
-  tooltip, at the next: `{bonus}` (the first modifier), `{spell_damage}`, `{crit_chance}`, `{block_cooldown}` and
-  `{block_cooldown_rank}`, `{splash_radius}` and `{splash_radius_rank}`, and the first proc's `{proc_chance}`,
-  `{proc_duration}`, `{proc_cooldown}` and `{proc_damage}`. It never goes onto the spell bar and is never cast. Improved Frostbolt,
-  Frostbite, Shatter and Two-Handed Specialization are the first, of the M1 trees: the Frost Mage's "Shatter"
-  (RLM-542) and the Arms Warrior's "Bloodletter" (RLM-543, with Deep Wounds and Bloodthirst).
+  tooltip, at the next: `{bonus}` (the first modifier) and `{bonus_<attribute>}` (its modifier on that attribute, by
+  the id's path, RLM-596; a modifier on one of our shares reads in percent), `{spell_damage}`, `{crit_chance}`,
+  `{block_cooldown}` and `{block_cooldown_rank}`, `{splash_radius}` and `{splash_radius_rank}`, and the first proc's
+  `{proc_chance}`, `{proc_duration}`, `{proc_cooldown}` and `{proc_damage}`. It never goes onto the spell bar and is
+  never cast. Improved Frostbolt, Frostbite, Shatter and Two-Handed Specialization are the first, of the M1 trees: the
+  Frost Mage's "Shatter" (RLM-542) and the Arms Warrior's "Bloodletter" (RLM-543, with Deep Wounds and Bloodthirst).
+
+  **An aura spell** (RLM-595) has an `aura` block instead, with the same fields as `passive` and a `group` (lowercase,
+  `stance` for the Warrior's stances), and leaves out the same fields; it may not be passive too. It is learned with
+  ranks and goes onto the spell bar, which turns it on and off: free, off the global cooldown, one aura of a group on at
+  a time, and every aura on a shared 3 minute cooldown that Cooldown Reduction never shortens. While it is on it does
+  what its block says, as a passive spell does, its `while_wielding` pausing it, never turning it off; it stays on
+  through death and relog. Its description reads the same placeholders. No proc casts an aura and no boss names one.
+  `test_stance_a` and `test_stance_b` are the engine's test auras, and Battle Stance (RLM-596) is the first.
 - `worldgen/` is the one exception to YAML: Minecraft's own worldgen JSON (`dimension/`, `dimension_type/`,
   `biome/`, `noise_settings/`, ...), validated (location, id, JSON, dimension types, no clash with the core mod's
   own `realmforge:instances`) and copied byte for byte; the game decodes it when a world loads.

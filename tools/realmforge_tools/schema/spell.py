@@ -1359,6 +1359,25 @@ class PassiveDef(StrictModel):
         )
 
 
+AURA_GROUP = r"^[a-z][a-z0-9_]*$"
+# The cooldown every aura shares (RLM-595; Matěj, 2026-11-03), never shortened by Cooldown Reduction:
+# spell/Aura#COOLDOWN_TICKS.
+AURA_COOLDOWN_SECONDS = 180
+
+
+class AuraDef(PassiveDef):
+    """What an aura spell does (RLM-595; Matěj, 2026-11-03): a spell with ranks that the player turns on and off from
+    the spell bar, free and off the global cooldown. While it is on it works as a passive spell does, at its rank: its
+    weapon condition (while_wielding) pauses it, never turns it off. One aura of a group is on at a time (the Warrior's
+    stances), and turning any aura on, off or switching starts a 3 minute cooldown that every aura shares, which
+    Cooldown Reduction never shortens. It stays on through death and relog."""
+
+    group: str = Field(
+        pattern=AURA_GROUP,
+        description="The auras of which only one is on at a time, e.g. stance: turning one on turns the others off.",
+    )
+
+
 # The fields an active spell names and a passive one leaves out (RLM-541).
 ACTIVE_FIELDS: tuple[str, ...] = (
     "scales_with",
@@ -1564,33 +1583,64 @@ class SpellDef(StrictModel):
         "does this while the player knows it. A passive spell names no targeting, cast, cost, cooldowns, crit, "
         "effects or scales_with.",
     )
+    aura: AuraDef | None = Field(
+        default=None,
+        description="Makes the spell an aura (RLM-595): learned with ranks and put on the spell bar, which turns it on "
+        "and off, free and off the global cooldown, on a 3 minute cooldown every aura shares; while it is on it does "
+        "what a passive does. An aura spell names no targeting, cast, cost, cooldowns, crit, effects or scales_with.",
+    )
 
     @model_validator(mode="after")
     def _active_or_passive(self) -> SpellDef:
-        if self.passive is None:
+        if self.passive is not None and self.aura is not None:
+            raise ValueError("a spell is passive or an aura, not both")
+        if self.passive is None and self.aura is None:
             missing = [name for name in REQUIRED_ACTIVE_FIELDS if name not in self.model_fields_set]
             if missing:
                 raise ValueError(
-                    f"an active spell names {', '.join(missing)}; a passive one names passive instead"
+                    f"an active spell names {', '.join(missing)}; a passive one names passive, an aura aura instead"
                 )
             if not self.effects:
                 raise ValueError("an active spell has at least one effect")
             return self
         named = [name for name in ACTIVE_FIELDS if name in self.model_fields_set]
         if named:
-            raise ValueError(f"a passive spell is never cast, so it names no {', '.join(named)}")
+            kind = (
+                "a passive spell is never cast"
+                if self.passive is not None
+                else "an aura spell is only toggled"
+            )
+            raise ValueError(f"{kind}, so it names no {', '.join(named)}")
         return self
 
     @property
     def is_passive(self) -> bool:
         return self.passive is not None
 
+    @property
+    def is_aura(self) -> bool:
+        return self.aura is not None
+
+    @property
+    def is_cast(self) -> bool:
+        """Whether a cast runs its effects: neither a passive spell (never cast) nor an aura (toggled, RLM-595)."""
+        return self.passive is None and self.aura is None
+
+    @property
+    def bonus(self) -> tuple[str, PassiveDef] | None:
+        """What a passive spell gives, or an aura while it is on (RLM-595), with its field's name; None otherwise."""
+        if self.passive is not None:
+            return "passive", self.passive
+        if self.aura is not None:
+            return "aura", self.aura
+        return None
+
     @model_validator(mode="after")
     def _levels(self) -> SpellDef:
         if self.max_level == 1:
             leveled = [path for path, effect in self.all_effects() if _grows_with_level(effect)]
-            if self.passive is not None and self.passive.grows():
-                leveled.append("passive")
+            if self.bonus is not None and self.bonus[1].grows():
+                leveled.append(self.bonus[0])
             if self.cost is not None and self.cost.per_level != 0:
                 leveled.append("cost")
             if self.cost is not None and self.cost.up_front is not None and self.cost.up_front.per_level != 0:
@@ -1656,28 +1706,29 @@ class SpellDef(StrictModel):
         refund = self.cost.refund_on_kill if self.cost is not None else None
         if refund is not None and refund.from_level > top:
             raise ValueError(f"cost.refund_on_kill.from_level: a rank above max_level {top} is never reached")
-        if self.passive is not None:
-            if self.passive.crit_chance is not None and self.passive.crit_chance.chance_at(top) > 100:
-                raise ValueError(f"passive.crit_chance stays at most 100 % at max_level {top}")
-            if self.passive.block_cooldown is not None and self.passive.block_cooldown.from_level > top:
+        if self.bonus is not None:
+            field, passive = self.bonus
+            if passive.crit_chance is not None and passive.crit_chance.chance_at(top) > 100:
+                raise ValueError(f"{field}.crit_chance stays at most 100 % at max_level {top}")
+            if passive.block_cooldown is not None and passive.block_cooldown.from_level > top:
                 raise ValueError(
-                    f"passive.block_cooldown.from_level: a rank above max_level {top} is never reached"
+                    f"{field}.block_cooldown.from_level: a rank above max_level {top} is never reached"
                 )
-            for n, bonus in enumerate(self.passive.splash_radius):
+            for n, bonus in enumerate(passive.splash_radius):
                 if bonus.from_level > top:
                     raise ValueError(
-                        f"passive.splash_radius.{n}.from_level: a rank above max_level {top} is never reached"
+                        f"{field}.splash_radius.{n}.from_level: a rank above max_level {top} is never reached"
                     )
-            for n, proc in enumerate(self.passive.procs):
+            for n, proc in enumerate(passive.procs):
                 if proc.apply_effect is not None and proc.apply_effect.duration_at(top) > MAX_EFFECT_SECONDS:
                     raise ValueError(
-                        f"passive.procs.{n}.apply_effect: lasts {proc.apply_effect.duration_at(top):g} s at max_level "
+                        f"{field}.procs.{n}.apply_effect: lasts {proc.apply_effect.duration_at(top):g} s at max_level "
                         f"{top}, more than {MAX_EFFECT_SECONDS:g}"
                     )
                 longer = proc.apply_effect.from_level if proc.apply_effect is not None else None
                 if longer is not None and longer.level > top:
                     raise ValueError(
-                        f"passive.procs.{n}.apply_effect.from_level.level: a rank above max_level {top} is never "
+                        f"{field}.procs.{n}.apply_effect.from_level.level: a rank above max_level {top} is never "
                         "reached"
                     )
         return self
@@ -1775,7 +1826,7 @@ class SpellDef(StrictModel):
         text = self.description.en_us
         if _PLACEHOLDER.sub("", text).count("{") or _PLACEHOLDER.sub("", text).count("}"):
             raise ValueError("description: a brace that opens or closes no {placeholder}")
-        if self.passive is not None:
+        if self.bonus is not None:
             self._passive_placeholders()
             return self
         for name in self.placeholders():
@@ -1817,8 +1868,9 @@ class SpellDef(StrictModel):
         return self
 
     def _passive_placeholders(self) -> None:
-        passive = self.passive
-        assert passive is not None
+        assert self.bonus is not None
+        kind, passive = self.bonus
+        attributes = {modifier.attribute.split(":", 1)[1] for modifier in passive.modifiers}
         present = {
             "bonus": bool(passive.modifiers),
             "spell_damage": bool(passive.spell_damage),
@@ -1834,13 +1886,21 @@ class SpellDef(StrictModel):
             "proc_damage": bool(passive.procs) and passive.procs[0].damage_over_time is not None,
         }
         for name in self.placeholders():
+            attribute = ATTRIBUTE_BONUS.fullmatch(name)
+            if attribute is not None:
+                # {bonus_<attribute>} (RLM-596): the modifier on that attribute, by the id's path.
+                if attribute.group(1) not in attributes:
+                    raise ValueError(
+                        f"description: {{{name}}} reads the {kind}'s modifier on {attribute.group(1)}, and it has none"
+                    )
+                continue
             if name not in PASSIVE_PLACEHOLDERS:
                 raise ValueError(
-                    f"description: unknown placeholder {{{name}}} for a passive spell; known: "
-                    f"{', '.join(PASSIVE_PLACEHOLDERS)}"
+                    f"description: unknown placeholder {{{name}}} for a {kind} spell; known: "
+                    f"{', '.join(PASSIVE_PLACEHOLDERS)} and bonus_<attribute>"
                 )
             if not present[name]:
-                raise ValueError(f"description: {{{name}}} reads a part of the passive it does not have")
+                raise ValueError(f"description: {{{name}}} reads a part of the {kind} it does not have")
 
     def placeholders(self) -> list[str]:
         """The names of the placeholders in the description, in order."""

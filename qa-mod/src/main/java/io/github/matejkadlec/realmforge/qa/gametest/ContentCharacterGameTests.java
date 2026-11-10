@@ -91,7 +91,7 @@ public final class ContentCharacterGameTests {
             helper.assertValueEqual(playerClass.resource().getRegisteredName(), expected.resource(),
                     expected.id() + " resource");
             helper.assertValueEqual(playerClass.rage().map(rage -> new Rage(rage.perHitDealt(),
-                    rage.perMaxHealthTaken(), rage.decayPerSecond(), rage.decayAfterTicks())), expected.rage(),
+                    rage.perMaxHealthTaken(), rage.decayPerSecond())), expected.rage(),
                     expected.id() + " rage");
             List<String> kit = playerClass.startingKit().stream().map(ContentCharacterGameTests::kitItem).toList();
             List<String> expectedKit = expected.startingKit().stream()

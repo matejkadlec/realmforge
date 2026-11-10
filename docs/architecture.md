@@ -511,7 +511,7 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
 | `realmforge:level` | `stats` | every living entity | the level: derived from XP and the cap for players, set at spawn for mobs, fixed for bosses | the player itself and everyone tracking the entity |
 | `realmforge:character` | `character` | players | race, class, specialization ([10.1](#101-races-and-classes)), total character XP, cached level cap, the stat points spent on each primary stat | the owner and nearby players (small, nothing secret) |
 | `realmforge:starting_kit` | `character` | players | whether the player has received a class's starting kit, which comes with their first character only, so a new character after a reset brings none (Matěj, 2026-10-30); a login records it for a character older than the attachment; copied on death | not synced |
-| `realmforge:spellbook` | `spell` | players | known spells and their levels, the spell bar's layout: its eight slots and the racial slot beside it (C3b) | owner |
+| `realmforge:spellbook` | `spell` | players | known spells and their levels, the spell bar's layout: its eight slots and the racial slot beside it (C3b), and the aura spells that are on (RLM-595) | owner |
 | `realmforge:combat` | `spell` | players and mobs that cast | resource pools (mana, rage), cooldowns, current cast (transient), whether a cast set Better Combat's disable tag | owner, throttled (players; clients never read a mob's copy) |
 | `realmforge:effect_sources` | `effect` | living entities | who applied each status effect a spell gave the holder: the caster's UUID, the spell's id, the proc origin ([11.4](#114-status-effects), C3c) | not synced (the server reads it) |
 | `realmforge:talents` | `talent` | players | allocated ranks per tree, unspent points (F3; unused, as no talents are planned, [12](#12-talents)) | owner |
@@ -1129,8 +1129,8 @@ one state every rule reads, instead of a timer of its own:
   one.
 - **The window** is the common config's `combat.inCombatSeconds`, 10 by default (`combat/CombatConfig`,
   [19.2](#192-configuration)); a hit's combat ends at its time plus the window as it was then.
-- **Its users:** rage decays measured from the same last hit ([11.5](#115-resources-cooldowns-modifiers)), so the
-  two never disagree about the fight; every scroll (`character/Scrolls`, [10.2](#102-leveling)) refuses to start in
+- **Its users:** rage decays once its holder is out of combat ([11.5](#115-resources-cooldowns-modifiers), RLM-594),
+  so the two never disagree about the fight; every scroll (`character/Scrolls`, [10.2](#102-leveling)) refuses to start in
   combat, is kept and says "You can't use this in combat." (`message.realmforge.cannot_use_in_combat`), on both sides,
   so the client swings no arm, and a hit dealt or taken during its 3 s charge stops the charge. The Scroll of Oblivion
   (RLM-196) is the first; the Scroll of Respec (RLM-226) and the Scroll of Rebirth (RLM-228) refuse the same way, and
@@ -1447,6 +1447,22 @@ Its name and description are translation keys from C3b, the description's number
   Improved Frostbolt, Frostbite, Shatter and Two-Handed Specialization (Attack Damage +4/8/12 % with
   `#realmforge:two_handed_weapons` in hand, as the Human's Sword Specialization gives its +10 %), which the M1 spell
   trees teach ([11.7](#117-class-spells-and-stances)).
+- **Aura spells** (RLM-595; Matěj, 2026-11-03): a spell with an `aura` (`spell/Aura`: a `group` and a passive's fields)
+  is learned with ranks like any other and goes onto the bar, off; its data names no targeting, cast or effects (the
+  pipeline writes the defaults). A cast of it toggles it instead (`spell/Auras`, from `SpellCaster` once the spell is
+  known): it costs nothing, neither waits for the global cooldown nor starts it, and leaves a cast in progress running,
+  even from the spell bar, whose casts may replace one. Turning an aura on turns off every other aura of its group (one
+  stance at a time, dual spec included), and turning one on, off or switching starts `Aura#COOLDOWN_TICKS` (3 minutes)
+  on every aura spell of the data, whatever its group, which Cooldown Reduction never shortens; while it runs, or while
+  the player is stunned, a toggle is refused (`ON_COOLDOWN`, `STUNNED`). The spellbook saves which auras are on
+  (`Spellbook#auras`, [7](#7-player-state)), copied on death, so an aura stays on through death and relog, and leaves
+  with its spell when the player forgets it. While it is on, `spell/Passives` treats its bonus as a passive spell's at
+  its rank: modifiers, spell damage, crit chance, procs, all paused (never off, no cooldown) while its weapon condition
+  (`while_wielding`) is unmet. A mob never turns an aura on (`CANNOT_CAST`), and a proc or a boss never names one
+  (validation). The spellbook lists it with its rank and "Aura"; its tooltip shows "Aura", "Instant", "3 min cooldown,
+  shared by every aura" and its description, whose `{bonus_<attribute>}` reads its modifier on each attribute (a share
+  in percent, `SpellText#passiveValues`). The first is the Arms Warrior's Battle Stance (RLM-596, [11.7](#117-class-spells-and-stances)).
+  `AuraGameTests` covers it with the engine's test auras (`test_stance_a`, `test_stance_b`).
 - **Knockback:** a spell's damage is school damage, which never knocks back ([9.1](#91-damage-pipeline), RLM-214);
   a spell pushes its target only through a `realmforge:knockback` effect (C3a-3).
 - **Crits** (Matěj, 2026-10-15): every spell can crit, heals too, on the caster's crit chance for 1 + the caster's
@@ -1943,12 +1959,13 @@ rule on Astone.
   Vanilla hurts a sword's target before its sweep, and Better Combat ([9.2](#92-better-combat)) attacks a swing's
   targets one after another in the same tick, each with its own full-strength `Player#attack`, so neither the sweep
   nor Better Combat's further targets add rage; when the target's hit is dodged, the first hit that lands counts. The
-  pool holds while the last hit dealt or taken (a dodged or fully blocked one included) is less than
-  `decay_after_seconds` ago; after that it loses `decay_per_second` every second, as rage's regeneration
-  ([`ResourceType`](#115-resources-cooldowns-modifiers)) is negative then. The last hit is the shared in-combat
-  state's ([9.4](#94-in-combat), RLM-348), so rage and being in combat never disagree about the fight; a new player
-  entity starts with no hit. The Warrior's starting numbers are 10
-  a hit, 50 for the whole max health and 2 a second after 5 s, until the class kits (C4) tune them. Mobs pay no cost
+  pool holds while its holder is in combat, the shared in-combat state ([9.4](#94-in-combat), RLM-348: 10 s after the
+  last hit dealt or taken, a dodged or fully blocked one included), and once it is out of combat it loses
+  `decay_per_second` every second, as rage's regeneration ([`ResourceType`](#115-resources-cooldowns-modifiers)) is
+  negative then (RLM-594; Matěj, 2026-11-03), so rage and being in combat never disagree about the fight; a new player
+  entity starts out of combat. The Warrior's numbers are 10 a hit, 50 for the whole max health and 5 a second, so a
+  full pool holds for 10 s after the fight and is empty 20 s later (until RLM-594 it lost 2 a second from 5 s after the
+  last hit, about 55 s for a full pool). Mobs pay no cost
   ([11.2](#112-casting-server-authoritative)), so no mob gains rage. `RageGameTests` and `RageRulesTest` cover it.
 - **Cooldowns:** a spell's own cooldown at its rank (a cooldown may change per rank, `cooldown_per_level_seconds`,
   `Spell#cooldownTicksAt`: Frost Nova's 20/15/10 s, Ice Barrier's 60/45/30 s, RLM-572), shortened by Cooldown
@@ -1956,7 +1973,9 @@ rule on Astone.
   global cooldown, 0.5 s by default as in WoW (Matěj, 2026-10-19, RLM-25; it replaced research SP-11's second), which
   every spell is on, physical abilities too (Matěj, 2026-10-24, RLM-402): a spell may change its length, never switch
   it off, and Cooldown Reduction never touches it. Both are stored as the game time they
-  end.
+  end. Aura spells (RLM-595, [11.1](#111-model)) are the exception: their toggle is off the global cooldown, and they
+  share one cooldown of 3 minutes, set on every aura spell when any is turned on, off or switched, which Cooldown
+  Reduction never shortens.
 - Spell modifiers come from passive spells (`spell/Passives`, RLM-541: more damage for named spells, crit chance
   against Frozen targets, a wider splash), read from the caster's spellbook where they apply; no talents add any (no
   talents as of v1.0.0, [12](#12-talents)), and gear may, should glyphs or set bonuses come.
@@ -2031,7 +2050,8 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
   for the global cooldown; with queueing it waits for the cast to end too, and up to the queue size presses wait in
   order, a new press replacing the waiting one at size 1. A held key casts its spell again whenever its cooldowns
   allow, at most every half second, and never cancels a cast; pressing the spell being cast does nothing. Two spells
-  never cast at once. `client/spell/SpellBarInput` sends `CastSpellPayload` (the spell, the living entity under the
+  never cast at once. An aura (RLM-595) is toggled by a press only, never by a held key, is off the global cooldown on
+  the client too, and with queueing its press does not wait for a cast in progress, which its toggle leaves running. `client/spell/SpellBarInput` sends `CastSpellPayload` (the spell, the living entity under the
   crosshair within its range, `client/spell/SpellTargetPicker`, none for a direction spell, which flies where the
   crosshair points, and `replaceCast`); `spell/SpellBar` picks a targeted spell's target by aim assistance when it names
   none ([11.2](#112-casting-server-authoritative)) and casts it through `SpellCaster`, which with `replaceCast` skips
@@ -2071,7 +2091,10 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
   a frame that stays once spells have icons (Matěj, 2026-10-21), shows the spell's initials until then (C6, A1), its
   key in the corner, a blue tint while the resource does not cover the cost, and the cooldown sweep
   (`CooldownSweep`): a dark wedge that shrinks clockwise from 12 o'clock, for the spell's own cooldown or the global
-  cooldown, whichever ends later, with the seconds left of a cooldown of 2 s or more. The cast bar (`CastBarHud`, after
+  cooldown, whichever ends later, with the seconds left of a cooldown of 2 s or more. An aura spell that is on
+  (RLM-595) has a bright green frame two pixels wide inside its school's, grey-green while its weapon condition pauses
+  it (`SpellBarView.AuraState`); its sweep runs over the 3 minutes every aura shares and never over the global
+  cooldown. The cast bar (`CastBarHud`, after
   WoW's casting bar, Matěj's playtest of 2026-10-21) sits toward the middle of the screen, 70 % of the way down at most
   and clear of the spell bar wherever it is: above a group in its way, with room for the action bar message between,
   or below one at the top of the screen: a 200 by 20 px black frame with rounded corners and a 2 px
@@ -2234,7 +2257,7 @@ to a single target. Damage labels (Low, Medium, High) compare a spell with the o
   (RLM-399) are Better Combat's sword hitboxes at the player's melee reach: Slam and Reckless Strike the swing, Shield
   Bash the narrower stab ([11.3](#113-spell-entities)); the Mage's bolts splash.
 - **Shield Bash** hits with the shield, not the weapon: it needs a shield in either hand and needs no weapon. The
-  other hand may hold a one-handed weapon or nothing, so it works in the Defensive stance (Matěj, 2026-10-27,
+  other hand may hold a one-handed weapon or nothing, so it works in Defensive Stance (Matěj, 2026-10-27,
   RLM-418).
 - **Crit overflow:** a hit's crit chance above 100 % (Reckless Strike's bonus can take it there) turns into crit
   damage 1:1: every 1 % of chance above 100 % adds 1 % crit damage ([9.1](#91-damage-pipeline)).
@@ -2249,20 +2272,24 @@ to a single target. Damage labels (Low, Medium, High) compare a spell with the o
 - **No pure tank or pure healer:** every class stands on its own; Protection and the Paladin (RLM-162) are bruisers
   that also deal damage.
 
-**Stances** (RLM-392, a first draft): each Warrior specialization gets one stance, a little later in its tree, as an
-aura spell.
+**Stances** (RLM-392, a first draft; Matěj, 2026-11-03, RLM-595 and RLM-596): each Warrior specialization gets one
+stance, a little later in its tree, as an aura spell of the group `stance` ([11.1](#111-model)). Named after WoW's
+(earlier drafts called them Fighter, Berserker and Defensive).
 
 | Stance | Specialization | Bonus | Weapon condition |
 | --- | --- | --- | --- |
-| Fighter | Arms | + % Attack Damage | a two-handed weapon |
-| Berserker | Fury | + % Attack Speed and + % Lifesteal; the player takes X % more damage | no shield: one one-handed weapon, two one-handed weapons or a two-handed weapon |
-| Defensive | Protection | + % damage reduction and − % damage dealt | a one-handed weapon and a shield |
+| Battle Stance (RLM-596) | Arms | +5 Armor Pierce and +10 % Armor Shred, at its only rank; no Attack Damage | a two-handed weapon in the main hand |
+| Berserker Stance | Fury | + % Attack Speed and + % Lifesteal; the player takes X % more damage | no shield: one one-handed weapon, two one-handed weapons or a two-handed weapon |
+| Defensive Stance | Protection | + % damage reduction and − % damage dealt | a one-handed weapon and a shield |
 
 - **One stance at a time:** a player with several stance spells (through dual spec, say) has only one active.
-- **Once every 5 minutes** a stance can be turned on, turned off or switched, so fast stance swapping can't be
-  abused.
-- **The weapon condition pauses, never ends, a stance:** while it is not met (a torch in the offhand), the stance
-  stays on and only its bonuses pause; that neither turns it off nor starts the 5 minutes.
+- **Once every 3 minutes** (Matěj, 2026-11-03; the draft's 5) a stance can be turned on, turned off or switched, so
+  fast stance swapping can't be abused: the cooldown every aura shares, which Cooldown Reduction never shortens.
+  Turning one on is free and off the global cooldown, and it stays on through death and relog.
+- **The weapon condition pauses, never ends, a stance:** while it is not met (a one-handed sword in the main hand),
+  the stance stays on and only its bonuses pause; that neither turns it off nor starts the cooldown. The condition
+  reads the main hand, as a passive spell's does.
+- Berserker Stance and Defensive Stance come with the Fury and Protection trees (M3, RLM-218).
 
 **C4's first balance pass** (RLM-27; the numbers are in `content/spells/`, each file's comment says why; the playtest
 tunes them). A tree opens four active spells by level 10, chapter 1's cap ([10.1](#101-races-and-classes)). The M1
@@ -2317,14 +2344,16 @@ about one passive for every two actives. Points buy its ranks in the spell trees
 18" document, chosen for M1, version 1 of every spell, balanced by Claude): the same rows, a new one every 6 levels,
 the first two holding four actives (D4). Points buy its ranks in the spell trees window (C5, RLM-333,
 [10.1](#101-races-and-classes)). Reckless Strike and Shield Bash come back with their trees in M3. Bloodthirst needs
-Rend in the tree.
+Rend in the tree. Battle Stance (RLM-596, an aura, above) takes the free place at level 18, middle, until RLM-631's
+layout of rows by points spent puts it at R3, left (Matěj, 2026-11-04, RLM-333's comment 23656); that layout keeps
+Overpower at R3, middle, so RLM-596's earlier move of Overpower to level 18 is dropped.
 
 | Row (level) | Left | Middle | Right |
 | --- | --- | --- | --- |
 | 1 | Charge (2) | Slam (5) | Deep Wounds (passive, 3) |
 | 6 | Rend (3) | Battle Shout (2) | Two-Handed Specialization (passive, 3) |
 | 12 | Bloodthirst (passive, 2) | Overpower (5) | Victory Rush (3) |
-| 18 | Execute (3) | | |
+| 18 | Execute (3) | Battle Stance (aura, 1) | |
 
 - **The loop:** Charge in for rage, Rend to bleed and Slam on cooldown; blocks and Bloodthirst's procs on Rend's
   ticks open Overpower, crits bleed through Deep Wounds, kills open Victory Rush, and Execute finishes, refunding rage
@@ -2345,8 +2374,8 @@ Rend in the tree.
   a block, Victory Rush only after a kill that is not gray and its heal, Execute's condition, extra rage, refund and lit
   slot, Charge's closest point, stun and hop back (from either side) and its distance by rank, a player's Charge
   landing on the server (within a tick of travel, at its timeout and with its target gone, RLM-602), Deep Wounds' share,
-  Bloodthirst's proc, the tooltips' next rank, the kit by rows, the handoff's setup line, and the rage and cooldowns
-  above (RLM-604).
+  Bloodthirst's proc, the tooltips' next rank, the kit by rows, the handoff's setup line, the rage and cooldowns
+  above (RLM-604), and Battle Stance's bonus only with a two-handed weapon (RLM-596).
 
 - **Slam:** 5 + 1 per rank + 150 % of attack damage and 20 % more per rank, 30 rage, 4 s, needs a melee weapon (RLM-499); armor shred
   5 % per rank. **Reckless Strike:** 2 + 1 per rank + 100 % of attack damage, 20 rage, 4 s, a melee weapon; crit
@@ -2364,9 +2393,10 @@ Rend in the tree.
 - **Will To Survive** (the Human's racial): free, 1 minute, cast while stunned, of no school.
 - **Arcane Missiles' damage per second** stays above Frostbolt's and Fireball's (Matěj, 2026-10-30: Frostbolt slows,
   Fireball burns, Arcane Missiles should deal the most damage).
-- **Rage gain** stays at the Warrior's starting numbers ([11.5](#115-resources-cooldowns-modifiers)).
+- **Rage gain** stays at the Warrior's starting numbers, and the pool loses 5 a second once out of combat (RLM-594;
+  [11.5](#115-resources-cooldowns-modifiers)).
 
-**Open, for the playtest:** the numbers above; the stance percentages (X);
+**Open, for the playtest:** the numbers above; Berserker Stance's and Defensive Stance's percentages (X);
 whether Frostbolt stays the Mage's D4 starting spell ("a Frostbolt-like fast single-target cast that slows",
 RLM-54), as C4 made it.
 

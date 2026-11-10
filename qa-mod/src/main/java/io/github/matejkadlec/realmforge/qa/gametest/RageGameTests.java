@@ -5,6 +5,7 @@ import io.github.matejkadlec.realmforge.character.CharacterCreation;
 import io.github.matejkadlec.realmforge.character.CharacterRegistries;
 import io.github.matejkadlec.realmforge.character.ResourceBarView;
 import io.github.matejkadlec.realmforge.combat.CombatRegistries;
+import io.github.matejkadlec.realmforge.combat.InCombat;
 import io.github.matejkadlec.realmforge.combat.SpellSchools;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.qa.command.StatsCommands;
@@ -23,19 +24,23 @@ import net.neoforged.fml.ModList;
 
 /**
  * C3a-4 (RLM-212): rage as a combat resource (architecture 11.5). The Warrior's numbers in {@code content/classes/}
- * give 10 rage for a full-strength melee hit and 50 for losing the whole max health to attackers, and 5 s after the
- * last hit dealt or taken the pool loses 2 every second. A swing gives its rage once, however many mobs it hits
- * (RLM-278). A fake player's connection never ticks it, so the tests run its ticks themselves ({@link #seconds}); its
- * combat clock is the level's game time.
+ * give 10 rage for a full-strength melee hit and 50 for losing the whole max health to attackers, and once the Warrior
+ * is out of combat, 10 s after the last hit dealt or taken, the pool loses 5 every second (RLM-594). A swing gives its
+ * rage once, however many mobs it hits (RLM-278). A fake player's connection never ticks it, so the tests run its ticks
+ * themselves ({@link #seconds}); its combat clock is the level's game time.
  */
 public final class RageGameTests {
     private static final double TOLERANCE = 1e-3;
+    /** A tick past the 10 s of combat after a hit (the common config's default, {@code CombatConfig}). */
+    private static final int OUT_OF_COMBAT_TICKS = 201;
+    /** Ten ticks before the 10 s of combat after a hit end. */
+    private static final int LAST_COMBAT_TICK = 190;
 
     private RageGameTests() {
     }
 
     /** A Warrior's rage rises with the hits it deals and takes, holds in combat, and decays once out of it. */
-    @QaGameTest(timeoutTicks = 200)
+    @QaGameTest(timeoutTicks = 300)
     public static void rageRisesWithHitsAndDecaysOutOfCombat(GameTestHelper helper) {
         ServerPlayer player = character(helper, "qa-rage-warrior", "warrior");
         Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 2));
@@ -59,12 +64,81 @@ public final class RageGameTests {
 
         seconds(player, 1);
         assertRage(helper, player, afterHits, "no decay in combat");
-        // 5 s after the last hit the Warrior is out of combat.
+        // RLM-594: 5 s after the last hit the Warrior is still in combat, and its rage holds.
         helper.runAfterDelay(101, () -> {
             seconds(player, 1);
-            assertRage(helper, player, afterHits - 2, "out of combat it decays 2 a second");
+            assertRage(helper, player, afterHits, "no decay 5 s after the last hit");
+        });
+        // 10 s after the last hit the Warrior is out of combat.
+        helper.runAfterDelay(OUT_OF_COMBAT_TICKS, () -> {
+            helper.assertFalse(InCombat.isInCombat(player), "out of combat 10 s after the last hit");
+            seconds(player, 1);
+            assertRage(helper, player, afterHits - 5, "out of combat it decays 5 a second");
             seconds(player, 2);
-            assertRage(helper, player, afterHits - 6, "two more seconds");
+            assertRage(helper, player, Math.max(0, afterHits - 15), "two more seconds");
+            logout(player);
+            helper.succeed();
+        });
+    }
+
+    /**
+     * RLM-594's numbers: a full pool holds for the 10 s of combat after the last hit, then loses 5 a second, so it is
+     * empty 20 s later, 30 s after the last hit.
+     */
+    @QaGameTest(timeoutTicks = 300)
+    public static void fullRageHoldsTenSecondsThenEmptiesInTwenty(GameTestHelper helper) {
+        ServerPlayer player = character(helper, "qa-rage-full", "warrior");
+        Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 2));
+        seconds(player, 1);
+        player.attack(husk);
+        Resources.set(player, ResourceTypes.RAGE, ResourceTypes.RAGE_MAXIMUM);
+        helper.runAfterDelay(LAST_COMBAT_TICK, () -> {
+            helper.assertTrue(InCombat.isInCombat(player), "still in combat just before 10 s");
+            seconds(player, 1);
+            assertRage(helper, player, 100, "a full pool holds in combat");
+        });
+        helper.runAfterDelay(OUT_OF_COMBAT_TICKS, () -> {
+            seconds(player, 1);
+            assertRage(helper, player, 95, "the first second out of combat");
+            seconds(player, 18);
+            assertRage(helper, player, 5, "19 seconds out of combat");
+            seconds(player, 1);
+            assertRage(helper, player, 0, "empty 20 s after it left combat");
+            logout(player);
+            helper.succeed();
+        });
+    }
+
+    /**
+     * RLM-594: a hit during the decay puts the Warrior back in combat, which stops it for another 10 s. Every step is
+     * registered up front: the test framework runs them from a map it iterates, which a step must not add to.
+     */
+    @QaGameTest(timeoutTicks = 500)
+    public static void aHitDuringTheDecayStopsItForAnotherTenSeconds(GameTestHelper helper) {
+        ServerPlayer player = character(helper, "qa-rage-restart", "warrior");
+        Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 2));
+        seconds(player, 1);
+        player.attack(husk);
+        Resources.set(player, ResourceTypes.RAGE, ResourceTypes.RAGE_MAXIMUM);
+        double[] afterHit = new double[1];
+        helper.runAfterDelay(OUT_OF_COMBAT_TICKS, () -> {
+            seconds(player, 2);
+            assertRage(helper, player, 90, "two seconds of decay");
+            // A hit taken, not dealt: its rage is the share of max health it took.
+            float before = player.getHealth();
+            player.hurtServer(helper.getLevel(), helper.getLevel().damageSources().mobAttack(husk), 2);
+            afterHit[0] = 90 + 50 * (before - player.getHealth()) / player.getMaxHealth();
+            helper.assertTrue(InCombat.isInCombat(player), "the hit puts the Warrior back in combat");
+            seconds(player, 1);
+            assertRage(helper, player, afterHit[0], "no decay right after the hit");
+        });
+        helper.runAfterDelay(OUT_OF_COMBAT_TICKS + LAST_COMBAT_TICK, () -> {
+            seconds(player, 1);
+            assertRage(helper, player, afterHit[0], "no decay just before 10 s after the hit");
+        });
+        helper.runAfterDelay(2 * OUT_OF_COMBAT_TICKS, () -> {
+            seconds(player, 1);
+            assertRage(helper, player, afterHit[0] - 5, "the decay starts again 10 s after the hit");
             logout(player);
             helper.succeed();
         });
