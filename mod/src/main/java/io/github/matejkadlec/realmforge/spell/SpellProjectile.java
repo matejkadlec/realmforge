@@ -76,8 +76,16 @@ public final class SpellProjectile extends Projectile implements IEntityWithComp
     public static final byte EVENT_HIT_BLOCK = 61;
     /** An impact without a splash still bursts over this many blocks round where it hit. */
     private static final float MIN_BURST_RADIUS = 0.25F;
-    /** How fast a burst's particles fly out, in blocks per tick for each block of its radius. */
+    /**
+     * How fast a burst's particles fly out, in blocks per tick: for each block of its radius when it is wider than a
+     * block, so a wide splash fills as fast as a small puff sprays.
+     */
     private static final double BURST_SPEED = 0.12;
+    /**
+     * A trail starts once the projectile has flown this many ticks: a bolt leaves from its caster's eyes, and a
+     * particle spawned there would fill the caster's own screen in first person.
+     */
+    private static final int TRAIL_AFTER_TICKS = 2;
     /** How far a trail's particles drift, in blocks per tick. */
     private static final double TRAIL_DRIFT = 0.01;
 
@@ -285,7 +293,7 @@ public final class SpellProjectile extends Projectile implements IEntityWithComp
             return;
         }
         SpellLook element = look.get().value();
-        if (element.trail().isEmpty()) {
+        if (element.trail().isEmpty() || flownTicks <= TRAIL_AFTER_TICKS) {
             return;
         }
         SpellLook.Trail emitter = element.trail().get();
@@ -347,7 +355,7 @@ public final class SpellProjectile extends Projectile implements IEntityWithComp
             Vec3 out = new Vec3(random.triangle(0, 1), random.triangle(0, 1), random.triangle(0, 1));
             Vec3 at = centre.add(out.scale(radius / 2));
             // Off a block's face, never into it: what flies into the block turns back out.
-            Vec3 speed = out.scale(BURST_SPEED * radius);
+            Vec3 speed = out.scale(BURST_SPEED * Math.max(1, radius));
             double into = speed.dot(off);
             Vec3 away = into < 0 ? speed.subtract(off.scale(2 * into)) : speed;
             Vec3 velocity = away.add(off.scale(BURST_SPEED / 2));

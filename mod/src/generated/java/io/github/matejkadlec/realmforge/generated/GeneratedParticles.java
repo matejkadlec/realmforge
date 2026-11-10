@@ -23,7 +23,7 @@ public final class GeneratedParticles {
     /** {@code realmforge:ember} from {@code content/particles/ember.yaml}. */
     public static final TintedParticles.Entry EMBER =
             register("ember",
-                    new TintedParticles.Motion(8, 16, 0.06F, -0.1F, 0.92F, true));
+                    new TintedParticles.Motion(8, 16, 0.09F, -0.1F, 0.92F, true));
 
     /** {@code realmforge:mote} from {@code content/particles/mote.yaml}. */
     public static final TintedParticles.Entry MOTE =
@@ -33,7 +33,7 @@ public final class GeneratedParticles {
     /** {@code realmforge:shard} from {@code content/particles/shard.yaml}. */
     public static final TintedParticles.Entry SHARD =
             register("shard",
-                    new TintedParticles.Motion(8, 14, 0.08F, 0.6F, 0.96F, false));
+                    new TintedParticles.Motion(8, 14, 0.1F, 0.6F, 0.96F, false));
 
     /** Every particle above, in id order. */
     public static final List<TintedParticles.Entry> ALL = List.of(EMBER, MOTE, SHARD);

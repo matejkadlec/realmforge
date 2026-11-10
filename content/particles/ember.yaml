@@ -27,6 +27,6 @@ frames:
     - "........"
     - "........"
 lifetime_ticks: [8, 16]
-size: 0.06
+size: 0.09
 gravity: -0.1
 friction: 0.92
