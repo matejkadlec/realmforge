@@ -32,7 +32,8 @@ import org.lwjgl.glfw.GLFW;
  * Screenshots of the spellbook's two tabs for an agent (C5, RLM-333), and a run of the window's real path: with the
  * environment variable {@code REALMFORGE_QA_SPELL_TREE_SHOTS} set, the dev client creates a superflat world and a Mage,
  * so the window opens by itself, clicks Choose and spells as a player would (real clicks on the screen, real payloads
- * to the server), repeats it with a Warrior for Bloodthirst's arrow, saves each state to
+ * to the server), closes it and casts Frostbolt for the HUD's spell bar and cast bar with their icons (A1, RLM-642),
+ * repeats it with a Warrior for Bloodthirst's arrow, saves each state to
  * {@code run/client/screenshots/<value>-spelltree-<state>.png}, and quits. It logs an error for a click that did not do
  * what it should, as a GameTest's fake player has no client. It needs no input, so it runs headless under Xvfb.
  */
@@ -146,10 +147,11 @@ public final class QaSpellTreeShots {
             hover(minecraft, 0, 1, 0);
         });
         then(() -> shot(minecraft, "4-frost-spent-tooltip"));
-        then(() -> {
-            minecraft.setScreen(null);
-            command(minecraft, "qa character reset");
-        });
+        // The HUD with the window closed (A1, RLM-642): the spell bar's icons, and the cast bar's during a cast.
+        then(() -> minecraft.setScreen(null));
+        then(() -> command(minecraft, "qa spell cast realmforge:frostbolt"));
+        then(() -> shot(minecraft, "4b-hud-cast-bar"));
+        then(() -> command(minecraft, "qa character reset"));
         when(() -> minecraft.screen instanceof CharacterCreationScreen, () -> command(minecraft,
                 "qa character create realmforge:human realmforge:warrior"));
         when(() -> minecraft.screen instanceof SpellbookScreen && Characters.exists(minecraft.player),

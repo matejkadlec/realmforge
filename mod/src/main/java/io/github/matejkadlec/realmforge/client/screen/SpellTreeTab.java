@@ -29,7 +29,6 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.ARGB;
-import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Util;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
@@ -40,7 +39,8 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
  * asks: {@link PickSpecializationPayload} and {@link SpendSpellPointPayload} go to the server, which checks them
  * again, and the tab redraws from the synced state ({@link SpellTreeView}). A spell's square is as big as the bar's
  * and holds its rank in the bottom right corner, and its shade says what it is ({@link SpellShade}; Matěj's playtest of
- * 2026-11-04). Drawn over the plain panel until the book texture exists (RLM-609).
+ * 2026-11-04). It is drawn on the book's page ({@link SpellbookPage}, RLM-609), in its inks, and a spell's tooltip
+ * has its icon ({@link SpellTooltips}).
  */
 final class SpellTreeTab {
     /** The spellbook's width on both tabs, which its three rectangles here need. */
@@ -62,18 +62,24 @@ final class SpellTreeTab {
     private static final int INITIALS_X = -3;
     private static final int INITIALS_Y = -4;
     private static final int BUTTON_HEIGHT = 16;
-    private static final int TOOLTIP_WIDTH = 200;
+    private static final int TOOLTIP_WIDTH = SpellTooltips.WIDTH;
 
-    private static final int CARD = 0x60000000;
-    private static final int CARD_FRAME = 0x60FFFFFF;
-    private static final int CHOSEN_FRAME = 0xFFFFC94A;
-    private static final int TITLE = 0xFFFFC94A;
+    /** A tree's rectangle on the page ({@link SpellbookPage}): a faint shade in a thin frame, red once chosen. */
+    private static final int CARD = 0x182F2115;
+    private static final int CARD_FRAME = SpellbookPage.RULE;
+    private static final int CHOSEN_FRAME = SpellbookPage.MARK;
+    private static final int TITLE = SpellbookPage.RUBRIC;
+    private static final int HINT = SpellbookPage.FAINT;
+    /** An arrow in ink once its spell is known, in the palette's wood 8 before. */
+    private static final int ARROW = SpellbookPage.INK;
+    private static final int ARROW_LOCKED = 0xFFBC9868;
+    /** The Choose button, leather on the page (the palette's wood 4 and 5), with a white label. */
+    private static final int BUTTON = 0xFF573F26;
+    private static final int BUTTON_HOVER = 0xFF6D5132;
+    private static final int BUTTON_FRAME = SpellbookPage.INK;
+    /** What stands on a spell's dark square: its rank in white, gold at the highest, and the light under the mouse. */
     private static final int TEXT = 0xFFFFFFFF;
-    private static final int HINT = 0xFFA0A0A0;
-    private static final int ARROW = 0xFFC8C8C8;
-    private static final int ARROW_LOCKED = 0xFF606060;
-    private static final int BUTTON = 0xFF3A3A3A;
-    private static final int BUTTON_HOVER = 0xFF5A5A5A;
+    private static final int RANK_MAX = 0xFFFFC94A;
     private static final int HOVER = 0x30FFFFFF;
 
     private final Minecraft minecraft;
@@ -89,7 +95,7 @@ final class SpellTreeTab {
         SpellTreeView view = SpellTreeView.of(player);
         if (!view.picked()) {
             graphics.text(font, Component.translatable(GeneratedTexts.GUI_SPELL_TREE_PICK), left + PADDING,
-                    top + PADDING + 14, TITLE);
+                    top + PADDING + 14, TITLE, false);
         }
         for (int index = 0; index < view.trees().size(); index++) {
             drawTree(graphics, view, view.trees().get(index), index, left, top, bottom, mouseX, mouseY);
@@ -122,11 +128,11 @@ final class SpellTreeTab {
         int width = cardWidth(view);
         graphics.fill(x, y, x + width, bottom - PADDING, CARD);
         graphics.outline(x, y, width, bottom - PADDING - y, tree.chosen() ? CHOSEN_FRAME : CARD_FRAME);
-        graphics.centeredText(font, Component.translatable(tree.specialization().name()), x + width / 2, y + 4,
-                tree.chosen() || !view.picked() && tree.specialization().playable() ? TITLE : HINT);
+        SpellbookPage.centered(graphics, font, Component.translatable(tree.specialization().name()), x + width / 2,
+                y + 4, tree.chosen() || !view.picked() && tree.specialization().playable() ? TITLE : HINT);
         if (!tree.specialization().playable()) {
-            graphics.centeredText(font, Component.translatable(GeneratedTexts.GUI_SPELL_TREE_LATER), x + width / 2,
-                    y + HEADER + 8, HINT);
+            SpellbookPage.centered(graphics, font, Component.translatable(GeneratedTexts.GUI_SPELL_TREE_LATER),
+                    x + width / 2, y + HEADER + 8, HINT);
             return;
         }
         tree.cells().forEach(cell -> drawArrow(graphics, view, tree, cell, x, y));
@@ -135,7 +141,7 @@ final class SpellTreeTab {
             boolean hovered = onButton(index, view, left, bottom, mouseX, mouseY);
             int buttonY = bottom - PADDING - BUTTON_HEIGHT - 3;
             graphics.fill(x + 6, buttonY, x + width - 6, buttonY + BUTTON_HEIGHT, hovered ? BUTTON_HOVER : BUTTON);
-            graphics.outline(x + 6, buttonY, width - 12, BUTTON_HEIGHT, CHOSEN_FRAME);
+            graphics.outline(x + 6, buttonY, width - 12, BUTTON_HEIGHT, BUTTON_FRAME);
             graphics.centeredText(font, Component.translatable(GeneratedTexts.GUI_SPELL_TREE_CHOOSE), x + width / 2,
                     buttonY + 4, TEXT);
         }
@@ -148,12 +154,14 @@ final class SpellTreeTab {
         SpellSlots.draw(graphics, font, x, y, CELL, new SpellBarView.Slot(cell.spell().unwrapKey(),
                 Optional.of(cell.spell().value()), Math.max(cell.rank(), 1), 0, 0, true, false), Optional.empty(),
                 INITIALS_X, INITIALS_Y);
+        // In the slot's own shape, so a passive spell's cut corners stay the page's.
+        Optional<Spell> spell = Optional.of(cell.spell().value());
         int shade = SpellShade.of(cell.rank(), cell.state()).overlayAlpha(Util.getMillis());
         if (shade > 0) {
-            graphics.fill(x, y, x + CELL, y + CELL, ARGB.color(shade, 0));
+            SpellSlots.overlay(graphics, x, y, CELL, spell, ARGB.color(shade, 0));
         }
         if (mouseX >= x && mouseX < x + CELL && mouseY >= y && mouseY < y + CELL) {
-            graphics.fill(x, y, x + CELL, y + CELL, HOVER);
+            SpellSlots.overlay(graphics, x, y, CELL, spell, HOVER);
         }
         drawRank(graphics, cell, x, y);
     }
@@ -165,7 +173,7 @@ final class SpellTreeTab {
         graphics.pose().translate(x + CELL - 1 - font.width(rank) * RANK_SCALE,
                 y + CELL - 1 - RANK_GLYPH_HEIGHT * RANK_SCALE);
         graphics.pose().scale(RANK_SCALE, RANK_SCALE);
-        graphics.text(font, rank, 0, 0, cell.state() == State.MAX_RANK ? TITLE : TEXT);
+        graphics.text(font, rank, 0, 0, cell.state() == State.MAX_RANK ? RANK_MAX : TEXT);
         graphics.pose().popMatrix();
     }
 
@@ -194,17 +202,14 @@ final class SpellTreeTab {
             int bottom, int mouseX, int mouseY) {
         Optional<Cell> hovered = cellAt(view, left, top, mouseX, mouseY);
         if (hovered.isPresent()) {
-            List<FormattedCharSequence> lines = new ArrayList<>();
             Cell cell = hovered.get();
             Spell spell = cell.spell().value();
             ResourceKey<Spell> key = cell.spell().unwrapKey().orElseThrow();
-            for (Component line : SpellTooltip.lines(spell, Math.clamp(cell.rank(), 1, spell.maxLevel()),
-                    SpellText.statsOf(player), SpellText.schoolsOf(player.registryAccess()),
-                    Passives.damageBonus(player, key))) {
-                lines.addAll(font.split(line, TOOLTIP_WIDTH));
-            }
-            lines.addAll(font.split(stateLine(cell), TOOLTIP_WIDTH));
-            graphics.setTooltipForNextFrame(lines, mouseX, mouseY);
+            List<Component> lines = new ArrayList<>(SpellTooltip.lines(spell,
+                    Math.clamp(cell.rank(), 1, spell.maxLevel()), SpellText.statsOf(player),
+                    SpellText.schoolsOf(player.registryAccess()), Passives.damageBonus(player, key)));
+            lines.add(stateLine(cell));
+            SpellTooltips.show(graphics, font, key, spell, lines, mouseX, mouseY);
             return;
         }
         for (int index = 0; index < view.trees().size(); index++) {

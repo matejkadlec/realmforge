@@ -159,7 +159,12 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   weapons by holding right click (RLM-297: Sword Blocking Mechanics' poses, our rules), and their projectiles and
   full-strength hits never lose anything to the hurt cooldown (RLM-311, RLM-386). A player or mob is in combat for 10 s
   after the last hit dealt or taken (RLM-348), which rage and the scrolls read; a scroll charges for 3 s, like a bow,
-  before it works. The quest pipeline (Q1) writes FTB Quests' quest book from `content/quests/` (no quests yet), with
+  before it works. Spells have icons (A1's first part: RLM-642, RLM-588, RLM-591): approved art in `art/textures/`
+  takes a generated placeholder's place in `rf gen` (items, spell and effect icons), every M1 player spell shows its
+  icon in the spell bar, the spellbook, its tooltip and the cast bar, a passive's in a medallion with cut corners, the
+  four school icons are drawn, and the spellbook's window is a book with one page open (RLM-609); item and gear icons
+  are A1's second part (RLM-643).
+  The quest pipeline (Q1) writes FTB Quests' quest book from `content/quests/` (no quests yet), with
   stable ids, tasks of our own (a level, a dungeon, a spell) through our criteria triggers, and every quest's where and
   with what from data. The pack has M1's QoL, UI and building mods, and vanilla strongholds are off (PK1 to PK3). Next to
   the core mod, the pack ships Better Key Binds (RLM-372), our own client mod that gives every key bind a secondary
@@ -254,7 +259,7 @@ bash tests/test_gradle_queue.sh           # the Gradle queue's cloud warm-up sui
 | `dev/` | dev client defaults: `options.txt`, seeded into `run/client` by `seedDevOptions` | yes |
 | `pack/` | packwiz metadata and config overrides (`config/`), no jars | metadata via `packwiz` commands; `config/` by hand ([procedure](pack/README.md#configuration)), except the quest book (next row), then `packwiz refresh` |
 | `pack/config/ftbquests/quests/` | FTB Quests' quest book from `rf gen` (`content/quests/`, `content/chapters/`); `rf gen` deletes what it did not write | **no** |
-| `art/` | asset sources: the project palette, generator candidates, prompts, Blockbench files, room import rules | yes |
+| `art/` | asset sources: the project palette, generator candidates, prompts, the approved textures `rf gen` installs (`art/textures/`, [art/README.md](art/README.md)), Blockbench files, room import rules | yes |
 | `docs/` | vision, architecture, roadmap, design documents, lore, research, research notes, ADRs, dev setup | yes |
 | `.github/workflows/ci.yml` | CI | yes |
 | `git_clean_worktrees.sh` | Matěj's cleanup of merged branches, their worktrees and worktree residue ([README](README.md#git-worktree-cleanup)) | yes |
