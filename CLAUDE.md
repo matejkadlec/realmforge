@@ -92,7 +92,8 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   and the Mage's, the Frost Mage's "Shatter" tree (RLM-542: Improved Frostbolt, Frostbolt, Cone of Cold; Ice Lance,
   Frost Nova, Frostbite; Shatter, Ice Barrier; Blizzard), with a cone along the look, Ice Lance's × 2 to × 4 against
   Frozen and Frostbite's freeze on a Slowness; the first spells of rank 5, and the Human's Will To Survive in the
-  racial slot and Sword Specialization; melee spells need a melee weapon in the main hand and
+  racial slot and Sword Specialization (its line reads "+10% Damage With Sword-like Weapons" on the character sheet and
+  an indented "+10% Damage" in the weapon's tooltip, RLM-563); melee spells need a melee weapon in the main hand and
   Shield Bash a shield (RLM-499), stuns stop mobs and casts, crit chance above 100 % turns into crit damage, a
   player's channel ticks every 0.5 s (RLM-518) but Blizzard's waves come a second apart and Cast Time Reduction adds
   waves to it (RLM-572: Matěj's Frost numbers, cooldowns and costs by rank, a channel's cost up front), a cast with less
@@ -115,7 +116,10 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   Casters have their gear (RLM-172, RLM-197), from an item's `gear` in YAML: seven two-handed wands from wood to
   netherite whose stats count in the main hand, which every cast wears and which lock shields, and four robe sets (Apprentice's, Spellweave, Arcane Silk,
   Netherite) with magic shield, flat Spell Power and mana instead of armor; Arcane Dust drops from witches, evokers and
-  illusioners through a NeoForge loot modifier.
+  illusioners through a NeoForge loot modifier. A netherite piece takes one netherite upgrade at a smithing table
+  (RLM-566, `content/netherite_upgrades/`): a Ruby, Sapphire or Topaz Upgrade (eight gems around a diamond) gives
+  offense, defense or utility by the piece's archetype (melee: vanilla's netherite armor; caster: the Netherite robes)
+  while worn, through a data component of ours that names the upgrade's registry entry.
   Characters level up (C2): character XP from kills (by the victim's level and rank) and `/realmforge xp`, an XP
   bar, and a level cap from chapter advancements (10, then 18 after chapter 1 and 30 after chapter 2). The spell
   engine is done (C3a): spells as data in `content/spells/`, cast by players and mobs through one `SpellCaster` (from

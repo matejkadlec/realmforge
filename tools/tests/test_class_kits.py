@@ -13,10 +13,15 @@ from realmforge_tools.generate import generate_all
 from realmforge_tools.generate.effect_icons import ICONS, PIXELS, drawn_icon
 from realmforge_tools.id_universe import load_vanilla
 from realmforge_tools.problems import ValidationFailed
-from realmforge_tools.project import REPO_ROOT, RepoPaths
+from realmforge_tools.project import MOD_ID, REPO_ROOT, RepoPaths
 from realmforge_tools.schema.character import passive_bonuses, passive_modifier_id
 from realmforge_tools.schema.effect import EffectDef
-from realmforge_tools.schema.item import FIXED_ITEM_TAGS, MELEE_WEAPONS_TAG, SWORD_LIKE_TAG
+from realmforge_tools.schema.item import (
+    FIXED_ITEM_TAGS,
+    MELEE_WEAPONS_TAG,
+    NETHERITE_UPGRADABLE_CASTER_TAG,
+    SWORD_LIKE_TAG,
+)
 from realmforge_tools.schema.spell import SpellDef
 from realmforge_tools.validate import load_and_validate
 from tests.conftest import write
@@ -531,8 +536,29 @@ def test_a_racial_passive_names_a_tag_that_exists(repo: RepoPaths) -> None:
 
 def test_a_racial_passive_description_names_only_bonus(repo: RepoPaths) -> None:
     human = repo.content / "races" / "human.yaml"
-    human.write_text(human.read_text().replace("+{bonus}% damage", "+{damage}% damage"))
+    human.write_text(human.read_text().replace("+{bonus}% Damage With", "+{damage}% Damage With"))
     assert_problem(repo, "unknown placeholder {damage}")
+
+
+def test_a_racial_passive_tooltip_line_names_only_bonus(repo: RepoPaths) -> None:
+    human = repo.content / "races" / "human.yaml"
+    human.write_text(human.read_text().replace('"+{bonus}% Damage"}', '"+{damage}% Damage"}'))
+    assert_problem(repo, "tooltip_description: unknown placeholder {damage}")
+
+
+def test_a_racial_passive_tooltip_line_is_optional(repo: RepoPaths) -> None:
+    human = repo.content / "races" / "human.yaml"
+    text = human.read_text()
+    line = '  tooltip_description: {en_us: "+{bonus}% Damage"}\n'
+    assert line in text
+    human.write_text(text.replace(line, ""))
+    content, _ = load_and_validate(repo)
+    assert content.races[0].model.racial_passive.tooltip_description is None
+    races = generate(repo)[f"{QA}/GeneratedRaceExpectations.java"].decode()
+    assert (
+        '"race.realmforge.human.racial_passive.description",\n                            Optional.empty(),'
+        in races
+    )
 
 
 def test_class_spells_and_racials_reach_the_data_and_expectations() -> None:
@@ -560,6 +586,7 @@ def test_class_spells_and_racials_reach_the_data_and_expectations() -> None:
     assert human["racial_passive"] == {
         "name": "race.realmforge.human.racial_passive.name",
         "description": "race.realmforge.human.racial_passive.description",
+        "tooltip_description": "race.realmforge.human.racial_passive.tooltip_description",
         "weapons": "realmforge:sword_like",
         "modifiers": [
             {"attribute": "minecraft:attack_damage", "operation": "add_multiplied_base", "amount": 0.1}
@@ -568,6 +595,12 @@ def test_class_spells_and_racials_reach_the_data_and_expectations() -> None:
     races = files[f"{QA}/GeneratedRaceExpectations.java"].decode()
     assert 'Optional.of("realmforge:will_to_survive")' in races
     assert 'new Bonus("realmforge:race/realmforge/passive/0/human", "minecraft:attack_damage"' in races
+    assert 'Optional.of("race.realmforge.human.racial_passive.tooltip_description")' in races
+    lang = json.loads(files["mod/src/generated/resources/assets/realmforge/lang/en_us.json"])
+    assert (
+        lang["race.realmforge.human.racial_passive.description"] == "+{bonus}% Damage With Sword-like Weapons"
+    )
+    assert lang["race.realmforge.human.racial_passive.tooltip_description"] == "+{bonus}% Damage"
     classes = files[f"{QA}/GeneratedClassExpectations.java"].decode()
     assert 'new TreeSpell("realmforge:frostbolt", 1, 2, Optional.empty())' in classes
     assert 'new TreeSpell("realmforge:bloodthirst", 12, 1, Optional.of("realmforge:rend"))' in classes
@@ -599,7 +632,10 @@ def test_the_fixed_tags_name_vanilla_ids_that_exist() -> None:
     vanilla = load_vanilla(RepoPaths())
     for members in FIXED_ITEM_TAGS.values():
         for member in members:
-            if member.startswith("#"):
+            if member.startswith(f"#{MOD_ID}:"):
+                # One of our own tags (the netherite pieces, RLM-566): generate/items.py writes it.
+                assert member[1:] in FIXED_ITEM_TAGS or member[1:] == NETHERITE_UPGRADABLE_CASTER_TAG, member
+            elif member.startswith("#"):
                 assert vanilla.contains_tag("minecraft:item", member[1:]), member
             else:
                 assert vanilla.contains("minecraft:item", member), member

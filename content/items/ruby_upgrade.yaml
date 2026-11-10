@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=../../tools/schemas/items.schema.json
+# The Ruby netherite upgrade (RLM-566; gear design, "Netherite upgrades"): eight Rubys around one diamond, and a
+# smithing table puts it on one netherite piece with a Netherite Upgrade Smithing Template
+# (content/netherite_upgrades/ruby.yaml). The diamond as the base item is Claude's pick for Matěj's playtest. The
+# generated placeholder texture until the A* textures.
+id: ruby_upgrade
+name:
+  en_us: Ruby Upgrade
+creative_tabs:
+  - minecraft:ingredients
+color: "#C42638"
+recipe:
+  pattern: ["RRR", "RDR", "RRR"]
+  key:
+    R: realmforge:ruby
+    D: minecraft:diamond

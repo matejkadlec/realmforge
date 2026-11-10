@@ -1,0 +1,7 @@
+{
+  "type": "realmforge:netherite_upgrade",
+  "addition": "realmforge:topaz_upgrade",
+  "base": "#realmforge:netherite_upgradable",
+  "template": "minecraft:netherite_upgrade_smithing_template",
+  "upgrade": "realmforge:topaz"
+}

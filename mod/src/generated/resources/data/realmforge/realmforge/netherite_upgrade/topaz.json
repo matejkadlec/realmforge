@@ -1,0 +1,20 @@
+{
+  "name": "netherite_upgrade.realmforge.topaz.name",
+  "color": "#E3A92B",
+  "item": "realmforge:topaz_upgrade",
+  "template": "minecraft:netherite_upgrade_smithing_template",
+  "melee": [
+    {
+      "attribute": "minecraft:movement_speed",
+      "operation": "add_multiplied_base",
+      "amount": 0.05
+    }
+  ],
+  "caster": [
+    {
+      "attribute": "realmforge:cooldown_reduction",
+      "operation": "add_value",
+      "amount": 0.05
+    }
+  ]
+}

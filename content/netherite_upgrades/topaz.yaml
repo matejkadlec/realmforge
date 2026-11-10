@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../tools/schemas/netherite_upgrades.schema.json
+# The utility upgrade (Matěj, 2026-10-30, RLM-511): +5 % movement speed on a melee piece, +5 % Cooldown Reduction on a
+# caster piece. Later, on a ranged piece: +5 % Draw Speed (M3).
+id: topaz
+name:
+  en_us: Topaz Upgrade
+color: "#E3A92B"
+item: realmforge:topaz_upgrade
+template: minecraft:netherite_upgrade_smithing_template
+melee:
+  - {attribute: minecraft:movement_speed, operation: add_multiplied_base, amount_percent: 5}
+caster:
+  - {attribute: realmforge:cooldown_reduction, operation: add_value, amount_percent: 5}

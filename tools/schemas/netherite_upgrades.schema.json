@@ -1,0 +1,138 @@
+{
+  "$defs": {
+    "GearModifierDef": {
+      "additionalProperties": false,
+      "description": "A fixed stat the gear gives while it is in its slot: a wand in the main hand, armor where it is worn. Units\nfollow the stat rules: ``add_value`` on one of our stats takes its unit (``amount_percent`` for a share, ``amount``\nfor points); multiplied operations take ``amount_percent``.",
+      "properties": {
+        "amount": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The amount, in game units.",
+          "title": "Amount"
+        },
+        "amount_percent": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The amount in percent (5 means 5 %, the fraction 0.05).",
+          "title": "Amount Percent"
+        },
+        "attribute": {
+          "description": "The attribute it modifies, e.g. realmforge:strength.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Attribute",
+          "type": "string"
+        },
+        "operation": {
+          "description": "How the amount applies (vanilla's attribute modifier operations).",
+          "enum": [
+            "add_value",
+            "add_multiplied_base",
+            "add_multiplied_total"
+          ],
+          "title": "Operation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "attribute",
+        "operation"
+      ],
+      "title": "GearModifierDef",
+      "type": "object"
+    },
+    "LocalizedText": {
+      "additionalProperties": false,
+      "description": "A player-facing text, keyed by locale. Realmforge ships English only, so en_us is the one locale.",
+      "properties": {
+        "en_us": {
+          "description": "English (US). Required.",
+          "minLength": 1,
+          "title": "En Us",
+          "type": "string"
+        }
+      },
+      "required": [
+        "en_us"
+      ],
+      "title": "LocalizedText",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One netherite upgrade: the item that carries it to the smithing table, the line the piece's tooltip shows, and\nits bonus per archetype of the piece. The bonus counts while the piece is worn, in the piece's armor slot.",
+  "properties": {
+    "caster": {
+      "description": "The bonus on a caster piece (our netherite robes), e.g. {attribute: realmforge:spell_power, operation: add_multiplied_base, amount_percent: 5}.",
+      "items": {
+        "$ref": "#/$defs/GearModifierDef"
+      },
+      "minItems": 1,
+      "title": "Caster",
+      "type": "array"
+    },
+    "color": {
+      "description": "The colour of that line, \"#RRGGBB\": its gem's.",
+      "pattern": "^#[0-9A-Fa-f]{6}$",
+      "title": "Color",
+      "type": "string"
+    },
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "item": {
+      "description": "The upgrade item a smithing table takes as the addition, e.g. realmforge:ruby_upgrade: one of our items that is no gear and carries no other upgrade.",
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+      "title": "Item",
+      "type": "string"
+    },
+    "melee": {
+      "description": "The bonus on a melee piece (vanilla's netherite armor), e.g. {attribute: minecraft:attack_damage, operation: add_multiplied_base, amount_percent: 5}.",
+      "items": {
+        "$ref": "#/$defs/GearModifierDef"
+      },
+      "minItems": 1,
+      "title": "Melee",
+      "type": "array"
+    },
+    "name": {
+      "$ref": "#/$defs/LocalizedText",
+      "description": "The line the upgraded piece's tooltip shows, e.g. \"Ruby Upgrade\"."
+    },
+    "template": {
+      "description": "The smithing template the recipe takes, e.g. minecraft:netherite_upgrade_smithing_template.",
+      "pattern": "^#?[a-z0-9_.-]+:[a-z0-9_./-]+$",
+      "title": "Template",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "color",
+    "item",
+    "template",
+    "melee",
+    "caster"
+  ],
+  "title": "NetheriteUpgradeDef",
+  "type": "object"
+}

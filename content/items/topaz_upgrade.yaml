@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=../../tools/schemas/items.schema.json
+# The Topaz netherite upgrade (RLM-566; gear design, "Netherite upgrades"): eight Topazs around one diamond, and a
+# smithing table puts it on one netherite piece with a Netherite Upgrade Smithing Template
+# (content/netherite_upgrades/topaz.yaml). The diamond as the base item is Claude's pick for Matěj's playtest. The
+# generated placeholder texture until the A* textures.
+id: topaz_upgrade
+name:
+  en_us: Topaz Upgrade
+creative_tabs:
+  - minecraft:ingredients
+color: "#E3A92B"
+recipe:
+  pattern: ["TTT", "TDT", "TTT"]
+  key:
+    T: realmforge:topaz
+    D: minecraft:diamond

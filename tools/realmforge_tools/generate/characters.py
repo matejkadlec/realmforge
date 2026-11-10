@@ -80,10 +80,16 @@ def _passive(race: RaceDef) -> str:
         f"{_double(amount)})"
         for id_, attribute, operation, amount in passive_bonuses(race.id, passive)
     )
+    tooltip = (
+        f"Optional.of({string_literal(translation_key('race', race.id, 'racial_passive.tooltip_description'))})"
+        if passive.tooltip_description is not None
+        else "Optional.empty()"
+    )
     return (
         "Optional.of(new Passive(\n"
         f"                            {string_literal(translation_key('race', race.id, 'racial_passive.name'))},\n"
         f"                            {string_literal(translation_key('race', race.id, 'racial_passive.description'))},\n"
+        f"                            {tooltip},\n"
         f"                            {string_literal(passive.weapons)},\n"
         f"                            List.of({rows})))"
     )
@@ -115,10 +121,11 @@ def _races(content: Content) -> bytes:
         "\n"
         "/** What {@code content/races/} says about every race, so GameTests can check that the game agrees. */\n"
         "public final class GeneratedRaceExpectations {\n" + _BONUS_RECORDS + "    /**\n"
-        "     * A racial passive: its name and description keys, the item tag the main hand needs, and the bonuses it\n"
-        "     * gives meanwhile.\n"
+        "     * A racial passive: its name and description keys, its weapon tooltip's key when it has one of its own, the\n"
+        "     * item tag the main hand needs, and the bonuses it gives meanwhile.\n"
         "     */\n"
-        "    public record Passive(String nameKey, String descriptionKey, String weapons, List<Bonus> bonuses) {\n"
+        "    public record Passive(String nameKey, String descriptionKey, Optional<String> tooltipDescriptionKey,\n"
+        "            String weapons, List<Bonus> bonuses) {\n"
         "    }\n"
         "\n"
         "    /**\n"

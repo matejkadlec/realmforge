@@ -40,14 +40,22 @@ TWO_HANDED_TAG = f"{MOD_ID}:two_handed"
 # spears, the trident and the mace; our own melee weapon types (katana, hammer, dagger) join it once they exist. Bows,
 # crossbows, wands and tools such as pickaxes are no melee weapons.
 MELEE_WEAPONS_TAG = f"{MOD_ID}:melee_weapons"
-# The item tag of sword-like weapons (Matěj, 2026-10-15, RLM-219): the Human's Sword Specialization. Vanilla's swords
-# today; katanas, longswords and maybe rapiers once the pack has them.
+# The item tag of sword-like weapons (Matěj, 2026-10-15, RLM-219): the Human's Sword Specialization. Swords, katanas
+# and rapiers, never hammers (Matěj, 2026-11-04, RLM-563): vanilla's swords today, and RLM-617 adds its Katana and
+# Rapier.
 SWORD_LIKE_TAG = f"{MOD_ID}:sword_like"
 # The item tag of two-handed weapons (RLM-541): Two-Handed Specialization applies while one is in the main hand.
 # Every weapon Better Combat calls two-handed, spears included; Better Combat decides that at run time, so the data
 # tag is empty and compat/bettercombat/TwoHandedWeapons binds its members into the items, as for the weapons a player
 # raises to block. Not TWO_HANDED_TAG's two-handed gear (wands).
 TWO_HANDED_WEAPONS_TAG = f"{MOD_ID}:two_handed_weapons"
+# The item tags of the netherite pieces that take one netherite upgrade (RLM-566, content/netherite_upgrades/), by
+# the archetype whose bonus they get, and the tag of them all, the upgrade recipes' base. Melee: vanilla's four
+# netherite armor pieces; caster: our gear with netherite_upgradable, the Netherite robes. Ranged joins with the first
+# ranged set (M3).
+NETHERITE_UPGRADABLE_TAG = f"{MOD_ID}:netherite_upgradable"
+NETHERITE_UPGRADABLE_MELEE_TAG = f"{MOD_ID}:netherite_upgradable/melee"
+NETHERITE_UPGRADABLE_CASTER_TAG = f"{MOD_ID}:netherite_upgradable/caster"
 # Item tags whose members are fixed here rather than coming from content/items/ (generate/items.py writes them).
 FIXED_ITEM_TAGS: dict[str, tuple[str, ...]] = {
     MELEE_WEAPONS_TAG: (
@@ -59,6 +67,13 @@ FIXED_ITEM_TAGS: dict[str, tuple[str, ...]] = {
     ),
     SWORD_LIKE_TAG: ("#minecraft:swords",),
     TWO_HANDED_WEAPONS_TAG: (),
+    NETHERITE_UPGRADABLE_MELEE_TAG: (
+        "minecraft:netherite_helmet",
+        "minecraft:netherite_chestplate",
+        "minecraft:netherite_leggings",
+        "minecraft:netherite_boots",
+    ),
+    NETHERITE_UPGRADABLE_TAG: (f"#{NETHERITE_UPGRADABLE_MELEE_TAG}", f"#{NETHERITE_UPGRADABLE_CASTER_TAG}"),
 }
 # A player's attack damage and attack speed without a weapon (vanilla's base values): a weapon's tooltip numbers are
 # its modifiers plus these.
@@ -163,6 +178,13 @@ class GearDef(StrictModel):
         default_factory=list,
         description="Its fixed stats while in its slot, e.g. {attribute: realmforge:spell_power, operation: add_value, amount: 2}.",
     )
+    netherite_upgradable: bool = Field(
+        default=False,
+        description=(
+            "Armor only: a netherite caster piece that takes one netherite upgrade at the smithing table "
+            "(content/netherite_upgrades/, RLM-566), whose caster bonus it then gives while worn."
+        ),
+    )
 
     @model_validator(mode="after")
     def _kind_fields(self) -> GearDef:
@@ -178,6 +200,8 @@ class GearDef(StrictModel):
                 raise ValueError("attack_damage and attack_speed are a wand's")
             if self.two_handed:
                 raise ValueError("only a wand is two-handed: armor is worn, not held")
+        if self.kind == "wand" and self.netherite_upgradable:
+            raise ValueError("only armor takes a netherite upgrade")
         attributes = [modifier.attribute for modifier in self.modifiers]
         repeated = sorted({attribute for attribute in attributes if attributes.count(attribute) > 1})
         if repeated:

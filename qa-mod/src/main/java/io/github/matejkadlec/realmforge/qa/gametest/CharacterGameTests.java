@@ -225,6 +225,10 @@ public final class CharacterGameTests {
                     Component.translatable(raceEntry.racialPassive().get().name()).getString(),
                     RacialPassives.description(raceEntry.racialPassive().get())),
                     "each racial on two lines: its heading or name, then what it is (Matěj, 2026-10-30)");
+            if (race.id().equals("realmforge:human")) {
+                helper.assertValueEqual(racial.getLast().getString(), "+10% Damage With Sword-like Weapons",
+                        "the sheet names the weapons, capitalized on purpose (Matěj, 2026-11-04, RLM-563)");
+            }
             helper.assertValueEqual(racial.stream().map(line -> 0xFF000000 | line.getStyle().getColor().getValue())
                     .toList(), List.of(CharacterSheetView.RACIAL_NAME, CharacterSheetView.RACIAL_DETAIL,
                     CharacterSheetView.RACIAL_NAME, CharacterSheetView.RACIAL_DETAIL), "gold over yellow");

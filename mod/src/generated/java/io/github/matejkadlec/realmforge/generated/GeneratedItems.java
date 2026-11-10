@@ -358,9 +358,17 @@ public final class GeneratedItems {
     public static final DeferredItem<Item> RUBY =
             ITEMS.registerSimpleItem("ruby");
 
+    /** {@code realmforge:ruby_upgrade} from {@code content/items/ruby_upgrade.yaml}. */
+    public static final DeferredItem<Item> RUBY_UPGRADE =
+            ITEMS.registerSimpleItem("ruby_upgrade");
+
     /** {@code realmforge:sapphire} from {@code content/items/sapphire.yaml}. */
     public static final DeferredItem<Item> SAPPHIRE =
             ITEMS.registerSimpleItem("sapphire");
+
+    /** {@code realmforge:sapphire_upgrade} from {@code content/items/sapphire_upgrade.yaml}. */
+    public static final DeferredItem<Item> SAPPHIRE_UPGRADE =
+            ITEMS.registerSimpleItem("sapphire_upgrade");
 
     /** {@code realmforge:spellweave} from {@code content/items/spellweave.yaml}. */
     public static final DeferredItem<Item> SPELLWEAVE =
@@ -474,6 +482,10 @@ public final class GeneratedItems {
     public static final DeferredItem<Item> TOPAZ =
             ITEMS.registerSimpleItem("topaz");
 
+    /** {@code realmforge:topaz_upgrade} from {@code content/items/topaz_upgrade.yaml}. */
+    public static final DeferredItem<Item> TOPAZ_UPGRADE =
+            ITEMS.registerSimpleItem("topaz_upgrade");
+
     /** {@code realmforge:undervault_signet} from {@code content/items/undervault_signet.yaml}. */
     public static final DeferredItem<Item> UNDERVAULT_SIGNET =
             ITEMS.registerSimpleItem("undervault_signet", properties -> properties.stacksTo(1).fireResistant()
@@ -539,12 +551,15 @@ public final class GeneratedItems {
                 event.accept(ICE_SIGNET_SHARD);
                 event.accept(MAGIC_STONE_DUST);
                 event.accept(RUBY);
+                event.accept(RUBY_UPGRADE);
                 event.accept(SAPPHIRE);
+                event.accept(SAPPHIRE_UPGRADE);
                 event.accept(SPELLWEAVE);
                 event.accept(STONE_HEART);
                 event.accept(SUN_SIGNET_SHARD);
                 event.accept(TEST_ITEM);
                 event.accept(TOPAZ);
+                event.accept(TOPAZ_UPGRADE);
             }
             case "minecraft:tools_and_utilities" -> {
                 event.accept(OBLIVION_SCROLL);
