@@ -322,6 +322,9 @@ How features cooperate without breaking the direction:
 | `realmforge:class` | `content/classes/` | class: role (melee, caster, ranged), resource type, starting stats, its specializations' spell trees (C5), starting kit | yes | M1 |
 | `realmforge:spell_school` | `content/spell_schools/` | school (owned by `combat`): kind (physical or magic), colour, its damage type, and the stats that are its power and resistance (attributes from `content/stats/`, static registrations, so a new school's stats need a game restart) | yes | M1 |
 | `realmforge:spell` | `content/spells/` | spell for players or NPCs: school, what it scales with, targeting, cast, cost, cooldowns, crit rules, typed effects with values per spell level (C3a-1), its name and description with placeholders (C3b) | yes | M1 |
+| `realmforge:spell_look` | `content/spell_looks/` | an element's look of the spell visuals kit (owned by `spell`, RLM-439): its colours, the particles of a projectile's trail and burst, its impact sound; its material is `textures/spell/material/<look>.png` ([11.3](#113-spell-entities)) | yes | M1 |
+| `realmforge:spell_model` | `content/spell_models/` | a projectile's shape: the orb until the GeckoLib models (RLM-640), its scale, how it turns in flight | yes | M1 |
+| `realmforge:spell_trajectory` | `content/spell_trajectories/` | how a projectile flies: its kind, only `straight` ([ADR 0052](decisions/0052-spells-aim-with-the-crosshair.md)) | yes | M1 |
 | `realmforge:talent_tree` | `content/talents/` | WoW-style tree: nodes on a grid, ranks, prerequisites, typed effects per rank | yes | not planned: no talents as of v1.0.0 ([12](#12-talents)) |
 | `realmforge:stat_rule` | `content/stat_rules/` | what a primary stat gives: per-point modifiers, milestone bonuses, each for every player or some class roles | yes | M1 |
 | `realmforge:curve` | `content/curves/` | named table of points (level → value), linearly interpolated: XP per level, mob scaling, item budgets | yes | M1 |
@@ -393,8 +396,9 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 
 | `content/` | Generated | Loaded as |
 | --- | --- | --- |
-| `items/` (exists), `stats/` (exists: attributes, [8.1](#81-the-attribute-set)), `blocks/` (exists: blocks with their items, loot tables, mining tags and recipes; a block's kind picks its class, below), `effects/` (exists: status effects, [11.4](#114-status-effects)), `mobs/` (exists: entity types of an archetype with their attributes, loot tables, tags and placeholder GeckoLib models, [14.2](#142-custom-mobs)), `sounds/` (exists: our sound events `realmforge:<category>.<subject>.<name>` playing vanilla sounds by reference with their own pitch and volume, [ADR 0007](decisions/0007-asset-pipeline.md); `GeneratedSounds` belongs to `core`) | `Generated*.java` registrations; models, blockstates, textures (placeholders until art exists), lang, `sounds.json`; QA expectations | static registries |
-| `races/`, `classes/`, `spells/`, `spell_schools/`, `talents/`, `stat_rules/`, `curves/`, `chapters/`, `dimensions/`, `realms/`, `bosses/`, `dungeons/`, `netherite_upgrades/` | `data/realmforge/realmforge/<registry>/<id>.json`, lang, `ResourceKey` constants where needed, QA expectations | datapack registries |
+| `items/` (exists), `stats/` (exists: attributes, [8.1](#81-the-attribute-set)), `blocks/` (exists: blocks with their items, loot tables, mining tags and recipes; a block's kind picks its class, below), `effects/` (exists: status effects, [11.4](#114-status-effects)), `mobs/` (exists: entity types of an archetype with their attributes, loot tables, tags and placeholder GeckoLib models, [14.2](#142-custom-mobs)), `sounds/` (exists: our sound events `realmforge:<category>.<subject>.<name>` playing vanilla sounds by reference with their own pitch and volume, [ADR 0007](decisions/0007-asset-pipeline.md); `GeneratedSounds` belongs to `core`), `particles/` (exists: our particle types, greyscale frames that a spawn's colour tints, with how they move; `GeneratedParticles` belongs to `spell`, [11.3](#113-spell-entities)) | `Generated*.java` registrations; models, blockstates, textures (placeholders until art exists), lang, `sounds.json`; QA expectations | static registries |
+| `races/`, `classes/`, `spells/`, `spell_looks/`, `spell_models/`, `spell_trajectories/`, `spell_schools/`, `talents/`, `stat_rules/`, `curves/`, `chapters/`, `dimensions/`, `realms/`, `bosses/`, `dungeons/`, `netherite_upgrades/` | `data/realmforge/realmforge/<registry>/<id>.json`, lang, `ResourceKey` constants where needed, QA expectations | datapack registries |
+| `spell_looks/` (also), `particles/` (also) | a look's placeholder material `assets/realmforge/textures/spell/material/<look>.png` (16 x 16 noise in the look's colours, until its art exists); a particle's sprite set `assets/realmforge/particles/<id>.json` and its frames `textures/particle/<id>_<n>.png` (`generate/spell_visuals.py`) | textures; the particle atlas |
 | `spell_schools/` (also) | `data/realmforge/damage_type/<school>.json` (death messages `death.attack.realmforge.<school>`), the tag entries in `#minecraft:bypasses_cooldown` and, for magic schools, `#minecraft:bypasses_armor` and `#realmforge:is_magic`, for physical ones `#neoforge:is_physical` ([9.1](#91-damage-pipeline)); the school's power and resistance are stats in `content/stats/` that it names | vanilla damage types, tags |
 | `dungeons/` (also) | the entry carries its pool's rooms resolved (template, size, role, weight, and the connectors read from the templates' jigsaw blocks; `generate/dungeons.py`), so the planner needs no template, and each room's set-piece spots with the pieces that may fill them ([15.4](#154-rooms)); a biome per type, `worldgen/biome/dungeon_<id>.json`, named like it (`generate/instance_biomes.py`, [15.5](#155-instances)) | the planner ([15.3](#153-generation-pure-first-then-minecraft)); the builder's set pieces (RLM-282) |
 | `loot/`, tags; the `recipe` of an item or block (exists, W4d); an item's `dropped_by` (RLM-172) | `data/realmforge/loot_table/`, `recipe/<id>.json` (vanilla's `crafting_shaped`, `crafting_shapeless` or `smithing_transform`, with item or tag ingredients, the result the entry itself), `tags/`; per `dropped_by` mob a loot table `loot_table/item_drops/<item>/<ns>/<entity>.json` and a NeoForge `neoforge:add_table` loot modifier `loot_modifiers/item_drops/<item>/<ns>/<entity>.json` that adds it to the mob's own table ([13](#13-items-gear-and-loot)) | reloadable vanilla data; global loot modifiers |
@@ -1407,7 +1411,9 @@ scales with, targeting (with the range), cast type (instant since C3a-1; cast ti
 its own cooldown and the global cooldown, crit rules, typed effects, a maximum level with values per level (the
 vision prefers spell levels or power over rarities; research SP-9), and an `npc_only` flag for mob and boss spells.
 Its name and description are translation keys from C3b, the description's numbers placeholders filled from the data
-([11.6](#116-client-side)); its icon, animation and sound keys come with C6.
+([11.6](#116-client-side)). Its `visuals` (`spell/Visuals`, RLM-439) name its look, what forms in the caster's hands
+during the cast and an impact sound of its own, from the parts of the spell visuals kit
+([11.3](#113-spell-entities)); its icon and animation keys come with C6.
 
 - **What it scales with** (Matěj, 2026-10-15): spell power for magic, attack damage for physical abilities (a
   Warrior's Slam is a weapon move), later summon damage. Off-class stats do nothing for a class's abilities, so the
@@ -1735,8 +1741,9 @@ tick and ends the cast at once when blocks come between them (`CastEnd.NO_LINE_O
 `keep_range_percent`, the target must stay within the spell's range for that share of the cast, or the cast ends at
 once (`CastEnd.OUT_OF_RANGE`), and past it the range no longer matters, not even before the effects
 (`SpellCaster#recheck` then needs the target only alive, in the dimension and in sight). A spell that locks on keeps
-neither. A cast's `sound` plays from the caster when the cast begins, and a cast time that `forms_projectile` launches
-its first effect's projectile from the caster's raised hands (`SpellVisuals#formPoint`, the caster's body
+neither. A cast's `sound` plays from the caster when the cast begins, and a cast time whose `visuals.forming` forms
+its projectile (`grow` or `storm`, `SpellVisuals#formedProjectile`) launches its first effect's projectile from the
+caster's raised hands (`SpellVisuals#formPoint`, the caster's body
 facing) toward the target's middle, where its clients drew it forming ([11.6](#116-client-side)). A cast-time or
 channelled spell's `animation` says how a custom mob moves its arms while it runs (`SpellCast.Animation`: `raise`, the
 default, or `slam`, [14.2](#142-custom-mobs)); players' casts ignore it. The Hewn Chanter's
@@ -1770,9 +1777,8 @@ type only for genuinely new behaviour.
   `ServerLevel#isPositionEntityTicking`: beyond every player's simulation distance, which equals the render distance by
   default, or in a chunk that is not loaded; `checkDespawn`, which the server calls even where entities no longer
   tick, removes one left behind), and in the void (vanilla's `Entity#checkBelowWorld`, 64 blocks below the
-  bottom). Its `impact` plays a sound and bursts a
-  block's break particles where it hits a block or an entity, and its `appearance` (`orb`) is how its clients draw it
-  ([11.6](#116-client-side)).
+  bottom). Its `model` and its `trajectory` are parts of the
+  spell visuals kit (below), and its impact where it hits a block or an entity is the spell's look's.
 - **`realmforge:area`** (`AreaEffect`, `SpellArea`): a zone at the target's position (the caster's feet, an enemy's,
   a ground point) with a `radius`, which runs its own effects on every enemy (or, with `affects: allies`, ally)
   standing within the radius of its middle, from half a block below it to 3 blocks above: on its first tick, then
@@ -1783,7 +1789,7 @@ type only for genuinely new behaviour.
 - **A bolt's splash** (RLM-399, Matěj, 2026-10-24; `ProjectileEffect.Splash`): a projectile with a splash explodes where
   it hits an enemy: the caster's other enemies whose hitboxes lie within its radius of the target's take its effects too,
   its damage at the splash's share (the Mage's bolts: 1 block, 50 %) and every other effect at full strength (Burning,
-  Slowness, spell penetration), and its impact's particles burst over the whole of it. Each of Arcane Missiles' missiles
+  Slowness, spell penetration), and its impact's particles burst over the whole of it, on its clients. Each of Arcane Missiles' missiles
   explodes on its own. A passive spell may widen a named spell's splash from a rank on (`splash_radius`,
   `Passives#splashRadiusBonus`, RLM-542: Improved Frostbolt's rank 3 adds half a block to Frostbolt's, Matěj,
   2026-10-31).
@@ -1822,10 +1828,10 @@ type only for genuinely new behaviour.
   they land; no snapshot is taken at the cast, as nothing (passives, procs) needs one yet. A spell entity ends when its
   caster leaves its level (logs out, changes dimension, a mob that died and was removed).
 - **Never saved:** they carry a live cast (the caster, the spell), so a chunk that unloads or a server that stops
-  drops them (`shouldBeSaved` is false), they use no portal, and commands cannot summon them. Only their size is
-  synced, and a projectile's appearance with its spawn (NeoForge's `IEntityWithComplexSpawn`: its spell's texture);
-  the client moves them and draws a projectile's appearance, or particles (a trail, a ring)
-  (`client/render/SpellEntityRenderers`), until C6 (RLM-29) gives spells their visuals. Their names, "Spell
+  drops them (`shouldBeSaved` is false), they use no portal, and commands cannot summon them. Their size is
+  synced, and a projectile's spawn carries what its clients draw it and fly its path from (NeoForge's
+  `IEntityWithComplexSpawn`, below); the client moves them and draws a projectile's model and trail and an area's
+  ring of particles (`client/render/SpellEntityRenderers`), until the area styles (RLM-443). Their names, "Spell
   Projectile" and "Spell Area", come from `content/texts/entity.yaml` (RLM-259) and show where the game prints an
   entity's own name (F3, `/data`).
 - **The other effect types:** `apply_effect` (a status effect from the caster, one of ours from `content/effects/`
@@ -1839,6 +1845,68 @@ type only for genuinely new behaviour.
   caster, along a projectile's flight, out from an area's middle) with vanilla's knockback, which Knockback Resistance
   weakens, and interrupts its cast. A player moves itself, so a dash or a knockback reaches it as a velocity its
   client applies; the server moves mobs. `SpellEffectGameTests` casts every type.
+
+**The spell visuals kit (RLM-439, part 1: RLM-639; [ADR 0073](decisions/0073-spell-visuals-are-reusable-parts-in-data.md),
+[design](design/spell-visuals.md)).** A spell's look is a combination of parts, each defined once in `content/` and
+named by id, so Frostbolt and Fireball share a model and a trajectory and differ in their look. The engine comes in
+three parts: the kit as content and what the server runs (here), the GeckoLib models and the forming in the caster's
+hands (RLM-640), and the instant spells' animation with its no-melee window (RLM-641).
+
+- **A look** (`realmforge:spell_look`, `spell/SpellLook`, `content/spell_looks/`: frost, fire, arcane, stone) is what
+  makes an element recognisable: its `colors` (lightest first, at most 16; frost's are Matěj's range of 2026-10-29,
+  #B8E2F4 through #8DCFEC to #6ABCE2), the particles of a projectile's `trail` (`per_block`, at most 3) and `burst`
+  (`count`, at most 24), and its `impact_sound`. Its **material** is one tileable 16 x 16 texture,
+  `textures/spell/material/<look>.png` (`SpellLook#material`), that every model of the look is drawn with, as a
+  block's faces take a block texture; `rf gen` writes a placeholder, noise in the look's colours, until its art
+  exists (RLM-440 and the per-spell tickets).
+- **A model** (`realmforge:spell_model`, `spell/SpellModel`, `content/spell_models/`) is a projectile's shape: its
+  `shape`, its `scale` (its width as a share of the hitbox) and how it turns in flight (`tumble`, or `forward` along
+  the flight with a spin). The only shape is the `orb`, three crossed slabs (`client/render/SpellOrbs`, a model layer
+  of our own whose faces take the material pixel for pixel; it repeats, as a texture does unless its metadata clamps
+  it), the placeholder of every model until RLM-640's GeckoLib models.
+- **A trajectory** (`realmforge:spell_trajectory`, `spell/SpellTrajectory`, `content/spell_trajectories/`) is how a
+  projectile flies, and it is gameplay: `SpellTrajectory#velocity(aim, tick, seed)` gives a tick's step and
+  `#position` adds the steps up, a pure function of the launch point, the aim, the ticks flown and the seed.
+  `SpellProjectile#tick` moves by that step on the server and on its clients alike, so they fly the same path. The
+  aim is the velocity of the line it flies along: homing turns it on the server (`needsSync`, so the clients get the
+  turned velocity at once and take it as their aim, `SpellProjectile#lerpMotion`), and a later kind would add its
+  offset to that line. The only kind is `straight` ([ADR 0052](decisions/0052-spells-aim-with-the-crosshair.md)): its
+  step is the aim, whatever the seed. A projectile that names no trajectory gets `realmforge:straight` (the pipeline
+  writes it into the data).
+- **A particle** of ours (`content/particles/`: mote, shard, ember) is a shape, one to eight greyscale 8 x 8 frames
+  written as pixel rows, with how it moves (`lifetime_ticks`, `size`, `gravity`, `friction`, `glows`).
+  `GeneratedParticles` registers a particle type per shape whose options are a colour, vanilla's
+  `ColorParticleOption` (`spell/TintedParticles`), and the client's provider (`client/particle/TintedParticle`,
+  `RegisterParticleProvidersEvent#registerSpriteSet`) tints it, plays its frames over its life and fades it out. They
+  are spawned on the client only, through `Level#addParticle`, so they follow vanilla's Particles option; no particle
+  crosses the network.
+- **A spell names its parts:** `visuals: {look, forming, impact_sound}` on the spell (`spell/Visuals`), `model` and
+  `trajectory` on each projectile (`ProjectileEffect`). A projectile with a model is drawn with its look's material;
+  one without has no body, only the look's trail; a spell without visuals keeps the old trail of sparks (the test
+  spells). `forming` is what shows in the caster's hands during the cast: `grow` (the model grows there cube by cube,
+  Matěj's choice of 2026-10-29), `storm` (it scales up as a whole, grow's fallback) or `hands` (only particles, for a
+  channel such as Arcane Missiles). Until RLM-640's forming renderer, `grow` and `storm` both show a custom mob's
+  projectile growing as a whole ([11.6](#116-client-side)) and `hands` shows nothing; a projectile that forms flies
+  from the hands (`SpellVisuals#formedProjectile`).
+- **A projectile's spawn data** carries what its clients need: its spell's look and its model (each optional), its
+  trajectory, its aim, its seed, the ticks it has flown (for a client that starts to track it mid-flight) and how
+  far its impact bursts (its splash's radius with the caster's passive bonus, or a small puff).
+- **Trail:** every client tick the projectile spawns its look's trail along the step it just flew, `per_block`
+  particles a block, each in one of the look's colours. It starts after the projectile's second tick of flight: a
+  bolt leaves from its caster's eyes, and a particle spawned there would fill the caster's own screen.
+- **Impact:** the server plays the impact's sound (the spell's own `impact_sound`, or its look's) and sends one
+  entity event, `SpellProjectile.EVENT_HIT_ENTITY` or `EVENT_HIT_BLOCK`, before the projectile is gone, as a snowball
+  does. Each client bursts the look's `burst` from it (`SpellProjectile#handleEntityEvent`): round the creature it
+  hit, over the burst radius, or off the block's face, never into it. A client's projectile is a tick or two off the
+  server's, so the client finds the point itself: where the last two ticks of its own flight meet a creature or a
+  block, or its own middle when they meet nothing.
+- **Tests:** `test_spell_visuals.py` (the content types, the references a spell and a look may name, the caps, what
+  `rf gen` writes, and the twin test spells `test_twin_frost` and `test_twin_fire`, which share a model and a
+  trajectory and differ only in their look), `SpellTrajectoryTest` and `SpellVisualsTest` (JUnit), and
+  `SpellVisualsGameTests` (the content as loaded, the twins flying and hitting alike, the entity event and the sound
+  of a hit on a creature and on a block, none for a projectile without a look). What a client draws is checked in a
+  rendered client: `REALMFORGE_QA_SPELL_SHOTS` saves a frame of every tick of a few casts
+  ([dev setup 3.3](dev-setup.md#33-in-wsl-quick-checks)).
 
 ### 11.4 Status effects
 
@@ -2175,16 +2243,18 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
   rules), `CentreSnapTest`, `CastBarStyleTest`, `KeyLabelsTest` (the key labels), `WandClicksTest`, `SpellTextTest`
   and `SpellBarViewTest` the client's logic.
 
-**In code (W3 revision, RLM-33): projectile appearances.** A projectile with an `appearance` is drawn by
-`client/render/SpellProjectileRenderer` instead of its trail of sparks: the `orb` is vanilla's shulker bullet model
-(three crossed slabs, spinning as the bullet does, `client/render/SpellOrbs`) with its spell's own texture,
-`textures/entity/spell/<spell>.png` (`SpellVisuals#projectileTexture`, a placeholder in the YAML's colour that
-`rf gen` draws), as wide as its hitbox. While a caster casts a spell that `forms_projectile`, the custom mob renderer
-reads the cast from `ClientCasts` and the spell from the synced registry and draws that orb in the caster's raised
+**In code (W3 revision, RLM-33; the kit, RLM-639): a projectile's model.** A projectile with a model is drawn by
+`client/render/SpellProjectileRenderer` with the material of its spell's look
+(`textures/spell/material/<look>.png`, [11.3](#113-spell-entities)), as wide as its hitbox times the model's scale
+and turned as the model says; every model is the `orb` for now (three crossed slabs, `client/render/SpellOrbs`), and
+a projectile without a model or a look has no body, only its trail. While a caster casts a spell whose visuals form
+its projectile, the custom mob renderer reads the cast from `ClientCasts` and the spell from the synced registry and
+draws that model in the caster's raised
 hands (`SpellVisuals#formOffset`: where a custom mob's spec puts its hands, `SpellVisuals.Hands`, at the end of its
 arms in the cast pose, which `rf gen` works out from the model; for any other caster 0.75 blocks in front of its
 hitbox and 0.4 above its eyes; never above its height), from 15 % of its size at the cast's start to all of it at its
-end, where the server launches it from ([11.2](#112-casting-server-authoritative)).
+end, where the server launches it from ([11.2](#112-casting-server-authoritative)). A player's own cast shows nothing
+forming until RLM-640's forming renderer, which draws every caster's.
 
 **In code (aim assistance, RLM-345): the target circle.** During the local player's cast-time or channelled spell,
 `client/spell/TargetCircle` draws a ring on the ground under the mob the server named in `CastTargetPayload`
@@ -2848,7 +2918,7 @@ holds the same text. New feedback on a mob goes into both in the same run.
   `attack.swing` lasts half the mob's attack interval (0.75 s for the Sentinel), a stone golem's heavy swing:
   `MeleeMob#swing` triggers it on the server (`triggerAnim`, synced to clients) and it plays to its end, since
   GeckoLib's own attack controller stops with vanilla's 6-tick arm swing. While a custom mob (a caster, or a boss such
-  as Astone with her boulder) casts a spell that forms its projectile, the renderer draws the projectile's orb growing
+  as Astone with her boulder) casts a spell that forms its projectile, the renderer draws the projectile's model growing
   in its hands, which its spec places at the end of its arms in the cast pose (`CustomMobSpec.Hands`, from the model:
   half an arm's thickness back from its end; Matěj's playtest of Astone, 2026-10-29) ([11.6](#116-client-side)). Until
   A2 (RLM-48) brings the art, `rf gen` writes placeholders from the YAML's `model`: a build that fills the hitbox
@@ -4026,6 +4096,7 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   (`RegisterMenuScreensEvent`), tooltip components (`RegisterClientTooltipComponentFactoriesEvent`) and the handlers
   of client-bound payloads (`RegisterClientPayloadHandlersEvent`, [17.1](#171-rules)).
 - **Layout:** `client/hud`, `client/screen`, `client/input`, `client/render` (the spell entities' renderers, C3a-3),
+  `client/particle` (the provider of our particle types, RLM-639),
   `client/tooltip`, `client/network`, `client/spell` (the casts in progress, C3a-2), `client/animation` (the PAL cast
   layer), and `client/compat/<mod>` for the client parts of integrations (JEI plugins, Jade tooltips).
 - **The rule:** no class outside `client/` imports `net.minecraft.client.*`, `com.mojang.blaze3d.*`,
