@@ -32,8 +32,10 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.PermissionSet;
@@ -48,6 +50,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.Potion;
@@ -276,6 +279,54 @@ public final class QaCommandGameTests {
             server.getPlayerList().remove(player);
         }
         helper.succeed();
+    }
+
+    /**
+     * The setup line of the realm portal's playtest (RLM-306, RLM-337, RLM-394), as its command block runs it: the
+     * frame's blocks, the signet and what the new recipe takes, the realm locked again and the player at level 1.
+     */
+    static final String PORTAL_PLAYTEST = "qa run give @s realmforge:gatewright_bricks 17;"
+            + " give @s realmforge:gatewright_sealstone; give @s realmforge:undervault_signet;"
+            + " give @s minecraft:crafting_table; give @s minecraft:stone_bricks 3; give @s minecraft:deepslate_bricks 3;"
+            + " give @s minecraft:quartz_bricks 3; give @s minecraft:mud_bricks 3; give @s minecraft:tuff_bricks 3;"
+            + " give @s realmforge:diorite_bricks 3; give @s realmforge:granite_bricks 3;"
+            + " give @s realmforge:andesite_bricks 3; give @s minecraft:ender_pearl 3; give @s minecraft:gold_ingot 4;"
+            + " give @s minecraft:compass; qa realm lock realmforge:stone; qa level 1";
+
+    /** The realm portal playtest's setup line runs whole: every item arrives, the realm is locked, the level is 1. */
+    @QaGameTest
+    public static void thePortalPlaytestsSetupLineRuns(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-portal-playtest");
+        player.snapTo(helper.absoluteVec(new Vec3(2.5, 1, 2.5)), 0, 0);
+        try {
+            run(server, player, "qa realm unlock realmforge:stone");
+            run(server, player, "qa level 9");
+            run(server, player, PORTAL_PLAYTEST);
+            Inventory inventory = player.getInventory();
+            helper.assertValueEqual(inventory.countItem(item("realmforge:gatewright_bricks")), 17,
+                    "Gatewright Bricks for a frame and a sealstone");
+            helper.assertValueEqual(inventory.countItem(item("realmforge:gatewright_sealstone")), 1, "a sealstone");
+            helper.assertValueEqual(inventory.countItem(item("realmforge:undervault_signet")), 1, "the signet");
+            for (String brick : List.of("minecraft:stone_bricks", "minecraft:deepslate_bricks",
+                    "minecraft:quartz_bricks", "minecraft:mud_bricks", "minecraft:tuff_bricks",
+                    "realmforge:diorite_bricks", "realmforge:granite_bricks", "realmforge:andesite_bricks",
+                    "minecraft:ender_pearl")) {
+                helper.assertValueEqual(inventory.countItem(item(brick)), 3, brick + " for three crafts");
+            }
+            helper.assertValueEqual(inventory.countItem(Items.GOLD_INGOT), 4, "gold for the sealstone");
+            helper.assertValueEqual(inventory.countItem(Items.COMPASS), 1, "a compass for the sealstone");
+            helper.assertValueEqual(Characters.level(player), 1, "the player is back at level 1");
+            run(server, player, "qa realm enter realmforge:stone");
+            helper.assertTrue(player.level() == helper.getLevel(), "and the realm is locked again");
+        } finally {
+            server.getPlayerList().remove(player);
+        }
+        helper.succeed();
+    }
+
+    private static Item item(String id) {
+        return BuiltInRegistries.ITEM.getValue(Identifier.parse(id));
     }
 
     /**
