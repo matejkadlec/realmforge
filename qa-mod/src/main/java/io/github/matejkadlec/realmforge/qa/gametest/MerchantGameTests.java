@@ -10,9 +10,11 @@ import java.util.Optional;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundMerchantOffersPacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -34,6 +36,7 @@ import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.inventory.MerchantMenu;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.item.trading.TradeSet;
@@ -44,7 +47,8 @@ import net.minecraft.world.level.block.Block;
  * Merchants (RLM-285, RLM-241): every merchant of {@code content/merchants/} is a villager profession with its
  * workstation as its job site and its trades at the written prices and in the written order
  * ({@link GeneratedMerchantExpectations}); the prices stay fixed with reputation and Hero of the Village, where a
- * vanilla villager's fall; the trade screen is told no level; a player buys every trade of every merchant for its
+ * vanilla villager's fall; the trade screen is told to draw no level name and no XP bar, when it opens and when a
+ * restock resends the offers; a name tag still names a merchant; a player buys every trade of every merchant for its
  * coins; the first trade locks the profession without levelling the villager; and a jobless villager takes the job at
  * a workstation.
  */
@@ -120,8 +124,9 @@ public final class MerchantGameTests {
     }
 
     /**
-     * Hero of the Village V and the best reputation: a vanilla armorer's prices fall, a merchant's stay as written,
-     * and the trade screen is told level 0, which draws neither a level name nor an XP bar.
+     * Hero of the Village V and the best reputation: a vanilla armorer's prices fall, a merchant's stay as written.
+     * The armorer's offers packet tells the trade screen to draw its level and XP bar; a merchant's says no, when the
+     * screen opens and again when a restock resends the offers while it is open.
      */
     @QaGameTest
     public static void pricesStayFixedWithReputationAndHeroOfTheVillage(GameTestHelper helper) {
@@ -141,7 +146,7 @@ public final class MerchantGameTests {
         List<ClientboundMerchantOffersPacket> vanilla = QaPlayers.sentPackets(player,
                 ClientboundMerchantOffersPacket.class);
         helper.assertValueEqual(vanilla.size(), 1, "the armorer's offers were sent");
-        helper.assertValueEqual(vanilla.getFirst().getVillagerLevel(), 1, "a vanilla villager shows its level");
+        helper.assertTrue(vanilla.getFirst().showProgress(), "a vanilla villager shows its level and XP bar");
         player.closeContainer();
         armorer.discard();
 
@@ -162,13 +167,38 @@ public final class MerchantGameTests {
             List<ClientboundMerchantOffersPacket> sent = QaPlayers.sentPackets(player,
                     ClientboundMerchantOffersPacket.class);
             helper.assertValueEqual(sent.size(), 1, "the merchant's offers were sent once");
-            helper.assertValueEqual(sent.getFirst().getVillagerLevel(), Merchants.SHOWN_LEVEL,
-                    "the trade screen is told no level");
+            helper.assertFalse(sent.getFirst().showProgress(),
+                    "the trade screen is told to draw no level name and no XP bar");
             helper.assertValueEqual(sent.getFirst().getOffers().size(), expected.trades().size(), "with every offer");
+            villager.restock();
+            List<ClientboundMerchantOffersPacket> resent = QaPlayers.sentPackets(player,
+                    ClientboundMerchantOffersPacket.class);
+            helper.assertValueEqual(resent.size(), 1, "a restock resends the offers to the open screen");
+            helper.assertFalse(resent.getFirst().showProgress(), "still without a level name and an XP bar");
             player.closeContainer();
             helper.assertTrue(villager.getTradingPlayer() == null, "closing the screen ends the trading");
             villager.discard();
         }
+        logout(player);
+        helper.succeed();
+    }
+
+    /** A renamed name tag names a merchant, as any villager, and opens no trade screen: the click stays vanilla's. */
+    @QaGameTest
+    public static void aNameTagStillNamesAMerchant(GameTestHelper helper) {
+        ServerPlayer player = customer(helper, "qa-merchant-tag");
+        Villager villager = merchant(helper, GeneratedMerchantExpectations.MERCHANTS.getFirst());
+        ItemStack tag = new ItemStack(Items.NAME_TAG);
+        tag.set(DataComponents.CUSTOM_NAME, Component.literal("Maren"));
+        player.setItemInHand(InteractionHand.MAIN_HAND, tag);
+        InteractionResult result = player.interactOn(villager, InteractionHand.MAIN_HAND, villager.position());
+        helper.assertTrue(result instanceof InteractionResult.Success, "the name tag is used: " + result);
+        helper.assertTrue(villager.hasCustomName() && villager.getCustomName().getString().equals("Maren"),
+                "the merchant is named Maren");
+        helper.assertTrue(player.getItemInHand(InteractionHand.MAIN_HAND).isEmpty(), "the tag is used up");
+        helper.assertFalse(player.containerMenu instanceof MerchantMenu, "no trade screen opened");
+        helper.assertTrue(villager.getTradingPlayer() == null, "and the merchant trades with nobody");
+        villager.discard();
         logout(player);
         helper.succeed();
     }
@@ -277,7 +307,7 @@ public final class MerchantGameTests {
         return villager;
     }
 
-    /** The player's right click on the villager, through the path a real interaction takes on the server. */
+    /** The player's right click on the villager, through vanilla's own interaction on the server. */
     private static void open(GameTestHelper helper, ServerPlayer player, Villager villager) {
         InteractionResult result = player.interactOn(villager, InteractionHand.MAIN_HAND, villager.position());
         helper.assertTrue(result instanceof InteractionResult.Success, "the villager trades: " + result);

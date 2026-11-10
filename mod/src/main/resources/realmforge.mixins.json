@@ -9,10 +9,12 @@
     "EnchantmentSelectionMixin",
     "HolderSetNamedMixin",
     "InventorySortingStacksMixin",
+    "MerchantProgressBarMixin",
     "MobStunMixin",
     "PlayerBlockActionMixin",
     "PlayerExhaustionMixin",
-    "RangedAttributeAccessor"
+    "RangedAttributeAccessor",
+    "VillagerSpecialPricesMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -3047,24 +3047,25 @@ Specialist (Ancient Workbench), which sell the Nether's and the End's materials.
   (Matěj's correction on RLM-285, 2026-10-19). Before its first trade a merchant can still lose its job, as a
   vanilla villager can.
 - **Fixed prices:** `reputation_discount: 0` is the offer's price multiplier, which scales demand and reputation, so
-  neither changes a price. Hero of the Village is not data: vanilla's `Villager#startTrading` always takes 30 % and
-  more off every first cost. For a profession in `#realmforge:fixed_price` (every merchant, written by the pipeline)
-  `Merchants#onEntityInteract` therefore opens the trading itself (`PlayerInteractEvent.EntityInteract`, on the
-  server, cancelled with a success), under exactly the conditions vanilla starts trading under, and leaves every
-  other click to vanilla (a spawn egg, a sleeping, trading or baby villager, a sneaking player, no offers). It calls
-  `setTradingPlayer` and `Merchant#openTradingScreen` without `updateSpecialPrices`: no mixin and no access
-  transformer.
-- **The trade screen shows no level:** that call passes level 0, and `MerchantScreen` draws the level name and the XP
-  bar only from level 1. The villager's own data stays level 1.
-- **The offers are listed in the written order:** vanilla draws a trade set's offers in a random order, so the
-  handler sorts them by the generated list before the screen opens (validation allows one trade per stack a merchant
-  gives, which makes the order unambiguous).
+  neither changes a price. Hero of the Village is not data: vanilla's `Villager#startTrading` always calls the
+  private `updateSpecialPrices`, which takes 30 % and more off every first cost. For a profession in
+  `#realmforge:fixed_price` (every merchant, written by the pipeline) `VillagerSpecialPricesMixin` makes that method
+  do nothing ([19.3](#193-mixins-and-access-transformers)). Everything else about clicking a merchant stays
+  vanilla's: a name tag names it, a lead ties it, a sleeping or baby one does not trade.
+- **The trade screen shows no level:** `MerchantScreen` draws the level name and the XP bar only while the offers
+  packet says so, and the server takes that flag from `AbstractVillager#showProgressBar`, for the packet that opens
+  the screen and for the one a restock sends while it is open. `MerchantProgressBarMixin` makes it false for a
+  fixed-price profession. The villager's own data stays level 1.
+- **The offers are listed in the written order:** vanilla draws a trade set's offers in a random order, so
+  `Merchants#beforeTrading`, which the first mixin calls right before the screen opens, sorts them by the generated
+  list (validation allows one trade per stack a merchant gives, which makes the order unambiguous).
 - **Placeholder look:** a profession's layer is `assets/realmforge/textures/entity/villager/profession/<id>.png`; the
   pipeline writes a checkered robe on the villager model's jacket until A1's art (RLM-645), and the workstations
   use the blocks' placeholder textures.
 - `MerchantGameTests` cover the registration, the offers against the content, fixed prices with the best reputation
-  and Hero of the Village V next to a vanilla armorer whose prices fall, the level the screen is told, a purchase of
-  every trade through the trade screen's slots, the lock, and a jobless villager taking the job at a workstation.
+  and Hero of the Village V next to a vanilla armorer whose prices fall, the flag the screen is told when it opens
+  and after a restock, a name tag on a merchant, a purchase of every trade through the trade screen's slots, the
+  lock, and a jobless villager taking the job at a workstation.
 
 ## 15. Dimensions and dungeons
 
@@ -4225,7 +4226,7 @@ content.
 
 Last resort, only where no event or API exists. Each one sits in `mixin/` (or the access transformer file) with a
 comment saying why, and gets a test. A mod lists its mixins in `<modid>.mixins.json`, which `neoforge.mods.toml`
-names under `[[mixins]]`. The core mod has nine: `RangedAttributeAccessor`, which raises attribute caps
+names under `[[mixins]]`. The core mod has eleven: `RangedAttributeAccessor`, which raises attribute caps
 ([8.4](#84-caps)) and caps two of Apothic Attributes' down ([19.4](#194-optional-integrations)),
 `PlayerBlockActionMixin`, which lets Adventure mode break the allowlist inside instances ([15.5](#155-instances)),
 `PlayerExhaustionMixin`, which lowers a player's food exhaustion by their Stamina ([8.1](#81-the-attribute-set);
@@ -4245,7 +4246,12 @@ enchantment, the last two `@Pseudo` as above. `HolderSetNamedMixin` gives every 
 wraps, outside that getter's lock. Two structures whose biomes negate one tag raced on that list: a lost race threw
 (`apotheosis:tower_sand` stayed unbound and the registry freeze failed the load, about one GameTest server start in
 six), left a null that crashed the tag's bind, or dropped a listener. NeoForge's newest 26.1.2 build (26.1.2.126)
-still has the plain list; once a pinned build fixes it, the mixin can be removed. The QA mod has two, for dev runs only: `GameTestServerMixin` gives the
+still has the plain list; once a pinned build fixes it, the mixin can be removed. Two keep our merchants' trading
+fixed and level-free ([14.4](#144-merchants), RLM-285; `MerchantGameTests`): `VillagerSpecialPricesMixin` makes
+`Villager#updateSpecialPrices`, private and called by every `startTrading`, do nothing for a profession in
+`#realmforge:fixed_price` (Hero of the Village's discount is unconditional there), and `MerchantProgressBarMixin`
+makes `AbstractVillager#showProgressBar` false for one, the flag of every offers packet. The QA mod has two, for dev
+runs only: `GameTestServerMixin` gives the
 GameTest world the data pack dimensions, which vanilla leaves out ([20](#20-tests-per-layer)), and
 `MinecraftProfileLookupMixin`, a client mixin (the config's `client` list), retries the dev client's one profile
 lookup at startup up to three times, 1 s and then 2 s apart (`ProfileLookupRetry`, RLM-570;

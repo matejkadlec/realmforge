@@ -15,21 +15,15 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.stats.Stats;
 import net.minecraft.tags.TagKey;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.ai.village.poi.PoiType;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.TradeSet;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.entity.player.TradeWithVillagerEvent;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -40,23 +34,22 @@ import net.neoforged.neoforge.registries.DeferredRegister;
  * from {@link GeneratedMerchants}: the point of interest is every state of the workstation block (one villager per
  * block, as vanilla's job sites), and the profession names its one trade set at level 1.
  *
- * <p><b>Fixed prices, no levels.</b> A profession in {@link #FIXED_PRICE} is traded with through
- * {@link #onEntityInteract} instead of vanilla's {@code Villager#startTrading}, which always applies its special
- * prices: reputation (switched off by the trades' {@code reputation_discount: 0}) and Hero of the Village, which takes
- * 30 % and more off every first cost and at least 1. Opening the trading ourselves skips them, so a price is the
- * written one for every player, always. It also sends the trade screen level 0, which shows neither a level name nor
- * an XP bar ({@code MerchantScreen} draws both only from level 1): the merchants have no levels (ADR 0034). The
- * trades give the villager no XP, so it never levels; vanilla lets a level 1 villager without XP lose its profession
- * with its workstation ({@code ResetProfession}), so the first trade locks it by one point of XP
- * ({@link #onTrade}; Matěj, 2026-10-19), as a vanilla villager's first trade does. The offers are put into the written
- * order before the screen opens, since vanilla draws them in a random one.
+ * <p><b>Fixed prices, no levels.</b> Vanilla's {@code Villager#startTrading} always applies its special prices:
+ * reputation (switched off by the trades' {@code reputation_discount: 0}) and Hero of the Village, which takes 30 %
+ * and more off every first cost and at least 1. For a profession in {@link #FIXED_PRICE} the mixin
+ * {@code VillagerSpecialPricesMixin} skips them, so a price is the written one for every player, always, and calls
+ * {@link #beforeTrading}, which puts the offers into the written order, since vanilla draws them in a random one. The
+ * merchants have no levels (ADR 0034): the trades give the villager no XP, and {@code MerchantProgressBarMixin} turns
+ * off the flag that makes the trade screen draw a level name and an XP bar, in the packet that opens the screen and
+ * in the one a restock sends while it is open. Vanilla lets a level 1 villager without XP lose its profession with
+ * its workstation ({@code ResetProfession}), so the first trade locks it by one point of XP ({@link #onTrade};
+ * Matěj, 2026-10-19), as a vanilla villager's first trade does. Everything else about a merchant is vanilla's: how it
+ * is clicked, named, leashed, restocked and zombified.
  */
 public final class Merchants {
     /** {@code #realmforge:fixed_price}: the professions traded with at fixed prices, every merchant of ours. */
     public static final TagKey<VillagerProfession> FIXED_PRICE =
             TagKey.create(Registries.VILLAGER_PROFESSION, Realmforge.id("fixed_price"));
-    /** The level the trade screen is told: none, so it shows no level name and no XP bar. */
-    public static final int SHOWN_LEVEL = 0;
     /** The villager XP that locks a merchant's profession after its first trade. */
     public static final int LOCKING_XP = 1;
     /** One villager works at one workstation, and must stand next to it, as with vanilla's job sites. */
@@ -86,11 +79,10 @@ public final class Merchants {
     private Merchants() {
     }
 
-    /** Registers the merchants' points of interest and professions and the listeners of their trading. */
+    /** Registers the merchants' points of interest and professions and the listener that locks a profession. */
     public static void register(IEventBus modBus) {
         POI_TYPES.register(modBus);
         PROFESSIONS.register(modBus);
-        NeoForge.EVENT_BUS.addListener(PlayerInteractEvent.EntityInteract.class, Merchants::onEntityInteract);
         NeoForge.EVENT_BUS.addListener(TradeWithVillagerEvent.class, Merchants::onTrade);
     }
 
@@ -123,29 +115,11 @@ public final class Merchants {
     }
 
     /**
-     * A player's right click on a fixed-price merchant, on the server: under exactly the conditions vanilla's
-     * {@code Villager#mobInteract} starts trading, the trading opens here instead, without special prices and without
-     * a level. Everything else (a spawn egg, a sleeping or trading villager, a baby, a sneaking player, a villager
-     * without offers) stays vanilla's. The client keeps vanilla's answer, which is a success in the same cases.
+     * Called by {@code VillagerSpecialPricesMixin} where vanilla would set a fixed-price merchant's special prices,
+     * right before its trade screen opens: puts the offers into the written order.
      */
-    static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
-        if (!(event.getEntity() instanceof ServerPlayer player) || !(event.getTarget() instanceof Villager villager)
-                || !isFixedPrice(villager)) {
-            return;
-        }
-        ItemStack held = player.getItemInHand(event.getHand());
-        if (held.is(Items.VILLAGER_SPAWN_EGG) || !villager.isAlive() || villager.isTrading() || villager.isSleeping()
-                || player.isSecondaryUseActive() || villager.isBaby() || villager.getOffers().isEmpty()) {
-            return;
-        }
-        event.setCanceled(true);
-        event.setCancellationResult(InteractionResult.SUCCESS);
-        if (event.getHand() == InteractionHand.MAIN_HAND) {
-            player.awardStat(Stats.TALKED_TO_VILLAGER);
-        }
+    public static void beforeTrading(Villager villager) {
         of(villager).ifPresent(merchant -> villager.getOffers().sort(inWrittenOrder(merchant)));
-        villager.setTradingPlayer(player);
-        villager.openTradingScreen(player, villager.getDisplayName(), SHOWN_LEVEL);
     }
 
     /** A fixed-price merchant's first trade locks its profession: one point of villager XP, never more. */
