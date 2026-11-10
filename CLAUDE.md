@@ -115,7 +115,10 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   Warrior's Battle Stance (RLM-596: +5 Armor Pierce and +10 % Armor Shred with a two-handed weapon).
   Casters have their gear (RLM-172, RLM-197), from an item's `gear` in YAML: seven two-handed wands from wood to
   netherite whose stats count in the main hand, which every cast wears and which lock shields, and four robe sets (Apprentice's, Spellweave, Arcane Silk,
-  Netherite) with magic shield, flat Spell Power and mana instead of armor; Arcane Dust drops from witches, evokers and
+  Netherite) with magic shield, flat Spell Power and mana instead of armor, their own item icons and worn textures
+  (RLM-505: three sets' icons are the Arcane Silk icons recoloured, `art/textures/variants.yaml`, and a set's worn
+  textures are composed by the pipeline from its cloth and trim tiles, as a cap, robes, pants and sandals); Arcane
+  Dust drops from witches, evokers and
   illusioners through a NeoForge loot modifier. A netherite piece takes one netherite upgrade at a smithing table
   (RLM-566, `content/netherite_upgrades/`): a Ruby, Sapphire or Topaz Upgrade (eight gems around a diamond) gives
   offense, defense or utility by the piece's archetype (melee: vanilla's netherite armor; caster: the Netherite robes)
@@ -167,8 +170,8 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   before it works. Spells have icons (A1's first part: RLM-642, RLM-588, RLM-591): approved art in `art/textures/`
   takes a generated placeholder's place in `rf gen` (items, spell and effect icons), every M1 player spell shows its
   icon in the spell bar, the spellbook, its tooltip and the cast bar, a passive's in a medallion with cut corners, the
-  four school icons are drawn, and the spellbook's window is a book with one page open (RLM-609); item and gear icons
-  are A1's second part (RLM-643).
+  four school icons are drawn, and the spellbook's window is a book with one page open (RLM-609); the other item and
+  gear icons are A1's second part (RLM-643).
   The quest pipeline (Q1) writes FTB Quests' quest book from `content/quests/` (no quests yet), with
   stable ids, tasks of our own (a level, a dungeon, a spell) through our criteria triggers, and every quest's where and
   with what from data. The pack has M1's QoL, UI and building mods, and vanilla strongholds are off (PK1 to PK3). Next to
