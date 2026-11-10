@@ -1,0 +1,25 @@
+{
+  "colors": [
+    "#B8E2F4",
+    "#B1DFF3",
+    "#AADCF1",
+    "#A2D8F0",
+    "#9BD5EF",
+    "#94D2ED",
+    "#8DCFEC",
+    "#86CBEA",
+    "#7FC7E8",
+    "#78C4E6",
+    "#71C0E4",
+    "#6ABCE2"
+  ],
+  "trail": {
+    "particle": "realmforge:mote",
+    "per_block": 2.0
+  },
+  "burst": {
+    "particle": "realmforge:shard",
+    "count": 16
+  },
+  "impact_sound": "minecraft:block.glass.break"
+}

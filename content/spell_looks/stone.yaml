@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=../../tools/schemas/spell_looks.schema.json
+# The stone look (RLM-639, docs/design/spell-visuals.md): Undervault's greys, for the Hewn Chanter's Stoneform and
+# Astone's boulder (which names its own impact sound). A stone leaves no trail; it breaks into chips.
+id: stone
+colors: ["#B4B0A8", "#A09C94", "#8D9094", "#8B8579", "#74706A", "#5E5B57"]
+burst: {particle: realmforge:shard, count: 14}
+impact_sound: realmforge:spell.stoneform.impact

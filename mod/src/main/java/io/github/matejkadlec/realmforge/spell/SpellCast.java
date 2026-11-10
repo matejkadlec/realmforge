@@ -30,8 +30,6 @@ import net.minecraft.util.StringRepresentable;
  *                            or the cast ends at once; after it, range no longer matters, not even before the effects.
  *                            Empty: range is checked only before the effects
  * @param sound               the sound event the caster makes when the cast begins, if any
- * @param formsProjectile     whether the spell's projectile (its first effect) forms in front of the caster during a
- *                            cast time, growing to its size, and flies from there ({@link SpellVisuals})
  * @param animation           how a custom mob or boss moves its arms while a cast-time or channelled spell runs (its
  *                            model's animation); players' casts ignore it
  * @param animationTicks      an instant spell that plays out over its animation (RLM-399, a Warrior's swing): how
@@ -43,11 +41,11 @@ import net.minecraft.util.StringRepresentable;
  */
 public record SpellCast(Type type, int durationTicks, int intervalTicks, boolean castableWhileMoving,
         boolean lockOn, boolean keepSight, Optional<Double> keepRange, Optional<Identifier> sound,
-        boolean formsProjectile, Animation animation, int animationTicks, double hitAt, Haste castTimeReduction) {
+        Animation animation, int animationTicks, double hitAt, Haste castTimeReduction) {
     /** When an animated instant spell lands by default: the middle of its swing (Matěj, 2026-10-24). */
     public static final double DEFAULT_HIT_AT = 0.5;
     public static final SpellCast INSTANT = new SpellCast(Type.INSTANT, 0, 0, false, false, false, Optional.empty(),
-            Optional.empty(), false, Animation.RAISE, 0, DEFAULT_HIT_AT, Haste.SHORTENS);
+            Optional.empty(), Animation.RAISE, 0, DEFAULT_HIT_AT, Haste.SHORTENS);
 
     public static final Codec<SpellCast> CODEC = RecordCodecBuilder.<SpellCast>create(instance -> instance.group(
                     Type.CODEC.fieldOf("type").forGetter(SpellCast::type),
@@ -61,7 +59,6 @@ public record SpellCast(Type type, int durationTicks, int intervalTicks, boolean
                     Codec.BOOL.optionalFieldOf("keep_sight", false).forGetter(SpellCast::keepSight),
                     Codec.doubleRange(0, 1).optionalFieldOf("keep_range").forGetter(SpellCast::keepRange),
                     Identifier.CODEC.optionalFieldOf("sound").forGetter(SpellCast::sound),
-                    Codec.BOOL.optionalFieldOf("forms_projectile", false).forGetter(SpellCast::formsProjectile),
                     Animation.CODEC.optionalFieldOf("animation", Animation.RAISE).forGetter(SpellCast::animation),
                     ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("animation_ticks", 0)
                             .forGetter(SpellCast::animationTicks),
@@ -73,12 +70,12 @@ public record SpellCast(Type type, int durationTicks, int intervalTicks, boolean
     /** A cast time of {@code ticks} (1 or more). */
     public static SpellCast castTime(int ticks, boolean castableWhileMoving, boolean lockOn) {
         return new SpellCast(Type.CAST_TIME, ticks, 0, castableWhileMoving, lockOn, false, Optional.empty(),
-                Optional.empty(), false, Animation.RAISE, 0, DEFAULT_HIT_AT, Haste.SHORTENS);
+                Optional.empty(), Animation.RAISE, 0, DEFAULT_HIT_AT, Haste.SHORTENS);
     }
 
     /** An instant spell that plays out over {@code animationTicks}, its effects at the {@code hitAt} share of it. */
     public static SpellCast swing(int animationTicks, double hitAt) {
-        return new SpellCast(Type.INSTANT, 0, 0, false, false, false, Optional.empty(), Optional.empty(), false,
+        return new SpellCast(Type.INSTANT, 0, 0, false, false, false, Optional.empty(), Optional.empty(),
                 Animation.RAISE, animationTicks, hitAt, Haste.SHORTENS);
     }
 
@@ -92,7 +89,7 @@ public record SpellCast(Type type, int durationTicks, int intervalTicks, boolean
     public static SpellCast channel(int durationTicks, int intervalTicks, boolean castableWhileMoving,
             boolean lockOn, Haste castTimeReduction) {
         return new SpellCast(Type.CHANNEL, durationTicks, intervalTicks, castableWhileMoving, lockOn, false,
-                Optional.empty(), Optional.empty(), false, Animation.RAISE, 0, DEFAULT_HIT_AT, castTimeReduction);
+                Optional.empty(), Optional.empty(), Animation.RAISE, 0, DEFAULT_HIT_AT, castTimeReduction);
     }
 
     /** Whether the effects run at once, without a current cast. */
@@ -145,9 +142,6 @@ public record SpellCast(Type type, int durationTicks, int intervalTicks, boolean
         }
         if (cast.keepRange.filter(share -> share <= 0).isPresent()) {
             return DataResult.error(() -> "keep_range is a share of the cast above 0: " + cast);
-        }
-        if (cast.formsProjectile && cast.type != Type.CAST_TIME) {
-            return DataResult.error(() -> "Only a cast time forms a projectile: " + cast);
         }
         if (cast.castTimeReduction == Haste.ADDS_TICKS && cast.type != Type.CHANNEL) {
             return DataResult.error(() -> "Only a channel gets more ticks from Cast Time Reduction: " + cast);

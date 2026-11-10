@@ -45,12 +45,15 @@ import net.minecraft.util.ExtraCodecs;
  * @param aura what it does while it is on, for an aura spell (RLM-595): turned on and off from the spell bar, free and
  *     off the global cooldown, on the cooldown every aura shares ({@link Aura}). Like a passive spell's, its data names
  *     no targeting, cast or effects
+ * @param visuals how it looks, from the parts of the spell visuals kit (RLM-439, ADR 0073): its look, and what shows in
+ *     the caster's hands during the cast. Without them its projectile is a trail of sparks
  */
 public record Spell(String name, String description, Optional<Holder<SpellSchool>> school, Scaling scalesWith,
         SpellTargeting targeting, SpellCast cast,
         Optional<SpellCost> cost, int cooldownTicks, int globalCooldownTicks, int maxLevel, CritRule crit,
         boolean npcOnly, List<SpellRequirement> requires, boolean castableWhileStunned, List<SpellEffect> effects,
-        Optional<Passive> passive, SpellConditions conditions, int cooldownPerLevelTicks, Optional<Aura> aura) {
+        Optional<Passive> passive, SpellConditions conditions, int cooldownPerLevelTicks, Optional<Aura> aura,
+        Optional<Visuals> visuals) {
     /** The global cooldown of a spell that names none: half a second, as in WoW (Matěj, 2026-10-19, RLM-25). */
     public static final int DEFAULT_GLOBAL_COOLDOWN_TICKS = 10;
 
@@ -68,6 +71,10 @@ public record Spell(String name, String description, Optional<Holder<SpellSchool
             Codec.mapPair(SpellEffect.CODEC.listOf().optionalFieldOf("effects", List.of()),
                     Codec.mapPair(Passive.CODEC.optionalFieldOf("passive"), Aura.CODEC.optionalFieldOf("aura")));
 
+    /** How it is cast and how it looks (RLM-639), one field of the codec for the same reason. */
+    private static final MapCodec<Pair<SpellCast, Optional<Visuals>>> CAST = Codec.mapPair(
+            SpellCast.CODEC.fieldOf("cast"), Visuals.CODEC.optionalFieldOf("visuals"));
+
     /** Its own cooldown at rank 1 and its change per rank (RLM-572), one field of the codec for the same reason. */
     private static final MapCodec<Pair<Integer, Integer>> COOLDOWN = Codec.mapPair(
             ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("cooldown_ticks", 0),
@@ -80,7 +87,7 @@ public record Spell(String name, String description, Optional<Holder<SpellSchool
                             .forGetter(Spell::school),
                     Scaling.CODEC.fieldOf("scales_with").forGetter(Spell::scalesWith),
                     SpellTargeting.CODEC.fieldOf("targeting").forGetter(Spell::targeting),
-                    SpellCast.CODEC.fieldOf("cast").forGetter(Spell::cast),
+                    CAST.forGetter(Spell::castAndVisuals),
                     SpellCost.CODEC.optionalFieldOf("cost").forGetter(Spell::cost),
                     COOLDOWN.forGetter(Spell::cooldown),
                     ExtraCodecs.POSITIVE_INT.optionalFieldOf("global_cooldown_ticks", DEFAULT_GLOBAL_COOLDOWN_TICKS)
@@ -99,6 +106,17 @@ public record Spell(String name, String description, Optional<Holder<SpellSchool
     public Spell {
         requires = List.copyOf(requires);
         effects = List.copyOf(effects);
+    }
+
+    /** A spell without visuals (RLM-639). */
+    public Spell(String name, String description, Optional<Holder<SpellSchool>> school, Scaling scalesWith,
+            SpellTargeting targeting, SpellCast cast, Optional<SpellCost> cost, int cooldownTicks,
+            int globalCooldownTicks, int maxLevel, CritRule crit, boolean npcOnly, List<SpellRequirement> requires,
+            boolean castableWhileStunned, List<SpellEffect> effects, Optional<Passive> passive,
+            SpellConditions conditions, int cooldownPerLevelTicks, Optional<Aura> aura) {
+        this(name, description, school, scalesWith, targeting, cast, cost, cooldownTicks, globalCooldownTicks,
+                maxLevel, crit, npcOnly, requires, castableWhileStunned, effects, passive, conditions,
+                cooldownPerLevelTicks, aura, Optional.empty());
     }
 
     /** A spell that is no aura (RLM-595). */
@@ -131,17 +149,31 @@ public record Spell(String name, String description, Optional<Holder<SpellSchool
             return DataResult.error(() -> active ? "An active spell has at least one effect: " + spell.name()
                     : "A passive or aura spell has no effects: " + spell.name());
         }
+        Optional<Visuals.Forming> forming = spell.visuals().flatMap(Visuals::forming);
+        if (forming.filter(Visuals.Forming::formsModel).isPresent()
+                && SpellVisuals.formedProjectile(spell).isEmpty()) {
+            return DataResult.error(() -> "A spell that forms its projectile has a cast time, and its first effect is "
+                    + "a projectile with a model: " + spell.name());
+        }
+        if (forming.isPresent() && spell.cast().type() == SpellCast.Type.INSTANT) {
+            return DataResult.error(() -> "Only a cast time or a channel shows something forming: " + spell.name());
+        }
         return DataResult.success(spell);
     }
 
     private static Spell decoded(String name, String description, Optional<Holder<SpellSchool>> school,
-            Scaling scalesWith, SpellTargeting targeting, SpellCast cast, Optional<SpellCost> cost,
-            Pair<Integer, Integer> cooldown, int globalCooldownTicks, int maxLevel, CritRule crit, boolean npcOnly,
+            Scaling scalesWith, SpellTargeting targeting, Pair<SpellCast, Optional<Visuals>> cast,
+            Optional<SpellCost> cost, Pair<Integer, Integer> cooldown, int globalCooldownTicks, int maxLevel, CritRule crit, boolean npcOnly,
             List<SpellRequirement> requires, boolean castableWhileStunned,
             Pair<List<SpellEffect>, Pair<Optional<Passive>, Optional<Aura>>> behaviour, SpellConditions conditions) {
-        return new Spell(name, description, school, scalesWith, targeting, cast, cost, cooldown.getFirst(),
-                globalCooldownTicks, maxLevel, crit, npcOnly, requires, castableWhileStunned, behaviour.getFirst(),
-                behaviour.getSecond().getFirst(), conditions, cooldown.getSecond(), behaviour.getSecond().getSecond());
+        return new Spell(name, description, school, scalesWith, targeting, cast.getFirst(), cost,
+                cooldown.getFirst(), globalCooldownTicks, maxLevel, crit, npcOnly, requires, castableWhileStunned,
+                behaviour.getFirst(), behaviour.getSecond().getFirst(), conditions, cooldown.getSecond(),
+                behaviour.getSecond().getSecond(), cast.getSecond());
+    }
+
+    private Pair<SpellCast, Optional<Visuals>> castAndVisuals() {
+        return Pair.of(cast, visuals);
     }
 
     private Pair<List<SpellEffect>, Pair<Optional<Passive>, Optional<Aura>>> behaviour() {

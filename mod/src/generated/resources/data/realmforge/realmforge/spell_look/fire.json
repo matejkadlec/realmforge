@@ -1,0 +1,21 @@
+{
+  "colors": [
+    "#FFD27F",
+    "#FFB347",
+    "#FF9A1F",
+    "#FF7F1F",
+    "#E85D04",
+    "#B23A05",
+    "#5C1F0A",
+    "#1F1410"
+  ],
+  "trail": {
+    "particle": "realmforge:ember",
+    "per_block": 3.0
+  },
+  "burst": {
+    "particle": "realmforge:ember",
+    "count": 20
+  },
+  "impact_sound": "minecraft:entity.generic.extinguish_fire"
+}

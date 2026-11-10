@@ -11,6 +11,9 @@ import io.github.matejkadlec.realmforge.generated.GeneratedMobs;
 import io.github.matejkadlec.realmforge.mob.custom.CustomMob;
 import io.github.matejkadlec.realmforge.spell.CombatState;
 import io.github.matejkadlec.realmforge.spell.ProjectileEffect;
+import io.github.matejkadlec.realmforge.spell.Spell;
+import io.github.matejkadlec.realmforge.spell.SpellLook;
+import io.github.matejkadlec.realmforge.spell.SpellModel;
 import io.github.matejkadlec.realmforge.spell.Spells;
 import io.github.matejkadlec.realmforge.spell.SpellVisuals;
 import java.util.Optional;
@@ -19,6 +22,7 @@ import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
@@ -32,8 +36,9 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
  * mob's id ({@code assets/realmforge/geckolib/models/entity/<id>.geo.json}, {@code .../animations/entity/},
  * {@code textures/entity/<id>.png}, a variant's {@code <id>_<variant>.png}), and Neat's card above it as above every
  * vanilla mob ({@link NeatCard}). The animations turn the model's head to where the mob looks. While a custom mob (a
- * caster or a boss) casts a spell that forms its projectile, the projectile's orb grows in its raised hands
- * ({@link SpellOrbs}), where the server launches it from.
+ * caster or a boss) casts a spell that forms its projectile, the projectile's model grows in its raised hands with its
+ * look's material (the orb, {@link SpellOrbs}), where the server launches it from, until the forming renderer
+ * (RLM-640) draws every caster's.
  */
 public final class CustomMobRenderers {
     /** A formed projectile starts at this share of its size and grows to the whole of it by the end of the cast. */
@@ -90,15 +95,18 @@ public final class CustomMobRenderers {
             if (cast.isEmpty() || cast.get().durationTicks() <= 0) {
                 return Optional.empty();
             }
-            Optional<ProjectileEffect> projectile = Spells.get(caster.registryAccess(), cast.get().spell())
-                    .flatMap(spell -> SpellVisuals.formedProjectile(spell.value()));
-            if (projectile.isEmpty()) {
+            Optional<Spell> spell = Spells.get(caster.registryAccess(), cast.get().spell()).map(Holder::value);
+            Optional<ProjectileEffect> projectile = spell.flatMap(SpellVisuals::formedProjectile);
+            Optional<Identifier> material = spell.flatMap(Spell::visuals)
+                    .flatMap(visuals -> SpellLook.material(visuals.look()));
+            if (projectile.isEmpty() || material.isEmpty()) {
                 return Optional.empty();
             }
+            SpellModel model = projectile.get().model().orElseThrow().value();
             float elapsed = caster.level().getGameTime() + partialTick - cast.get().startGameTime();
             float progress = Mth.clamp(elapsed / cast.get().durationTicks(), 0.0F, 1.0F);
-            float size = (float) projectile.get().size() * (FORM_START + (1 - FORM_START) * progress);
-            return Optional.of(new Forming(SpellVisuals.projectileTexture(cast.get().spell()), size));
+            float size = (float) projectile.get().size() * model.scale() * (FORM_START + (1 - FORM_START) * progress);
+            return Optional.of(new Forming(material.get(), size));
         }
 
         @Override
@@ -110,8 +118,8 @@ public final class CustomMobRenderers {
                 Vec3 at = custom.formAt;
                 poseStack.pushPose();
                 poseStack.translate(at.x, at.y, at.z);
-                orbs.submit(poseStack, collector, forming.texture(), forming.size(), state.ageInTicks,
-                        state.lightCoords, state.outlineColor);
+                orbs.submit(poseStack, collector, forming.material(), forming.size(), SpellModel.Orientation.TUMBLE,
+                        0, 0, 0, state.ageInTicks, state.lightCoords, state.outlineColor);
                 poseStack.popPose();
             }
         }
@@ -142,7 +150,7 @@ public final class CustomMobRenderers {
         Vec3 formAt = Vec3.ZERO;
     }
 
-    /** A projectile forming in a caster's hands: its texture and its size so far, in blocks. */
-    private record Forming(Identifier texture, float size) {
+    /** A projectile forming in a caster's hands: its look's material and its size so far, in blocks. */
+    private record Forming(Identifier material, float size) {
     }
 }

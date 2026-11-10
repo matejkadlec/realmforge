@@ -184,24 +184,28 @@ def _effect_mark(category: str) -> set[tuple[int, int]]:
     return marks
 
 
-ORB_TEXTURE_SIZE = (64, 32)
-
-
-def placeholder_orb_texture(seed: str, color: int) -> bytes:
-    """The 64x32 texture of a spell projectile's orb (vanilla's shulker bullet model, whose three slabs take its
-    upper left), until real art exists: opaque speckled stone in ``color`` (0xRRGGBB), the flecks from a hash of
-    ``seed`` (the spell's id), so it is the same on every machine."""
-    base = ((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF)
-    width, height = ORB_TEXTURE_SIZE
+def placeholder_material_texture(seed: str, colors: list[int]) -> bytes:
+    """A spell look's 16x16 material (``textures/spell/material/<look>.png``) until real art exists: noise in the
+    look's ``colors`` (0xRRGGBB each), the pixels from a hash of ``seed`` (the look's id), so it is the same on every
+    machine. Noise has no seam, so it tiles as a material must."""
     pixels: list[Rgba] = []
-    for y in range(height):
-        for x in range(width):
+    for y in range(SIZE):
+        for x in range(SIZE):
             cell = hashlib.sha256(f"{seed}/{x}/{y}".encode()).digest()[0]
-            factor = (
-                1.0 + ((cell % 9) - 4) * 0.04 + (0.2 if cell > 236 else 0.0) - (0.25 if cell < 20 else 0.0)
-            )
-            pixels.append(_shade(base, factor))
-    return encode_rgba(width, height, pixels)
+            color = colors[cell % len(colors)]
+            pixels.append(((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, 255))
+    return encode_rgba(SIZE, SIZE, pixels)
+
+
+def particle_frame(rows: list[str]) -> bytes:
+    """One frame of a particle of ours as a PNG: ``.`` is transparent, a hex digit from 1 to f an opaque grey from
+    dark to white, which the game tints with each spawn's colour."""
+    pixels: list[Rgba] = []
+    for row in rows:
+        for char in row:
+            grey = 0 if char == "." else int(char, 16) * 17
+            pixels.append((grey, grey, grey, 0 if char == "." else 255))
+    return encode_rgba(len(rows[0]), len(rows), pixels)
 
 
 EQUIPMENT_TEXTURE_SIZE = (64, 32)

@@ -89,6 +89,8 @@ REMOVE_EFFECT = f"{MOD_ID}:remove_effect"
 CLEANSE = f"{MOD_ID}:cleanse"
 KNOCKBACK = f"{MOD_ID}:knockback"
 PROJECTILE = f"{MOD_ID}:projectile"
+# The trajectory of a projectile that names none (content/spell_trajectories/straight.yaml).
+STRAIGHT = f"{MOD_ID}:straight"
 DAMAGE_OVER_TIME = f"{MOD_ID}:damage_over_time"
 MELEE = f"{MOD_ID}:melee"
 AREA = f"{MOD_ID}:area"
@@ -475,29 +477,6 @@ EntityEffectDef = Annotated[
 ]
 
 
-class ProjectileImpactDef(StrictModel):
-    """What a projectile does where it hits a block or an entity: a sound and a block's break particles, as a mined
-    block shatters."""
-
-    sound: ResourceId | None = Field(
-        default=None, description="A sound event, e.g. realmforge:spell.stoneform.impact."
-    )
-    particles: ResourceId | None = Field(
-        default=None,
-        description="A block whose break particles burst where it hits, e.g. realmforge:vaultstone.",
-    )
-
-
-class ProjectileAppearanceDef(StrictModel):
-    """How a projectile looks; without it, a trail of sparks (until C6, RLM-29). Its placeholder texture is
-    generated at ``textures/entity/spell/<spell>.png`` until real art exists."""
-
-    model: Literal["orb"] = Field(
-        description="orb: a small spinning orb of three crossed slabs, the shape of a shulker's bullet."
-    )
-    color: HexColor = Field(description='Main colour of its placeholder texture, "#RRGGBB".')
-
-
 class SplashDef(StrictModel):
     """A bolt's small explosion where it hits an enemy (RLM-399): every other enemy within ``radius`` of the target
     takes the projectile's effects too, its damage at ``damage_percent`` and every other effect at full strength."""
@@ -543,11 +522,16 @@ class ProjectileEffectDef(StrictModel):
         description="An entity type tag, e.g. realmforge:stone_creatures: an entity in it stops the projectile but "
         "takes none of its effects.",
     )
-    impact: ProjectileImpactDef | None = Field(
-        default=None, description="Its sound and particles where it hits a block or an entity."
+    model: ResourceId | None = Field(
+        default=None,
+        description="Its shape, a spell model (content/spell_models/), e.g. realmforge:orb, drawn with the material "
+        "of the spell's look (visuals.look). Without it the projectile has no body: only its look's trail, or a "
+        "trail of sparks for a spell without a look.",
     )
-    appearance: ProjectileAppearanceDef | None = Field(
-        default=None, description="How it looks; without it, a trail of sparks."
+    trajectory: ResourceId = Field(
+        default=STRAIGHT,
+        description="How it flies, a spell trajectory (content/spell_trajectories/). realmforge:straight by "
+        "default, the only one (ADR 0052).",
     )
     splash: SplashDef | None = Field(
         default=None,
@@ -892,11 +876,6 @@ class CastTimeCastDef(_TimedCastDef):
 
     type: Literal["cast_time"]
     duration_seconds: Seconds = Field(description="The cast time, before Cast Time Reduction; more than 0.")
-    forms_projectile: bool = Field(
-        default=False,
-        description="Whether the spell's projectile forms in front of the caster during the cast, growing to its "
-        "size, and flies from there; the spell's first effect is a projectile with an appearance.",
-    )
 
     @model_validator(mode="after")
     def _positive(self) -> CastTimeCastDef:
@@ -1378,6 +1357,33 @@ class AuraDef(PassiveDef):
     )
 
 
+# The forming styles that show the spell's projectile, its first effect, in the caster's hands during a cast time.
+FORMS_MODEL = ("grow", "storm")
+
+
+class SpellVisualsDef(StrictModel):
+    """How a spell looks, combined from the kit's parts (RLM-439, ADR 0073, docs/design/spell-visuals.md). Its
+    projectiles name their model and trajectory themselves."""
+
+    look: ResourceId = Field(
+        description="Its element's look, a spell look (content/spell_looks/), e.g. realmforge:frost: the material "
+        "its projectile's model is drawn with, the particles of its trail and its impact, and the impact's sound."
+    )
+    forming: Literal["grow", "storm", "hands"] | None = Field(
+        default=None,
+        description="What shows in the caster's hands while it casts. grow: the projectile's model grows there cube "
+        "by cube during a cast time (Matěj's choice, 2026-10-29); storm: it scales up there as a whole, grow's "
+        "fallback; hands: only the look's particles at the hands, during a cast time or a channel. A projectile that "
+        "forms flies from the hands. Until the forming renderer (RLM-640), grow and storm both show a mob's "
+        "projectile growing as a whole, and hands shows nothing.",
+    )
+    impact_sound: ResourceId | None = Field(
+        default=None,
+        description="A sound event of its own for its projectile's hit, instead of its look's "
+        "(realmforge:spell.astone_boulder.impact).",
+    )
+
+
 # The fields an active spell names and a passive one leaves out (RLM-541).
 ACTIVE_FIELDS: tuple[str, ...] = (
     "scales_with",
@@ -1393,6 +1399,7 @@ ACTIVE_FIELDS: tuple[str, ...] = (
     "window",
     "target_health_below_percent",
     "target_distance",
+    "visuals",
     "effects",
 )
 REQUIRED_ACTIVE_FIELDS: tuple[str, ...] = ("scales_with", "targeting", "cast", "effects")
@@ -1572,6 +1579,11 @@ class SpellDef(StrictModel):
         default=None,
         description="Castable only on an enemy this near or far, the farthest growing per rank (RLM-543: Charge's "
         "{min: 3, max: 10, max_per_level: 2}); the targeting's range is the farthest at max_level.",
+    )
+    visuals: SpellVisualsDef | None = Field(
+        default=None,
+        description="How the spell looks (RLM-439): its look, and how its projectile forms during the cast. Without "
+        "it a projectile is a trail of sparks.",
     )
     effects: list[SpellEffectDef] = Field(
         default_factory=list,
@@ -1768,22 +1780,36 @@ class SpellDef(StrictModel):
         return self.cooldown_seconds + (self.cooldown_per_level_seconds or 0) * (level - 1)
 
     @model_validator(mode="after")
-    def _formed_projectile(self) -> SpellDef:
-        if getattr(self.cast, "forms_projectile", False):
-            first = self.effects[0]
-            if first.type != PROJECTILE or first.appearance is None:
+    def _visuals(self) -> SpellDef:
+        models = [path for path, effect in self.all_effects() if getattr(effect, "model", None) is not None]
+        if self.visuals is None:
+            if models:
                 raise ValueError(
-                    "forms_projectile: the spell's first effect is a projectile with an appearance"
+                    f"a projectile's model is drawn with the material of the spell's look: name visuals.look, or "
+                    f"drop the model of {', '.join(models)}"
                 )
-        appearances = [
-            path for path, effect in self.all_effects() if getattr(effect, "appearance", None) is not None
-        ]
-        if len(appearances) > 1:
-            raise ValueError(
-                f"one projectile with an appearance per spell, its texture textures/entity/spell/<spell>.png: "
-                f"{', '.join(appearances)}"
-            )
+            return self
+        forming = self.visuals.forming
+        if forming in FORMS_MODEL:
+            first = self.effects[0] if self.effects else None
+            if (
+                self.cast.type != "cast_time"
+                or first is None
+                or first.type != PROJECTILE
+                or first.model is None
+            ):
+                raise ValueError(
+                    f"visuals.forming: {forming} forms the spell's projectile during a cast time, so the cast is a "
+                    "cast_time and the first effect a projectile with a model"
+                )
+        elif forming is not None and self.cast.type not in ("cast_time", "channel"):
+            raise ValueError(f"visuals.forming: {forming} shows during a cast time or a channel")
         return self
+
+    @property
+    def forms_projectile(self) -> bool:
+        """Whether its first effect, a projectile, forms in the caster's hands during its cast time."""
+        return self.visuals is not None and self.visuals.forming in FORMS_MODEL
 
     @model_validator(mode="after")
     def _npc_targeting(self) -> SpellDef:

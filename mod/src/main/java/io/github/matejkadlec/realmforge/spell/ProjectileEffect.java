@@ -6,11 +6,11 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.SharedConstants;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.RegistryFixedCodec;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.ExtraCodecs;
-import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -20,7 +20,7 @@ import net.minecraft.world.phys.Vec3;
  * {@code realmforge:projectile}: launches a {@link SpellProjectile} from the caster's eyes along the target's direction
  * (toward an enemy, a ground point, or along a direction: where the crosshair points, RLM-344), which runs its own
  * {@code effects} on the first enemy it hits (architecture 11.3). A spell that forms it during its cast
- * ({@link SpellCast#formsProjectile}) launches it from where it formed, in front of the caster
+ * ({@link SpellVisuals#formedProjectile}) launches it from where it formed, in front of the caster
  * ({@link SpellVisuals#formPoint}), toward the target; a channel launches each from there too. A player's projectile
  * is aim assisted (RLM-345): it leaves toward the enemy it homes in on and curves after it ({@link #homing}). A bolt
  * with a {@link Splash} explodes where it hits an enemy (RLM-399): the enemies round the target take its effects too,
@@ -32,13 +32,15 @@ import net.minecraft.world.phys.Vec3;
  *     the world ({@link SpellProjectile})
  * @param effects what it does to the enemy it hits, in order
  * @param spares an entity type tag whose entities stop it but take none of its effects
- * @param impact its sound and particles where it hits a block or an entity
- * @param appearance how it looks; without it, a trail of sparks
+ * @param model its shape, drawn with the material of the spell's look ({@link Visuals}); without one it has no body,
+ *     only its look's trail, or a trail of sparks for a spell without a look
+ * @param trajectory how it flies ({@link SpellTrajectory}); the server moves it along it, and its clients compute the
+ *     same path
  * @param splash its small explosion where it hits an enemy, if it has one (RLM-399)
  */
 public record ProjectileEffect(double speed, double size, Optional<Integer> lifetimeTicks, List<SpellEffect> effects,
-        Optional<TagKey<EntityType<?>>> spares, Optional<Impact> impact, Optional<Appearance> appearance,
-        Optional<Splash> splash) implements SpellEffect {
+        Optional<TagKey<EntityType<?>>> spares, Optional<Holder<SpellModel>> model,
+        Holder<SpellTrajectory> trajectory, Optional<Splash> splash) implements SpellEffect {
     public static final double MAX_SPEED = 100;
     public static final double MAX_SIZE = 4;
     public static final int MAX_LIFETIME_TICKS = 200;
@@ -51,8 +53,10 @@ public record ProjectileEffect(double speed, double size, Optional<Integer> life
                     ExtraCodecs.nonEmptyList(SpellEffect.CODEC.listOf()).fieldOf("effects")
                             .forGetter(ProjectileEffect::effects),
                     TagKey.codec(Registries.ENTITY_TYPE).optionalFieldOf("spares").forGetter(ProjectileEffect::spares),
-                    Impact.CODEC.optionalFieldOf("impact").forGetter(ProjectileEffect::impact),
-                    Appearance.CODEC.optionalFieldOf("appearance").forGetter(ProjectileEffect::appearance),
+                    RegistryFixedCodec.create(SpellRegistries.SPELL_MODEL).optionalFieldOf("model")
+                            .forGetter(ProjectileEffect::model),
+                    RegistryFixedCodec.create(SpellRegistries.SPELL_TRAJECTORY).fieldOf("trajectory")
+                            .forGetter(ProjectileEffect::trajectory),
                     Splash.CODEC.optionalFieldOf("splash").forGetter(ProjectileEffect::splash))
             .apply(instance, ProjectileEffect::new));
 
@@ -117,49 +121,5 @@ public record ProjectileEffect(double speed, double size, Optional<Integer> life
             return AimAssist.enemy(player, AimAssist.REACH);
         }
         return target.entity().filter(entity -> entity != caster && !Targets.allied(caster, entity));
-    }
-
-    /**
-     * What a projectile does where it hits a block or an entity.
-     *
-     * @param sound the sound event it makes there
-     * @param particles the block whose break particles burst there, as a mined block shatters
-     */
-    public record Impact(Optional<Identifier> sound, Optional<Identifier> particles) {
-        public static final Codec<Impact> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                        Identifier.CODEC.optionalFieldOf("sound").forGetter(Impact::sound),
-                        Identifier.CODEC.optionalFieldOf("particles").forGetter(Impact::particles))
-                .apply(instance, Impact::new));
-    }
-
-    /**
-     * How a projectile looks, with the texture of its spell ({@link SpellVisuals#projectileTexture}). The YAML's
-     * {@code color} is only its placeholder texture's, which the pipeline draws.
-     *
-     * @param model its shape
-     */
-    public record Appearance(Model model) {
-        public static final Codec<Appearance> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                        Model.CODEC.fieldOf("model").forGetter(Appearance::model))
-                .apply(instance, Appearance::new));
-    }
-
-    /** The shapes a projectile can have. */
-    public enum Model implements StringRepresentable {
-        /** A small spinning orb of three crossed slabs, the shape of vanilla's shulker bullet. */
-        ORB("orb");
-
-        public static final Codec<Model> CODEC = StringRepresentable.fromEnum(Model::values);
-
-        private final String serializedName;
-
-        Model(String serializedName) {
-            this.serializedName = serializedName;
-        }
-
-        @Override
-        public String getSerializedName() {
-            return serializedName;
-        }
     }
 }

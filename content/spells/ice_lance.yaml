@@ -16,12 +16,12 @@ targeting: {type: realmforge:direction, range: 40}
 cast: {type: instant}
 cost: {resource: realmforge:mana, amount: 15, per_level: 10}
 max_level: 5
+visuals: {look: realmforge:frost}
 effects:
   - type: realmforge:projectile
     speed: 45
     size: 0.3
-    impact: {sound: minecraft:block.glass.break, particles: minecraft:ice}
-    appearance: {model: orb, color: "#D6F4FF"}
+    model: realmforge:orb
     effects:
       - type: realmforge:damage
         amount: 4

@@ -14,8 +14,7 @@
     "keep_range": 0.5,
     "sound": "realmforge:spell.stoneform.form",
     "type": "cast_time",
-    "duration_ticks": 30,
-    "forms_projectile": true
+    "duration_ticks": 30
   },
   "cooldown_ticks": 60,
   "global_cooldown_ticks": 10,
@@ -27,6 +26,10 @@
   "npc_only": true,
   "requires": [],
   "castable_while_stunned": false,
+  "visuals": {
+    "look": "realmforge:stone",
+    "forming": "grow"
+  },
   "effects": [
     {
       "type": "realmforge:projectile",
@@ -41,14 +44,8 @@
         }
       ],
       "spares": "realmforge:stone_creatures",
-      "impact": {
-        "sound": "realmforge:spell.stoneform.impact",
-        "particles": "realmforge:vaultstone"
-      },
-      "appearance": {
-        "model": "orb",
-        "color": "#8D9094"
-      }
+      "model": "realmforge:orb",
+      "trajectory": "realmforge:straight"
     }
   ]
 }

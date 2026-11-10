@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=../../tools/schemas/spell_trajectories.schema.json
+# Straight (RLM-639): along the aim at the projectile's speed, without gravity or drag (ADR 0052). Every projectile
+# flies it; a projectile that names no trajectory gets this one.
+id: straight
+kind: straight

@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A projectile's shape, drawn with its look's material.",
+  "properties": {
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "orientation": {
+      "default": "tumble",
+      "description": "tumble: it turns over on every axis as it flies. forward: it points along its flight and may spin about that line.",
+      "enum": [
+        "tumble",
+        "forward"
+      ],
+      "title": "Orientation",
+      "type": "string"
+    },
+    "scale": {
+      "default": 1.0,
+      "description": "Its width as a share of the projectile's hitbox: 1 fills it. At most 4.",
+      "exclusiveMinimum": 0,
+      "maximum": 4,
+      "title": "Scale",
+      "type": "number"
+    },
+    "shape": {
+      "const": "orb",
+      "description": "orb: three crossed slabs half a block across, the placeholder shape of every model until its GeckoLib model exists (RLM-640).",
+      "title": "Shape",
+      "type": "string"
+    },
+    "spin_degrees_per_second": {
+      "default": 0.0,
+      "description": "How fast a forward model spins about its flight, at most 1440 (4 turns a second).",
+      "maximum": 1440,
+      "minimum": 0,
+      "title": "Spin Degrees Per Second",
+      "type": "number"
+    }
+  },
+  "required": [
+    "id",
+    "shape"
+  ],
+  "title": "SpellModelDef",
+  "type": "object"
+}

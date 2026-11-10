@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# One of the two twin test spells of the spell visuals kit (RLM-639): Test Twin Frost and Test Twin Fire share a
+# model and a trajectory and differ only in their look, so in their material, their particles and their impact
+# sound, purely in data (tools/tests/test_spell_visuals.py, SpellVisualsGameTests).
+id: test_twin_fire
+name: {en_us: Test Twin Fire}
+description: {en_us: "Fires a test orb for {damage} damage."}
+school: realmforge:arcane
+scales_with: spell_power
+targeting: {type: realmforge:direction, range: 32}
+cast: {type: instant}
+visuals: {look: realmforge:fire}
+effects:
+  - type: realmforge:projectile
+    speed: 20
+    model: realmforge:orb
+    trajectory: realmforge:straight
+    splash: {radius: 1, damage_percent: 50}
+    effects:
+      - {type: realmforge:damage, amount: 3}

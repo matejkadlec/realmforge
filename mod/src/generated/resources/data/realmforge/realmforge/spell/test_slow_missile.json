@@ -12,8 +12,7 @@
     "lock_on": false,
     "keep_sight": false,
     "type": "cast_time",
-    "duration_ticks": 20,
-    "forms_projectile": false
+    "duration_ticks": 20
   },
   "cooldown_ticks": 0,
   "global_cooldown_ticks": 10,
@@ -37,7 +36,8 @@
           "per_level": 0,
           "type": "realmforge:damage"
         }
-      ]
+      ],
+      "trajectory": "realmforge:straight"
     }
   ]
 }

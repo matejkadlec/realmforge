@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=../../tools/schemas/spell_models.schema.json
+# The orb (RLM-639): three crossed slabs that turn over as they fly, the placeholder shape of every projectile until
+# its own model exists (the ice chunk, the fire ball, the crystal: RLM-640 and the per-spell tickets).
+id: orb
+shape: orb

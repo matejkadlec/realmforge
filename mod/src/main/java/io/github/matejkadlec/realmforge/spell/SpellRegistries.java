@@ -13,6 +13,24 @@ public final class SpellRegistries {
     /** {@code realmforge:spell}: the spells from {@code content/spells/}; synced, for the spell bar and tooltips. */
     public static final ResourceKey<Registry<Spell>> SPELL = ResourceKey.createRegistryKey(Realmforge.id("spell"));
 
+    /**
+     * {@code realmforge:spell_look}: the looks of the spell visuals kit from {@code content/spell_looks/}; synced, as
+     * clients draw them.
+     */
+    public static final ResourceKey<Registry<SpellLook>> SPELL_LOOK =
+            ResourceKey.createRegistryKey(Realmforge.id("spell_look"));
+
+    /** {@code realmforge:spell_model}: a projectile's shapes from {@code content/spell_models/}; synced. */
+    public static final ResourceKey<Registry<SpellModel>> SPELL_MODEL =
+            ResourceKey.createRegistryKey(Realmforge.id("spell_model"));
+
+    /**
+     * {@code realmforge:spell_trajectory}: how a projectile flies, from {@code content/spell_trajectories/}; synced,
+     * as clients compute the path the server flies.
+     */
+    public static final ResourceKey<Registry<SpellTrajectory>> SPELL_TRAJECTORY =
+            ResourceKey.createRegistryKey(Realmforge.id("spell_trajectory"));
+
     /** {@code realmforge:resource_type}: the resources a class's spells cost ({@link ResourceTypes}). */
     public static final ResourceKey<Registry<ResourceType>> RESOURCE_TYPE =
             ResourceKey.createRegistryKey(Realmforge.id("resource_type"));
@@ -49,6 +67,9 @@ public final class SpellRegistries {
     }
 
     static void registerDataPackRegistries(DataPackRegistryEvent.NewRegistry event) {
+        event.dataPackRegistry(SPELL_LOOK, SpellLook.CODEC, SpellLook.CODEC);
+        event.dataPackRegistry(SPELL_MODEL, SpellModel.CODEC, SpellModel.CODEC);
+        event.dataPackRegistry(SPELL_TRAJECTORY, SpellTrajectory.CODEC, SpellTrajectory.CODEC);
         event.dataPackRegistry(SPELL, Spell.CODEC, Spell.CODEC);
     }
 }

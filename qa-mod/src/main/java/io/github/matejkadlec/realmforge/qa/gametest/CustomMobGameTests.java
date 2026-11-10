@@ -580,7 +580,7 @@ public final class CustomMobGameTests {
             }
             for (SpellProjectile stone : helper.getLevel().getEntitiesOfClass(SpellProjectile.class,
                     chanter.getBoundingBox().inflate(16))) {
-                looked.compareAndSet(false, stone.texture().isPresent());
+                looked.compareAndSet(false, stone.look().isPresent() && stone.model().isPresent());
             }
         });
         helper.succeedWhen(() -> {

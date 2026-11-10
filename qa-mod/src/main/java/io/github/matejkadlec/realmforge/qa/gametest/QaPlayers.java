@@ -2,6 +2,7 @@ package io.github.matejkadlec.realmforge.qa.gametest;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.logging.LogUtils;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -10,22 +11,27 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
+import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.Connection;
 import net.minecraft.network.ConnectionProtocol;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.BundlePacket;
 import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.network.protocol.game.ClientboundEntityEventPacket;
 import net.minecraft.network.protocol.game.ClientboundSystemChatPacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
+import net.minecraft.server.network.PlayerChunkSender;
 import net.minecraft.server.players.NameAndId;
 import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.storage.LevelData;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.ValueInput;
@@ -144,6 +150,26 @@ public final class QaPlayers {
     }
 
     /**
+     * Plays a fake player's client for a tick: it acknowledges the chunks the server sent, so the server sends the next
+     * ones (it stops after one batch it has no answer for), and reports where it stands, which is when the server
+     * checks which entities the player tracks ({@code ServerChunkCache#move}). A player starts tracking an entity once
+     * its client has the entity's chunk; a fake player's client never says so by itself.
+     */
+    static void playClient(GameTestHelper helper, ServerPlayer player) {
+        player.connection.chunkSender.onChunkBatchReceivedByClient(PlayerChunkSender.MAX_CHUNKS_PER_TICK);
+        helper.getLevel().getChunkSource().move(player);
+    }
+
+    /**
+     * Whether {@code player}'s client has the chunk at {@code at} ({@link #playClient}), so the server tells it about
+     * the entities there: a new entity is tracked from its first tick, and its packets reach {@link #sentPackets}.
+     */
+    static boolean tracksChunkAt(ServerPlayer player, Vec3 at) {
+        ChunkPos chunk = ChunkPos.containing(BlockPos.containing(at));
+        return player.level().getChunkSource().chunkMap.isChunkTracked(player, chunk.x(), chunk.z());
+    }
+
+    /**
      * The payloads of {@code type} the server sent {@code player} since the last call, oldest first. The fake
      * connection's channel ({@link #login}) keeps every packet written to it; this drains it, bundles included.
      */
@@ -191,6 +217,17 @@ public final class QaPlayers {
             collectPackets(message, type, packets);
         }
         return packets;
+    }
+
+    /** The id of the entity an entity event is about: the packet itself only looks the entity up in a level. */
+    static int entityId(ClientboundEntityEventPacket packet) {
+        FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
+        try {
+            ClientboundEntityEventPacket.STREAM_CODEC.encode(buffer, packet);
+            return buffer.readInt();
+        } finally {
+            buffer.release();
+        }
     }
 
     private static <T> void collectPackets(Object packet, Class<T> type, List<T> into) {

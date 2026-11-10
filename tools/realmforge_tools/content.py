@@ -48,6 +48,7 @@ from realmforge_tools.schema import (
     MerchantDef,
     MobDef,
     NetheriteUpgradeDef,
+    ParticleDef,
     QuestDef,
     RaceDef,
     RealmDef,
@@ -57,7 +58,10 @@ from realmforge_tools.schema import (
     RoomThemeDef,
     SoundGroupDef,
     SpellDef,
+    SpellLookDef,
+    SpellModelDef,
     SpellSchoolDef,
+    SpellTrajectoryDef,
     StatDef,
     StatRuleDef,
     TextGroupDef,
@@ -208,6 +212,10 @@ class Content:
     effects: tuple[Entry[EffectDef], ...]
     enchantments: tuple[Entry[EnchantmentDef], ...]
     spells: tuple[Entry[SpellDef], ...]
+    spell_looks: tuple[Entry[SpellLookDef], ...]
+    spell_models: tuple[Entry[SpellModelDef], ...]
+    spell_trajectories: tuple[Entry[SpellTrajectoryDef], ...]
+    particles: tuple[Entry[ParticleDef], ...]
     mobs: tuple[Entry[MobDef], ...]
     bosses: tuple[Entry[BossDef], ...]
     sounds: tuple[Entry[SoundGroupDef], ...]
@@ -314,6 +322,10 @@ def load_content(
         effects=by_id(loaded["effects"]),
         enchantments=by_id(loaded["enchantments"]),
         spells=by_id(loaded["spells"]),
+        spell_looks=by_id(loaded["spell_looks"]),
+        spell_models=by_id(loaded["spell_models"]),
+        spell_trajectories=by_id(loaded["spell_trajectories"]),
+        particles=by_id(loaded["particles"]),
         mobs=by_id(loaded["mobs"]),
         bosses=by_id(loaded["bosses"]),
         sounds=by_id(loaded["sounds"]),

@@ -17,12 +17,12 @@ targeting: {type: realmforge:direction, range: 40}
 cast: {type: channel, duration_seconds: 1.5, interval_seconds: 0.5}
 cost: {resource: realmforge:mana, amount: 12}
 max_level: 5
+visuals: {look: realmforge:arcane, forming: hands}
 effects:
   - type: realmforge:projectile
     speed: 35
     size: 0.4
-    impact: {sound: minecraft:block.amethyst_cluster.break, particles: minecraft:amethyst_block}
-    appearance: {model: orb, color: "#C77DFF"}
+    model: realmforge:orb
     splash: {radius: 1, damage_percent: 50}
     effects:
       - type: realmforge:damage

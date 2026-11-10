@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=../../tools/schemas/particles.schema.json
+# A shard (RLM-639): a sliver that flies out and falls, lit by the world like a chip of what broke. Frost's burst
+# (ice) and stone's (rock chips).
+id: shard
+frames:
+  - - "........"
+    - ".....f.."
+    - "....fb.."
+    - "...fb6.."
+    - "..fb6..."
+    - ".fb6...."
+    - ".b6....."
+    - "........"
+  - - "........"
+    - "........"
+    - "....f..."
+    - "...fb..."
+    - "..fb...."
+    - "..b....."
+    - "........"
+    - "........"
+lifetime_ticks: [8, 14]
+size: 0.08
+gravity: 0.6
+friction: 0.96
+glows: false

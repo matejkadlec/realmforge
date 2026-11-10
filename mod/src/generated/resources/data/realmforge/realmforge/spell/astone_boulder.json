@@ -14,8 +14,7 @@
     "keep_range": 0.5,
     "sound": "realmforge:spell.astone_boulder.form",
     "type": "cast_time",
-    "duration_ticks": 40,
-    "forms_projectile": true
+    "duration_ticks": 40
   },
   "cooldown_ticks": 160,
   "global_cooldown_ticks": 10,
@@ -27,6 +26,11 @@
   "npc_only": true,
   "requires": [],
   "castable_while_stunned": false,
+  "visuals": {
+    "look": "realmforge:stone",
+    "forming": "grow",
+    "impact_sound": "realmforge:spell.astone_boulder.impact"
+  },
   "effects": [
     {
       "type": "realmforge:projectile",
@@ -48,14 +52,8 @@
         }
       ],
       "spares": "realmforge:stone_creatures",
-      "impact": {
-        "sound": "realmforge:spell.astone_boulder.impact",
-        "particles": "realmforge:vaultstone"
-      },
-      "appearance": {
-        "model": "orb",
-        "color": "#8B8579"
-      }
+      "model": "realmforge:orb",
+      "trajectory": "realmforge:straight"
     }
   ]
 }

@@ -17,16 +17,15 @@ cast:
   keep_sight: true
   keep_range_percent: 50
   sound: realmforge:spell.stoneform.form
-  forms_projectile: true
 cooldown_seconds: 3
 npc_only: true
+visuals: {look: realmforge:stone, forming: grow}
 effects:
   - type: realmforge:projectile
     speed: 16
     size: 0.5
     lifetime_seconds: 1
     spares: realmforge:stone_creatures
-    impact: {sound: realmforge:spell.stoneform.impact, particles: realmforge:vaultstone}
-    appearance: {model: orb, color: "#8D9094"}
+    model: realmforge:orb
     effects:
       - {type: realmforge:damage, amount: 4}

@@ -376,12 +376,6 @@
           "title": "Duration Seconds",
           "type": "number"
         },
-        "forms_projectile": {
-          "default": false,
-          "description": "Whether the spell's projectile forms in front of the caster during the cast, growing to its size, and flies from there; the spell's first effect is a projectile with an appearance.",
-          "title": "Forms Projectile",
-          "type": "boolean"
-        },
         "keep_range_percent": {
           "anyOf": [
             {
@@ -2164,46 +2158,10 @@
       "title": "ProcDurationFromLevelDef",
       "type": "object"
     },
-    "ProjectileAppearanceDef": {
-      "additionalProperties": false,
-      "description": "How a projectile looks; without it, a trail of sparks (until C6, RLM-29). Its placeholder texture is\ngenerated at ``textures/entity/spell/<spell>.png`` until real art exists.",
-      "properties": {
-        "color": {
-          "description": "Main colour of its placeholder texture, \"#RRGGBB\".",
-          "pattern": "^#[0-9A-Fa-f]{6}$",
-          "title": "Color",
-          "type": "string"
-        },
-        "model": {
-          "const": "orb",
-          "description": "orb: a small spinning orb of three crossed slabs, the shape of a shulker's bullet.",
-          "title": "Model",
-          "type": "string"
-        }
-      },
-      "required": [
-        "model",
-        "color"
-      ],
-      "title": "ProjectileAppearanceDef",
-      "type": "object"
-    },
     "ProjectileEffectDef": {
       "additionalProperties": false,
       "description": "Launches a projectile from the caster's eyes toward the target (an enemy, a ground point or along a\ndirection, where the crosshair points). It flies straight and stops at the first living entity in its way that is\nnot the caster or its ally: one that can be damaged, hostile or passive, takes its own ``effects``, and one that\ncannot (invulnerable) or of ``spares`` stops it untouched. A block or the end of its lifetime ends it without them,\nand so does leaving the world: above the build height, beyond where entities move, or in the void (architecture\n11.3, RLM-344).",
       "properties": {
-        "appearance": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ProjectileAppearanceDef"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "How it looks; without it, a trail of sparks."
-        },
         "effects": {
           "description": "What it does to the enemy it hits, in order.",
           "items": {
@@ -2247,18 +2205,6 @@
           "title": "Effects",
           "type": "array"
         },
-        "impact": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ProjectileImpactDef"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Its sound and particles where it hits a block or an entity."
-        },
         "lifetime_seconds": {
           "anyOf": [
             {
@@ -2272,6 +2218,21 @@
           "default": null,
           "description": "How long it flies before it fizzles; more than 0, at most 10. Without it, it flies until it hits something or leaves the world.",
           "title": "Lifetime Seconds"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Its shape, a spell model (content/spell_models/), e.g. realmforge:orb, drawn with the material of the spell's look (visuals.look). Without it the projectile has no body: only its look's trail, or a trail of sparks for a spell without a look.",
+          "title": "Model"
         },
         "size": {
           "default": 0.5,
@@ -2315,6 +2276,13 @@
           "default": null,
           "description": "A small explosion where it hits an enemy (RLM-399): the enemies round the target take its effects too, its damage at a share."
         },
+        "trajectory": {
+          "default": "realmforge:straight",
+          "description": "How it flies, a spell trajectory (content/spell_trajectories/). realmforge:straight by default, the only one (ADR 0052).",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Trajectory",
+          "type": "string"
+        },
         "type": {
           "const": "realmforge:projectile",
           "title": "Type",
@@ -2327,44 +2295,6 @@
         "effects"
       ],
       "title": "ProjectileEffectDef",
-      "type": "object"
-    },
-    "ProjectileImpactDef": {
-      "additionalProperties": false,
-      "description": "What a projectile does where it hits a block or an entity: a sound and a block's break particles, as a mined\nblock shatters.",
-      "properties": {
-        "particles": {
-          "anyOf": [
-            {
-              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
-              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "A block whose break particles burst where it hits, e.g. realmforge:vaultstone.",
-          "title": "Particles"
-        },
-        "sound": {
-          "anyOf": [
-            {
-              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
-              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "A sound event, e.g. realmforge:spell.stoneform.impact.",
-          "title": "Sound"
-        }
-      },
-      "title": "ProjectileImpactDef",
       "type": "object"
     },
     "RandomPlayerTargetingDef": {
@@ -2472,6 +2402,56 @@
         "damage_percent"
       ],
       "title": "SpellDamageDef",
+      "type": "object"
+    },
+    "SpellVisualsDef": {
+      "additionalProperties": false,
+      "description": "How a spell looks, combined from the kit's parts (RLM-439, ADR 0073, docs/design/spell-visuals.md). Its\nprojectiles name their model and trajectory themselves.",
+      "properties": {
+        "forming": {
+          "anyOf": [
+            {
+              "enum": [
+                "grow",
+                "storm",
+                "hands"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "What shows in the caster's hands while it casts. grow: the projectile's model grows there cube by cube during a cast time (Matěj's choice, 2026-10-29); storm: it scales up there as a whole, grow's fallback; hands: only the look's particles at the hands, during a cast time or a channel. A projectile that forms flies from the hands. Until the forming renderer (RLM-640), grow and storm both show a mob's projectile growing as a whole, and hands shows nothing.",
+          "title": "Forming"
+        },
+        "impact_sound": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A sound event of its own for its projectile's hit, instead of its look's (realmforge:spell.astone_boulder.impact).",
+          "title": "Impact Sound"
+        },
+        "look": {
+          "description": "Its element's look, a spell look (content/spell_looks/), e.g. realmforge:frost: the material its projectile's model is drawn with, the particles of its trail and its impact, and the impact's sound.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Look",
+          "type": "string"
+        }
+      },
+      "required": [
+        "look"
+      ],
+      "title": "SpellVisualsDef",
       "type": "object"
     },
     "SplashDef": {
@@ -2950,6 +2930,18 @@
         }
       ],
       "title": "Targeting"
+    },
+    "visuals": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SpellVisualsDef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "How the spell looks (RLM-439): its look, and how its projectile forms during the cast. Without it a projectile is a trail of sparks."
     },
     "window": {
       "anyOf": [

@@ -34,6 +34,7 @@ import io.github.matejkadlec.realmforge.spell.SpellEffect;
 import io.github.matejkadlec.realmforge.spell.SpellRegistries;
 import io.github.matejkadlec.realmforge.spell.SpellRequirement;
 import io.github.matejkadlec.realmforge.spell.SpellTargeting;
+import io.github.matejkadlec.realmforge.spell.Visuals;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -91,8 +92,12 @@ public final class ContentSpellGameTests {
             helper.assertValueEqual(spell.cast().keepRange(), expected.keepRange(), id + " keeps range");
             helper.assertValueEqual(spell.cast().sound().map(Identifier::toString), expected.castSound(),
                     id + " cast sound");
-            helper.assertValueEqual(spell.cast().formsProjectile(), expected.formsProjectile(),
-                    id + " forms its projectile");
+            helper.assertValueEqual(spell.visuals().map(visuals -> visuals.look().getRegisteredName()),
+                    expected.look(), id + " look");
+            helper.assertValueEqual(spell.visuals().flatMap(Visuals::forming).map(Visuals.Forming::getSerializedName),
+                    expected.forming(), id + " forming");
+            helper.assertValueEqual(spell.visuals().flatMap(Visuals::impactSound).map(Identifier::toString),
+                    expected.impactSound(), id + " impact sound of its own");
             helper.assertValueEqual(spell.cast().animation().getSerializedName(), expected.castAnimation(),
                     id + " cast animation");
             helper.assertValueEqual(spell.cast().castTimeReduction().getSerializedName(),
@@ -190,7 +195,7 @@ public final class ContentSpellGameTests {
             case GainResourceEffect gain -> new EffectExpectation(type, Map.of("amount", gain.amount(), "per_level",
                     gain.perLevel()), Map.of("resource", gain.resource().getRegisteredName()), List.of());
             case ProjectileEffect projectile -> new EffectExpectation(type, projectileNumbers(projectile),
-                    projectile.spares().map(tag -> Map.of("spares", tag.location().toString())).orElse(Map.of()),
+                    projectileNames(projectile),
                     projectile.effects().stream().map(ContentSpellGameTests::effect).toList());
             case DamageOverTimeEffect dot -> new EffectExpectation(type, damageOverTimeNumbers(dot),
                     Map.of("effect", dot.effect().getRegisteredName()), List.of());
@@ -205,6 +210,15 @@ public final class ContentSpellGameTests {
                     areaNames(area), area.effects().stream().map(ContentSpellGameTests::effect).toList());
             default -> new EffectExpectation(type, Map.of(), Map.of(), List.of());
         };
+    }
+
+    /** A projectile's names: the tag it spares and its model, each only when it has one, and its trajectory. */
+    private static Map<String, String> projectileNames(ProjectileEffect projectile) {
+        Map<String, String> names = new HashMap<>();
+        projectile.spares().ifPresent(tag -> names.put("spares", tag.location().toString()));
+        projectile.model().ifPresent(model -> names.put("model", model.getRegisteredName()));
+        names.put("trajectory", projectile.trajectory().getRegisteredName());
+        return names;
     }
 
     /** A cone's names (RLM-542): its sound and particle block, each only when it has one. */

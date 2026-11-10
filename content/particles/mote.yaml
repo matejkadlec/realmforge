@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=../../tools/schemas/particles.schema.json
+# A mote (RLM-639): a soft round speck that floats where it appeared and shrinks away. Frost's and arcane's trails,
+# arcane's burst.
+id: mote
+frames:
+  - - "........"
+    - "..6bb6.."
+    - ".6bffb6."
+    - ".bffffb."
+    - ".bffffb."
+    - ".6bffb6."
+    - "..6bb6.."
+    - "........"
+  - - "........"
+    - "........"
+    - "..6bb6.."
+    - "..bffb.."
+    - "..bffb.."
+    - "..6bb6.."
+    - "........"
+    - "........"
+  - - "........"
+    - "........"
+    - "........"
+    - "...bb..."
+    - "...bb..."
+    - "........"
+    - "........"
+    - "........"
+lifetime_ticks: [6, 12]
+size: 0.07
+friction: 0.9
