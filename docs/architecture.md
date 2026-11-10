@@ -4049,7 +4049,7 @@ depth limit.
     reward with its FTB Quests id and type, each reward's team flag and auto-claim as FTB Quests resolves them, and
     our custom statistics) and, from sample tasks, advancements in the QA mod's data
     (`realmforge_qa:quest_task/<name>`; the spell sample is the first spell a bare caster casts at once: a player's,
-    instant, on themselves, without a weapon or a window, free or for mana, RLM-472). `QuestGameTests` completes the samples through a level-up, a dungeon run and
+    instant without a swing, on themselves, without a weapon or a window, free or for mana, RLM-472). `QuestGameTests` completes the samples through a level-up, a dungeon run and
     casts, counts the statistic, and compares the book FTB Quests loaded in the GameTest server (which gets the pack's
     config, `seedPackConfig`) with the expectations: while `content/quests/` is empty, it holds no chapter. The
     comparison's FTB Quests types live in `QuestBook`, out of every GameTest class: the QA mod lists those classes'

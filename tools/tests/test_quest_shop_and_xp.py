@@ -411,16 +411,21 @@ def test_the_sample_spell_stays_one_a_bare_caster_casts_at_once(repo: RepoPaths)
             cost="window: {duration_seconds: 20, opened_by: [kill]}\n",
         ),
     )
+    # A swing starts at once but lands at its hit moment: the game begins it instead of casting it (SpellCast#instant).
+    write(
+        repo.content / "spells" / "aab_swung_shout.yaml",
+        SHOUT.format(id="aab_swung_shout", cast="{type: instant, animation_seconds: 0.5}", cost=""),
+    )
     content, _ = load_and_validate(repo)
     spells = {f"realmforge:{entry.model.id}": entry.model for entry in content.spells}
-    for refused in ("aaa_rage_shout", "aab_self_channel", "aab_windowed_shout"):
+    for refused in ("aaa_rage_shout", "aab_self_channel", "aab_windowed_shout", "aab_swung_shout"):
         assert not castable_sample(spells[f"realmforge:{refused}"]), refused
     after = dict(sample_tasks(content))["quest_task/spell"]
     assert isinstance(after, SpellTaskDef)
     assert after.spell == before.spell
     sample = spells[after.spell]
     assert sample.targeting.type == "realmforge:self"
-    assert sample.cast.type == "instant"
+    assert sample.cast.type == "instant" and sample.cast.animation_seconds is None
     assert sample.cost is None or sample.cost.resource == "realmforge:mana"
     assert not sample.requires and not sample.npc_only and sample.is_cast
     assert sample.window is None
