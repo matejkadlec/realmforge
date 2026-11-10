@@ -18,6 +18,18 @@ public final class GeneratedBlockExpectations {
 
     public static final List<BlockExpectation> BLOCKS = List.of(
             new BlockExpectation(
+                    "realmforge:ancient_casting",
+                    "block.realmforge.ancient_casting",
+                    5.0F, 1200.0F, true,
+                    List.of("minecraft:mineable/pickaxe"),
+                    "realmforge:blocks/ancient_casting"),
+            new BlockExpectation(
+                    "realmforge:ancient_workbench",
+                    "block.realmforge.ancient_workbench",
+                    5.0F, 1200.0F, true,
+                    List.of("minecraft:mineable/pickaxe"),
+                    "realmforge:blocks/ancient_workbench"),
+            new BlockExpectation(
                     "realmforge:andesite_bricks",
                     "block.realmforge.andesite_bricks",
                     1.5F, 6.0F, true,

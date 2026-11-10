@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../../tools/schemas/merchants.schema.json
+# The Ancient Specialist (RLM-241; Matěj, 2026-10-16/17; ADR 0034): a villager profession whose workstation is the
+# Ancient Workbench. It sells what grew and lived in the Nether and the End, which have no other source (ADR 0025,
+# ADR 0034: blaze rods, ender pearls, nether wart, and the Wither's skulls), for coins at fixed prices: no villager
+# levels, every trade from the start. Matěj named the items, the amounts and the price bands. The numbers are the
+# agent's (docs/design/merchants.md, open until RLM-241's deferred playtest): cheap 20 to 40 copper, medium 2 to 3
+# silver, expensive 5 to 6 silver, extremely expensive 75 silver (three skulls summon the Wither) and 1 gold.
+id: ancient_specialist
+name:
+  en_us: Ancient Specialist
+workstation: realmforge:ancient_workbench
+work_sound: minecraft:entity.villager.work_cleric
+trades:
+  - gives: {item: minecraft:crimson_nylium, count: 8}
+    price: 40
+  - gives: {item: minecraft:crimson_fungus, count: 1}
+    price: 20
+  - gives: {item: minecraft:warped_nylium, count: 8}
+    price: 40
+  - gives: {item: minecraft:warped_fungus, count: 1}
+    price: 20
+  - gives: {item: minecraft:nether_wart, count: 8}
+    price: 200
+  - gives: {item: minecraft:blaze_rod, count: 8}
+    price: 300
+  - gives: {item: minecraft:ender_pearl, count: 1}
+    price: 500
+  - gives: {item: minecraft:ghast_tear, count: 1}
+    price: 600
+  - gives: {item: minecraft:wither_skeleton_skull, count: 1}
+    price: 7500
+  - gives: {item: minecraft:netherite_scrap, count: 1}
+    price: 10000

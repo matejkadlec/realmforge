@@ -195,7 +195,7 @@ io.github.matejkadlec.realmforge
 ├─ character/         races, classes, character data, leveling, level caps, the character sheet's view
 ├─ world/             dimension rules and access, realms, world blocks, world defaults, Night Vision, griefing
 │                     protection
-├─ mob/               mob levels and scaling, AI goal library, custom mobs
+├─ mob/               mob levels and scaling, AI goal library, custom mobs, merchants (villager professions)
 ├─ boss/              boss definitions, phase machine, boss entity, the boss bar
 ├─ dungeon/           dungeon types, planner, layout, builder, instances
 ├─ command/           `/realmforge` operator commands (developer commands live in the QA mod)
@@ -3018,6 +3018,53 @@ Cracked Stone again as an ability), her buff's health, damage, armor shred, magi
 Frostbolt deals her 90 % of what it would without it), her three drops on three kills, and the playtest's commands
 (`/summon`, `/qa boss phase`, `/qa boss reset`, `/kill`); `BossPhaseMachineTest` walks her definition through all three
 phases.
+
+### 14.4 Merchants
+
+Built in RLM-285 and RLM-241 ([ADR 0040](decisions/0040-coins-and-data-driven-merchant-trades.md),
+[ADR 0034](decisions/0034-ancient-merchants-and-the-wither-amend-the-nether-and-end-removal.md);
+[merchants design](design/merchants.md)): `content/merchants/` and `mob/merchant/Merchants`. A merchant is a villager
+profession of ours with a workstation block and a fixed list of trades, paid in coins
+([13](#13-items-gear-and-loot)). The first two are the Ancient Builder (workstation: Ancient Casting) and the Ancient
+Specialist (Ancient Workbench), which sell the Nether's and the End's materials.
+
+- **Trades are vanilla data the pipeline writes** (Minecraft 26.1's `villager_trade` and `trade_set` registries,
+  which load with the world, not on `/reload`, and are not sent to clients): one `villager_trade` file per trade
+  (`data/realmforge/villager_trade/<merchant>/<nn>_<item>.json`), the merchant's one trade set
+  (`trade_set/<merchant>/level_1.json`, its `amount` the number of trades, no duplicates) and its tag
+  (`tags/villager_trade/<merchant>/level_1.json`). A trade's `price` is an amount of copper, paid in the largest
+  coins: at most two coin types and a stack of each, since a trade has two cost slots (validation refuses more). A
+  trade may name its `wants` instead, for a merchant that buys.
+- **The profession and its job site are Java,** since `villager_profession` and `point_of_interest_type` are
+  built-in registries: `Merchants` registers both per entry of the generated `GeneratedMerchants`. The point of
+  interest is every state of the workstation block (one villager per block, within one block of it, as vanilla's);
+  the pipeline adds it to `#minecraft:acquirable_job_site`, so a jobless villager near a workstation takes the job
+  as with vanilla's. The profession names its trade set at level 1 only. A workstation is a `simple` block of
+  `content/blocks/` with its recipe; it does nothing else.
+- **No levels** (ADR 0034, ADR 0040): every trade sits in the level 1 set and gives the villager no XP (`xp: 0`), so
+  it never levels. Vanilla lets a level 1 villager without XP lose its profession with its workstation
+  (`ResetProfession`), so the first trade locks it: `TradeWithVillagerEvent` raises the villager's XP to 1, once
+  (Matěj's correction on RLM-285, 2026-10-19). Before its first trade a merchant can still lose its job, as a
+  vanilla villager can.
+- **Fixed prices:** `reputation_discount: 0` is the offer's price multiplier, which scales demand and reputation, so
+  neither changes a price. Hero of the Village is not data: vanilla's `Villager#startTrading` always takes 30 % and
+  more off every first cost. For a profession in `#realmforge:fixed_price` (every merchant, written by the pipeline)
+  `Merchants#onEntityInteract` therefore opens the trading itself (`PlayerInteractEvent.EntityInteract`, on the
+  server, cancelled with a success), under exactly the conditions vanilla starts trading under, and leaves every
+  other click to vanilla (a spawn egg, a sleeping, trading or baby villager, a sneaking player, no offers). It calls
+  `setTradingPlayer` and `Merchant#openTradingScreen` without `updateSpecialPrices`: no mixin and no access
+  transformer.
+- **The trade screen shows no level:** that call passes level 0, and `MerchantScreen` draws the level name and the XP
+  bar only from level 1. The villager's own data stays level 1.
+- **The offers are listed in the written order:** vanilla draws a trade set's offers in a random order, so the
+  handler sorts them by the generated list before the screen opens (validation allows one trade per stack a merchant
+  gives, which makes the order unambiguous).
+- **Placeholder look:** a profession's layer is `assets/realmforge/textures/entity/villager/profession/<id>.png`; the
+  pipeline writes a checkered robe on the villager model's jacket until A1's art (RLM-645), and the workstations
+  use the blocks' placeholder textures.
+- `MerchantGameTests` cover the registration, the offers against the content, fixed prices with the best reputation
+  and Hero of the Village V next to a vanilla armorer whose prices fall, the level the screen is told, a purchase of
+  every trade through the trade screen's slots, the lock, and a jobless villager taking the job at a workstation.
 
 ## 15. Dimensions and dungeons
 

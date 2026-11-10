@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "G": "minecraft:glass",
+    "L": "minecraft:lava_bucket",
+    "O": "minecraft:obsidian"
+  },
+  "pattern": [
+    "OGO",
+    "GLG",
+    "OGO"
+  ],
+  "result": {
+    "id": "realmforge:ancient_casting"
+  }
+}

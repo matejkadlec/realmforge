@@ -180,6 +180,19 @@ public final class QaPlayers {
                 .toList();
     }
 
+    /**
+     * The packets of {@code type} the server sent {@code player} since the last drain, oldest first, bundles
+     * included. Drains the fake connection's channel, like {@link #sentChatLines}.
+     */
+    static <T> List<T> sentPackets(ServerPlayer player, Class<T> type) {
+        EmbeddedChannel channel = (EmbeddedChannel) player.connection.getConnection().channel();
+        List<T> packets = new ArrayList<>();
+        for (Object message = channel.readOutbound(); message != null; message = channel.readOutbound()) {
+            collectPackets(message, type, packets);
+        }
+        return packets;
+    }
+
     private static <T> void collectPackets(Object packet, Class<T> type, List<T> into) {
         if (type.isInstance(packet)) {
             into.add(type.cast(packet));

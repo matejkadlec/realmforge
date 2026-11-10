@@ -125,6 +125,10 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   using it breaks one, and change that does not fit drops at the player's feet. A hostile mob a player killed drops
   coins by its level and rank (RLM-286: the curve `coin_drop`, 50 to 150 %, about 1 gold at level 50), which neither
   Looting nor luck changes; a mob's rank, its kill XP multiplier, is read through `stats/MobRanks`.
+  Merchants are villager professions from `content/merchants/` (RLM-285): a workstation block of ours as the job site
+  and a fixed trade list as vanilla trade data, paid in coins at prices no reputation or Hero of the Village changes,
+  without villager levels (`mob/merchant/Merchants`). The first two sell the Nether's and the End's materials
+  (RLM-241, ADR 0034): the Ancient Builder at the Ancient Casting and the Ancient Specialist at the Ancient Workbench.
   Characters level up (C2): character XP from kills (by the victim's level and rank) and `/realmforge xp`, an XP
   bar, and a level cap from chapter advancements (10, then 18 after chapter 1 and 30 after chapter 2). The spell
   engine is done (C3a): spells as data in `content/spells/`, cast by players and mobs through one `SpellCaster` (from

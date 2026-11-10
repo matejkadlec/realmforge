@@ -1,0 +1,12 @@
+{
+  "wants": {
+    "id": "realmforge:silver_coin",
+    "count": 6
+  },
+  "gives": {
+    "id": "minecraft:ghast_tear"
+  },
+  "max_uses": 12,
+  "reputation_discount": 0,
+  "xp": 0
+}

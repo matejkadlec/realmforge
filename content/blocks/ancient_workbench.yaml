@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=../../tools/schemas/blocks.schema.json
+# Ancient Workbench (RLM-241; Matěj, 2026-10-16): the Ancient Specialist's workstation, an obsidian crafting table. A
+# jobless villager near one becomes an Ancient Specialist (content/merchants/ancient_specialist.yaml). Four obsidian
+# on the sides around a crafting table make one. It is a job site only: it opens no crafting grid. The generated
+# placeholder texture until A1's art; hardness and tool are the agent's numbers (RLM-241's deferred playtest).
+id: ancient_workbench
+name:
+  en_us: Ancient Workbench
+hardness: 5
+blast_resistance: 1200
+tool: pickaxe
+requires_tool: true
+sound: stone
+map_color: color_black
+creative_tabs:
+  - minecraft:functional_blocks
+recipe:
+  pattern:
+    - " O "
+    - OCO
+    - " O "
+  key:
+    O: minecraft:obsidian
+    C: minecraft:crafting_table
