@@ -27,6 +27,7 @@ import io.github.matejkadlec.realmforge.client.render.SwingShapes;
 import io.github.matejkadlec.realmforge.client.render.RealmPortalColors;
 import io.github.matejkadlec.realmforge.client.render.ScrollCharge;
 import io.github.matejkadlec.realmforge.client.render.SpellEntityRenderers;
+import io.github.matejkadlec.realmforge.client.render.SpellForming;
 import io.github.matejkadlec.realmforge.client.screen.CharacterCreationScreen;
 import io.github.matejkadlec.realmforge.client.spell.ClientCasts;
 import io.github.matejkadlec.realmforge.client.spell.ClientCharges;
@@ -80,6 +81,7 @@ public final class RealmforgeClient {
         WandCasting.register();
         TargetCircle.register();
         SpellEntityRenderers.register(modBus);
+        SpellForming.register();
         TintedParticle.register(modBus);
         CustomMobRenderers.register(modBus);
         FrozenLook.register(modBus);

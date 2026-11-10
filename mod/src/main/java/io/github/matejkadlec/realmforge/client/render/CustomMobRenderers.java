@@ -3,47 +3,27 @@ package io.github.matejkadlec.realmforge.client.render;
 import com.geckolib.model.DefaultedEntityGeoModel;
 import com.geckolib.renderer.GeoEntityRenderer;
 import com.geckolib.renderer.base.GeoRenderState;
-import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.matejkadlec.realmforge.client.compat.neat.NeatCard;
 import io.github.matejkadlec.realmforge.client.compat.neat.NeatCompat;
-import io.github.matejkadlec.realmforge.client.spell.ClientCasts;
 import io.github.matejkadlec.realmforge.generated.GeneratedMobs;
 import io.github.matejkadlec.realmforge.mob.custom.CustomMob;
-import io.github.matejkadlec.realmforge.spell.CombatState;
-import io.github.matejkadlec.realmforge.spell.ProjectileEffect;
-import io.github.matejkadlec.realmforge.spell.Spell;
-import io.github.matejkadlec.realmforge.spell.SpellLook;
-import io.github.matejkadlec.realmforge.spell.SpellModel;
-import io.github.matejkadlec.realmforge.spell.Spells;
-import io.github.matejkadlec.realmforge.spell.SpellVisuals;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
-import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
-
 /**
  * The renderers of the custom mobs (architecture 14.2, 18): GeckoLib's, with the model, animations and texture of the
  * mob's id ({@code assets/realmforge/geckolib/models/entity/<id>.geo.json}, {@code .../animations/entity/},
  * {@code textures/entity/<id>.png}, a variant's {@code <id>_<variant>.png}), and Neat's card above it as above every
- * vanilla mob ({@link NeatCard}). The animations turn the model's head to where the mob looks. While a custom mob (a
- * caster or a boss) casts a spell that forms its projectile, the projectile's model grows in its raised hands with its
- * look's material (the orb, {@link SpellOrbs}), where the server launches it from, until the forming renderer
- * (RLM-640) draws every caster's.
+ * vanilla mob ({@link NeatCard}). The animations turn the model's head to where the mob looks. What forms in a casting
+ * mob's raised hands is drawn by {@link SpellForming}, as every caster's is.
  */
 public final class CustomMobRenderers {
-    /** A formed projectile starts at this share of its size and grows to the whole of it by the end of the cast. */
-    private static final float FORM_START = 0.15F;
-
     private CustomMobRenderers() {
     }
 
@@ -61,12 +41,10 @@ public final class CustomMobRenderers {
 
     private static final class Renderer<T extends CustomMob> extends GeoEntityRenderer<T, LivingEntityRenderState> {
         private final Optional<NeatCard> neat;
-        private final SpellOrbs orbs;
 
         Renderer(EntityRendererProvider.Context context, EntityType<? extends T> type) {
             super(context, new Model<>(BuiltInRegistries.ENTITY_TYPE.getKey(type)));
             neat = NeatCompat.card(context);
-            orbs = new SpellOrbs(context);
         }
 
         @Override
@@ -84,43 +62,6 @@ public final class CustomMobRenderers {
                 custom.texture = entity.variant()
                         .map(variant -> type.withPath("textures/entity/" + type.getPath() + "_" + variant.id() + ".png"))
                         .orElse(null);
-                custom.forming = forming(entity, partialTick);
-                custom.formAt = SpellVisuals.formOffset(entity, state.bodyRot);
-            }
-        }
-
-        /** The projectile {@code caster} forms now, at its size so far, if its cast forms one. */
-        private static Optional<Forming> forming(CustomMob caster, float partialTick) {
-            Optional<CombatState.Cast> cast = ClientCasts.current(caster);
-            if (cast.isEmpty() || cast.get().durationTicks() <= 0) {
-                return Optional.empty();
-            }
-            Optional<Spell> spell = Spells.get(caster.registryAccess(), cast.get().spell()).map(Holder::value);
-            Optional<ProjectileEffect> projectile = spell.flatMap(SpellVisuals::formedProjectile);
-            Optional<Identifier> material = spell.flatMap(Spell::visuals)
-                    .flatMap(visuals -> SpellLook.material(visuals.look()));
-            if (projectile.isEmpty() || material.isEmpty()) {
-                return Optional.empty();
-            }
-            SpellModel model = projectile.get().model().orElseThrow().value();
-            float elapsed = caster.level().getGameTime() + partialTick - cast.get().startGameTime();
-            float progress = Mth.clamp(elapsed / cast.get().durationTicks(), 0.0F, 1.0F);
-            float size = (float) projectile.get().size() * model.scale() * (FORM_START + (1 - FORM_START) * progress);
-            return Optional.of(new Forming(material.get(), size));
-        }
-
-        @Override
-        public void submit(LivingEntityRenderState state, PoseStack poseStack, SubmitNodeCollector collector,
-                CameraRenderState camera) {
-            super.submit(state, poseStack, collector, camera);
-            if (state instanceof State custom && custom.forming.isPresent()) {
-                Forming forming = custom.forming.get();
-                Vec3 at = custom.formAt;
-                poseStack.pushPose();
-                poseStack.translate(at.x, at.y, at.z);
-                orbs.submit(poseStack, collector, forming.material(), forming.size(), SpellModel.Orientation.TUMBLE,
-                        0, 0, 0, state.ageInTicks, state.lightCoords, state.outlineColor);
-                poseStack.popPose();
             }
         }
     }
@@ -139,18 +80,10 @@ public final class CustomMobRenderers {
     }
 
     /**
-     * What a frame draws of a custom mob beyond vanilla's living entity: its variant's texture, its forming orb. Not
-     * final: GeckoLib makes every living entity's render state a {@code GeoRenderState} at runtime, which its model
-     * receives this as.
+     * What a frame draws of a custom mob beyond vanilla's living entity: its variant's texture. Not final: GeckoLib
+     * makes every living entity's render state a {@code GeoRenderState} at runtime, which its model receives this as.
      */
     private static class State extends LivingEntityRenderState {
         @Nullable Identifier texture;
-        Optional<Forming> forming = Optional.empty();
-        /** Where it forms, from the mob's feet: in its raised hands ({@link SpellVisuals#formOffset}). */
-        Vec3 formAt = Vec3.ZERO;
-    }
-
-    /** A projectile forming in a caster's hands: its look's material and its size so far, in blocks. */
-    private record Forming(Identifier material, float size) {
     }
 }

@@ -6,6 +6,7 @@ import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.spell.CombatState.Cast;
 import io.github.matejkadlec.realmforge.spell.Spell;
 import io.github.matejkadlec.realmforge.spell.SpellRegistries;
+import java.util.Map;
 import java.util.Optional;
 import net.minecraft.resources.ResourceKey;
 import org.junit.jupiter.api.Test;
@@ -50,5 +51,19 @@ class CurrentCastsTest {
         assertEquals(0.0F, CurrentCasts.progress(CAST, 990.0));
         assertEquals(0.25F, CurrentCasts.progress(CAST, 1_010.0));
         assertEquals(1.0F, CurrentCasts.progress(CAST, 1_100.0));
+    }
+
+    /** What forms in every caster's hands is drawn from all of them at once (RLM-640). */
+    @Test
+    void everyCastInProgressIsListedByItsCaster() {
+        CurrentCasts casts = new CurrentCasts();
+        Cast drain = new Cast(DRAIN, 1_040L, 60, true);
+        casts.start(5, CAST);
+        casts.start(9, drain);
+        assertEquals(Map.of(5, CAST, 9, drain), casts.all(1_041L));
+        assertEquals(Map.of(9, drain), casts.all(1_041L + CurrentCasts.GRACE_TICKS),
+                "a cast whose end never arrived is gone after the grace");
+        assertEquals(1, casts.size());
+        assertEquals(Map.of(), new CurrentCasts().all(0));
     }
 }
