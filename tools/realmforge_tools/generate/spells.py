@@ -1,5 +1,10 @@
-"""Spells: ``ResourceKey`` constants for Java and the QA mod's expectations (the data itself: datapack.py, which turns
-``cooldown_seconds`` into ``cooldown_ticks`` and every ``<name>_percent`` into a fraction named ``<name>``)."""
+"""Spells: ``ResourceKey`` constants for Java, the QA mod's expectations and the spells' icons (the data itself:
+datapack.py, which turns ``cooldown_seconds`` into ``cooldown_ticks`` and every ``<name>_percent`` into a fraction
+named ``<name>``).
+
+A spell's icon is its approved art (``art/textures/spell/<id>.png``, ``art/approved.py``), written as the GUI sprite
+``realmforge:spell/<id>``; ``GeneratedSpellIcons`` lists the spells that have one, so the client draws the icon for
+those and their initials for the rest (test spells, mobs' spells)."""
 
 from __future__ import annotations
 
@@ -7,6 +12,7 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
+from realmforge_tools.art import approved
 from realmforge_tools.content import Content
 from realmforge_tools.generate.datapack import game_field, seconds_to_ticks, translation_key
 from realmforge_tools.generate.javagen import constant_name, header, java_file_path, string_literal
@@ -26,6 +32,13 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
             _expectations(content)
         ),
     }
+    icons = spell_icons(content, paths)
+    files[java_file_path(paths.mod_generated / "java", GENERATED_PACKAGE, "GeneratedSpellIcons")] = (
+        _icon_list(icons)
+    )
+    sprites = paths.mod_generated / "resources" / "assets" / MOD_ID / "textures" / "gui" / "sprites" / "spell"
+    for spell_id, icon in icons.items():
+        files[sprites / f"{spell_id}.png"] = icon
     textures = paths.mod_generated / "resources" / "assets" / MOD_ID / "textures" / "entity" / "spell"
     for entry in content.spells:
         for _, effect in entry.model.all_effects():
@@ -36,6 +49,39 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
                     f"{MOD_ID}:{entry.model.id}", int(appearance.color.removeprefix("#"), 16)
                 )
     return files
+
+
+def spell_icons(content: Content, paths: RepoPaths) -> dict[str, bytes]:
+    """Each spell that has approved art (``art/textures/spell/``), by id, with its icon as the game gets it."""
+    icons: dict[str, bytes] = {}
+    for entry in content.spells:
+        icon = approved.texture(paths, approved.SPELL, entry.model.id)
+        if icon is not None:
+            icons[entry.model.id] = icon
+    return icons
+
+
+def _icon_list(icons: dict[str, bytes]) -> bytes:
+    ids = ", ".join(string_literal(spell_id) for spell_id in sorted(icons))
+    source = (
+        header(Path(__file__), "art/textures/spell/") + f"package {GENERATED_PACKAGE};\n"
+        "\n"
+        "import java.util.Set;\n"
+        "\n"
+        "/**\n"
+        " * The spells that have an icon, generated from the approved art in {@code art/textures/spell/}: the GUI sprite\n"
+        " * {@code realmforge:spell/<path>} of each exists, so the client draws it instead of the spell's initials\n"
+        " * ({@code client/hud/SpellIcons}).\n"
+        " */\n"
+        "public final class GeneratedSpellIcons {\n"
+        "    /** The paths of the {@code realmforge} spells with an icon. */\n"
+        f"    public static final Set<String> SPELLS = Set.of({ids});\n"
+        "\n"
+        "    private GeneratedSpellIcons() {\n"
+        "    }\n"
+        "}\n"
+    )
+    return source.encode("utf-8")
 
 
 def _double(value: float) -> str:

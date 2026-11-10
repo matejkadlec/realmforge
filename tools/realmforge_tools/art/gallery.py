@@ -162,7 +162,9 @@ def render(info: GalleryInfo, subjects: tuple[Subject, ...], palette: Palette) -
             out.append(f'<p class="prompt">{esc(meta.prompt)}</p>')
         out.append('<div class="cards">')
         for candidate in subject.candidates:
-            out.append(_card(subject.name, candidate, info, picked=bool(meta) and meta.pick == candidate.name))
+            out.append(
+                _card(subject.name, candidate, info, picked=bool(meta) and meta.pick == candidate.name)
+            )
         out.append("</div></section>")
 
     out.append('<section class="picks"><h2>Your picks</h2>')

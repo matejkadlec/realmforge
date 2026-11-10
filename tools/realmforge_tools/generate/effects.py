@@ -6,6 +6,7 @@ from __future__ import annotations
 import math
 from pathlib import Path
 
+from realmforge_tools.art import approved
 from realmforge_tools.content import Content
 from realmforge_tools.generate.datapack import seconds_to_ticks
 from realmforge_tools.generate.effect_icons import drawn_icon
@@ -41,7 +42,8 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
     }
     for entry in content.effects:
         effect = entry.model
-        drawn = drawn_icon(effect.id)
+        # Approved art first (art/textures/effect/, RLM-642), then a drawn icon, then the placeholder disc.
+        drawn = approved.texture(paths, approved.EFFECT, effect.id) or drawn_icon(effect.id)
         files[icons / f"{effect.id}.png"] = (
             drawn if drawn is not None else placeholder_effect_icon(_rgb(effect.color), effect.category)
         )
