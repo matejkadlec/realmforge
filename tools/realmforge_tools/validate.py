@@ -13,6 +13,7 @@ from pathlib import PurePosixPath
 from pydantic import BaseModel
 
 from realmforge_tools.apotheosis import Snapshot, fit, load_snapshot
+from realmforge_tools.art import approved
 from realmforge_tools.content import Content, Entry, RoomEntry, SetPieceEntry, load_content
 from realmforge_tools.id_universe import NEOFORGE_ATTRIBUTES, IdUniverse, load_vanilla
 from realmforge_tools.problems import Problem, ValidationFailed
@@ -207,6 +208,7 @@ def load_and_validate(
     _add_core_mod_worldgen(universe, paths)
     problems = (
         validate_content(content, universe)
+        + approved.problems(paths, content)
         + _check_worldgen_clashes(content, paths)
         + _check_apotheosis(content, universe, paths)
     )

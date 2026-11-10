@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from realmforge_tools.art import approved
 from realmforge_tools.content import Content
 from realmforge_tools.formats.jsonfmt import dump_json
 from realmforge_tools.generate.datapack import data_dir
@@ -135,8 +136,9 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
         files[assets / "items" / f"{item_id}.json"] = dump_json(definition)
         model = {"parent": "minecraft:item/generated", "textures": {"layer0": f"{MOD_ID}:item/{item_id}"}}
         files[assets / "models" / "item" / f"{item_id}.json"] = dump_json(model)
-        files[assets / "textures" / "item" / f"{item_id}.png"] = placeholder_texture(
-            f"{MOD_ID}:{item_id}", _rgb(entry.model.color)
+        # The item's approved art (art/textures/item/, RLM-642), or its placeholder until it has one.
+        files[assets / "textures" / "item" / f"{item_id}.png"] = approved.placeholder_or_approved(
+            paths, approved.ITEM, item_id, placeholder_texture(f"{MOD_ID}:{item_id}", _rgb(entry.model.color))
         )
     files.update(_looks(content, assets))
 

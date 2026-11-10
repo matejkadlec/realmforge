@@ -229,7 +229,8 @@ there while the game runs. The handoff gives the commands
   have Xvfb and Mesa).
 - **Spell tree screenshots without input.** `REALMFORGE_QA_SPELL_TREE_SHOTS=<label> ./gradlew runClient -PofflineClient
   -PleanClient` makes the QA mod create a superflat world and a Mage, so the spellbook opens by itself, click Choose and
-  spells as a player would (real clicks and real payloads, which a GameTest's fake player cannot send), repeat it with a
+  spells as a player would (real clicks and real payloads, which a GameTest's fake player cannot send), close it and
+  cast Frostbolt for the HUD's spell bar and cast bar with their icons (`4b-hud-cast-bar`, RLM-642), repeat it with a
   Warrior for Bloodthirst's arrow and the Spell Bar tab's two columns, save each state to
   `run/client/screenshots/<label>-spelltree-<state>.png`, log
   `Spell tree check passed` or `FAILED` for what each click should do, and quit (RLM-333). Headless:

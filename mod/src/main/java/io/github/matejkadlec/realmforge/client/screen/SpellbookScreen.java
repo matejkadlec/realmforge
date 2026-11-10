@@ -16,7 +16,6 @@ import io.github.matejkadlec.realmforge.spell.SpellTooltip;
 import io.github.matejkadlec.realmforge.spell.Spellbook;
 import io.github.matejkadlec.realmforge.spell.Spells;
 import io.github.matejkadlec.realmforge.spell.net.SetSpellBarSlotPayload;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +53,9 @@ import org.lwjgl.glfw.GLFW;
  * only shows. A passive spell (RLM-541) is listed with its rank and "Passive" and never goes onto the bar; its tooltip
  * shows its rank and the next one. The gear button top right, level with the title (RLM-497; Matěj, 2026-10-29: an
  * icon instead of the word), opens the Realmforge config screen ({@link RealmforgeConfigScreen}), "Options" in its
- * tooltip. The panel is drawn as the background, under the button, so the button shows at full brightness. Spells
+ * tooltip. The book ({@link SpellbookPage}, RLM-609) is drawn as the background, under the button, so the button
+ * shows at full brightness; the texts are in its inks, and a spell's tooltip has its icon ({@link SpellTooltips}).
+ * Spells
  * that fill both columns scroll them together with the wheel and show a scrollbar beside them ({@link ScrollBar},
  * RLM-542), whose thumb can be dragged and whose track takes a click.
  */
@@ -65,35 +66,34 @@ public final class SpellbookScreen extends Screen {
     private static final int TAB_BAR = 1;
     private static final int TAB_COUNT = 2;
     private static final int TAB_GAP = 12;
-    private static final int TAB_IDLE = 0xFFA0A0A0;
-    private static final int TAB_HOVER = 0xFFC8C8C8;
+    private static final int TAB_IDLE = SpellbookPage.IDLE;
+    private static final int TAB_HOVER = SpellbookPage.IDLE_HOVER;
     /** The gap between the unspent points and the gear button. */
     private static final int UNSPENT_GAP = 6;
-    /** The unspent points' number while there are any, the headings' gold without its alpha, for a text style. */
-    private static final int UNSPENT_RGB = 0xFFC94A;
+    /** The unspent points' number while there are any, the page's mark without its alpha, for a text style. */
+    private static final int UNSPENT_RGB = SpellbookPage.MARK & 0xFFFFFF;
     /** The two columns of spells: the gap on each side of the line between them, and the line's colour. */
     private static final int DIVIDER_GAP = 4;
-    private static final int DIVIDER = 0x40FFFFFF;
+    private static final int DIVIDER = SpellbookPage.RULE;
     private static final int PADDING = 8;
     private static final int ROW = 20;
     /** The known spells' slots, smaller than the bar's to fit a row. */
     private static final int LIST_SLOT = 18;
-    private static final int TOOLTIP_WIDTH = 200;
-    private static final int PANEL = 0xC0101010;
-    private static final int HEADING = 0xFFFFFFFF;
-    private static final int TITLE = 0xFFFFC94A;
-    private static final int HINT = 0xFFA0A0A0;
-    private static final int SELECTED = 0xFFFFD24A;
-    private static final int HOVER = 0x30FFFFFF;
+    /** The page's inks ({@link SpellbookPage}): names, the headings' red, hints, a picked spell's frame. */
+    private static final int HEADING = SpellbookPage.INK;
+    private static final int TITLE = SpellbookPage.RUBRIC;
+    private static final int HINT = SpellbookPage.FAINT;
+    private static final int SELECTED = SpellbookPage.MARK;
+    private static final int HOVER = SpellbookPage.HOVER;
     /** The gear button and its sprite ({@code realmforge:icon/gear}, drawn in {@code generate/gui_icons.py}). */
     private static final int GEAR_BUTTON = 16;
     private static final int GEAR_SPRITE = 12;
     /** The spells' scrollbar: its width, its gap to the rows, and its colours. */
     private static final int SCROLLBAR_WIDTH = 4;
     private static final int SCROLLBAR_GAP = 2;
-    private static final int TRACK = 0x40FFFFFF;
-    private static final int THUMB = 0xFFA0A0A0;
-    private static final int THUMB_HELD = 0xFFFFFFFF;
+    private static final int TRACK = SpellbookPage.RULE;
+    private static final int THUMB = SpellbookPage.IDLE;
+    private static final int THUMB_HELD = SpellbookPage.INK;
 
     /** The tab the window shows, kept between openings as the character sheet's is. */
     private static int selectedTab = TAB_TREE;
@@ -255,11 +255,14 @@ public final class SpellbookScreen extends Screen {
         return super.mouseClicked(event, doubleClick);
     }
 
-    /** The panel, under the widgets: drawn over them, it greyed the old Options button out (RLM-497). */
+    /**
+     * The book (RLM-609), under the widgets: drawn over them, the old panel greyed the Options button out (RLM-497).
+     * The window's content lies on its page; the cover and the spine reach out round it ({@link SpellbookPage}).
+     */
     @Override
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
         super.extractBackground(graphics, mouseX, mouseY, a);
-        graphics.fill(left(), top(), left() + PANEL_WIDTH, bottom(), PANEL);
+        SpellbookPage.draw(graphics, left(), top(), left() + PANEL_WIDTH, bottom());
     }
 
     @Override
@@ -271,15 +274,15 @@ public final class SpellbookScreen extends Screen {
         }
         int x = left();
         int y = top();
-        graphics.text(font, title.copy().withStyle(ChatFormatting.BOLD), x + PADDING, y + PADDING, HEADING);
+        graphics.text(font, title.copy().withStyle(ChatFormatting.BOLD), x + PADDING, y + PADDING, HEADING, false);
         int hoveredTab = tabAt(mouseX, mouseY);
         for (int tab = 0; tab < TAB_COUNT; tab++) {
             graphics.text(font, tabName(tab), tabX(tab), y + PADDING, tab == selectedTab ? HEADING
-                    : tab == hoveredTab ? TAB_HOVER : TAB_IDLE);
+                    : tab == hoveredTab ? TAB_HOVER : TAB_IDLE, false);
         }
         Component unspent = unspent(player);
         graphics.text(font, unspent, x + PANEL_WIDTH - PADDING - GEAR_BUTTON - UNSPENT_GAP - font.width(unspent),
-                y + PADDING, HEADING);
+                y + PADDING, HEADING, false);
         if (selectedTab == TAB_TREE) {
             if (treeTab != null) {
                 treeTab.extract(graphics, player, x, y, bottom(), mouseX, mouseY);
@@ -288,7 +291,8 @@ public final class SpellbookScreen extends Screen {
         }
 
         SpellBarView bar = SpellBarHud.view(player);
-        graphics.text(font, Component.translatable(GeneratedTexts.GUI_SPELL_BAR), x + PADDING, barTitleY(), TITLE);
+        graphics.text(font, Component.translatable(GeneratedTexts.GUI_SPELL_BAR), x + PADDING, barTitleY(), TITLE,
+                false);
         for (int slot = 0; slot < Spellbook.SLOT_COUNT; slot++) {
             SpellBarView.Slot view = bar.slots().get(slot);
             int slotX = slotX(slot);
@@ -299,14 +303,15 @@ public final class SpellbookScreen extends Screen {
         }
         List<FormattedCharSequence> hint = hintLines();
         for (int line = 0; line < hint.size(); line++) {
-            graphics.text(font, hint.get(line), x + PADDING, hintY() + line * 10, HINT);
+            graphics.text(font, hint.get(line), x + PADDING, hintY() + line * 10, HINT, false);
         }
 
-        graphics.text(font, Component.translatable(GeneratedTexts.GUI_KNOWN_SPELLS), x + PADDING, listTitleY(), TITLE);
+        graphics.text(font, Component.translatable(GeneratedTexts.GUI_KNOWN_SPELLS), x + PADDING, listTitleY(), TITLE,
+                false);
         List<Map.Entry<ResourceKey<Spell>, Integer>> known = known();
         if (known.isEmpty()) {
             graphics.text(font, Component.translatable(GeneratedTexts.GUI_NO_KNOWN_SPELLS), x + PADDING,
-                    listY() + 4, HINT);
+                    listY() + 4, HINT, false);
         }
         graphics.fill(dividerX(), listY() - 1, dividerX() + 1, listY() - 1 + visibleRows() * ROW, DIVIDER);
         ScrollBar scrollBar = scrollBar();
@@ -357,21 +362,21 @@ public final class SpellbookScreen extends Screen {
                 .toString()));
         if (spell.map(Spell::isPassive).orElse(false)) {
             name = name.copy().append(Component.literal(" ")).append(Component.translatable(
-                    GeneratedTexts.SPELL_TOOLTIP_PASSIVE).withStyle(ChatFormatting.GRAY));
+                    GeneratedTexts.SPELL_TOOLTIP_PASSIVE).withColor(HINT & 0xFFFFFF));
         } else if (spell.map(Spell::isAura).orElse(false)) {
             // RLM-595: an aura goes onto the bar like an active spell; "Aura" tells it from one.
             name = name.copy().append(Component.literal(" ")).append(Component.translatable(
-                    GeneratedTexts.SPELL_TOOLTIP_AURA).withStyle(ChatFormatting.GRAY));
+                    GeneratedTexts.SPELL_TOOLTIP_AURA).withColor(HINT & 0xFFFFFF));
         }
         // A name too long for the row (Two-Handed Specialization with its rank and "Passive") breaks onto a second
         // line (Matěj's playtest of 2026-11-03); the row's 20 px hold two lines of text.
         int nameX = x + LIST_SLOT + 6;
         List<FormattedCharSequence> lines = font.split(name, x + columnWidth() - nameX);
         if (lines.size() <= 1) {
-            graphics.text(font, name, nameX, rowY + 5, HEADING);
+            graphics.text(font, name, nameX, rowY + 5, HEADING, false);
         } else {
             for (int line = 0; line < Math.min(2, lines.size()); line++) {
-                graphics.text(font, lines.get(line), nameX, rowY + line * font.lineHeight, HEADING);
+                graphics.text(font, lines.get(line), nameX, rowY + line * font.lineHeight, HEADING, false);
             }
         }
     }
@@ -405,15 +410,11 @@ public final class SpellbookScreen extends Screen {
             level = known().get(row).getValue();
         }
         int spellLevel = level;
-        spell.flatMap(key -> Spells.get(player.registryAccess(), key)).ifPresent(holder -> {
-            List<FormattedCharSequence> lines = new ArrayList<>();
-            for (Component line : SpellTooltip.lines(holder.value(), Math.min(spellLevel, holder.value().maxLevel()),
-                    SpellText.statsOf(player), SpellText.schoolsOf(player.registryAccess()),
-                    Passives.damageBonus(player, holder.key()))) {
-                lines.addAll(font.split(line, TOOLTIP_WIDTH));
-            }
-            graphics.setTooltipForNextFrame(lines, mouseX, mouseY);
-        });
+        spell.flatMap(key -> Spells.get(player.registryAccess(), key)).ifPresent(holder -> SpellTooltips.show(graphics,
+                font, holder.key(), holder.value(), SpellTooltip.lines(holder.value(),
+                        Math.min(spellLevel, holder.value().maxLevel()), SpellText.statsOf(player),
+                        SpellText.schoolsOf(player.registryAccess()), Passives.damageBonus(player, holder.key())),
+                mouseX, mouseY));
     }
 
     /** The known spells, by name, with their levels. */

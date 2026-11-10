@@ -11,6 +11,7 @@ from realmforge_tools.content import Content
 from realmforge_tools.formats.jsonfmt import dump_json
 from realmforge_tools.generate.datapack import data_dir, translation_key
 from realmforge_tools.generate.javagen import constant_name, header, java_file_path, string_literal
+from realmforge_tools.generate.school_icons import drawn_icon
 from realmforge_tools.generate.textures import placeholder_school_icon
 from realmforge_tools.project import JAVA_PACKAGE, MOD_ID, QA_JAVA_PACKAGE, RepoPaths
 from realmforge_tools.schema.common import LocalizedText
@@ -52,7 +53,10 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
     for school in schools:
         files[data_dir(paths) / MOD_ID / REGISTRY / f"{school.id}.json"] = dump_json(_entry(school))
         files[data / MOD_ID / "damage_type" / f"{school.id}.json"] = dump_json(_damage_type(school))
-        files[icons / f"{school.id}.png"] = placeholder_school_icon(int(school.color[1:], 16))
+        drawn = drawn_icon(school.id)
+        files[icons / f"{school.id}.png"] = (
+            drawn if drawn is not None else placeholder_school_icon(int(school.color[1:], 16))
+        )
     # Physical schools join NeoForge's common physical tag, which Apotheosis's physical damage reduction (Combatant's
     # gem bonus, its affixes) and Apothic Attributes' melee elemental damage read (RLM-549; Matěj, 2026-10-30, G4).
     # Magic schools stay out of #neoforge:is_magic, so no Apotheosis magic reduction stacks with Magic Protection.

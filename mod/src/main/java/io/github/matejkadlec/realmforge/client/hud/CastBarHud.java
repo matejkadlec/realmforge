@@ -128,8 +128,8 @@ public final class CastBarHud {
             int elapsed = (int) Math.floor(time - cast.get().startGameTime());
             String clock = cast.get().swing() ? CastBarStyle.countdown(elapsed, cast.get().durationTicks())
                     : CastBarStyle.time(elapsed, cast.get().durationTicks());
-            drawBar(graphics, font, x, top, spell, filled, schoolColor(spell), name(spell, cast.get().spell()), clock,
-                    0, 255);
+            drawBar(graphics, font, x, top, spell, SpellIcons.sprite(cast.get().spell()), filled, schoolColor(spell),
+                    name(spell, cast.get().spell()), clock, 0, 255);
             return;
         }
         if (ended != null && CastBarStyle.showing(now - ended.gameTime(), ENDED_TICKS)) {
@@ -138,8 +138,9 @@ public final class CastBarHud {
             Optional<Component> why = CastTexts.end(ended.end(), spell);
             // A completed cast flashes toward white as it fades; a failed one turns red.
             float flash = why.isPresent() ? 0 : 0.5F * alpha / 255;
-            drawBar(graphics, font, x, top, spell, 1, why.isPresent() ? FAILED : schoolColor(spell),
-                    why.orElseGet(() -> name(spell, ended.spell())), "", flash, alpha);
+            drawBar(graphics, font, x, top, spell, SpellIcons.sprite(ended.spell()), 1,
+                    why.isPresent() ? FAILED : schoolColor(spell), why.orElseGet(() -> name(spell, ended.spell())),
+                    "", flash, alpha);
             return;
         }
         if (message != null && CastBarStyle.showing(now - message.gameTime(), MESSAGE_TICKS)) {
@@ -150,7 +151,7 @@ public final class CastBarHud {
     }
 
     private static void drawBar(GuiGraphicsExtractor graphics, Font font, int x, int y, Optional<Spell> spell,
-            float filled, int color, Component name, String time, float flash, int alpha) {
+            Optional<Identifier> icon, float filled, int color, Component name, String time, float flash, int alpha) {
         int width = SpellBarLayout.CAST_BAR_WIDTH;
         int height = SpellBarLayout.CAST_BAR_HEIGHT;
         roundedFrame(graphics, x, y, width, height, ARGB.color(alpha, FRAME));
@@ -162,8 +163,14 @@ public final class CastBarHud {
         spell.ifPresent(value -> {
             graphics.fill(iconX, innerY, iconX + ICON, innerY + innerHeight,
                     ARGB.color(alpha * 110 / 255, value.color()));
-            graphics.centeredText(font, SpellSlots.initials(Language.getInstance().getOrDefault(value.name())),
-                    iconX + ICON / 2 + 1, innerY + (innerHeight - 8) / 2, ARGB.color(alpha, TEXT));
+            // The spell's icon (A1, RLM-642), or its initials while it has none.
+            if (icon.isPresent()) {
+                SpellIcons.draw(graphics, icon.get(), iconX + (ICON - SpellIcons.SIZE) / 2,
+                        innerY + (innerHeight - SpellIcons.SIZE) / 2, alpha);
+            } else {
+                graphics.centeredText(font, SpellSlots.initials(Language.getInstance().getOrDefault(value.name())),
+                        iconX + ICON / 2 + 1, innerY + (innerHeight - 8) / 2, ARGB.color(alpha, TEXT));
+            }
         });
 
         int barX = iconX + ICON + BORDER;

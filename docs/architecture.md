@@ -406,6 +406,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | item YAML with a weapon preset | `data/realmforge/weapon_attributes/<item>.json` (Better Combat format) | read by Better Combat |
 | mob YAML | Xaero's Minimap icon files (*verify* format) | read by Xaero's Minimap |
 | `texts/` (exists) | lang keys `<group>.realmforge.<name>`, `GeneratedTexts` constants | translations |
+| `art/textures/<kind>/<id>.png` (not content: the approved art, the cleaned texture of the candidate picked in the gallery; A1, RLM-642, [ADR 0007](decisions/0007-asset-pipeline.md), [art/README.md](../art/README.md)) | in place of the generated placeholder: an item's texture (`item`), a status effect's icon (`effect`, a 16 x 16 one centred on vanilla's 18 x 18), a spell's icon as the GUI sprite `textures/gui/sprites/spell/<id>.png` with `GeneratedSpellIcons`, the list of the spells that have one (`spell`), and the tiles a generator composes a GUI texture of (`gui`: the spellbook's book, `generate/spellbook.py`); re-encoded by our own encoder, so the bytes are the same on every machine (`art/approved.py`). Validation refuses a file that names no content or that `rf art clean` did not write (its size, half-transparent pixels, colours outside the palette) | assets |
 | `apotheosis_new_affixes/` (exists, RLM-557) | an affix of our own at `data/realmforge/apotheosis/affixes/<id>.json`, its name and suffix in lang (`affix.realmforge:<id>`, `.suffix`) ([19.4](#194-optional-integrations)) | Apotheosis's affix registry, which reads every namespace |
 | `apotheosis_affixes/` (exists, RLM-271), `apotheosis_gems/`, `apotheosis_tier_augments/`, `apotheosis_rarities/`, `apotheosis_stat_remaps/` (exist, RLM-272), `apotheosis_rarity_overrides/` (exists, RLM-232) | each Apotheosis entry they change, from its snapshot, at Apotheosis's own path `data/apotheosis/apotheosis/<kind>/<path>.json`, and Apotheosis's MIT `LICENSE` with our `NOTICE` in `META-INF/third_party/apotheosis/` ([19.4](#194-optional-integrations)) | Apotheosis's affix, gem, tier augment, rarity and rarity override registries |
 | `enchantments/` (exists, RLM-537) | `data/realmforge/enchantment/<id>.json`, the vanilla enchantment tags it joins, its highest level with Apothic Enchanting (`data/apothic_enchanting/data_maps/enchantment/enchantment_info.json`), `#realmforge:protections` and `#minecraft:exclusive_set/armor` without Fire, Blast and Projectile Protection, `GeneratedEnchantments` keys, lang ([13](#13-items-gear-and-loot)) | vanilla's enchantment registry (datapack) |
@@ -1855,9 +1856,10 @@ harmful, neutral), its particle colour, its attribute modifiers (units as for th
 multiplied operations; one per attribute, as `MobEffect` keeps one) and its `periodic` damage or healing: a school, an
 amount per tick at the first level and an interval from 0.25 to 10 s. `generate/effects.py` writes `GeneratedEffects`
 (a `DeferredRegister<MobEffect>`, which `effect/EffectFeature` registers; NeoForge registers attributes before status
-effects, so a modifier finds its attribute, ours included), an 18 by 18 icon in `textures/mob_effect/<id>.png` (a
-placeholder disc in the effect's colour with an arrow up or down, or one drawn in pixel rows in
-`generate/effect_icons.py`: Battle Shout's and Ice Barrier's, C4), the name
+effects, so a modifier finds its attribute, ours included), an 18 by 18 icon in `textures/mob_effect/<id>.png` (its
+approved art from `art/textures/effect/`: Frozen's and Bleeding's, RLM-588, RLM-591; or one drawn in pixel rows in
+`generate/effect_icons.py`: Battle Shout's and Ice Barrier's, C4; or a placeholder disc in the effect's colour with an
+arrow up or down), the name
 `effect.realmforge.<id>` and `GeneratedEffectExpectations`, which `ContentEffectGameTests` checks. Each is an
 `effect/StatusEffect`: vanilla's modifiers, multiplied by the amplifier + 1, and an `effect/Periodic` that ticks at the
 end of every interval since the effect was first applied (an effect of 4 s and 1 s intervals ticks 4 times, the first
@@ -2043,7 +2045,16 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
   a scrollbar beside its spells once they fill both columns, `client/screen/ScrollBar`, RLM-542; a name too long for
   its row wraps onto a second line, Matěj's playtest of 2026-11-03) moves a known spell into a slot, swapping with the
   one there, or empties one, through `SetSpellBarSlotPayload` and `Spells#placeOnBar`, which refuses another slot or an
-  unknown spell.
+  unknown spell. **The window is a book** (RLM-609; Matěj, 2026-10-21: "a real spellbook, a background texture of a
+  book with a single page open"): behind both tabs lies the nine-slice GUI sprite `realmforge:spellbook/book`
+  (`client/screen/SpellbookPage`), which `generate/spellbook.py` composes of two approved tiles from the texture
+  generator, a 64 px tile of paper and a 16 px tile of leather, with the cover's outline, the spine on the left and the
+  edges of the pages drawn in palette colours. The game repeats the page and the cover's edges and stretches nothing,
+  so the texture fits any window size; the content lies on the page, and the cover reaches out round it. The page is
+  light, so the window's texts are in dark inks without a shadow (names in brown, headings in a rubric's red), and
+  only what stands on a slot or a button stays white. A spell's tooltip, on either tab, has the spell's icon in its
+  frame beside the name (`client/screen/SpellTooltips`, a tooltip component of our own drawn with the screen's
+  tooltip).
 - **Casting** (Matěj, 2026-10-19): `client/spell/CastQueue` decides every client tick, from the presses and the held
   keys and the client options `Queue Spell Casts` (off) and `Spells Queue Size` (1 to 3; `client/ClientConfig`, edited
   in the Realmforge config screen, `client/screen/RealmforgeConfigScreen` ([18](#18-client-code-rendering-gui-input)),
@@ -2089,9 +2100,14 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
   group lies in the screen's middle columns and reaches down to the action bar message, it raises `Gui#leftHeight` and
   `Gui#rightHeight` above itself, unless the stack already reaches higher, so the message stays above it
   (`SpellBarLayout`); extra heart rows lift only the XP bar and the item name toward the group. It shows even when
-  empty (research SP-1). A slot is framed in its spell's school colour,
-  a frame that stays once spells have icons (Matěj, 2026-10-21), shows the spell's initials until then (C6, A1), its
-  key in the corner, a blue tint while the resource does not cover the cost, and the cooldown sweep
+  empty (research SP-1). A slot (`client/hud/SpellSlots`) is a dark square framed in its spell's school colour, with
+  the spell's icon in its middle (A1, RLM-642; Matěj, 2026-10-21: the frame and the key stay, the initials go): the GUI
+  sprite `realmforge:spell/<path>`, 16 px, a texture's pixel for a pixel of the GUI, which `generate/spells.py` writes
+  from the spell's approved art in `art/textures/spell/` ([6.2](#62-what-each-content-type-becomes)).
+  `GeneratedSpellIcons` lists the spells that have one, and `client/hud/SpellIcons` asks it: a spell without art (a
+  test spell, a mob's, another data pack's) shows its initials, as every slot did before. A passive spell's slot loses
+  a sixth of its width at each corner, a medallion instead of a square, which sets it apart from the spells a player
+  casts (RLM-588, RLM-591). A slot also shows its key in the corner, a blue tint while the resource does not cover the cost, and the cooldown sweep
   (`CooldownSweep`): a dark wedge that shrinks clockwise from 12 o'clock, for the spell's own cooldown or the global
   cooldown, whichever ends later, with the seconds left of a cooldown of 2 s or more. An aura spell that is on
   (RLM-595) has a bright green frame two pixels wide inside its school's, grey-green while its weapon condition pauses
@@ -2100,8 +2116,8 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
   WoW's casting bar, Matěj's playtest of 2026-10-21) sits toward the middle of the screen, 70 % of the way down at most
   and clear of the spell bar wherever it is: above a group in its way, with room for the action bar message between,
   or below one at the top of the screen: a 200 by 20 px black frame with rounded corners and a 2 px
-  border, holding the spell's icon (its initials on the school's colour until icons exist) and then the bar. The bar
-  fills in the spell school's colour, shaded in steps from light at the top to dark at the bottom with an almost white
+  border, holding the spell's icon on the school's colour (its initials for a spell without one) and then the bar. The
+  bar fills in the spell school's colour, shaded in steps from light at the top to dark at the bottom with an almost white
   leading edge (`CastBarStyle`); a cast time fills from the left, a channel starts full and empties toward the left. The
   spell's name is on the left and the seconds "elapsed / total" on the right, smaller. A melee spell's swing (RLM-399)
   empties like a channel while its seconds count down, "0.5 / 0.5" to "0.0 / 0.5", and goes at 0 (Matěj's playtest of
@@ -2146,7 +2162,9 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
   sure each has the effect it reads. A damage number shows its school
   instead of naming it (Matěj's playtest of 2026-10-21): `SpellText#fill` puts the school's icon before it (an inline
   GUI sprite, `combat/SpellSchools#icon`: `Component.object` with an `AtlasSprite` of the `gui` atlas,
-  `textures/gui/sprites/school/<id>.png`, a generated placeholder until the art exists) and draws the number in the
+  `textures/gui/sprites/school/<id>.png`: 8 px, too small for the texture generator, so drawn as pixel rows in
+  `generate/school_icons.py`, a flame, a snowflake, an arcane rune and a burst, with the last column and row empty as
+  the gap before the number, RLM-642; a placeholder diamond for a school without one) and draws the number in the
   school's colour, the spell's school for `{damage}` and the effect's for its damage over time; descriptions read
   "for {damage} damage". `spell/SpellTooltip` builds the spellbook's tooltip: name, rank, cost (a channel's per second,
   after its amount up front: "40 Mana, then 15 per sec", RLM-572), range, the cast after Cast Time Reduction (a channel
@@ -4126,8 +4144,8 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
     `CastBarHud`) and the spellbook (`client/screen/SpellbookScreen`, P by default), C3b, with the spell bar's place
     and size and its drag mode (`SpellBarPositionScreen`, RLM-404): [11.6](#116-client-side). The spellbook's gear
     button, top right and level with its title (RLM-497; Matěj, 2026-10-29: an icon instead of the word "Options",
-    which a panel drawn over it had greyed out), opens the config screen; "Options" is its tooltip. The panel is the
-    screen's background now, under its widgets. The gear is our sprite `realmforge:icon/gear`, drawn as pixel rows in
+    which a panel drawn over it had greyed out), opens the config screen; "Options" is its tooltip. The book texture
+    (RLM-609, [11.6](#116-client-side)) is the screen's background, under its widgets. The gear is our sprite `realmforge:icon/gear`, drawn as pixel rows in
     palette colours by `tools/realmforge_tools/generate/gui_icons.py`, like the font's symbols.
   - The Realmforge config screen (`client/screen/RealmforgeConfigScreen`, RLM-495; Matěj, 2026-10-29), in the style of
     Better Combat's (Cloth Config's), behind the spellbook's gear button and the mod list's Config button
