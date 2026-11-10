@@ -91,7 +91,7 @@ The scrolls give the scale: the Scroll of Oblivion costs 5 silver and the Scroll
 Each is the agent's choice from RLM-285 and RLM-241's batch, built that way and merged unplayed. That is Matěj's
 decision of 2026-11-10 for the `flow1 cloud` marathon that built it, a waiver of
 [ADR 0022](../decisions/0022-playtest-before-the-pull-request.md)'s playtest before the pull request for that run,
-given in its session and quoted in RLM-DEFERRED, the deferred playtest he still owes it:
+given in its session and quoted in RLM-647, the deferred playtest he still owes it:
 
 1. **The prices** in the tables above, and the four bands' numbers.
 2. **The workstations are job sites only:** the Ancient Workbench opens no crafting grid, and neither block does
