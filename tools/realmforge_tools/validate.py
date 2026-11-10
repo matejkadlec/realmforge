@@ -56,6 +56,7 @@ from realmforge_tools.schema.dungeon import (
     WALL_HEIGHT,
     WALL_WIDTH,
     DungeonTypeDef,
+    instance_biome_id,
     room_role,
 )
 from realmforge_tools.schema.effect import PeriodicDef, StacksDef, effect_id
@@ -74,6 +75,7 @@ from realmforge_tools.schema.merchant import MAX_COST_SLOTS
 from realmforge_tools.schema.mob import BOSS, TRASH_LOOT, mob_description_id, mob_id
 from realmforge_tools.schema.quest import (
     CUSTOM_STATS,
+    PURCHASE_SPACING,
     AdvancementRewardDef,
     AdvancementTaskDef,
     DimensionTaskDef,
@@ -89,6 +91,7 @@ from realmforge_tools.schema.quest import (
     chapter_key,
     code_string,
     object_id,
+    purchase_ids,
     quest_dependencies,
     quest_object_keys,
 )
@@ -132,6 +135,9 @@ from realmforge_tools.schema.text import text_constant
 from realmforge_tools.schema.worldgen import WORLDGEN_REGISTRIES, data_path
 
 ITEM_REGISTRY = "minecraft:item"
+# The text group whose entries name our worldgen biomes: biome.realmforge.<path>, the key the game and the quest book
+# translate a biome with.
+BIOME_TEXT_GROUP = "biome"
 # The most a vanilla item stacks to; ours say their own (ItemDef.max_stack_size).
 VANILLA_MAX_STACK = 64
 BLOCK_REGISTRY = "minecraft:block"
@@ -2847,6 +2853,7 @@ def _check_quests(content: Content, universe: IdUniverse) -> list[Problem]:
     quests = {entry.model.id: entry for entry in content.quests}
     npc_spells = {f"{MOD_ID}:{entry.model.id}" for entry in content.spells if entry.model.npc_only}
     passive_spells = {f"{MOD_ID}:{entry.model.id}" for entry in content.spells if entry.model.is_passive}
+    quest_ids = set(quests)
     for entry in content.quests:
         quest = entry.model
         if quest.chapter not in chapters:
@@ -2883,25 +2890,41 @@ def _check_quests(content: Content, universe: IdUniverse) -> list[Problem]:
                 )
         for i, reward in enumerate(quest.rewards):
             problems += _quest_reward_problems(entry.source, f"rewards.{i}", reward, universe)
+        problems += _buy_quest_problems(entry.source, quest, content, universe, quest_ids)
     problems += _quest_cycles(content)
+    problems += _check_signet_sources(content)
 
-    by_chapter: dict[str, list] = {}
+    # The book's quests: a buy quest stands there once per purchase, each a quest with ids of its own.
+    source_of: dict[str, str] = {}
     for entry in content.quests:
-        by_chapter.setdefault(entry.model.chapter, []).append(entry)
-    for chapter, entries in sorted(by_chapter.items()):
+        for id_ in purchase_ids(entry.model) or [entry.model.id]:
+            source_of.setdefault(id_, entry.source)
+    book = content.book_quests()
+    by_chapter: dict[str, list[QuestDef]] = {}
+    for quest in book:
+        by_chapter.setdefault(quest.chapter, []).append(quest)
+    for chapter, chapter_quests in sorted(by_chapter.items()):
         placed: dict[tuple[float, float], str] = {}
-        for entry in entries:
-            position = (entry.model.position.x, entry.model.position.y)
+        for quest in chapter_quests:
+            position = (quest.position.x, quest.position.y)
             if position in placed:
+                which = f"its purchase {quest.purchase} " if quest.purchase > 1 else ""
                 problems.append(
                     Problem(
-                        entry.source,
+                        source_of[quest.id],
                         "position",
-                        f"stands on {placed[position]}'s place in chapter {chapter!r}: quests of a chapter stand apart",
+                        f"{which}stands on {placed[position]}'s place in chapter {chapter!r}: quests of a chapter "
+                        "stand apart"
+                        + (
+                            f" (a quest that buys something takes a place per purchase, {PURCHASE_SPACING:g} apart "
+                            "to the right)"
+                            if quest.purchase > 1
+                            else ""
+                        ),
                     )
                 )
-            placed.setdefault(position, entry.model.id)
-        completing = [entry.model.id for entry in entries if entry.model.completes_chapter]
+            placed.setdefault(position, quest.id)
+        completing = [quest.id for quest in chapter_quests if quest.completes_chapter]
         if len(completing) != 1:
             found = ", ".join(completing) if completing else "none"
             problems.append(
@@ -2915,7 +2938,7 @@ def _check_quests(content: Content, universe: IdUniverse) -> list[Problem]:
 
     owners: dict[int, str] = {}
     keys = [chapter_key(chapter) for chapter in sorted(by_chapter)]
-    keys += [key for entry in content.quests for key in quest_object_keys(entry.model)]
+    keys += [key for quest in book for key in quest_object_keys(quest)]
     for key in keys:
         object_id_ = object_id(key)
         if object_id_ in owners:
@@ -2928,6 +2951,87 @@ def _check_quests(content: Content, universe: IdUniverse) -> list[Problem]:
                 )
             )
         owners.setdefault(object_id_, key)
+    return problems
+
+
+def _buy_quest_problems(
+    source: str, quest: QuestDef, content: Content, universe: IdUniverse, quest_ids: set[str]
+) -> list[Problem]:
+    """A quest that buys something (Q1-4): the item exists, our coins pay its price exactly, and none of the quests
+    it becomes in the book (``<id>_2``, ``<id>_3``, one per purchase) takes another quest's id."""
+    if quest.buy is None:
+        return []
+    problems: list[Problem] = []
+    if not universe.contains(ITEM_REGISTRY, quest.buy.item):
+        problems.append(Problem(source, "buy.item", _unknown(quest.buy.item, ITEM_REGISTRY, universe)))
+    values = [coin.coin.value for coin in coin_chain(entry.model for entry in content.items) if coin.coin]
+    paid = sum(count * value for count, value in zip(split(quest.buy.price, values), values, strict=True))
+    if paid != quest.buy.price:
+        problems.append(
+            Problem(
+                source,
+                "buy.price",
+                f"our coins cannot pay {quest.buy.price} exactly: a price is paid in the coins of content/items/ "
+                "(an item's coin), the smallest worth 1",
+            )
+        )
+    for id_ in purchase_ids(quest)[1:]:
+        if id_ in quest_ids:
+            problems.append(
+                Problem(
+                    source,
+                    "buy.limit",
+                    f"its purchases are the quests {', '.join(purchase_ids(quest))} in the book, and {id_} is "
+                    "another quest's id: rename one of the two",
+                )
+            )
+    return problems
+
+
+def _check_signet_sources(content: Content) -> list[Problem]:
+    """The signet source check (realm portal design, "Data"; RLM-424): a realm's signet that a quest hands out, a
+    reward a player gets once, also has a renewable source, so a lost signet never locks its player out: its own
+    recipe or a recipe of content/recipes/, a quest that buys it (the shop), or the guaranteed drop of a boss, which a
+    player can fight again. A signet that no quest gives yet is not in play and is not checked."""
+    problems: list[Problem] = []
+    boss_mobs = {entry.model.entity for entry in content.bosses}
+    guaranteed: set[str] = set()
+    for entry in content.mobs:
+        if f"{MOD_ID}:{entry.model.id}" in boss_mobs:
+            guaranteed |= {
+                drop.item for drop in entry.model.loot if drop.chance_percent >= 100 and drop.count.min >= 1
+            }
+    for realm in content.realms:
+        signet = realm.model.signet
+        if signet is None:
+            continue
+        given = [
+            (entry.source, i)
+            for entry in content.quests
+            for i, reward in enumerate(entry.model.rewards)
+            if isinstance(reward, ItemRewardDef) and reward.item == signet
+        ]
+        if not given:
+            continue
+        crafted = any(
+            f"{MOD_ID}:{entry.model.id}" == signet and entry.model.recipe is not None
+            for entry in content.items
+        ) or any(entry.model.result == signet for entry in content.recipes)
+        bought = any(
+            entry.model.buy is not None and entry.model.buy.item == signet for entry in content.quests
+        )
+        if crafted or bought or signet in guaranteed:
+            continue
+        for source, i in given:
+            problems.append(
+                Problem(
+                    source,
+                    f"rewards.{i}.item",
+                    f"{signet}, the signet of the realm {realm.model.id!r}, comes only from a quest's reward, which a "
+                    "player gets once: a lost signet needs a renewable source, a recipe, a quest that buys it (buy) "
+                    "or a boss's drop at 100 percent (realm portal design, the signet source check)",
+                )
+            )
     return problems
 
 
@@ -2944,6 +3048,17 @@ def _quest_where_and_with_what(
         ):
             if id_ is not None and not universe.contains(registry, id_):
                 problems.append(Problem(source, f"place.{field}", _unknown(id_, registry, universe)))
+        biome = quest.place.biome
+        if biome is not None and biome.startswith(f"{MOD_ID}:") and biome not in _named_biomes(content):
+            problems.append(
+                Problem(
+                    source,
+                    "place.biome",
+                    f"{biome} has no name, so the quest's Where line would show the raw key "
+                    f"biome.{biome.replace(':', '.', 1)}: give it one in content/texts/{BIOME_TEXT_GROUP}.yaml "
+                    f"({biome.split(':', 1)[1]}), or name the place by its structure",
+                )
+            )
     for field, items in (("bring", quest.bring), ("craft", quest.craft)):
         for i, item in enumerate(items):
             if not universe.contains(ITEM_REGISTRY, item):
@@ -2984,9 +3099,22 @@ def _quest_where_and_with_what(
     return problems
 
 
+def _named_biomes(content: Content) -> set[str]:
+    """Our biomes that have a name in the lang file (``biome.realmforge.<path>``): a dungeon type's instance biome,
+    named after the dungeon (generate/instance_biomes.py), and the entries of the text group ``biome``. A worldgen
+    biome of content/worldgen/ is raw JSON and brings no name of its own (RLM-472)."""
+    named = {f"{MOD_ID}:{instance_biome_id(entry.model.id)}" for entry in content.dungeons}
+    for group in content.texts:
+        if group.model.id == BIOME_TEXT_GROUP:
+            named |= {f"{MOD_ID}:{name}" for name in group.model.texts}
+    return named
+
+
 def _has_recipe(item: str, content: Content, universe: IdUniverse) -> bool:
     """Whether a recipe makes the item: our item's or block's own recipe, a content/recipes/ override's result, or a
-    vanilla recipe named after it (``minecraft:iron_pickaxe``, ``minecraft:iron_ingot_from_smelting_iron_ore``)."""
+    vanilla recipe named after it: the item's own id (``minecraft:iron_pickaxe``), ``<item>_from_...``
+    (``minecraft:iron_ingot_from_smelting_iron_ore``) or ``<item>_smithing``, the smithing table's upgrade
+    (``minecraft:netherite_sword_smithing``, the only recipe of every netherite tool and armor piece; RLM-472)."""
     namespace, path = item.split(":", 1)
     if namespace == MOD_ID:
         return any(
@@ -2996,7 +3124,11 @@ def _has_recipe(item: str, content: Content, universe: IdUniverse) -> bool:
     if any(entry.model.result == item for entry in content.recipes):
         return True
     recipes = universe.registries.get(RECIPE_REGISTRY, set())
-    return item in recipes or any(recipe.startswith(f"{item}_from_") for recipe in recipes)
+    return (
+        item in recipes
+        or f"{item}_smithing" in recipes
+        or any(recipe.startswith(f"{item}_from_") for recipe in recipes)
+    )
 
 
 def _quest_task_problems(source: str, path: str, task: TaskDef, universe: IdUniverse) -> list[Problem]:

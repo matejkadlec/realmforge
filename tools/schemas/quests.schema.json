@@ -95,6 +95,47 @@
       "title": "AdvancementTaskDef",
       "type": "object"
     },
+    "BuyDef": {
+      "additionalProperties": false,
+      "description": "Makes the quest a purchase in the quest shop (Q1-4, RLM-424; realm portal design, \"Realm signets\"): its task\ntakes coins and its reward is an item. The pipeline writes one quest per allowed purchase, each opening with the\none before it, since FTB Quests has no repeat limit of its own; after the last, the shop is closed for good.",
+      "properties": {
+        "count": {
+          "default": 1,
+          "description": "How many a purchase gives.",
+          "maximum": 8192,
+          "minimum": 1,
+          "title": "Count",
+          "type": "integer"
+        },
+        "item": {
+          "description": "What is bought, e.g. realmforge:undervault_signet.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Item",
+          "type": "string"
+        },
+        "limit": {
+          "default": 1,
+          "description": "How often it can be bought, then never again: 3 for a realm's lost signet.",
+          "maximum": 9,
+          "minimum": 1,
+          "title": "Limit",
+          "type": "integer"
+        },
+        "price": {
+          "description": "What a purchase costs, in the smallest coin (copper), the same every time: 50 is 50 Copper Coins, 250 is 2 Silver Coins and 50 Copper Coins. The quest takes the coins.",
+          "maximum": 2147483647,
+          "minimum": 1,
+          "title": "Price",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "item",
+        "price"
+      ],
+      "title": "BuyDef",
+      "type": "object"
+    },
     "CheckmarkTaskDef": {
       "additionalProperties": false,
       "description": "A checkmark the player clicks, for a quest that only tells something.",
@@ -671,7 +712,7 @@
     },
     "XpRewardDef": {
       "additionalProperties": false,
-      "description": "Character XP: ``/realmforge xp add``, with the player's XP multiplier and level-ups (architecture 10.2).",
+      "description": "Character XP, with the player's XP multiplier and level-ups (architecture 10.2). Never written in a quest's\n``rewards``: the pipeline computes it from the quest's ``level`` and ``type``, or takes the quest's ``xp``\n(``quest_xp``, RLM-189). With a ``level`` it is paid by ``/realmforge xp quest``, which lowers it for a player far\nabove the quest; without one by ``/realmforge xp add``.",
       "properties": {
         "amount": {
           "maximum": 9223372036854775807,
@@ -693,6 +734,21 @@
           ],
           "default": null,
           "title": "Key"
+        },
+        "level": {
+          "anyOf": [
+            {
+              "maximum": 1000,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The quest's level.",
+          "title": "Level"
         },
         "type": {
           "const": "xp",
@@ -722,6 +778,18 @@
       "title": "Bring",
       "type": "array",
       "uniqueItems": true
+    },
+    "buy": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/BuyDef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Makes the quest a purchase in the quest shop: it takes coins and gives an item, up to its limit. Such a quest has no tasks, rewards or XP of its own and is optional."
     },
     "chapter": {
       "description": "The chapter of content/chapters/ whose page shows the quest.",
@@ -766,6 +834,12 @@
       },
       "title": "Description",
       "type": "array"
+    },
+    "hide_until_dependencies_complete": {
+      "default": false,
+      "description": "Show the quest on its chapter's page only once every quest it depends on is completed.",
+      "title": "Hide Until Dependencies Complete",
+      "type": "boolean"
     },
     "icon": {
       "anyOf": [
@@ -839,6 +913,7 @@
       "type": "boolean"
     },
     "rewards": {
+      "description": "Items and advancements. Character XP is computed from the quest's level and type (or its xp).",
       "items": {
         "discriminator": {
           "mapping": {
@@ -876,7 +951,7 @@
       "description": "One line under the title."
     },
     "tasks": {
-      "description": "Every task must be done to complete the quest.",
+      "description": "Every task must be done to complete the quest. At least one, unless the quest buys something.",
       "items": {
         "discriminator": {
           "mapping": {
@@ -922,12 +997,39 @@
           }
         ]
       },
-      "minItems": 1,
       "title": "Tasks",
       "type": "array"
     },
     "title": {
       "$ref": "#/$defs/LocalizedText"
+    },
+    "type": {
+      "default": "standard",
+      "description": "What the quest is, which scales its XP: small (x 0.5), standard (x 1), main (a step of the chapter's main questline, x 1.5), dungeon (x 2) or finale (the chapter's last quest, x 4).",
+      "enum": [
+        "small",
+        "standard",
+        "main",
+        "dungeon",
+        "finale"
+      ],
+      "title": "Type",
+      "type": "string"
+    },
+    "xp": {
+      "anyOf": [
+        {
+          "maximum": 9223372036854775807,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Replaces the character XP the pipeline computes from the quest's level and type, for a special quest; 0 for none. A quest without a level gives XP only through this.",
+      "title": "Xp"
     }
   },
   "required": [
@@ -935,8 +1037,7 @@
     "chapter",
     "realm",
     "title",
-    "position",
-    "tasks"
+    "position"
   ],
   "title": "QuestDef",
   "type": "object"

@@ -1306,9 +1306,11 @@ the playtest covers it.
   takes `KE(L) × (45 + 5L)` XP, with `KE(1) = 30` (about 5 minutes of farming at 6 kills a minute) and each level
   1.07 times the KE of the one before below level 10, 1.05 times for 10-17, 1.035 times for 18-29 and 1.03 times
   from 30: 1,500 XP from level 1 to 2, 25,960 in all for level 10, 85,890 for 18, 281,690 for 30 and 1,912,740 for
-  60. Quest XP (RLM-189), dungeon XP (RLM-190) and anti-farm rules (RLM-191) join later.
+  60. Quest XP is computed from a quest's level and type (RLM-189, [16](#16-progression-and-quests)); dungeon XP
+  (RLM-190) and anti-farm rules (RLM-191) join later.
 - **XP sources** (amounts are data): kills, where `character` listens to `LivingDeathEvent` and scales the XP by the
-  victim's level relative to the player's (mobs far below give nothing) and by its kill XP multiplier (its rank); quests (`/realmforge xp`); dungeon
+  victim's level relative to the player's (mobs far below give nothing) and by its kill XP multiplier (its rank); quests (`/realmforge xp quest`, which
+  lowers the XP of a quest far below the player's level); dungeon
   completion and boss kills; later discoveries and professions. A player's XP multiplier (`xp_multiplier`, 100 % by
   default) scales every gain.
 - **Level-up:** earn stat points, recompute stats, grant spell points and teach class spells through their
@@ -1322,14 +1324,16 @@ the playtest covers it.
   of Rebirth resets the whole character (race, class, spell and stat points); the three share one scroll texture in
   purple-ish, yellow-ish and red-ish tones.
 - **In code (C2, RLM-23):**
-  - **The numbers** are four curves ([content README](../content/README.md)): `xp_to_next_level` (the XP from a
+  - **The numbers** are five curves ([content README](../content/README.md)): `xp_to_next_level` (the XP from a
     level to the next, rounded half up, at least 1; one point per level 1-59 from the XP model), `kill_xp` (a kill's
-    XP by the victim's level, `45 + 5 × level`), and `kill_xp_below_player` (90 % at 1 level below, then 15 % less a
+    XP by the victim's level, `45 + 5 × level`), `kill_xp_below_player` (90 % at 1 level below, then 15 % less a
     level, nothing from 7 below) and `kill_xp_above_player` (5 % more a level, up to +20 %), by how many levels the
-    victim is below or above the player. A kill gives `kill_xp × rank × level difference × XP multiplier`, in that
-    order, rounded half up. `character/XpTable` and `character/KillXp` are the pure rules, and
-    `tools/realmforge_tools/schema/leveling.py` computes the same; `LevelingGameTests` compares the two at the
-    generated samples.
+    victim is below or above the player, and `quest_xp_below_player` (RLM-189: all of a quest's XP up to 4 levels
+    below the player, then 75, 50 and 25 %, and 10 % from 8 below, so a quest never gives nothing). A kill gives
+    `kill_xp × rank × level difference × XP multiplier`, and a quest `its XP × level difference × XP multiplier`, each
+    in that order, rounded half up. `character/XpTable`, `character/KillXp` and `character/QuestXp` are the pure
+    rules, and `tools/realmforge_tools/schema/leveling.py` computes the same; `LevelingGameTests` compares the two at
+    the generated samples.
   - **Kill XP multipliers** (`character/KillXpMultiplier`, the server-only registry `realmforge:kill_xp_multiplier`
     from `content/kill_xp_multipliers/`): the victim's entity type gives its rank, 1 when it has no entry. Vanilla's
     first numbers (Matěj, 2026-10-15): 0 for a size 1 slime and 0.25 for a larger one, 0.1 for a silverfish,
@@ -1396,9 +1400,11 @@ the playtest covers it.
     its item joins `ScrollCharge`: the Scroll of Oblivion first, the Scroll of Respec (RLM-226) and the Scroll of
     Rebirth (RLM-228) next. A level that falls below what was spent
     (a command, a revoked chapter, a curve that gives fewer) returns every spent point, with a message.
-  - **`/realmforge xp add|set|query`** (`command/XpCommand`, permission level 2): `add` gives XP as a reward (times
-    the XP multiplier, with level-ups), `set` sets the total exactly and quietly, `query` shows XP, level and cap.
-    FTB Quests' `CommandReward` runs `add` for quest rewards (Q1).
+  - **`/realmforge xp add|quest|set|query`** (`command/XpCommand`, permission level 2): `add` gives XP as a reward
+    (times the XP multiplier, with level-ups), `quest <players> <xp> <level>` gives a quest's XP the same way, after
+    `QuestXp` lowered it for a player far above the quest's level, `set` sets the total exactly and quietly, `query`
+    shows XP, level and cap. FTB Quests' `CommandReward` runs `quest` for the rewards of quests with a level, and
+    `add` for a quest without one (Q1, RLM-189).
   - **The XP bar** ([18](#18-client-code-rendering-gui-input)) draws `character/XpBarView`.
   - No XP is lost on death in M1 (research PR-7).
 
@@ -3927,7 +3933,7 @@ depth limit.
     `realmforge:chapter/<id>` (an advancement whose only criterion is `minecraft:impossible`, so nothing else grants
     it). Leveling's `AdvancementProgressEvent` listener raises the level cap (C2, [10.2](#102-leveling)). Character XP rewards use a `CommandReward` that
     runs our operator command `/realmforge xp`, so the generator writes `permission_level: 2` (FTB Quests' default
-    is 0).
+    is 0). Nobody types the amount: the pipeline computes it from the quest's `level` and `type` (below).
   - **Every team member gets the chapter advancement** (checked in the FTB Quests 2101.1.36 jar, RLM-73, and again
     in 26.1.2.9, Q1-1). Quest progress belongs to the FTB Teams team, while advancements and level caps are per
     player. FTB Quests records a claimed reward under the claiming player, or under `Util.NIL_UUID` for a team reward
@@ -3989,15 +3995,43 @@ depth limit.
     its id as long as the task keeps its key), without a display (no toast, no advancement screen entry), with one
     criterion of the triggers above, and the quest's task is FTB Quests' advancement task on it. Its title comes from
     data: a text component (FTB Quests reads a title or description line that is JSON as one,
-    `TextUtils#parseRawText`) of our `quest.realmforge.task_*` texts with the dungeon's or spell's name key. **Rewards:** items, character XP (the `CommandReward`
-    above, `/realmforge xp add {p} <amount>` run quietly, titled like FTB Quests' own XP reward through its translation
-    of "XP") and our own advancements (`team_reward: false`, `auto: "enabled"`). A chapter's last quest says
+    `TextUtils#parseRawText`) of our `quest.realmforge.task_*` texts with the dungeon's or spell's name key. **Rewards:** items, our own advancements (`team_reward: false`, `auto: "enabled"`) and character XP, which is
+    never written in a quest's `rewards` (validation refuses it): the pipeline adds it after them (the `CommandReward`
+    above, run quietly, titled like FTB Quests' own XP reward through its translation of "XP").
+  - **Quest XP** (RLM-189; Matěj's XP model of 2026-10-15): a quest has a `type`, `small` (× 0.5), `standard` (× 1,
+    the default), `main` (a step of the chapter's main questline, × 1.5), `dungeon` (× 2) or `finale` (× 4), and
+    gives `(10 + 0.25 × level)` kills of a normal mob of its `level` (the curve `kill_xp`) times that factor, rounded
+    to the nearest 10 (`schema/quest.quest_xp`): 510 for a standard quest at level 1, 2,180 at 20, 8,630 at 60. A
+    quest's `xp` replaces the computed amount for a special quest (0: none), and a quest without a level gives XP
+    only through it. The reward runs `/realmforge xp quest {p} <amount> <level>`, so the game lowers it for a player
+    far above the quest's level when it is paid ([10.2](#102-leveling)), or `/realmforge xp add {p} <amount>` for a
+    quest without a level; the reward's title names the full amount.
+  - **Buy quests** (Q1-4, RLM-424; the quest shop of the [realm portal design](design/realm-portal.md#realm-signets)):
+    a quest with `buy` (`item`, `count`, a `price` in the smallest coin, a `limit` of 1 to 9) has no tasks, rewards
+    or XP of its own and is optional. FTB Quests has no repeat limit (`Quest#readData` reads only a
+    `repeat_cooldown`), so the book holds one quest per allowed purchase (`schema/quest.book_quests`,
+    `Content.book_quests`): `<id>`, `<id>_2`, `<id>_3`, each with item tasks that consume the price in our coins,
+    largest first ([13](#13-items-gear-and-loot)), and the item as its reward. The first keeps the quest's
+    dependencies, which lock the shop on another quest (a lost signet's on the realm's final boss quest); each later
+    one depends on the purchase before it, stands a grid unit further right and is hidden until that one is bought
+    (FTB Quests' `hide_until_deps_complete`, which any quest may set as `hide_until_dependencies_complete`). After
+    the last purchase nothing is left to buy. A purchase's text says which of how many it is. The generator, the
+    place check and the id check all read the book's quests, so a purchase can neither stand on another quest nor
+    share an id with one.
+  - **The signet source check** (RLM-424; [realm portal design](design/realm-portal.md#data-contentrealms)): a
+    realm's signet that a quest hands out as a reward, which a player gets once, also needs a renewable source: its
+    recipe, a quest that buys it, or the drop at 100 % of a boss's mob. Until a quest gives a signet, it is not in
+    play and is not checked. A chapter's last quest says
     `completes_chapter: true` and gets the chapter's advancement; validation wants exactly one per chapter with quests,
     refuses dependency cycles and two quests on one place, and checks every id against the ID universe.
   - **Where, how, with what** (Q1-3, research notes 3: "find X" quests with no location or recipe): every quest names
     its `realm` and may name a `place` (a world structure with the name the text gives it, a biome, or both); the how
     is its tasks; the with what is its recommended `level`, the items to `bring` and the items to `craft`, each with a
-    recipe (ours, a `content/recipes/` override's or vanilla's, whose recipe ids start with the item's). An errand (any
+    recipe: our item's or block's own, a `content/recipes/` override's, or a vanilla recipe named after the item (the
+    item's own id, `<item>_from_...`, or `<item>_smithing`, the only recipe of a netherite tool or armor piece;
+    RLM-472). A biome of ours as the place needs a name, since the Where line shows `biome.realmforge.<path>`: a
+    dungeon type's instance biome has one, any other gets it from the text group `biome`
+    (`content/texts/biome.yaml`), and validation refuses one without. An errand (any
     task but a checkmark, a level or a spell) needs the level, which lies in the realm's level band (v1 bands, RLM-188)
     and at most at the cap the quest's chapter leaves once completed. The validation demands no locator, summon item
     or vendor for a target (research PR-17). The generator ends the description with "where, with what" lines,
@@ -4014,7 +4048,8 @@ depth limit.
   - **Checked in the game:** the pipeline writes `GeneratedQuestBookExpectations` (every chapter, quest, task and
     reward with its FTB Quests id and type, each reward's team flag and auto-claim as FTB Quests resolves them, and
     our custom statistics) and, from sample tasks, advancements in the QA mod's data
-    (`realmforge_qa:quest_task/<name>`). `QuestGameTests` completes the samples through a level-up, a dungeon run and
+    (`realmforge_qa:quest_task/<name>`; the spell sample is the first spell a bare caster casts at once: a player's,
+    instant without a swing, on themselves, without a weapon or a window, free or for mana, RLM-472). `QuestGameTests` completes the samples through a level-up, a dungeon run and
     casts, counts the statistic, and compares the book FTB Quests loaded in the GameTest server (which gets the pack's
     config, `seedPackConfig`) with the expectations: while `content/quests/` is empty, it holds no chapter. The
     comparison's FTB Quests types live in `QuestBook`, out of every GameTest class: the QA mod lists those classes'
@@ -4734,7 +4769,7 @@ that agents can read. So far:
   `/qa level <level> [<entity>]` (a player with a character gets exactly the character XP of the level, quietly, so
   the level follows up to the level cap, C2; another player or a mob gets the `realmforge:level` attachment, which XP
   and loot read; a hostile mob also gets the scaling of the level, W1, and a player's race and class bonuses follow
-  it, C1). The core mod's operator command `/realmforge xp add|set|query` ([10.2](#102-leveling)) gives, sets or shows
+  it, C1). The core mod's operator command `/realmforge xp add|quest|set|query` ([10.2](#102-leveling)) gives, sets or shows
   character XP, and vanilla's `/advancement grant @s only realmforge:chapter/chapter_1` completes chapter 1;
 - `/qa mob [<entity>]` (W1): a mob's level, health over its maximum with the multiple its level added, armor with the
   points its level added, and the damage multiple of its hits; without an argument, the nearest hostile mob within

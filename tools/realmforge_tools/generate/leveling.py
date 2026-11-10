@@ -9,7 +9,8 @@ datapack.py).
   completed chapters.
 - ``GeneratedKillXpMultiplierExpectations``: every kill XP multiplier, with its value at sample sizes.
 - ``GeneratedLevelingExpectations``: the XP and the stat points per level, the levels of sample XP totals under sample
-  caps, and the XP of sample kills, from the curves in ``content/curves/`` (schema/leveling.py).
+  caps, the XP of sample kills and the XP sample quests pay players of sample levels (RLM-189), from the curves in
+  ``content/curves/`` (schema/leveling.py).
 """
 
 from __future__ import annotations
@@ -28,21 +29,29 @@ from realmforge_tools.schema.leveling import (
     KILL_XP,
     KILL_XP_ABOVE_PLAYER,
     KILL_XP_BELOW_PLAYER,
+    QUEST_XP_BELOW_PLAYER,
     STAT_POINTS_PER_LEVEL,
     XP_TO_NEXT_LEVEL,
     capped_xp,
     kill_xp,
     level_for,
+    quest_xp_paid,
     stat_points_to,
     xp_to_next,
     xp_to_reach,
 )
+from realmforge_tools.schema.quest import quest_xp
 
 QA_GENERATED_PACKAGE = f"{QA_JAVA_PACKAGE}.generated"
 REGISTRY = "chapter"
 # The levels the kill samples combine (victim against player), and the (rank, XP multiplier) pairs they take.
 KILL_SAMPLE_LEVELS = (1, 3, 5, 10, 14, 20)
 KILL_SAMPLE_FACTORS = ((1.0, 1.0), (1.0, 1.5), (0.25, 1.0), (1.5, 1.0), (10.0, 1.0))
+# The quest levels the quest samples take, how many levels above each the sample players are (and one below), and
+# the players' XP multipliers. Each sample quest gives a standard quest's XP of its level.
+QUEST_SAMPLE_LEVELS = (1, 6, 18)
+QUEST_SAMPLE_PLAYERS_ABOVE = (-3, 0, 1, 3, 4, 5, 6, 7, 8, 9, 30)
+QUEST_SAMPLE_MULTIPLIERS = (1.0, 1.5)
 # The sizes the kill XP multiplier samples take (none: a mob without a size).
 SIZE_SAMPLES = (None, 1, 2, 4, 127)
 
@@ -174,6 +183,15 @@ def _leveling(chapters: list[ChapterDef], curves: dict[str, CurveDef]) -> bytes:
         for player in KILL_SAMPLE_LEVELS
         for rank, multiplier in KILL_SAMPLE_FACTORS
     ]
+    quest_below = curves[QUEST_XP_BELOW_PLAYER]
+    quests = [
+        f"            new QuestSample({amount}L, {quest}, {player}, {_double(multiplier)}, "
+        f"{quest_xp_paid(quest_below, amount, quest, player, multiplier)}L)"
+        for quest in QUEST_SAMPLE_LEVELS
+        for amount in [quest_xp(base, quest, "standard")]
+        for player in sorted({max(1, quest + above) for above in QUEST_SAMPLE_PLAYERS_ABOVE})
+        for multiplier in QUEST_SAMPLE_MULTIPLIERS
+    ]
     source = (
         header(Path(__file__), "content/curves/ and content/chapters/") + f"package {QA_GENERATED_PACKAGE};\n"
         "\n"
@@ -202,11 +220,20 @@ def _leveling(chapters: list[ChapterDef], curves: dict[str, CurveDef]) -> bytes:
         "    public record KillSample(int victimLevel, int playerLevel, double rank, double multiplier, long xp) {\n"
         "    }\n"
         "\n"
+        "    /**\n"
+        "     * The XP a player of a level with an XP multiplier gets from a quest of a level that gives {@code amount}: a\n"
+        "     * standard quest's XP of that level, lowered for a player far above the quest (RLM-189).\n"
+        "     */\n"
+        "    public record QuestSample(long amount, int questLevel, int playerLevel, double multiplier, long xp) {\n"
+        "    }\n"
+        "\n"
         f"    public static final List<LevelXp> LEVELS = {_list(levels)};\n"
         "\n"
         f"    public static final List<LevelSample> LEVEL_SAMPLES = {_list(samples)};\n"
         "\n"
         f"    public static final List<KillSample> KILLS = {_list(kills)};\n"
+        "\n"
+        f"    public static final List<QuestSample> QUESTS = {_list(quests)};\n"
         "\n"
         "    private GeneratedLevelingExpectations() {\n"
         "    }\n"

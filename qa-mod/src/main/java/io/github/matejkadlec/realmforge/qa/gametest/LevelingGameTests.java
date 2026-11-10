@@ -11,6 +11,7 @@ import io.github.matejkadlec.realmforge.character.Characters;
 import io.github.matejkadlec.realmforge.character.KillXp;
 import io.github.matejkadlec.realmforge.character.KillXpMultiplier;
 import io.github.matejkadlec.realmforge.character.Leveling;
+import io.github.matejkadlec.realmforge.character.QuestXp;
 import io.github.matejkadlec.realmforge.character.XpTable;
 import io.github.matejkadlec.realmforge.core.CoreRegistries;
 import io.github.matejkadlec.realmforge.core.Curve;
@@ -29,6 +30,7 @@ import io.github.matejkadlec.realmforge.qa.generated.GeneratedLevelingExpectatio
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedLevelingExpectations.KillSample;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedLevelingExpectations.LevelSample;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedLevelingExpectations.LevelXp;
+import io.github.matejkadlec.realmforge.qa.generated.GeneratedLevelingExpectations.QuestSample;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedRaceExpectations;
 import io.github.matejkadlec.realmforge.stats.EntityLevel;
 import io.github.matejkadlec.realmforge.stats.StatBonus;
@@ -60,7 +62,8 @@ import net.minecraft.world.phys.Vec3;
  * expectations; XP stops at the level cap, and granting the chapter advancement raises the cap; hostile kills
  * give XP by the victim's level and its kill XP multiplier; players without a character gain none;
  * {@code realmforge:level_reached} completes advancements; {@code /realmforge xp} and {@code /qa level} work; a login
- * leaves the stat recompute to the first tick (RLM-202). Players log in through {@link QaPlayers#login}.
+ * leaves the stat recompute to the first tick (RLM-202); a quest pays less XP to a player far above its level
+ * (RLM-189). Players log in through {@link QaPlayers#login}.
  */
 public final class LevelingGameTests {
     /** {@code data/realmforge_qa/advancement/test/level_5.json}: done once the character reaches level 5. */
@@ -100,6 +103,64 @@ public final class LevelingGameTests {
                     + " player killing a level " + sample.victimLevel() + " mob of rank " + sample.rank() + " at "
                     + sample.multiplier());
         }
+        helper.succeed();
+    }
+
+    /** RLM-189: the XP a quest pays a player, by how far above the quest they are, as the pipeline computes it. */
+    @QaGameTest
+    public static void questXpMatchesThePipeline(GameTestHelper helper) {
+        Curve below = curve(helper, GeneratedCurves.QUEST_XP_BELOW_PLAYER);
+        helper.assertFalse(GeneratedLevelingExpectations.QUESTS.isEmpty(), "no quest expectations were generated");
+        for (QuestSample sample : GeneratedLevelingExpectations.QUESTS) {
+            helper.assertValueEqual(QuestXp.of(below, sample.amount(), sample.questLevel(), sample.playerLevel(),
+                    sample.multiplier()), sample.xp(), "a level " + sample.playerLevel() + " player's XP of "
+                    + sample.amount() + " from a level " + sample.questLevel() + " quest at " + sample.multiplier());
+        }
+        helper.succeed();
+    }
+
+    /**
+     * RLM-189's "Done when": a higher-level player who completes a low-level quest gets less of its XP. The quest
+     * book pays through {@code /realmforge xp quest <players> <xp> <level>}: a level 1 quest pays a level 1 player in
+     * full and a level 9 player a tenth, while a quest 3 levels below them still pays in full.
+     */
+    @QaGameTest
+    public static void aQuestFarBelowThePlayerPaysLess(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        ServerPlayer player = loginWithCharacter(helper, "qa-lvl-quest");
+        QuestSample full = questSample(1, 1);
+        QuestSample reduced = questSample(1, 9);
+        QuestSample near = questSample(6, 9);
+        helper.assertTrue(reduced.xp() < full.xp() && reduced.xp() > 0,
+                "a quest 8 levels below pays less, but never nothing: " + reduced.xp() + " of " + full.xp());
+        helper.assertValueEqual(near.xp(), near.amount(), "a quest 3 levels below pays in full");
+
+        run(server, player, "realmforge xp quest @s " + full.amount() + " 1");
+        helper.assertValueEqual(Characters.data(player).totalXp(), full.xp(), "a level 1 quest at level 1");
+
+        run(server, player, "qa level 9");
+        helper.assertValueEqual(Characters.level(player), 9, "/qa level 9");
+        long before = Characters.data(player).totalXp();
+        run(server, player, "realmforge xp quest @s " + reduced.amount() + " 1");
+        helper.assertValueEqual(Characters.data(player).totalXp() - before, reduced.xp(),
+                "the same quest at level 9");
+
+        run(server, player, "qa level 9");
+        before = Characters.data(player).totalXp();
+        run(server, player, "realmforge xp quest @s " + near.amount() + " 6");
+        helper.assertValueEqual(Characters.data(player).totalXp() - before, near.xp(), "a level 6 quest at level 9");
+
+        // The XP multiplier still applies, after the reduction.
+        run(server, player, "qa level 9");
+        AttributeInstance multiplier = player.getAttribute(GeneratedStats.XP_MULTIPLIER);
+        helper.assertTrue(multiplier != null, "players have the XP multiplier");
+        multiplier.setBaseValue(1.5);
+        before = Characters.data(player).totalXp();
+        helper.assertValueEqual(Characters.rewardQuestXp(player, reduced.amount(), 1),
+                questSample(1, 9, 1.5).xp(), "the same quest at level 9 and 150 %");
+        helper.assertValueEqual(Characters.data(player).totalXp() - before, questSample(1, 9, 1.5).xp(),
+                "the player's XP");
+        server.getPlayerList().remove(player);
         helper.succeed();
     }
 
@@ -364,6 +425,20 @@ public final class LevelingGameTests {
     private static long killXp(GameTestHelper helper, int victimLevel, int playerLevel, double rank) {
         return KillXp.of(curve(helper, GeneratedCurves.KILL_XP), curve(helper, GeneratedCurves.KILL_XP_BELOW_PLAYER),
                 curve(helper, GeneratedCurves.KILL_XP_ABOVE_PLAYER), victimLevel, playerLevel, rank, 1.0);
+    }
+
+    /** The pipeline's sample of a quest of a level paying a player of a level, at 100 % XP multiplier. */
+    private static QuestSample questSample(int questLevel, int playerLevel) {
+        return questSample(questLevel, playerLevel, 1.0);
+    }
+
+    private static QuestSample questSample(int questLevel, int playerLevel, double multiplier) {
+        return GeneratedLevelingExpectations.QUESTS.stream()
+                .filter(sample -> sample.questLevel() == questLevel && sample.playerLevel() == playerLevel
+                        && sample.multiplier() == multiplier)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("no quest sample of level " + questLevel
+                        + " for a level " + playerLevel + " player at " + multiplier));
     }
 
     /** The pipeline's multiplier for a mob of the entity type and size (-1: no size), from the expectations. */

@@ -19,8 +19,9 @@ from realmforge_tools.formats.jsonfmt import dump_json
 from realmforge_tools.generate.datapack import data_dir
 from realmforge_tools.project import MOD_ID, RepoPaths
 from realmforge_tools.schema.common import LocalizedText
+from realmforge_tools.schema.dungeon import INSTANCE_BIOME_PREFIX, instance_biome_id
 
-PREFIX = "dungeon_"
+PREFIX = INSTANCE_BIOME_PREFIX
 # minecraft:the_void's settings (build/mc-sources/data/minecraft/worldgen/biome/the_void.json) without its features.
 BIOME: dict[str, Any] = {
     "attributes": {"minecraft:visual/sky_color": "#7ba4ff"},
@@ -46,7 +47,7 @@ BIOME: dict[str, Any] = {
 
 def biome_id(dungeon_id: str) -> str:
     """The path of a dungeon type's biome; ``InstanceBiomes#biome`` derives the same."""
-    return f"{PREFIX}{dungeon_id}"
+    return instance_biome_id(dungeon_id)
 
 
 def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:

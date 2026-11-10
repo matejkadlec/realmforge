@@ -57,6 +57,11 @@ public final class GeneratedCurveExpectations {
                     List.of(new Point(1, 1.0), new Point(5, 1.4), new Point(10, 2.0), new Point(20, 3.5), new Point(60, 12.0)),
                     List.of(new Sample(0.0, 1.0), new Sample(1.0, 1.0), new Sample(3.0, 1.2), new Sample(5.0, 1.4), new Sample(7.5, 1.7), new Sample(10.0, 2.0), new Sample(15.0, 2.75), new Sample(20.0, 3.5), new Sample(40.0, 7.75), new Sample(60.0, 12.0), new Sample(61.0, 12.0))),
             new CurveExpectation(
+                    "realmforge:quest_xp_below_player",
+                    Optional.of("curve.realmforge.quest_xp_below_player.name"),
+                    List.of(new Point(0, 1.0), new Point(4, 1.0), new Point(5, 0.75), new Point(6, 0.5), new Point(7, 0.25), new Point(8, 0.1)),
+                    List.of(new Sample(-1.0, 1.0), new Sample(0.0, 1.0), new Sample(2.0, 1.0), new Sample(4.0, 1.0), new Sample(4.5, 0.875), new Sample(5.0, 0.75), new Sample(5.5, 0.625), new Sample(6.0, 0.5), new Sample(6.5, 0.375), new Sample(7.0, 0.25), new Sample(7.5, 0.175), new Sample(8.0, 0.1), new Sample(9.0, 0.1))),
+            new CurveExpectation(
                     "realmforge:stat_points_per_level",
                     Optional.of("curve.realmforge.stat_points_per_level.name"),
                     List.of(new Point(2, 1.0)),

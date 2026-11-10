@@ -66,6 +66,9 @@ from realmforge_tools.schema import (
     StatRuleDef,
     TextGroupDef,
 )
+from realmforge_tools.schema.coin import coin_chain
+from realmforge_tools.schema.leveling import KILL_XP
+from realmforge_tools.schema.quest import book_quests
 from realmforge_tools.schema.room import (
     GPL_FILE,
     GPL_TITLE,
@@ -238,6 +241,17 @@ class Content:
     room_reviews: tuple[RoomReview, ...] = ()
     room_notices: tuple[RoomNotice, ...] = ()
     set_pieces: tuple[SetPieceEntry, ...] = ()
+
+    def book_quests(self) -> list[QuestDef]:
+        """The quests as the quest book holds them (``schema.quest.book_quests``): a buy quest as one quest per
+        purchase, paid in our coins, and every other quest with its computed character XP as a reward."""
+        coins = [
+            (f"{MOD_ID}:{coin.id}", coin.coin.value)
+            for coin in coin_chain(entry.model for entry in self.items)
+            if coin.coin is not None
+        ]
+        kill_xp = next((entry.model for entry in self.curves if entry.model.id == KILL_XP), None)
+        return book_quests([entry.model for entry in self.quests], coins, kill_xp)
 
     def entries(self, type_dir: str) -> tuple[Entry, ...]:
         """The entries of the YAML content type in ``content/<type_dir>/``."""

@@ -52,6 +52,15 @@ public final class Characters {
     }
 
     /**
+     * Gives the player the character XP of a quest of {@code questLevel} ({@code /realmforge xp quest}): {@code xp},
+     * lowered for a player far above the quest's level ({@link QuestXp}), times their XP multiplier, with level-ups as
+     * {@link #rewardXp}. Returns the XP they gained.
+     */
+    public static long rewardQuestXp(ServerPlayer player, long xp, int questLevel) {
+        return Leveling.questReward(player, xp, questLevel);
+    }
+
+    /**
      * Sets the player's total character XP, at most the XP of their cap's level, and their level from it, quietly
      * (operator and QA commands). False without a character, which gains no XP.
      */

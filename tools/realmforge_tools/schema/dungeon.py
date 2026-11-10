@@ -36,6 +36,14 @@ WALL_ROLE = "wall"
 # door of the pools so far (Stonevaults' and the room generator's, architecture 15.4).
 WALL_WIDTH = 3
 WALL_HEIGHT = 3
+# What the path of a dungeon type's instance biome starts with (generate/instance_biomes.py, RLM-409).
+INSTANCE_BIOME_PREFIX = "dungeon_"
+
+
+def instance_biome_id(dungeon_id: str) -> str:
+    """The path of a dungeon type's instance biome, ``dungeon_<id>``, which is named after the dungeon type;
+    ``InstanceBiomes#biome`` derives the same."""
+    return f"{INSTANCE_BIOME_PREFIX}{dungeon_id}"
 
 
 def room_role(tags: list[str]) -> str | None:

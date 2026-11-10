@@ -21,6 +21,9 @@ texts:
     en_us: "Bring: %1$s"
   craft:
     en_us: "Craft: %1$s"
+  # A quest that buys something more than once (Q1-4): which purchase it is. %1$s its number, %2$s how many there are.
+  purchase:
+    en_us: "Purchase %1$s of %2$s"
   # The titles of our own tasks (Q1-2). %1$s the character level to reach.
   task_level:
     en_us: Reach level %1$s

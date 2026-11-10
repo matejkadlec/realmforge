@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../tools/schemas/curves.schema.json
+# The share of a quest's character XP a player gets when the quest's level is below theirs, by how many levels it is
+# below (the curve's "level" is that difference): all of it up to 4 below, then 75, 50 and 25 % at 5, 6 and 7 below,
+# and 10 % from 8 below, so a mandatory quest never gives nothing (XP model of 2026-10-15, RLM-189). A quest at or
+# above the player's level gives all of it. `/realmforge xp quest` applies it when the reward is paid.
+id: quest_xp_below_player
+name: {en_us: Quest XP Below Player}
+points:
+  - {level: 0, value: 1.0}
+  - {level: 4, value: 1.0}
+  - {level: 5, value: 0.75}
+  - {level: 6, value: 0.5}
+  - {level: 7, value: 0.25}
+  - {level: 8, value: 0.1}

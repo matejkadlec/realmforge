@@ -631,12 +631,15 @@ arrival: {y: [63, 310], floor: minecraft:stone_bricks, pocket_radius: 3}   # por
     signet stacks to 1;
   - the realm dimension's `dimension_rules` access requirement includes the unlock advancement;
   - the realm's dimension type sets a `coordinate_scale` above 1 and a `bed_rule` that sets no spawn.
-- **The signet source check comes later.** Every signet needs a renewable source (a recipe, a repeatable quest, or the
-  guaranteed drop of a boss that can be replayed), never only a one-time reward, as the "every item obtainable" rule
-  asks ([ADR 0005](../decisions/0005-content-pipeline-yaml-single-source-of-truth.md)). That rule is not in the pipeline
-  yet: it needs recipes, loot and quests as data, and quests arrive with Q1. The signet check joins it then, together
-  with a check that every realm has an unlock quest. Until Q2 adds the chapter 1 quests, the Signet of the Undervault
-  and the unlock have no source in play: `/give`, `/advancement grant` and a QA command hand them out for tests and
+- **The signet source check** (Q1-4, RLM-424). Every signet needs a renewable source (a recipe, the quest shop, or
+  the guaranteed drop of a boss that can be replayed), never only a one-time reward, as the "every item obtainable"
+  rule asks ([ADR 0005](../decisions/0005-content-pipeline-yaml-single-source-of-truth.md)). Validation checks it from
+  the moment a quest hands a realm's signet out as a reward: the signet then also needs its own recipe (or one of
+  `content/recipes/`), a quest that buys it (`buy`, the shop: a price in coins and a limit of purchases,
+  [architecture 16](../architecture.md#16-progression-and-quests)), or a drop at 100 % of a boss's mob. The rest of
+  the "every item obtainable" rule is not in the pipeline yet, and neither is a check that every realm has an unlock
+  quest. Until Q2 adds the chapter 1 quests, the Signet of the Undervault and the unlock have no source in play, and
+  the check has nothing to refuse: `/give`, `/advancement grant` and a QA command hand them out for tests and
   playtests, so W2a and W2b do not wait for Q2.
 - **Not in the data yet:** a realm map's positions and parents (RE-7). They join when a client view needs them,
   synced with the realm entry. The realm's level band is in it (`levels`, for the arrival title): mob levels follow
@@ -850,4 +853,5 @@ and W2b. Two questions are open (3 and 4); questions 1 and 2 are decided:
    (M2, in RLM-407's own description), so its signet has only the one quest reward, and the signet source check
    ([Data](#data-contentrealms)) asks for a renewable source. Proposal: M1 already gets the shop's one signet quest
    (50 copper, up to 3 times, unlocked by The Ominous Chief), since coins (RLM-284, labelled `m1`) and the quest
-   pipeline (Q1) are M1 work; the rest of the tab stays M2.
+   pipeline (Q1) are M1 work; the rest of the tab stays M2. The pipeline can write that quest since Q1-4 (RLM-424),
+   and its check refuses chapter 1's quests (Q2) if they hand the signet out without such a source.

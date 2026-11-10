@@ -104,6 +104,20 @@ public final class Leveling {
     }
 
     /**
+     * Adds the XP of a quest of {@code questLevel} ({@code /realmforge xp quest}, RLM-189): {@link QuestXp}, which
+     * lowers it for a player far above the quest's level and applies their XP multiplier, and levels them up as far as
+     * it reaches. Without the curve (a data pack removed it) the quest pays in full. Returns the XP gained, as
+     * {@link #reward}.
+     */
+    static long questReward(ServerPlayer player, long xp, int questLevel) {
+        Optional<Curve> below = curve(player.registryAccess(), GeneratedCurves.QUEST_XP_BELOW_PLAYER);
+        if (below.isEmpty()) {
+            return reward(player, xp);
+        }
+        return add(player, QuestXp.of(below.get(), xp, questLevel, Characters.level(player), multiplier(player)));
+    }
+
+    /**
      * Sets the player's total character XP, at most the XP of their cap's level, and their level from it, without
      * level-up effects; false without a character.
      */
