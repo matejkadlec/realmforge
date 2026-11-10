@@ -57,7 +57,7 @@ import net.neoforged.neoforge.common.NeoForge;
  *   off the crosshair; the local player in first person also gets a third of the swirl, none of it above the model.
  *   A mob's model forms at its full size.</li>
  *   <li><b>An interrupted cast's model fades away</b> over {@link FormingCurves#FADE_TICKS}, at the size it had
- *   reached.</li>
+ *   reached; a caster who casts again at once shows the new cast's model alone.</li>
  *   <li><b>The projectile leaves the hands:</b> for its first {@link FormingCurves#LEAVE_TICKS} ticks a player's
  *   projectile is drawn blended from the hands, and from the forming model's size, to its own path and size
  *   ({@link #launch}).</li>
@@ -207,14 +207,21 @@ public final class SpellForming {
         double now = level.getGameTime() + partialTick;
         Vec3 camera = event.getCamera().position();
         List<Draw> draws = new ArrayList<>();
-        ClientCasts.all().forEach((casterId, cast) -> {
+        Map<Integer, Cast> casts = ClientCasts.all();
+        casts.forEach((casterId, cast) -> {
             if (!cast.channel()) {
                 hands(level, casterId, cast, partialTick, CurrentCasts.progress(cast, now), 1)
                         .ifPresent(hands -> draw(hands, camera, draws));
             }
         });
-        FADING.forEach((casterId, fading) -> hands(level, casterId, fading.cast(), partialTick, fading.formed(),
-                FormingCurves.fade((float) (now - fading.endedAt()))).ifPresent(hands -> draw(hands, camera, draws)));
+        FADING.forEach((casterId, fading) -> {
+            // A caster who casts again at once holds the new cast's model: the old one is not drawn over it.
+            if (!casts.containsKey(casterId)) {
+                hands(level, casterId, fading.cast(), partialTick, fading.formed(),
+                        FormingCurves.fade((float) (now - fading.endedAt())))
+                        .ifPresent(hands -> draw(hands, camera, draws));
+            }
+        });
         if (!draws.isEmpty()) {
             event.getRenderState().setRenderData(DRAWS, draws);
         }
