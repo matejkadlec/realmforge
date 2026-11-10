@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../tools/schemas/spell_models.schema.json
+# The chunk (RLM-640): a rough pointed lump of 26 small cubes, its point first, the placeholder cube model. Frostbolt
+# and Fireball fly and form with it until their own models exist (the ice chunk, RLM-440; the fire ball, RLM-441). Its
+# source is art/models/spell/chunk.geo.json, written by a script. At 0.6 of a half-block bolt it is about 0.3 blocks
+# thick and 0.6 long, the size the design gives the ice chunk.
+id: chunk
+shape: cubes
+scale: 0.6
+orientation: forward

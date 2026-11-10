@@ -91,12 +91,17 @@ public final class SpellVisualsGameTests {
                     expected.burstParticle(), id + " burst particle");
             helper.assertValueEqual(look.burst().map(SpellLook.Burst::count).orElse(0), expected.burstCount(),
                     id + " burst count");
+            helper.assertValueEqual(look.swirl().map(swirl -> swirl.particle().toString()),
+                    expected.swirlParticle(), id + " swirl particle");
+            helper.assertValueEqual(look.swirl().map(SpellLook.Swirl::perTick).orElse(0.0F),
+                    (float) expected.swirlPerTick(), id + " swirl per tick");
+            helper.assertValueEqual(look.light().getSerializedName(), expected.light(), id + " light");
             helper.assertValueEqual(look.impactSound().map(Identifier::toString), expected.impactSound(),
                     id + " impact sound");
             look.impactSound().ifPresent(sound -> helper.assertTrue(
                     BuiltInRegistries.SOUND_EVENT.containsKey(sound), id + ": no sound event " + sound));
             for (Optional<Identifier> particle : List.of(look.trail().map(SpellLook.Trail::particle),
-                    look.burst().map(SpellLook.Burst::particle))) {
+                    look.burst().map(SpellLook.Burst::particle), look.swirl().map(SpellLook.Swirl::particle))) {
                 particle.ifPresent(type -> helper.assertTrue(TintedParticles.of(type, -1).isPresent(),
                         id + ": " + type + " is not one of our particles"));
             }
@@ -114,6 +119,14 @@ public final class SpellVisualsGameTests {
                     id + " orientation");
             helper.assertValueEqual(model.spinDegreesPerSecond(), (float) expected.spinDegreesPerSecond(),
                     id + " spin");
+            if (model.shape() == SpellModel.Shape.CUBES) {
+                // Its clients draw the GeckoLib model of its id (RLM-640); without the file they fall back to the orb.
+                Identifier geometry = SpellModel.geometry(Identifier.parse(id));
+                String file = "/assets/" + geometry.getNamespace() + "/geckolib/models/" + geometry.getPath()
+                        + ".geo.json";
+                helper.assertTrue(Realmforge.class.getResource(file) != null,
+                        id + ": the model of cubes is not in the mod's resources: " + file);
+            }
         }
 
         Registry<SpellTrajectory> trajectories = helper.getLevel().registryAccess()

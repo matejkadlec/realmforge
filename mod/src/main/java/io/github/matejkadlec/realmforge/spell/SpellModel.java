@@ -3,6 +3,7 @@ package io.github.matejkadlec.realmforge.spell;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.StringRepresentable;
 
 /**
@@ -11,7 +12,8 @@ import net.minecraft.util.StringRepresentable;
  * ({@link SpellLook#material}). Synced, as its clients draw it.
  *
  * @param shape what is drawn
- * @param scale its width as a share of the projectile's hitbox: 1 fills it
+ * @param scale its width as a share of the projectile's hitbox: 1 fills it; a model of cubes is as wide as the
+ *     larger of its extents across its length
  * @param orientation how it turns as it flies
  * @param spinDegreesPerSecond how fast a {@link Orientation#FORWARD} model spins about its flight
  */
@@ -40,11 +42,14 @@ public record SpellModel(Shape shape, float scale, Orientation orientation, floa
 
     /** What a model draws. */
     public enum Shape implements StringRepresentable {
+        /** Three crossed slabs half a block across: the placeholder shape of a model without art. */
+        ORB("orb"),
         /**
-         * Three crossed slabs half a block across: the placeholder shape of every model until its GeckoLib model
-         * exists (RLM-640).
+         * A GeckoLib model of at most 64 cubes, {@code assets/<ns>/geckolib/models/spell/<path>.geo.json} for the
+         * entry's id ({@link #geometry}), which {@code rf gen} writes from {@code art/models/spell/} (RLM-640). It
+         * forms cube by cube.
          */
-        ORB("orb");
+        CUBES("cubes");
 
         public static final Codec<Shape> CODEC = StringRepresentable.fromEnum(Shape::values);
 
@@ -58,6 +63,14 @@ public record SpellModel(Shape shape, float scale, Orientation orientation, floa
         public String getSerializedName() {
             return serializedName;
         }
+    }
+
+    /**
+     * The GeckoLib model of the {@link Shape#CUBES} entry {@code id}, as GeckoLib's model cache names it:
+     * {@code <ns>:spell/<path>}.
+     */
+    public static Identifier geometry(Identifier id) {
+        return id.withPrefix("spell/");
     }
 
     /** How a model turns as it flies. */

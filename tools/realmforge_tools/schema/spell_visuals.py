@@ -1,10 +1,10 @@
 """The spell visuals kit (RLM-439, ADR 0073, architecture 11.3): the reusable parts a spell's look is combined from.
 
 - ``content/spell_looks/<id>.yaml``: an element's look (frost, fire, arcane, stone): its colours, the particles its
-  projectiles trail and burst into, and its impact sound. Its material, the one tileable 16 x 16 texture every model of
-  the look is drawn with, is ``textures/spell/material/<id>.png``.
-- ``content/spell_models/<id>.yaml``: a projectile's shape. The ``orb`` is the only shape until the GeckoLib models
-  (RLM-640).
+  projectiles trail and burst into and that swirl round a forming one, its light and its impact sound. Its material,
+  the one tileable 16 x 16 texture every model of the look is drawn with, is ``textures/spell/material/<id>.png``.
+- ``content/spell_models/<id>.yaml``: a projectile's shape: the ``orb``, the placeholder, or ``cubes``, a GeckoLib
+  model whose source is ``art/models/spell/<id>.geo.json`` (RLM-640, ``art/spell_models.py``).
 - ``content/spell_trajectories/<id>.yaml``: how a projectile flies. Only ``straight`` (ADR 0052); the registry keeps
   room for a later kind.
 - ``content/particles/<id>.yaml``: a particle shape of our own, greyscale frames that each spawn tints with one of a
@@ -28,6 +28,10 @@ MAX_LOOK_COLORS = 16
 # bursts into at most 24 at once.
 MAX_TRAIL_PER_BLOCK = 3
 MAX_BURST_COUNT = 24
+# The same budget: a forming swirl spawns at most 8 a tick and keeps at most 80 alive per caster, so the longest life
+# of its particle times its rate stays within that.
+MAX_SWIRL_PER_TICK = 8
+MAX_SWIRL_ALIVE = 80
 # A particle's frames are 8 x 8 pixels, as vanilla's are.
 PARTICLE_SIZE = 8
 MAX_PARTICLE_FRAMES = 8
@@ -64,6 +68,21 @@ class BurstDef(StrictModel):
     count: int = Field(ge=1, le=MAX_BURST_COUNT, description="How many at once, at most 24.")
 
 
+class SwirlDef(StrictModel):
+    """The particles that swirl in toward a projectile of the look while it forms in a caster's hands, spawned by
+    the clients; a ``hands`` forming shows them alone."""
+
+    particle: ResourceId = Field(
+        description="One of our particles, e.g. realmforge:mote (content/particles/)."
+    )
+    per_tick: float = Field(
+        gt=0,
+        le=MAX_SWIRL_PER_TICK,
+        allow_inf_nan=False,
+        description="How many a tick while the cast runs, at most 8; times its particle's longest life, at most 80.",
+    )
+
+
 class SpellLookDef(StrictModel):
     """An element's look, shared by every spell of it: frost reads as frost on Frostbolt and on Ice Lance."""
 
@@ -77,6 +96,17 @@ class SpellLookDef(StrictModel):
     trail: TrailDef | None = Field(default=None, description="What its projectiles leave behind in flight.")
     burst: BurstDef | None = Field(
         default=None, description="What its projectiles burst into where they hit."
+    )
+    swirl: SwirlDef | None = Field(
+        default=None,
+        description="What swirls in toward its projectile while it forms in a caster's hands (the storm of a grow or "
+        "storm forming, and all a hands forming shows).",
+    )
+    light: Literal["world", "glow", "emit"] = Field(
+        default="world",
+        description="How its models are lit. world: by the light where they are, like an arrow. glow: a few light "
+        "levels above that, lighting nothing (frost). emit: at full brightness (fire); it lights its surroundings "
+        "once the pack has dynamic lights (ADR 0075).",
     )
     impact_sound: ResourceId | None = Field(
         default=None,
@@ -95,16 +125,17 @@ class SpellModelDef(StrictModel):
     """A projectile's shape, drawn with its look's material."""
 
     id: ContentId
-    shape: Literal["orb"] = Field(
-        description="orb: three crossed slabs half a block across, the placeholder shape of every model until its "
-        "GeckoLib model exists (RLM-640)."
+    shape: Literal["orb", "cubes"] = Field(
+        description="orb: three crossed slabs, the placeholder shape of a model without art. cubes: a GeckoLib model "
+        "of at most 64 cubes from art/models/spell/<id>.geo.json, which forms cube by cube (art/README.md)."
     )
     scale: float = Field(
         default=1.0,
         gt=0,
         le=MAX_MODEL_SCALE,
         allow_inf_nan=False,
-        description="Its width as a share of the projectile's hitbox: 1 fills it. At most 4.",
+        description="Its width as a share of the projectile's hitbox: 1 fills it. A cubes model's width is the "
+        "larger of its extents across its length (x and y); its length follows its proportions. At most 4.",
     )
     orientation: Literal["tumble", "forward"] = Field(
         default="tumble",

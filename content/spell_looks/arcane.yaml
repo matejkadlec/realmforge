@@ -1,8 +1,10 @@
 # yaml-language-server: $schema=../../tools/schemas/spell_looks.schema.json
 # The arcane look (RLM-639, docs/design/spell-visuals.md): Matěj's school colours, purple and dark purple (RLM-29,
-# 2026-10-21): motes behind a missile and where it bursts. The sound is vanilla's until the spell sounds (RLM-445).
+# 2026-10-21): motes behind a missile and where it bursts, flecks at the hands while Arcane Missiles is channelled. The sound
+# is vanilla's until the spell sounds (RLM-445).
 id: arcane
 colors: ["#E7C6FF", "#D6A2FF", "#C77DFF", "#A85CF0", "#8B3FD9", "#6A28B8", "#4E1A8F", "#35106B"]
 trail: {particle: realmforge:mote, per_block: 2}
 burst: {particle: realmforge:mote, count: 16}
+swirl: {particle: realmforge:fleck, per_tick: 6}
 impact_sound: minecraft:block.amethyst_cluster.break

@@ -677,7 +677,7 @@ public final class GeneratedSpellExpectations {
                     false,
                     Optional.empty(),
                     List.of(
-                            new EffectExpectation("realmforge:projectile", Map.of("size", 0.5, "speed", 30.0), Map.of("model", "realmforge:orb", "trajectory", "realmforge:straight"), List.of(
+                            new EffectExpectation("realmforge:projectile", Map.of("size", 0.5, "speed", 30.0), Map.of("model", "realmforge:chunk", "trajectory", "realmforge:straight"), List.of(
                                     new EffectExpectation("realmforge:damage", Map.of("amount", 6.0, "attack_damage", 0.0, "attack_damage_per_level", 0.0, "per_level", 1.0, "spell_power", 0.7, "spell_power_per_level", 0.1), Map.of(), List.of()),
                                     new EffectExpectation("realmforge:apply_effect", Map.of("amplifier", 0.0, "duration_per_level_ticks", 10.0, "duration_ticks", 80.0), Map.of("effect", "realmforge:burning", "stronger_at_levels", "5"), List.of()))))),
             new SpellExpectation(
@@ -803,7 +803,7 @@ public final class GeneratedSpellExpectations {
                     false,
                     Optional.empty(),
                     List.of(
-                            new EffectExpectation("realmforge:projectile", Map.of("size", 0.5, "speed", 30.0), Map.of("model", "realmforge:orb", "trajectory", "realmforge:straight"), List.of(
+                            new EffectExpectation("realmforge:projectile", Map.of("size", 0.5, "speed", 30.0), Map.of("model", "realmforge:chunk", "trajectory", "realmforge:straight"), List.of(
                                     new EffectExpectation("realmforge:damage", Map.of("amount", 8.0, "attack_damage", 0.0, "attack_damage_per_level", 0.0, "per_level", 1.0, "spell_power", 1.0, "spell_power_per_level", 0.15), Map.of(), List.of()),
                                     new EffectExpectation("realmforge:apply_effect", Map.of("amplifier", 0.0, "duration_ticks", 80.0), Map.of("effect", "minecraft:slowness", "stronger_at_levels", "3,5"), List.of()))))),
             new SpellExpectation(

@@ -1,5 +1,6 @@
-"""The spell visuals kit (RLM-639, ADR 0073): looks, models, trajectories and particles as content, a spell's
-``visuals``, and what ``rf gen`` writes for them."""
+"""The spell visuals kit (RLM-639, RLM-640, ADR 0073, ADR 0075): looks, models, trajectories and particles as
+content, a spell's ``visuals``, the models of cubes from ``art/models/spell/``, and what ``rf gen`` writes for
+them."""
 
 from __future__ import annotations
 
@@ -9,6 +10,7 @@ import json
 import pydantic
 import pytest
 
+from realmforge_tools.art import spell_models
 from realmforge_tools.formats.png import decode_rgba
 from realmforge_tools.generate import generate_all
 from realmforge_tools.problems import ValidationFailed
@@ -62,14 +64,17 @@ def spell(repo: RepoPaths, body: str, name: str = "test_shot") -> None:
 # The repository's kit
 
 
-def test_the_repository_has_the_first_looks_one_model_and_one_trajectory() -> None:
+def test_the_repository_has_the_first_looks_two_models_and_one_trajectory() -> None:
     content, _ = load_and_validate(RepoPaths())
     assert {entry.model.id for entry in content.spell_looks} == {"frost", "fire", "arcane", "stone"}
-    assert {entry.model.id for entry in content.spell_models} == {"orb"}
+    assert {entry.model.id: entry.model.shape for entry in content.spell_models} == {
+        "orb": "orb",
+        "chunk": "cubes",
+    }
     assert {entry.model.id: entry.model.kind for entry in content.spell_trajectories} == {
         "straight": "straight"
     }
-    assert {entry.model.id for entry in content.particles} == {"mote", "shard", "ember"}
+    assert {entry.model.id for entry in content.particles} == {"mote", "shard", "ember", "fleck"}
 
 
 def test_the_frost_look_is_inside_matejs_range() -> None:
@@ -138,8 +143,14 @@ def test_a_look_becomes_a_datapack_entry_and_a_placeholder_material(repo: RepoPa
         "colors": ["#2A1A3A", "#120818"],
         "trail": {"particle": "realmforge:mote", "per_block": 1.5},
         "burst": {"particle": "realmforge:shard", "count": 8},
+        "light": "world",
         "impact_sound": "minecraft:block.glass.break",
     }
+    # Frost swirls while it forms and glows a little; fire is drawn at full brightness (RLM-640).
+    frost = json.loads(files[f"{DATA}/spell_look/frost.json"])
+    assert frost["swirl"] == {"particle": "realmforge:fleck", "per_tick": 6.0}
+    assert frost["light"] == "glow"
+    assert json.loads(files[f"{DATA}/spell_look/fire.json"])["light"] == "emit"
     width, height, pixels = decode_rgba(files[f"{ASSETS}/textures/spell/material/shadow.png"])
     assert (width, height) == (16, 16)
     # Noise in the look's colours, opaque, so it tiles and reads as the element.
@@ -194,7 +205,7 @@ def test_a_particle_becomes_a_registration_a_sprite_set_and_its_frames(repo: Rep
         '            register("spark",\n'
         "                    new TintedParticles.Motion(4, 9, 0.05F, 0.25F, 0.9F, false));\n"
     ) in java
-    assert "ALL = List.of(EMBER, MOTE, SHARD, SPARK);" in java
+    assert "ALL = List.of(EMBER, FLECK, MOTE, SHARD, SPARK);" in java
     assert 'new ParticleExpectation("realmforge:spark", 2, 4, 9)' in files[EXPECTATIONS].decode()
 
 
@@ -208,9 +219,13 @@ def test_the_expectations_hold_every_part(repo: RepoPaths) -> None:
         "                    0.0,\n"
         '                    Optional.of("realmforge:shard"),\n'
         "                    14,\n"
+        '                    Optional.of("realmforge:shard"),\n'
+        "                    3.0,\n"
+        '                    "world",\n'
         '                    Optional.of("realmforge:spell.stoneform.impact"))'
     ) in expectations
     assert 'new ModelExpectation("realmforge:orb", "orb", 1.0, "tumble", 0.0)' in expectations
+    assert 'new ModelExpectation("realmforge:chunk", "cubes", 0.6, "forward", 0.0)' in expectations
     assert 'new TrajectoryExpectation("realmforge:straight", "straight")' in expectations
 
 
@@ -297,6 +312,13 @@ def test_a_spells_visuals_reach_its_data_and_its_expectations(repo: RepoPaths) -
             ),
             "appearance",
         ),
+        # RLM-640: the stone look has a burst but no trail, so nothing would draw this bolt until it hits.
+        (
+            "cast: {type: instant}\nvisuals: {look: realmforge:stone}\n"
+            + PROJECTILE.replace("    model: realmforge:orb\n", ""),
+            "effects.0: a projectile without a model is drawn by its look's trail, and realmforge:stone has none: "
+            "give the projectile a model or the look a trail",
+        ),
     ],
 )
 def test_a_spell_that_names_a_missing_or_misplaced_part_is_refused(
@@ -305,6 +327,21 @@ def test_a_spell_that_names_a_missing_or_misplaced_part_is_refused(
     spell(repo, body)
     problems = problems_for(repo)
     assert any(expected in problem for problem in problems), problems
+
+
+def test_a_projectile_is_drawn_by_a_model_or_by_its_looks_trail(repo: RepoPaths) -> None:
+    # RLM-640: each alone is enough.
+    spell(
+        repo,
+        "cast: {type: instant}\nvisuals: {look: realmforge:frost}\n"
+        + PROJECTILE.replace("    model: realmforge:orb\n", ""),
+        "test_trail_only",
+    )
+    spell(repo, "cast: {type: instant}\nvisuals: {look: realmforge:stone}\n" + PROJECTILE, "test_model_only")
+    spell(
+        repo, "cast: {type: instant}\n" + PROJECTILE.replace("    model: realmforge:orb\n", ""), "test_sparks"
+    )
+    load_and_validate(repo)
 
 
 def test_forming_and_hands_validate_where_they_fit(repo: RepoPaths) -> None:
@@ -371,6 +408,18 @@ def test_a_passive_spell_names_no_visuals() -> None:
             ("minecraft:block.glass.break", "minecraft:block.glass.shatter"),
             "impact_sound: unknown id 'minecraft:block.glass.shatter' in registry minecraft:sound_event",
         ),
+        (
+            ("swirl: {particle: realmforge:fleck", "swirl: {particle: minecraft:snowflake"),
+            "swirl.particle: minecraft:snowflake is not one of our particles (content/particles/)",
+        ),
+        # The particle budget: a mote lives up to 12 ticks, so 7 a tick would keep 84 alive per caster.
+        (
+            (
+                "swirl: {particle: realmforge:fleck, per_tick: 6}",
+                "swirl: {particle: realmforge:mote, per_tick: 7}",
+            ),
+            "swirl.per_tick: 7 a tick of realmforge:mote, which lives up to 12 ticks, keeps more than 80 alive",
+        ),
     ],
 )
 def test_a_look_names_particles_of_ours_and_a_sound_that_exists(
@@ -398,7 +447,11 @@ def look(**fields: object) -> SpellLookDef:
         ({"trail": {"particle": "realmforge:mote", "per_block": 0}}, "greater than 0"),
         ({"burst": {"particle": "realmforge:shard", "count": 25}}, "less than or equal to 24"),
         ({"burst": {"particle": "realmforge:shard", "count": 0}}, "greater than or equal to 1"),
-        ({"swirl": {"particle": "realmforge:mote"}}, "Extra inputs are not permitted"),
+        ({"swirl": {"particle": "realmforge:mote"}}, "Field required"),
+        ({"swirl": {"particle": "realmforge:mote", "per_tick": 8.5}}, "less than or equal to 8"),
+        ({"swirl": {"particle": "realmforge:mote", "per_tick": 0}}, "greater than 0"),
+        ({"light": "blinding"}, "Input should be 'world', 'glow' or 'emit'"),
+        ({"aura": {"particle": "realmforge:mote"}}, "Extra inputs are not permitted"),
     ],
 )
 def test_invalid_looks_are_rejected(fields: dict[str, object], expected: str) -> None:
@@ -411,10 +464,14 @@ def test_a_look_keeps_to_the_caps_at_their_edges() -> None:
         colors=[f"#0000{n:02X}" for n in range(16)],
         trail={"particle": "realmforge:mote", "per_block": 3},
         burst={"particle": "realmforge:shard", "count": 24},
+        swirl={"particle": "realmforge:mote", "per_tick": 8},
     )
     assert len(full.colors) == 16
     assert full.trail.per_block == 3
     assert full.burst.count == 24
+    assert full.swirl.per_tick == 8
+    assert full.light == "world", "lit by the world unless it says otherwise"
+    assert look().swirl is None
 
 
 # Validation: models, trajectories, particles
@@ -423,7 +480,7 @@ def test_a_look_keeps_to_the_caps_at_their_edges() -> None:
 @pytest.mark.parametrize(
     ("fields", "expected"),
     [
-        ({"shape": "cube"}, "Input should be 'orb'"),
+        ({"shape": "cube"}, "Input should be 'orb' or 'cubes'"),
         ({"scale": 0}, "greater than 0"),
         ({"scale": 4.5}, "less than or equal to 4"),
         ({"orientation": "sideways"}, "Input should be 'tumble' or 'forward'"),
@@ -487,3 +544,151 @@ def test_a_particle_and_a_text_group_cannot_share_a_translation_prefix(repo: Rep
     assert any("spell_look" in problem and "content/spell_looks/" in problem for problem in problems), (
         problems
     )
+
+
+# Models of cubes (RLM-640, art/spell_models.py)
+
+
+def geo(cubes: list[dict[str, object]], **bone: object) -> str:
+    return json.dumps(
+        {
+            "format_version": "1.12.0",
+            "minecraft:geometry": [
+                {
+                    "description": {"identifier": "geometry.test", "texture_width": 64, "texture_height": 64},
+                    "bones": [{"name": "body", "pivot": [0, 0, 0], **bone, "cubes": cubes}],
+                }
+            ],
+        }
+    )
+
+
+CUBE: dict[str, object] = {"origin": [-1, -1, -3], "size": [2, 2, 6], "uv": [0, 0]}
+TURNED: dict[str, object] = {
+    "origin": [1, 0, 0],
+    "size": [1.5, 1, 3],
+    "pivot": [1.5, 0.5, 1],
+    "rotation": [0, 30, 45],
+}
+
+
+def cube_model(repo: RepoPaths, source: str | None, name: str = "dart") -> None:
+    write(repo.content / "spell_models" / f"{name}.yaml", f"id: {name}\nshape: cubes\norientation: forward\n")
+    if source is not None:
+        write(repo.root / "art" / "models" / "spell" / f"{name}.geo.json", source)
+
+
+def test_the_repositorys_chunk_is_a_model_of_cubes_within_the_cap() -> None:
+    paths = RepoPaths()
+    assert spell_models.ids(paths) == ("chunk",)
+    source = spell_models.read(spell_models.source_path(paths, "chunk"))
+    assert 12 <= len(source.cubes) <= spell_models.MAX_CUBES, "dozens of small cubes, at most 64"
+
+
+def test_a_model_of_cubes_becomes_a_geckolib_model_mapped_onto_the_material(repo: RepoPaths) -> None:
+    cube_model(repo, geo([CUBE, TURNED]))
+    files = generate(repo)
+    assert json.loads(files[f"{DATA}/spell_model/dart.json"])["shape"] == "cubes"
+    model = json.loads(files[f"{ASSETS}/geckolib/models/spell/dart.geo.json"])
+    (geometry,) = model["minecraft:geometry"]
+    # One 16 x 16 material for every model: the source's own texture size and UVs are gone.
+    assert geometry["description"] == {
+        "identifier": "geometry.realmforge.spell.dart",
+        "texture_width": 16,
+        "texture_height": 16,
+    }
+    (bone,) = geometry["bones"]
+    assert "rotation" not in bone
+    first, second = bone["cubes"]
+    assert (first["origin"], first["size"]) == ([-1, -1, -3], [2, 2, 6])
+    assert "rotation" not in first
+    assert (second["pivot"], second["rotation"]) == ([1.5, 0.5, 1], [0, 30, 45]), "a cube keeps its own turn"
+    for cube in (first, second):
+        x, y, z = cube["size"]
+        sizes = {
+            "north": [x, y],
+            "south": [x, y],
+            "east": [z, y],
+            "west": [z, y],
+            "up": [x, z],
+            "down": [x, z],
+        }
+        assert set(cube["uv"]) == set(sizes)
+        for face, mapping in cube["uv"].items():
+            # Pixel for pixel, as a block's face takes a block texture, and inside the tile.
+            assert mapping["uv_size"] == sizes[face], face
+            (u, v), (width, height) = mapping["uv"], mapping["uv_size"]
+            assert u == int(u) and v == int(v), "whole-pixel corners"
+            assert u >= 0 and u + width <= 16 and v >= 0 and v + height <= 16, face
+    assert first["uv"] != second["uv"], "each cube takes another patch of the tile"
+    assert files == generate(repo), "the same on every run"
+    # The chunk the repository ships is written too.
+    assert f"{ASSETS}/geckolib/models/spell/chunk.geo.json" in files
+
+
+def test_a_face_longer_than_the_material_takes_the_whole_tile(repo: RepoPaths) -> None:
+    cube_model(repo, geo([{"origin": [0, 0, 0], "size": [20, 1, 1]}]))
+    model = json.loads(generate(repo)[f"{ASSETS}/geckolib/models/spell/dart.geo.json"])
+    north = model["minecraft:geometry"][0]["bones"][0]["cubes"][0]["uv"]["north"]
+    assert north == {"uv": [0, 0], "uv_size": [16, 1]}
+
+
+def test_a_model_of_at_most_64_cubes_is_fine_and_one_more_is_refused(repo: RepoPaths) -> None:
+    def row(count: int) -> list[dict[str, object]]:
+        return [{"origin": [n, 0, 0], "size": [1, 1, 1]} for n in range(count)]
+
+    cube_model(repo, geo(row(64)))
+    load_and_validate(repo)
+    cube_model(repo, geo(row(65)))
+    assert problems_for(repo) == [
+        "art/models/spell/dart.geo.json: the model has 65 cubes; a spell model has at most 64"
+    ]
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        (
+            None,
+            "content/spell_models/dart.yaml: shape: a cubes model has its source at "
+            "art/models/spell/dart.geo.json (art/README.md): the file is missing",
+        ),
+        ("{not json", "art/models/spell/dart.geo.json: cannot be read as JSON"),
+        ('{"bones": []}', 'a model source is Bedrock geometry with one entry in "minecraft:geometry"'),
+        (geo([]), "art/models/spell/dart.geo.json: the model has no cube"),
+        (
+            geo([CUBE], rotation=[0, 45, 0]),
+            "bone body is rotated: the game draws a spell model's cubes, not its bones",
+        ),
+        (
+            geo([{"origin": [0, 0, 0], "size": [1, 0, 1]}]),
+            "bone body, cube 0: every side of its size is above 0, not [1.0, 0.0, 1.0]",
+        ),
+        (
+            geo([{"origin": [0, 0], "size": [1, 1, 1]}]),
+            "bone body, cube 0: origin is three numbers, not [0, 0]",
+        ),
+        (geo([{**CUBE, "rotation": [0, "a", 0]}]), "bone body, cube 0: rotation is three numbers"),
+    ],
+)
+def test_a_cubes_model_needs_a_source_the_game_can_draw(
+    repo: RepoPaths, source: str | None, expected: str
+) -> None:
+    cube_model(repo, source)
+    problems = problems_for(repo)
+    assert any(expected in problem for problem in problems), problems
+
+
+def test_a_bone_turned_by_nothing_is_fine(repo: RepoPaths) -> None:
+    # Blockbench writes a zero rotation for a group that was turned and turned back.
+    cube_model(repo, geo([CUBE], rotation=[0, 0, 0]))
+    load_and_validate(repo)
+
+
+def test_a_source_that_no_cubes_model_names_is_refused(repo: RepoPaths) -> None:
+    write(repo.root / "art" / "models" / "spell" / "orb.geo.json", geo([CUBE]))
+    write(repo.root / "art" / "models" / "spell" / "notes.txt", "stray")
+    assert sorted(problems_for(repo)) == [
+        "art/models/spell/notes.txt: a spell model's source is art/models/spell/<id>.geo.json",
+        "art/models/spell/orb.geo.json: no spell model of shape cubes has the id 'orb' (content/spell_models/)",
+    ]

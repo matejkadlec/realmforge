@@ -17,5 +17,10 @@
     "particle": "realmforge:ember",
     "count": 20
   },
+  "swirl": {
+    "particle": "realmforge:fleck",
+    "per_tick": 6.0
+  },
+  "light": "emit",
   "impact_sound": "minecraft:entity.generic.extinguish_fire"
 }
