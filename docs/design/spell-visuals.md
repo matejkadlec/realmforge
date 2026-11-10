@@ -97,9 +97,27 @@ The folder names were proposals, and RLM-639 settled them with the [content READ
 proposed. In the data as built, a look's emitters hold their numbers (`trail: {particle, per_block}`,
 `burst: {particle, count}`), its impact sound is `impact_sound`, its material is always
 `textures/spell/material/<look>.png`, and a spell's `visuals.forming` is the style alone (the model that forms is the
-projectile's); swirls, auras, the forming sounds and a look's light come with the parts that draw them. Every part
+projectile's); auras and the forming sounds come with the parts that draw them. Every part
 follows rule 1 of `CLAUDE.md`: a pydantic model, an entry in `CONTENT_TYPES`, reference validation, a generator, tests
 and docs.
+
+**As built by RLM-640** ([ADR 0075](../decisions/0075-spell-models-are-drawn-cube-by-cube-and-fire-waits-for-dynamic-lights.md),
+[architecture 11.6](../architecture.md#116-client-side)), where it differs from the sections below:
+
+- **Models** are GeckoLib models whose source is `art/models/spell/<id>.geo.json`, but our own renderer draws their
+  cubes, not `GeoEntityRenderer` and `GeoObjectRenderer`: GeckoLib's render-time bone updater does not compile
+  against our render states, and a forming model needs a size per cube and a fading alpha. So `rf gen` splits no
+  bones; it checks the source (at most 64 cubes, no rotated bones) and maps every face onto the material. A model
+  has no GeckoLib animation and no locators yet: its cubes grow from the middle of its bounds outward.
+- **Forming** is `grow` as Matěj chose it, cube by cube in a swirl (`swirl: {particle, per_tick}` on the look), with
+  `storm` and `hands` beside it. A player's forming model is three quarters of its size in flight, the same in first
+  and third person; a mob's forms at full size, as its hands are its own.
+- **Leaving the hands:** the server launches a player's formed bolt, and a channel's missiles, from the caster's
+  form point, above and ahead of the head (Matěj's playtest of 2026-10-30 moved a channel's there), not from the
+  eyes as this design assumed. The first 4 ticks of the flight are drawn blended from the hands onto that path.
+- **Light:** a look's `light` is `world`, `glow` (frost) or `emit` (fire). `emit` is full brightness now; the light
+  on the blocks round a Fireball waits for LambDynamicLights in the pack (M4, RLM-326).
+- **The first cube model** is the `chunk`, a placeholder for Frostbolt and Fireball until RLM-440 and RLM-441.
 
 ### Looks
 

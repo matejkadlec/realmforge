@@ -7,6 +7,7 @@ images before they are processed into game textures. Nothing here is loaded by t
 | Path | What |
 | --- | --- |
 | `branding/` | the mods' logos at full size (1254 × 1254, transparent), not game textures: no palette, no grid. Each mod ships a 256 × 256 Lanczos copy at its resources' root, which `logoFile` names (RLM-414) |
+| `models/spell/` | the spell models of shape `cubes` (`content/spell_models/`): `<id>.geo.json`, Bedrock geometry from Blockbench or a script, which `rf gen` turns into the game's GeckoLib model (spell models, below) |
 | `palette/realmforge.gpl` | the project palette (GIMP palette; Aseprite and LibreSprite read it too). Every texture is snapped to it |
 | `robes/` | the caster robes' batch (RLM-505): the candidates of the four sets' item icons and of each set's cloth and trim tile, with their prompts and picks in `candidates/gallery.yaml`. Only the Arcane Silk icons are picks: the other three sets' icons are scripted from them (`textures/variants.yaml`), and their own candidates are kept as the alternative |
 | `rooms/` | the import rules of the third-party dungeon rooms in `content/rooms/third_party/`, one folder per source, and where each source comes from ([README](rooms/README.md)) |
@@ -65,6 +66,25 @@ the marathon runs of 2026-11-10, and a later batch only when he defers it himsel
 2 and installs them. They are provisional: `gallery.yaml`'s intro says so and names the batch's "Playtest
 (deferred)" ticket, which asks him to review the gallery. "Approved art" names the folder `art/textures/`, not his
 review. The spell icon batch's ticket is RLM-648, the robes batch's RLM-652.
+
+**Spell models** (RLM-640, [ADR 0075](../docs/decisions/0075-spell-models-are-drawn-cube-by-cube-and-fire-waits-for-dynamic-lights.md),
+`tools/realmforge_tools/art/spell_models.py`): a projectile's model of cubes is `models/spell/<id>.geo.json` for the
+entry `content/spell_models/<id>.yaml` with `shape: cubes`.
+
+- **Make it** in Blockbench (a "GeckoLib Animated Model" or a Bedrock model; export the geometry as `.geo.json`), or
+  write its cubes from a script: a jagged lump is geometry, not painting. The `chunk` was written by a script, 26
+  cubes round an axis that taper to a point.
+- **At most 64 cubes,** each side of each above 0. Rotate cubes freely; do not rotate groups (bones): the game draws
+  the cubes, not the bones, and validation refuses a rotated bone.
+- **The front is -z,** Blockbench's north: a `forward` model flies with that end first.
+- **No texture and no UVs:** `rf gen` drops the source's UVs and maps every face onto the look's 16 x 16 material
+  pixel for pixel, each cube from another corner of the tile, so one model serves every look.
+- **It forms from its heart:** while a cast forms it, its cubes appear in the order of their distance from the
+  middle of the model's bounds, so build it round its middle. Its size in the game comes from the YAML's `scale`,
+  not from its pixels.
+- `uv run rf gen` writes `assets/realmforge/geckolib/models/spell/<id>.geo.json`; `uv run rf validate` refuses a
+  `cubes` model without its source and a source no `cubes` model names. Look at it with the spell screenshots
+  ([dev setup](../docs/dev-setup.md), `REALMFORGE_QA_SPELL_SHOTS`).
 
 Our font's symbols (the mob level's skull, RLM-340) are not generator output: they are pixel rows in
 `tools/realmforge_tools/generate/fonts.py`, on the default Minecraft font's 8x8 grid in palette colours, and `rf gen`
