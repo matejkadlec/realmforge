@@ -1,6 +1,7 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
 import com.mojang.authlib.GameProfile;
+import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.generated.GeneratedItems;
 import io.github.matejkadlec.realmforge.generated.GeneratedSpells;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
@@ -132,6 +133,14 @@ public final class GearGameTests {
                 helper.assertValueEqual(equippable.slot(), ARMOR_SLOTS.get(gear.kind()), id + " slot");
                 helper.assertValueEqual(equippable.assetId().map(key -> key.identifier().toString()),
                         Optional.of(gear.look()), id + " look");
+                // What a client draws it with while it is worn: without one of these it shows the missing texture.
+                Identifier look = Identifier.parse(gear.look());
+                for (String resource : List.of("equipment/" + look.getPath() + ".json",
+                        "textures/entity/equipment/humanoid/" + look.getPath() + ".png",
+                        "textures/entity/equipment/humanoid_leggings/" + look.getPath() + ".png")) {
+                    helper.assertTrue(Realmforge.class.getResource("/assets/" + look.getNamespace() + "/" + resource)
+                            != null, id + ": its look's " + resource + " is not in the mod's resources");
+                }
                 helper.assertTrue(stack.is(ARMOR_ENCHANTABLE.get(gear.kind())), id + " takes its slot's enchantments");
                 helper.assertTrue(stack.is(ItemTags.EQUIPPABLE_ENCHANTABLE), id + " takes the Curse of Binding");
             }
