@@ -147,6 +147,9 @@ DUNGEON_TYPE_REGISTRY = f"{MOD_ID}:dungeon_type"
 CHAPTER_REGISTRY = f"{MOD_ID}:chapter"
 STRUCTURE_REGISTRY = "minecraft:structure"
 PARTICLE_TYPE_REGISTRY = "minecraft:particle_type"
+SPELL_LOOK_REGISTRY = f"{MOD_ID}:spell_look"
+SPELL_MODEL_REGISTRY = f"{MOD_ID}:spell_model"
+SPELL_TRAJECTORY_REGISTRY = f"{MOD_ID}:spell_trajectory"
 MOB_EFFECT_REGISTRY = "minecraft:mob_effect"
 SOUND_EVENT_REGISTRY = "minecraft:sound_event"
 SPELL_REGISTRY = f"{MOD_ID}:spell"
@@ -252,6 +255,9 @@ def universe_with_content(vanilla: IdUniverse, content: Content) -> IdUniverse:
     for entry in content.sounds:
         for name in entry.model.events:
             universe.add(SOUND_EVENT_REGISTRY, sound_id(entry.model, name))
+    # Each of our particles is a particle type of its id (generate/spell_visuals.py).
+    for entry in content.particles:
+        universe.add(PARTICLE_TYPE_REGISTRY, f"{MOD_ID}:{entry.model.id}")
     for entry in content.chapters:
         universe.add(ADVANCEMENT_REGISTRY, f"{MOD_ID}:{chapter_advancement(entry.model.id)}")
     for stat in CUSTOM_STATS:
@@ -283,6 +289,7 @@ def validate_content(content: Content, universe: IdUniverse) -> list[Problem]:
     problems += _check_stat_resistances(content, universe)
     problems += _check_spell_schools(content, universe)
     problems += _check_effects(content, universe)
+    problems += _check_spell_looks(content, universe)
     problems += _check_spells(content, universe)
     problems += _check_mobs(content, universe)
     problems += _check_bosses(content, universe)
@@ -731,7 +738,7 @@ def _check_pooled_room(room: RoomEntry) -> list[Problem]:
 def _check_ids(content: Content) -> list[Problem]:
     problems: list[Problem] = []
     for type_dir in CONTENT_TYPES:
-        kind = type_dir.removesuffix("es") if type_dir.endswith("sses") else type_dir.removesuffix("s")
+        kind = _singular(type_dir)
         seen: dict[str, str] = {}
         for entry in content.entries(type_dir):
             entry_id = entry.model.id
@@ -748,6 +755,15 @@ def _check_ids(content: Content) -> list[Problem]:
                 )
             seen.setdefault(entry_id, entry.source)
     return problems
+
+
+def _singular(type_dir: str) -> str:
+    """A content type's name for one entry: classes -> class, spell_trajectories -> spell_trajectory, items -> item."""
+    if type_dir.endswith("sses"):
+        return type_dir.removesuffix("es")
+    if type_dir.endswith("ies"):
+        return type_dir.removesuffix("ies") + "y"
+    return type_dir.removesuffix("s")
 
 
 def _check_references(content: Content, universe: IdUniverse) -> list[Problem]:
@@ -1067,6 +1083,7 @@ def _check_spells(content: Content, universe: IdUniverse) -> list[Problem]:
                 problems += _check_projectile(entry.source, path, effect, mob_tags, universe)
             if effect.type == CONE:
                 problems += _check_cone(entry.source, path, effect, universe)
+        problems += _check_visuals(entry.source, spell, universe)
         cast_sound = getattr(spell.cast, "sound", None)
         if cast_sound is not None and not universe.contains(SOUND_EVENT_REGISTRY, cast_sound):
             problems.append(
@@ -1467,7 +1484,7 @@ def _check_bonus_placeholder(
 def _check_projectile(
     source: str, path: str, projectile: BaseModel, mob_tags: set[str], universe: IdUniverse
 ) -> list[Problem]:
-    """A projectile spares a tag that our mobs fill, and its impact's sound and particle block exist."""
+    """A projectile spares a tag that our mobs fill, and its model and trajectory exist (RLM-639)."""
     problems: list[Problem] = []
     if projectile.spares is not None and projectile.spares not in mob_tags:
         known = ", ".join(sorted(mob_tags)) or "none"
@@ -1478,23 +1495,62 @@ def _check_projectile(
                 f"no mob in content/mobs/ is tagged {projectile.spares}; tags: {known}",
             )
         )
-    impact = projectile.impact
-    if (
-        impact is not None
-        and impact.sound is not None
-        and not universe.contains(SOUND_EVENT_REGISTRY, impact.sound)
-    ):
+    if projectile.model is not None and not universe.contains(SPELL_MODEL_REGISTRY, projectile.model):
         problems.append(
-            Problem(source, f"{path}.impact.sound", _unknown(impact.sound, SOUND_EVENT_REGISTRY, universe))
+            Problem(source, f"{path}.model", _unknown(projectile.model, SPELL_MODEL_REGISTRY, universe))
         )
-    if (
-        impact is not None
-        and impact.particles is not None
-        and not universe.contains(BLOCK_REGISTRY, impact.particles)
-    ):
+    if not universe.contains(SPELL_TRAJECTORY_REGISTRY, projectile.trajectory):
         problems.append(
-            Problem(source, f"{path}.impact.particles", _unknown(impact.particles, BLOCK_REGISTRY, universe))
+            Problem(
+                source,
+                f"{path}.trajectory",
+                _unknown(projectile.trajectory, SPELL_TRAJECTORY_REGISTRY, universe),
+            )
         )
+    return problems
+
+
+def _check_visuals(source: str, spell: BaseModel, universe: IdUniverse) -> list[Problem]:
+    """A spell's look exists, and so does an impact sound of its own (RLM-639)."""
+    visuals = spell.visuals
+    if visuals is None:
+        return []
+    problems: list[Problem] = []
+    if not universe.contains(SPELL_LOOK_REGISTRY, visuals.look):
+        problems.append(
+            Problem(source, "visuals.look", _unknown(visuals.look, SPELL_LOOK_REGISTRY, universe))
+        )
+    if visuals.impact_sound is not None and not universe.contains(SOUND_EVENT_REGISTRY, visuals.impact_sound):
+        problems.append(
+            Problem(
+                source, "visuals.impact_sound", _unknown(visuals.impact_sound, SOUND_EVENT_REGISTRY, universe)
+            )
+        )
+    return problems
+
+
+def _check_spell_looks(content: Content, universe: IdUniverse) -> list[Problem]:
+    """A look's trail and burst are particles of ours (content/particles/): only those carry a colour, which a look
+    gives each spawn. Its impact sound exists."""
+    problems: list[Problem] = []
+    ours = {f"{MOD_ID}:{entry.model.id}" for entry in content.particles}
+    for entry in content.spell_looks:
+        look = entry.model
+        for name in ("trail", "burst"):
+            emitter = getattr(look, name)
+            if emitter is None or emitter.particle in ours:
+                continue
+            message = f"{emitter.particle} is not one of our particles (content/particles/)"
+            close = difflib.get_close_matches(emitter.particle, ours, n=3)
+            if close:
+                message += f" (did you mean: {', '.join(close)}?)"
+            problems.append(Problem(entry.source, f"{name}.particle", message))
+        if look.impact_sound is not None and not universe.contains(SOUND_EVENT_REGISTRY, look.impact_sound):
+            problems.append(
+                Problem(
+                    entry.source, "impact_sound", _unknown(look.impact_sound, SOUND_EVENT_REGISTRY, universe)
+                )
+            )
     return problems
 
 

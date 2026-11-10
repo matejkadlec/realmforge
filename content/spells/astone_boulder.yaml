@@ -17,17 +17,16 @@ cast:
   keep_sight: true
   keep_range_percent: 50
   sound: realmforge:spell.astone_boulder.form
-  forms_projectile: true
 cooldown_seconds: 8
 npc_only: true
+visuals: {look: realmforge:stone, forming: grow, impact_sound: realmforge:spell.astone_boulder.impact}
 effects:
   - type: realmforge:projectile
     speed: 16
     size: 1.2
     lifetime_seconds: 2
     spares: realmforge:stone_creatures
-    impact: {sound: realmforge:spell.astone_boulder.impact, particles: realmforge:vaultstone}
-    appearance: {model: orb, color: "#8B8579"}
+    model: realmforge:orb
     effects:
       - {type: realmforge:damage, amount: 6, attack_damage_percent: 100, armor_shred_percent: 15, magic_shield_damage_percent: 15}
       - {type: realmforge:knockback, strength: 0.8}

@@ -6,6 +6,7 @@ import io.github.matejkadlec.realmforge.qa.client.castanim.QaCastAnimationClient
 import io.github.matejkadlec.realmforge.qa.client.charge.QaChargeTrace;
 import io.github.matejkadlec.realmforge.qa.client.combat.TrainingDummyRenderer;
 import io.github.matejkadlec.realmforge.qa.client.keybinds.QaKeyBindShots;
+import io.github.matejkadlec.realmforge.qa.client.spellshots.QaSpellShots;
 import io.github.matejkadlec.realmforge.qa.client.spelltree.QaSpellTreeShots;
 import io.github.matejkadlec.realmforge.qa.client.keybinds.QaKeyCategories;
 import net.neoforged.api.distmarker.Dist;
@@ -22,6 +23,7 @@ public final class RealmforgeQaClient {
         QaKeyCategories.register();
         QaKeyBindShots.registerIfRequested();
         QaSpellTreeShots.registerIfRequested();
+        QaSpellShots.registerIfRequested();
         QaChargeTrace.registerIfRequested();
         FtbLibraryGreetingFilter.register();
     }

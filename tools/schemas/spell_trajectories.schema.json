@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "How a projectile flies. A trajectory changes where a projectile is, so it is gameplay: the server moves the\nprojectile along it and its clients compute the same path.",
+  "properties": {
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "kind": {
+      "const": "straight",
+      "description": "straight: along its aim at its speed, without gravity or drag (ADR 0052). The only kind.",
+      "title": "Kind",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "kind"
+  ],
+  "title": "SpellTrajectoryDef",
+  "type": "object"
+}

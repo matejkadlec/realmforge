@@ -1,0 +1,21 @@
+{
+  "colors": [
+    "#E7C6FF",
+    "#D6A2FF",
+    "#C77DFF",
+    "#A85CF0",
+    "#8B3FD9",
+    "#6A28B8",
+    "#4E1A8F",
+    "#35106B"
+  ],
+  "trail": {
+    "particle": "realmforge:mote",
+    "per_block": 2.0
+  },
+  "burst": {
+    "particle": "realmforge:mote",
+    "count": 16
+  },
+  "impact_sound": "minecraft:block.amethyst_cluster.break"
+}

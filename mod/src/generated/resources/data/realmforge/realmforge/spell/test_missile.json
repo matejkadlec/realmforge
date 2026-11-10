@@ -39,7 +39,8 @@
           "amplifier": 0,
           "stronger_at_levels": []
         }
-      ]
+      ],
+      "trajectory": "realmforge:straight"
     }
   ]
 }

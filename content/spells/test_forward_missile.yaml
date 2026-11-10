@@ -10,9 +10,9 @@ school: realmforge:frost
 scales_with: spell_power
 targeting: {type: realmforge:direction, range: 32}
 cast: {type: instant}
+visuals: {look: realmforge:frost}
 effects:
   - type: realmforge:projectile
     speed: 20
-    impact: {sound: minecraft:block.glass.break, particles: minecraft:packed_ice}
     effects:
       - {type: realmforge:damage, amount: 3}

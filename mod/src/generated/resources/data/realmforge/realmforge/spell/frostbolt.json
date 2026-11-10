@@ -12,8 +12,7 @@
     "lock_on": false,
     "keep_sight": false,
     "type": "cast_time",
-    "duration_ticks": 30,
-    "forms_projectile": true
+    "duration_ticks": 30
   },
   "cost": {
     "amount": 10.0,
@@ -30,6 +29,10 @@
   "npc_only": false,
   "requires": [],
   "castable_while_stunned": false,
+  "visuals": {
+    "look": "realmforge:frost",
+    "forming": "grow"
+  },
   "effects": [
     {
       "type": "realmforge:projectile",
@@ -54,14 +57,8 @@
           ]
         }
       ],
-      "impact": {
-        "sound": "minecraft:block.glass.break",
-        "particles": "minecraft:packed_ice"
-      },
-      "appearance": {
-        "model": "orb",
-        "color": "#7FD4FF"
-      },
+      "model": "realmforge:orb",
+      "trajectory": "realmforge:straight",
       "splash": {
         "radius": 1.0,
         "damage": 0.5

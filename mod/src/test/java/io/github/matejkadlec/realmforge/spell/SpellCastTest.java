@@ -14,16 +14,17 @@ import org.junit.jupiter.api.Test;
 
 /**
  * The spell format's {@code cast} (C3a-2): instant, cast time or channel, in the shape {@code rf gen} writes, with the
- * kept target, the sound and the formed projectile of W3 (RLM-33, RLM-405) and a mob's cast animation (W5b, RLM-491).
+ * kept target and the sound of W3 (RLM-33, RLM-405) and a mob's cast animation (W5b, RLM-491). What forms during a cast
+ * is the spell's visuals ({@code SpellVisualsTest}, RLM-639).
  */
 class SpellCastTest {
     /** The Hewn Chanter's Stoneform as {@code rf gen} writes it: every field W3 added, set. */
     private static final SpellCast STONEFORM = new SpellCast(SpellCast.Type.CAST_TIME, 30, 0, false, false, true,
-            Optional.of(0.5), Optional.of(Identifier.parse("realmforge:spell.stoneform.form")), true,
+            Optional.of(0.5), Optional.of(Identifier.parse("realmforge:spell.stoneform.form")),
             SpellCast.Animation.RAISE, 0, SpellCast.DEFAULT_HIT_AT, SpellCast.Haste.SHORTENS);
     /** Astone's Quake as {@code rf gen} writes it: a channel that slams. */
     private static final SpellCast QUAKE = new SpellCast(SpellCast.Type.CHANNEL, 60, 15, false, false, false,
-            Optional.empty(), Optional.of(Identifier.parse("realmforge:spell.astone_quake.rumble")), false,
+            Optional.empty(), Optional.of(Identifier.parse("realmforge:spell.astone_quake.rumble")),
             SpellCast.Animation.SLAM, 0, SpellCast.DEFAULT_HIT_AT, SpellCast.Haste.SHORTENS);
 
     private static DataResult<SpellCast> parse(String json) {
@@ -40,7 +41,7 @@ class SpellCastTest {
                 + "\"type\": \"channel\", \"duration_ticks\": 60, \"interval_ticks\": 20}").getOrThrow());
         assertEquals(STONEFORM, parse("{\"castable_while_moving\": false, \"lock_on\": false, \"keep_sight\": true, "
                 + "\"keep_range\": 0.5, \"sound\": \"realmforge:spell.stoneform.form\", \"type\": \"cast_time\", "
-                + "\"duration_ticks\": 30, \"forms_projectile\": true}").getOrThrow());
+                + "\"duration_ticks\": 30}").getOrThrow());
         assertEquals(QUAKE, parse("{\"castable_while_moving\": false, \"lock_on\": false, \"keep_sight\": false, "
                 + "\"sound\": \"realmforge:spell.astone_quake.rumble\", \"animation\": \"slam\", "
                 + "\"type\": \"channel\", \"duration_ticks\": 60, \"interval_ticks\": 15}").getOrThrow());
@@ -75,8 +76,6 @@ class SpellCastTest {
                 .isError(), "a locked-on cast that keeps range");
         assertTrue(parse("{\"type\": \"cast_time\", \"duration_ticks\": 20, \"keep_range\": 0}").isError(),
                 "a kept range of no share of the cast");
-        assertTrue(parse("{\"type\": \"channel\", \"duration_ticks\": 60, \"interval_ticks\": 20, "
-                + "\"forms_projectile\": true}").isError(), "a channel that forms a projectile");
         assertTrue(parse("{\"type\": \"instant\", \"sound\": \"realmforge:spell.stoneform.form\"}").isError(),
                 "an instant cast with a sound");
         assertTrue(parse("{\"type\": \"instant\", \"animation\": \"slam\"}").isError(),

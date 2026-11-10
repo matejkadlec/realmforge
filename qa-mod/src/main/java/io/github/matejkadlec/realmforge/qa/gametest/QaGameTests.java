@@ -123,6 +123,7 @@ public final class QaGameTests {
             SpellIconGameTests.class,
             SpellTreeGameTests.class,
             SpellTextGameTests.class,
+            SpellVisualsGameTests.class,
             StaminaGameTests.class,
             StatPointsGameTests.class,
             StatsGameTests.class,

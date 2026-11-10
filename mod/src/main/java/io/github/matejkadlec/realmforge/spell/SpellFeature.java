@@ -2,6 +2,7 @@ package io.github.matejkadlec.realmforge.spell;
 
 import io.github.matejkadlec.realmforge.combat.CombatEvent;
 import io.github.matejkadlec.realmforge.combat.WeaponBlocks;
+import io.github.matejkadlec.realmforge.generated.GeneratedParticles;
 import io.github.matejkadlec.realmforge.stats.CharacterStats;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.IEventBus;
@@ -29,6 +30,8 @@ public final class SpellFeature {
         SpellEffectTypes.register(modBus);
         TargetingTypes.register(modBus);
         SpellEntities.register(modBus);
+        // Particle types generated from content/particles/ (mod/src/generated, never edit by hand).
+        GeneratedParticles.register(modBus);
         SpellAttachments.register(modBus);
         CharacterStats.addSource(Passives.SOURCE);
         WeaponBlocks.cooldownReductionBy(Passives::blockCooldownReductionTicks);

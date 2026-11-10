@@ -1,0 +1,123 @@
+{
+  "$defs": {
+    "BurstDef": {
+      "additionalProperties": false,
+      "description": "The particles a projectile of the look bursts into where it hits, spread over its splash.",
+      "properties": {
+        "count": {
+          "description": "How many at once, at most 24.",
+          "maximum": 24,
+          "minimum": 1,
+          "title": "Count",
+          "type": "integer"
+        },
+        "particle": {
+          "description": "One of our particles, e.g. realmforge:shard (content/particles/).",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Particle",
+          "type": "string"
+        }
+      },
+      "required": [
+        "particle",
+        "count"
+      ],
+      "title": "BurstDef",
+      "type": "object"
+    },
+    "TrailDef": {
+      "additionalProperties": false,
+      "description": "The particles a projectile of the look leaves behind as it flies, spawned by its clients.",
+      "properties": {
+        "particle": {
+          "description": "One of our particles, e.g. realmforge:mote (content/particles/).",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Particle",
+          "type": "string"
+        },
+        "per_block": {
+          "description": "How many a block flown, at most 3.",
+          "exclusiveMinimum": 0,
+          "maximum": 3,
+          "title": "Per Block",
+          "type": "number"
+        }
+      },
+      "required": [
+        "particle",
+        "per_block"
+      ],
+      "title": "TrailDef",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "An element's look, shared by every spell of it: frost reads as frost on Frostbolt and on Ice Lance.",
+  "properties": {
+    "burst": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/BurstDef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "What its projectiles burst into where they hit."
+    },
+    "colors": {
+      "description": "Its colours, lightest first, \"#RRGGBB\": each particle takes one at random, and its placeholder material is noise in them. At most 16.",
+      "items": {
+        "description": "An RGB colour, \"#RRGGBB\".",
+        "pattern": "^#[0-9A-Fa-f]{6}$",
+        "type": "string"
+      },
+      "maxItems": 16,
+      "minItems": 1,
+      "title": "Colors",
+      "type": "array"
+    },
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "impact_sound": {
+      "anyOf": [
+        {
+          "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "The sound event of its projectiles' hit on a block or a creature, e.g. minecraft:block.glass.break. A spell may name its own (visuals.impact_sound).",
+      "title": "Impact Sound"
+    },
+    "trail": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/TrailDef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "What its projectiles leave behind in flight."
+    }
+  },
+  "required": [
+    "id",
+    "colors"
+  ],
+  "title": "SpellLookDef",
+  "type": "object"
+}

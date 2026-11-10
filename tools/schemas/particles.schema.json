@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One of our particle shapes: ``realmforge:<id>``, a particle type whose spawns carry their colour.",
+  "properties": {
+    "frames": {
+      "description": "Its frames, first to last over its life, each 8 rows of 8 pixels: '.' is transparent, 1 to f a grey from dark to white that the spawn's colour tints. At most 8 frames.",
+      "items": {
+        "items": {
+          "pattern": "^[.1-9a-f]{8}$",
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "maxItems": 8,
+      "minItems": 1,
+      "title": "Frames",
+      "type": "array"
+    },
+    "friction": {
+      "default": 0.98,
+      "description": "The share of its speed it keeps every tick: 1 never slows, vanilla's default is 0.98.",
+      "exclusiveMinimum": 0,
+      "maximum": 1,
+      "title": "Friction",
+      "type": "number"
+    },
+    "glows": {
+      "default": true,
+      "description": "Whether it is drawn at full brightness, as a spark is, instead of in the light where it is.",
+      "title": "Glows",
+      "type": "boolean"
+    },
+    "gravity": {
+      "default": 0.0,
+      "description": "How hard it falls: 1 falls like a block, 0 floats, less than 0 rises.",
+      "maximum": 2,
+      "minimum": -2,
+      "title": "Gravity",
+      "type": "number"
+    },
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "lifetime_ticks": {
+      "description": "How long it lives, in ticks: the shortest and the longest, each spawn in between. At most 40.",
+      "items": {
+        "type": "integer"
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "title": "Lifetime Ticks",
+      "type": "array"
+    },
+    "size": {
+      "description": "Half its width in blocks (vanilla's quad size), at most 0.5; vanilla's are about 0.1.",
+      "exclusiveMinimum": 0,
+      "maximum": 0.5,
+      "title": "Size",
+      "type": "number"
+    }
+  },
+  "required": [
+    "id",
+    "frames",
+    "lifetime_ticks",
+    "size"
+  ],
+  "title": "ParticleDef",
+  "type": "object"
+}

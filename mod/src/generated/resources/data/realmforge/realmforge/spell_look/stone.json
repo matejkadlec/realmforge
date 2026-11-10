@@ -1,0 +1,15 @@
+{
+  "colors": [
+    "#B4B0A8",
+    "#A09C94",
+    "#8D9094",
+    "#8B8579",
+    "#74706A",
+    "#5E5B57"
+  ],
+  "burst": {
+    "particle": "realmforge:shard",
+    "count": 14
+  },
+  "impact_sound": "realmforge:spell.stoneform.impact"
+}

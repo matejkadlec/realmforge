@@ -138,7 +138,12 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   melee during a cast, and synced to clients as cast payloads; at an entity, a ground point or a direction, with damage,
   heals, projectiles, areas, status effects, teleports, dashes and knockback; rage that hits fill and that drops 5 a
   second once out of combat (RLM-594), procs that never trigger procs, and mobs choosing their target (their current
-  target, a random or the farthest player). Players cast from the spell bar (C3b): eight slots on R, T, F, G, C, Y, Ů
+  target, a random or the farthest player). A spell's look comes from the spell visuals kit (RLM-439, part 1:
+  RLM-639, ADR 0073): looks (frost, fire, arcane, stone), models, trajectories and particles are content of their own
+  (`content/spell_looks/`, `spell_models/`, `spell_trajectories/`, `particles/`), which a spell names in its `visuals`
+  and on its projectile; a projectile is the orb with its look's material until the GeckoLib models (RLM-640), flies
+  its trajectory (only straight), trails its look's particles and bursts into them where it hits, from one entity
+  event. Players cast from the spell bar (C3b): eight slots on R, T, F, G, C, Y, Ů
   and §, the racial slot on X, the
   class resource's bar (mana, rage) under it (RLM-400), the two in one place on the screen, a WoW-style cast bar, a
   cooldown sweep, a spellbook (P) whose tooltips fill a spell's numbers from data, a 0.5 s global cooldown that every

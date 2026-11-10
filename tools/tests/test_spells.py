@@ -163,6 +163,9 @@ def test_repository_spells_are_the_class_kits_engine_tests_stoneform_and_astones
         # Two auras of one group (RLM-595).
         "test_stance_a",
         "test_stance_b",
+        # The spell visuals kit's twins (RLM-639): one model, one trajectory, two looks.
+        "test_twin_frost",
+        "test_twin_fire",
     }
     assert universe.contains("realmforge:spell", "realmforge:test_bolt")
 
@@ -430,7 +433,6 @@ def test_timed_casts_are_in_ticks(repo: RepoPaths) -> None:
         "keep_sight": False,
         "type": "cast_time",
         "duration_ticks": 40,
-        "forms_projectile": False,
     }
     assert json.loads(files[f"{SPELL_DATA}/test_drain.json"])["cast"] == {
         "castable_while_moving": False,
@@ -446,7 +448,6 @@ def test_timed_casts_are_in_ticks(repo: RepoPaths) -> None:
         "keep_sight": False,
         "type": "cast_time",
         "duration_ticks": 20,
-        "forms_projectile": False,
     }
 
 
@@ -480,7 +481,8 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
         "TEST_LACERATE, TEST_MEND, TEST_MENDING_RING, "
         "TEST_MISSILE, TEST_NPC_BOLT, TEST_NPC_FAR_BOLT, TEST_NPC_RANDOM_BOLT, TEST_NPC_TARGET_BOLT, TEST_OVERPOWER, "
         "TEST_PROC_SPARK, TEST_REGROW, TEST_REND, TEST_SAP, TEST_SCORCH, TEST_SHOVE, TEST_SLOW_BOLT, TEST_SLOW_MISSILE, "
-        "TEST_STANCE_A, TEST_STANCE_B, TEST_STRIKE, TEST_SURE_CRIT, TEST_TARGETED_MISSILE, TEST_TITAN_HARDEN, TEST_VICTORY_RUSH, "
+        "TEST_STANCE_A, TEST_STANCE_B, TEST_STRIKE, TEST_SURE_CRIT, TEST_TARGETED_MISSILE, TEST_TITAN_HARDEN, TEST_TWIN_FIRE, "
+        "TEST_TWIN_FROST, TEST_VICTORY_RUSH, "
         "TWO_HANDED_WEAPON_SPECIALIZATION, VICTORY_RUSH, WILL_TO_SURVIVE);"
     ) in keys
     expectations = files[EXPECTATIONS].decode()
@@ -501,7 +503,9 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
         "                    false,\n"
         "                    Optional.empty(),\n"
         "                    Optional.empty(),\n"
-        "                    false,\n"
+        "                    Optional.empty(),\n"
+        "                    Optional.empty(),\n"
+        "                    Optional.empty(),\n"
         '                    "raise",\n'
         '                    "shortens",\n'
         '                    Optional.of("realmforge:mana"),\n'
@@ -868,6 +872,7 @@ def test_spell_entities_are_in_game_units(repo: RepoPaths) -> None:
                     "stronger_at_levels": [],
                 },
             ],
+            "trajectory": "realmforge:straight",
         }
     ]
     scorch = json.loads(files[f"{SPELL_DATA}/test_scorch.json"])
@@ -901,7 +906,7 @@ def test_expectations_of_spell_entities_hold_their_effects(repo: RepoPaths) -> N
     expectations = generate(repo)[EXPECTATIONS].decode()
     assert (
         'new EffectExpectation("realmforge:projectile", Map.of("lifetime_ticks", 40.0, "size", 0.5, "speed", 20.0), '
-        "Map.of(), List.of(\n"
+        'Map.of("trajectory", "realmforge:straight"), List.of(\n'
     ) in expectations
     assert (
         'new EffectExpectation("realmforge:apply_effect", Map.of("amplifier", 0.0, "duration_ticks", 60.0), '
@@ -1157,13 +1162,13 @@ STONE_CAST = (
     "targeting: {type: realmforge:current_target, range: 8}\n"
     "npc_only: true\n"
 )
+STONE_VISUALS = "visuals: {look: realmforge:stone, forming: grow}\n"
 STONE_PROJECTILE = (
     "effects:\n"
     "  - type: realmforge:projectile\n"
     "    speed: 16\n"
     "    spares: realmforge:stone_creatures\n"
-    "    impact: {sound: realmforge:spell.stoneform.impact, particles: realmforge:vaultstone}\n"
-    "    appearance: {model: orb, color: '#808080'}\n"
+    "    model: realmforge:orb\n"
     "    effects:\n"
     "      - {type: realmforge:damage, amount: 4}\n"
 )
@@ -1175,7 +1180,8 @@ def test_a_cast_keeps_its_target_in_sight_and_in_range(repo: RepoPaths) -> None:
         "test_stone",
         STONE_CAST
         + "cast: {type: cast_time, duration_seconds: 1.5, keep_sight: true, keep_range_percent: 50, "
-        + "sound: realmforge:spell.stoneform.form, forms_projectile: true}\n"
+        + "sound: realmforge:spell.stoneform.form}\n"
+        + STONE_VISUALS
         + STONE_PROJECTILE,
     )
     files = generate(repo)
@@ -1188,17 +1194,12 @@ def test_a_cast_keeps_its_target_in_sight_and_in_range(repo: RepoPaths) -> None:
         "sound": "realmforge:spell.stoneform.form",
         "type": "cast_time",
         "duration_ticks": 30,
-        "forms_projectile": True,
     }
+    assert data["visuals"] == {"look": "realmforge:stone", "forming": "grow"}
     projectile = data["effects"][0]
     assert projectile["spares"] == "realmforge:stone_creatures"
-    assert projectile["impact"] == {
-        "sound": "realmforge:spell.stoneform.impact",
-        "particles": "realmforge:vaultstone",
-    }
-    # The orb's placeholder texture, where spell/SpellVisuals looks for it.
-    texture = files["mod/src/generated/resources/assets/realmforge/textures/entity/spell/test_stone.png"]
-    assert texture.startswith(b"\x89PNG")
+    assert projectile["model"] == "realmforge:orb"
+    assert projectile["trajectory"] == "realmforge:straight"
 
 
 @pytest.mark.parametrize(
@@ -1209,26 +1210,11 @@ def test_a_cast_keeps_its_target_in_sight_and_in_range(repo: RepoPaths) -> None:
             "a spell that locks on checks neither sight nor range",
         ),
         ("{type: cast_time, duration_seconds: 1, keep_range_percent: 0}", "greater than 0"),
-        (
-            "{type: channel, duration_seconds: 2, interval_seconds: 1, forms_projectile: true}",
-            "forms_projectile",
-        ),
     ],
 )
 def test_invalid_kept_casts_are_rejected(repo: RepoPaths, cast: str, expected: str) -> None:
-    spell(repo, "test_stone", STONE_CAST + f"cast: {cast}\n" + STONE_PROJECTILE)
+    spell(repo, "test_stone", STONE_CAST + f"cast: {cast}\n" + STONE_VISUALS + STONE_PROJECTILE)
     assert_problem(repo, expected)
-
-
-def test_a_formed_projectile_is_the_first_effect_with_an_appearance(repo: RepoPaths) -> None:
-    spell(
-        repo,
-        "test_stone",
-        STONE_CAST
-        + "cast: {type: cast_time, duration_seconds: 1, forms_projectile: true}\n"
-        + STONE_PROJECTILE.replace("    appearance: {model: orb, color: '#808080'}\n", ""),
-    )
-    assert_problem(repo, "forms_projectile: the spell's first effect is a projectile with an appearance")
 
 
 def test_a_projectile_spares_a_tag_our_mobs_fill(repo: RepoPaths) -> None:
@@ -1237,19 +1223,10 @@ def test_a_projectile_spares_a_tag_our_mobs_fill(repo: RepoPaths) -> None:
         "test_stone",
         STONE_CAST
         + "cast: {type: instant}\n"
-        + STONE_PROJECTILE.replace("realmforge:stone_creatures", "realmforge:glass_creatures")
-        .replace("realmforge:spell.stoneform.impact", "realmforge:spell.stoneform.crash")
-        .replace("particles: realmforge:vaultstone", "particles: realmforge:vaultstones"),
+        + "visuals: {look: realmforge:stone}\n"
+        + STONE_PROJECTILE.replace("realmforge:stone_creatures", "realmforge:glass_creatures"),
     )
-    problems = problems_for(repo)
-    assert any(
-        "effects.0.spares: no mob in content/mobs/ is tagged realmforge:glass_creatures" in p
-        for p in problems
-    )
-    assert any("effects.0.impact.sound: unknown id 'realmforge:spell.stoneform.crash'" in p for p in problems)
-    assert any("effects.0.impact.particles: unknown id 'realmforge:vaultstones'" in p for p in problems), (
-        problems
-    )
+    assert_problem(repo, "effects.0.spares: no mob in content/mobs/ is tagged realmforge:glass_creatures")
 
 
 def test_a_cast_sound_must_exist(repo: RepoPaths) -> None:
@@ -1258,6 +1235,7 @@ def test_a_cast_sound_must_exist(repo: RepoPaths) -> None:
         "test_stone",
         STONE_CAST
         + "cast: {type: cast_time, duration_seconds: 1, sound: realmforge:spell.nothing}\n"
+        + STONE_VISUALS
         + STONE_PROJECTILE,
     )
     assert_problem(repo, "cast.sound: unknown id 'realmforge:spell.nothing'")

@@ -1,16 +1,14 @@
 package io.github.matejkadlec.realmforge.spell;
 
 import java.util.Optional;
-import net.minecraft.resources.Identifier;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Where and how a spell shows, for the server and its clients alike (architecture 11.3, 11.6), until C6 (RLM-29) gives
- * spells their full visuals: the point in front of a caster where a spell that {@code forms_projectile} forms its
- * projectile (in a custom mob's raised hands, {@link Hands}), and the texture of a projectile's appearance.
+ * Where a spell shows, for the server and its clients alike (architecture 11.3, 11.6): the point in front of a caster
+ * where a spell whose {@link Visuals.Forming} forms its projectile shows it (in a custom mob's raised hands,
+ * {@link Hands}) and launches it from, and which projectile that is.
  */
 public final class SpellVisuals {
     /**
@@ -76,20 +74,15 @@ public final class SpellVisuals {
         return new Vec3(-Mth.sin(radians) * ahead, up, Mth.cos(radians) * ahead);
     }
 
-    /** The texture of the projectile appearance of {@code spell}: {@code <ns>:textures/entity/spell/<path>.png}. */
-    public static Identifier projectileTexture(ResourceKey<Spell> spell) {
-        Identifier id = spell.identifier();
-        return id.withPath("textures/entity/spell/" + id.getPath() + ".png");
-    }
-
     /**
-     * The projectile {@code spell} forms during its cast: its first effect, when the cast forms it and it has an
-     * appearance.
+     * The projectile {@code spell} forms during its cast: its first effect, when its visuals form a model
+     * ({@link Visuals.Forming#formsModel}), its cast is a cast time and that projectile has a model.
      */
     public static Optional<ProjectileEffect> formedProjectile(Spell spell) {
-        if (!spell.cast().formsProjectile() || spell.effects().isEmpty()
+        if (spell.visuals().flatMap(Visuals::forming).filter(Visuals.Forming::formsModel).isEmpty()
+                || spell.cast().type() != SpellCast.Type.CAST_TIME || spell.effects().isEmpty()
                 || !(spell.effects().getFirst() instanceof ProjectileEffect projectile)
-                || projectile.appearance().isEmpty()) {
+                || projectile.model().isEmpty()) {
             return Optional.empty();
         }
         return Optional.of(projectile);

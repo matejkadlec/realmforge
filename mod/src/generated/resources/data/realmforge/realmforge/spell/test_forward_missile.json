@@ -20,6 +20,9 @@
   "npc_only": false,
   "requires": [],
   "castable_while_stunned": false,
+  "visuals": {
+    "look": "realmforge:frost"
+  },
   "effects": [
     {
       "type": "realmforge:projectile",
@@ -32,10 +35,7 @@
           "type": "realmforge:damage"
         }
       ],
-      "impact": {
-        "sound": "minecraft:block.glass.break",
-        "particles": "minecraft:packed_ice"
-      }
+      "trajectory": "realmforge:straight"
     }
   ]
 }

@@ -12,8 +12,7 @@
     "lock_on": false,
     "keep_sight": false,
     "type": "cast_time",
-    "duration_ticks": 40,
-    "forms_projectile": false
+    "duration_ticks": 40
   },
   "cost": {
     "amount": 20.0,

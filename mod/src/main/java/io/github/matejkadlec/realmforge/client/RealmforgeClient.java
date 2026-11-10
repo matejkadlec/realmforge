@@ -20,6 +20,7 @@ import io.github.matejkadlec.realmforge.client.input.CharacterSheetKey;
 import io.github.matejkadlec.realmforge.client.input.NightVisionKey;
 import io.github.matejkadlec.realmforge.client.input.SpellKeys;
 import io.github.matejkadlec.realmforge.client.network.ClientPayloadHandlers;
+import io.github.matejkadlec.realmforge.client.particle.TintedParticle;
 import io.github.matejkadlec.realmforge.client.render.CustomMobRenderers;
 import io.github.matejkadlec.realmforge.client.render.FrozenLook;
 import io.github.matejkadlec.realmforge.client.render.SwingShapes;
@@ -79,6 +80,7 @@ public final class RealmforgeClient {
         WandCasting.register();
         TargetCircle.register();
         SpellEntityRenderers.register(modBus);
+        TintedParticle.register(modBus);
         CustomMobRenderers.register(modBus);
         FrozenLook.register(modBus);
         SwingShapes.register(modBus);

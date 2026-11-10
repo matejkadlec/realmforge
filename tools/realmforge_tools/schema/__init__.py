@@ -37,6 +37,12 @@ from realmforge_tools.schema.room_spec import RoomSpecDef, RoomThemeDef
 from realmforge_tools.schema.sound import SoundGroupDef
 from realmforge_tools.schema.spell import SpellDef
 from realmforge_tools.schema.spell_school import SpellSchoolDef
+from realmforge_tools.schema.spell_visuals import (
+    ParticleDef,
+    SpellLookDef,
+    SpellModelDef,
+    SpellTrajectoryDef,
+)
 from realmforge_tools.schema.stat import StatDef
 from realmforge_tools.schema.stat_rule import StatRuleDef
 from realmforge_tools.schema.text import TextGroupDef
@@ -60,6 +66,10 @@ CONTENT_TYPES: dict[str, type] = {
     "effects": EffectDef,
     "enchantments": EnchantmentDef,
     "spells": SpellDef,
+    "spell_looks": SpellLookDef,
+    "spell_models": SpellModelDef,
+    "spell_trajectories": SpellTrajectoryDef,
+    "particles": ParticleDef,
     "mobs": MobDef,
     "bosses": BossDef,
     "sounds": SoundGroupDef,
@@ -104,6 +114,9 @@ DATAPACK_TYPES: tuple[DatapackType, ...] = (
     DatapackType("chapters", "chapter"),
     DatapackType("kill_xp_multipliers", "kill_xp_multiplier"),
     DatapackType("spells", "spell"),
+    DatapackType("spell_looks", "spell_look"),
+    DatapackType("spell_models", "spell_model"),
+    DatapackType("spell_trajectories", "spell_trajectory"),
     DatapackType("realms", "realm"),
     DatapackType("bosses", "boss"),
     DatapackType("netherite_upgrades", "netherite_upgrade"),
@@ -134,6 +147,7 @@ __all__ = [
     "MerchantDef",
     "MobDef",
     "NetheriteUpgradeDef",
+    "ParticleDef",
     "QuestDef",
     "RaceDef",
     "RealmDef",
@@ -143,7 +157,10 @@ __all__ = [
     "RoomThemeDef",
     "SoundGroupDef",
     "SpellDef",
+    "SpellLookDef",
+    "SpellModelDef",
     "SpellSchoolDef",
+    "SpellTrajectoryDef",
     "StatDef",
     "StatRuleDef",
     "TextGroupDef",

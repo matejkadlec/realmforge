@@ -5,8 +5,9 @@
 > Written on 2026-10-27 from Matěj's decisions of 2026-10-25 (RLM-434, RLM-440 to RLM-445), his C3b playtest notes
 > (RLM-29, 2026-10-21) and the first spells' records (RLM-391, RLM-392, RLM-399). **Approved by Matěj on 2026-10-29
 > with changes (RLM-463),** which are written in below; [his answers](#matějs-answers-rlm-463) list them. The engine
-> (RLM-439) and the per-spell tickets build it. The engine choices are drafted as an ADR at the end; RLM-439 files
-> it.
+> (RLM-439, in three parts: RLM-639, RLM-640, RLM-641) and the per-spell tickets build it. The engine choices are
+> [ADR 0073](../decisions/0073-spell-visuals-are-reusable-parts-in-data.md), filed with part 1 from the draft at the
+> end; what part 1 built is in [architecture 11.3](../architecture.md#113-spell-entities).
 
 ## Goals
 
@@ -64,6 +65,7 @@ Rules this design keeps from elsewhere:
 
 The kit replaces `appearance`, `impact` and `forms_projectile` with references to its parts. Stoneform, the Hewn
 Chanter's spell, moves to the kit with the engine (RLM-439), so mobs and players form their projectiles the same way.
+Part 1 of the engine (RLM-639) did that: the table above describes the game before it.
 
 ## The kit
 
@@ -90,8 +92,14 @@ Lance is a frost look on a lance; Fire Storm is Blizzard's area style with the f
 | Area style | a ground zone's look: a border ring, a faint fill and a storm of particles inside (RLM-443, M3) | `content/spell_areas/<id>.yaml` | the area entity's renderer |
 | Sound | a sound event | `content/sounds/` (exists) | `sounds.json` |
 
-The folder names are proposals; RLM-439 settles them with the content README. Every part follows rule 1 of
-`CLAUDE.md`: a pydantic model, an entry in `CONTENT_TYPES`, reference validation, a generator, tests and docs.
+The folder names were proposals, and RLM-639 settled them with the [content README](../../content/README.md):
+`content/spell_looks/`, `content/spell_models/`, `content/spell_trajectories/` and `content/particles/` exist as
+proposed. In the data as built, a look's emitters hold their numbers (`trail: {particle, per_block}`,
+`burst: {particle, count}`), its impact sound is `impact_sound`, its material is always
+`textures/spell/material/<look>.png`, and a spell's `visuals.forming` is the style alone (the model that forms is the
+projectile's); swirls, auras, the forming sounds and a look's light come with the parts that draw them. Every part
+follows rule 1 of `CLAUDE.md`: a pydantic model, an entry in `CONTENT_TYPES`, reference validation, a generator, tests
+and docs.
 
 ### Looks
 
@@ -438,7 +446,9 @@ local-only where they make textures or sounds, as their descriptions already say
 
 ## ADR draft
 
-RLM-439 files this as the next free ADR, adjusted here to Matěj's answers of 2026-10-29.
+Filed as [ADR 0073](../decisions/0073-spell-visuals-are-reusable-parts-in-data.md) with part 1 of the engine
+(RLM-639), which adds how the impact's event finds its point on a client; the draft, adjusted to Matěj's answers of
+2026-10-29, stays here for the record.
 
 > **NNNN. Spell visuals are reusable parts in data, drawn with GeckoLib, our own particles and the cast layer**
 >

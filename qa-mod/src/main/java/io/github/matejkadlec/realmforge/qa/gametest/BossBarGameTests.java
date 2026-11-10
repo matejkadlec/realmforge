@@ -7,7 +7,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.network.PlayerChunkSender;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.Tags;
 
@@ -16,7 +15,7 @@ import net.neoforged.neoforge.common.Tags;
  * follows the boss's health and title, and it goes away when the boss dies or a player stops tracking it.
  *
  * <p>A player starts tracking an entity once its client has the entity's chunk and reports where it stands. A fake
- * player's client does neither, so the tests play that part every tick ({@link #playClient}).
+ * player's client does neither, so the tests play that part every tick ({@link QaPlayers#playClient}).
  */
 public final class BossBarGameTests {
     private static final String NAME = "Test Boss";
@@ -92,14 +91,8 @@ public final class BossBarGameTests {
         return boss;
     }
 
-    /**
-     * Plays a fake player's client for a tick: it acknowledges the chunks the server sent, so the server sends the next
-     * ones (it stops after one batch it has no answer for), and reports where it stands, which is when the server
-     * checks which entities the player tracks ({@code ServerChunkCache#move}).
-     */
     private static void playClient(GameTestHelper helper, ServerPlayer player) {
-        player.connection.chunkSender.onChunkBatchReceivedByClient(PlayerChunkSender.MAX_CHUNKS_PER_TICK);
-        helper.getLevel().getChunkSource().move(player);
+        QaPlayers.playClient(helper, player);
     }
 
     private static void assertProgress(GameTestHelper helper, BossBar bar, float expected, String what) {

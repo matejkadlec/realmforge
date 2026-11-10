@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=../../tools/schemas/particles.schema.json
+# An ember (RLM-639): a spark that drifts up and dims. Fire's trail and burst.
+id: ember
+frames:
+  - - "........"
+    - "........"
+    - "...bb..."
+    - "..bffb.."
+    - "..bffb.."
+    - "...bb..."
+    - "........"
+    - "........"
+  - - "........"
+    - "........"
+    - "........"
+    - "...ff..."
+    - "...bb..."
+    - "........"
+    - "........"
+    - "........"
+  - - "........"
+    - "........"
+    - "........"
+    - "...b...."
+    - "........"
+    - "........"
+    - "........"
+    - "........"
+lifetime_ticks: [8, 16]
+size: 0.09
+gravity: -0.1
+friction: 0.92

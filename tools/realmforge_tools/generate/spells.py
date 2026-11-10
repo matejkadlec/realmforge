@@ -16,7 +16,6 @@ from realmforge_tools.art import approved
 from realmforge_tools.content import Content
 from realmforge_tools.generate.datapack import game_field, seconds_to_ticks, translation_key
 from realmforge_tools.generate.javagen import constant_name, header, java_file_path, string_literal
-from realmforge_tools.generate.textures import placeholder_orb_texture
 from realmforge_tools.project import JAVA_PACKAGE, MOD_ID, QA_JAVA_PACKAGE, RepoPaths
 from realmforge_tools.schema.spell import DAMAGE, DAMAGE_OVER_TIME, HEAL, SpellDef
 
@@ -39,15 +38,6 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
     sprites = paths.mod_generated / "resources" / "assets" / MOD_ID / "textures" / "gui" / "sprites" / "spell"
     for spell_id, icon in icons.items():
         files[sprites / f"{spell_id}.png"] = icon
-    textures = paths.mod_generated / "resources" / "assets" / MOD_ID / "textures" / "entity" / "spell"
-    for entry in content.spells:
-        for _, effect in entry.model.all_effects():
-            appearance = getattr(effect, "appearance", None)
-            if appearance is not None:
-                # spell/SpellVisuals#projectileTexture: textures/entity/spell/<spell>.png.
-                files[textures / f"{entry.model.id}.png"] = placeholder_orb_texture(
-                    f"{MOD_ID}:{entry.model.id}", int(appearance.color.removeprefix("#"), 16)
-                )
     return files
 
 
@@ -193,6 +183,7 @@ def _expectation(spell: SpellDef) -> str:
     crit = spell.crit
     multiplier = crit.multiplier_percent / 100 if crit.multiplier_percent is not None else None
     cast = spell.cast
+    visuals = spell.visuals
     duration = seconds_to_ticks(getattr(cast, "duration_seconds", 0))
     interval = seconds_to_ticks(getattr(cast, "interval_seconds", 0))
     return (
@@ -212,7 +203,9 @@ def _expectation(spell: SpellDef) -> str:
         f"                    {_bool(getattr(cast, 'keep_sight', False))},\n"
         f"                    {_optional_double(_fraction(getattr(cast, 'keep_range_percent', None)))},\n"
         f"                    {_optional_string(getattr(cast, 'sound', None))},\n"
-        f"                    {_bool(getattr(cast, 'forms_projectile', False))},\n"
+        f"                    {_optional_string(visuals.look if visuals is not None else None)},\n"
+        f"                    {_optional_string(visuals.forming if visuals is not None else None)},\n"
+        f"                    {_optional_string(visuals.impact_sound if visuals is not None else None)},\n"
         f"                    {string_literal(getattr(cast, 'animation', None) or 'raise')},\n"
         f"                    {string_literal(getattr(cast, 'cast_time_reduction', None) or 'shortens')},\n"
         f"                    {_optional_string(cost.resource if cost is not None else None)},\n"
@@ -265,6 +258,9 @@ def _expectations(content: Content) -> bytes:
         "     * spell on the caster itself and for a melee spell's enemy (in the caster's melee swing, RLM-399), the\n"
         "     * cost's amounts are 0 for a free spell, and the cast's duration and interval are 0 where its type has none;\n"
         "     * {@code keepRange} is the share of the cast that keeps the target in range;\n"
+        "     * {@code look}, {@code forming} and {@code impactSound} are its visuals (RLM-639): its look, what shows in\n"
+        "     * the caster's hands during the cast ({@code grow}, {@code storm}, {@code hands}) and an impact sound of\n"
+        "     * its own, each empty when the data names none;\n"
         "     * {@code castAnimation} is how a mob moves while it casts, {@code raise} unless the data says otherwise;\n"
         "     * {@code castTimeReduction} is what Cast Time Reduction does to a channel ({@code shortens} or\n"
         "     * {@code adds_ticks}, RLM-572), {@code shortens} for every other cast; the up-front cost is a channel's\n"
@@ -277,7 +273,8 @@ def _expectations(content: Content) -> bytes:
         "            String scalesWith,\n"
         "            String targeting, double range,\n"
         "            String cast, int castDurationTicks, int castIntervalTicks, boolean castableWhileMoving, boolean lockOn,\n"
-        "            boolean keepSight, Optional<Double> keepRange, Optional<String> castSound, boolean formsProjectile,\n"
+        "            boolean keepSight, Optional<Double> keepRange, Optional<String> castSound, Optional<String> look,\n"
+        "            Optional<String> forming, Optional<String> impactSound,\n"
         "            String castAnimation, String castTimeReduction, Optional<String> costResource, double costAmount,\n"
         "            double costPerLevel, double costUpFront, double costUpFrontPerLevel, int cooldownTicks,\n"
         "            int cooldownPerLevelTicks, int globalCooldownTicks, int maxLevel, boolean canCrit,\n"
