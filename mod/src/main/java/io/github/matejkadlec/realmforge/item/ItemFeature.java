@@ -4,11 +4,13 @@ import io.github.matejkadlec.realmforge.generated.GeneratedItems;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.AnvilUpdateEvent;
+import net.neoforged.neoforge.event.ItemAttributeModifierEvent;
 import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.registries.DataPackRegistryEvent;
 
-/** Item behaviours and gear components; affixes and gems later (architecture 13). */
+/** Item behaviours and gear components: two-handed gear, the protection limit, netherite upgrades (architecture 13). */
 public final class ItemFeature {
     private ItemFeature() {
     }
@@ -26,5 +28,10 @@ public final class ItemFeature {
         NeoForge.EVENT_BUS.addListener(ItemEntityPickupEvent.Pre.class, TwoHandedGear::onItemPickup);
         // At most two protections on one piece (RLM-537): the anvil here, the table and loot in mixin/.
         NeoForge.EVENT_BUS.addListener(AnvilUpdateEvent.class, ProtectionLimit::onAnvilUpdate);
+        // Netherite upgrades (RLM-566): the registry, the piece's component, the smithing recipe and the worn bonus.
+        modBus.addListener(DataPackRegistryEvent.NewRegistry.class, ItemRegistries::registerDataPackRegistries);
+        ItemComponents.register(modBus);
+        ItemRecipes.register(modBus);
+        NeoForge.EVENT_BUS.addListener(ItemAttributeModifierEvent.class, NetheriteUpgrades::onItemAttributeModifiers);
     }
 }

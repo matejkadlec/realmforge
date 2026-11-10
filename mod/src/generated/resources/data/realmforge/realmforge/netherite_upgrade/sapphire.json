@@ -1,0 +1,25 @@
+{
+  "name": "netherite_upgrade.realmforge.sapphire.name",
+  "color": "#2F64D6",
+  "item": "realmforge:sapphire_upgrade",
+  "template": "minecraft:netherite_upgrade_smithing_template",
+  "melee": [
+    {
+      "attribute": "minecraft:armor",
+      "operation": "add_value",
+      "amount": 2.0
+    },
+    {
+      "attribute": "minecraft:armor_toughness",
+      "operation": "add_value",
+      "amount": 1.0
+    }
+  ],
+  "caster": [
+    {
+      "attribute": "realmforge:magic_shield",
+      "operation": "add_value",
+      "amount": 3.0
+    }
+  ]
+}

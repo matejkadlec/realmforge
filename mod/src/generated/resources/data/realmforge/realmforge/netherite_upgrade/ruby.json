@@ -1,0 +1,20 @@
+{
+  "name": "netherite_upgrade.realmforge.ruby.name",
+  "color": "#C42638",
+  "item": "realmforge:ruby_upgrade",
+  "template": "minecraft:netherite_upgrade_smithing_template",
+  "melee": [
+    {
+      "attribute": "minecraft:attack_damage",
+      "operation": "add_multiplied_base",
+      "amount": 0.05
+    }
+  ],
+  "caster": [
+    {
+      "attribute": "realmforge:spell_power",
+      "operation": "add_multiplied_base",
+      "amount": 0.05
+    }
+  ]
+}

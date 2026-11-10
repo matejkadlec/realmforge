@@ -28,6 +28,7 @@ from realmforge_tools.schema.apotheosis import ROBE_LOOT_CATEGORIES
 from realmforge_tools.schema.item import (
     ARMOR_KINDS,
     FIXED_ITEM_TAGS,
+    NETHERITE_UPGRADABLE_CASTER_TAG,
     PLAYER_ATTACK_DAMAGE,
     PLAYER_ATTACK_SPEED,
     TWO_HANDED_TAG,
@@ -156,12 +157,19 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
 
 def _gear_tags(gear: GearDef | None) -> list[str]:
     """The item tags gear joins: a wand ``realmforge:wands``, and ``realmforge:two_handed`` when it is; all gear
-    vanilla's durability enchantments, and armor its slot's armor enchantments and the Curse of Binding."""
+    vanilla's durability enchantments, and armor its slot's armor enchantments and the Curse of Binding; a netherite
+    caster piece ``realmforge:netherite_upgradable/caster`` (RLM-566)."""
     if gear is None:
         return []
     if gear.kind == "wand":
         return [WANDS_TAG, *([TWO_HANDED_TAG] if gear.two_handed else []), ENCHANTABLE_DURABILITY_TAG]
-    return [ENCHANTABLE_ARMOR_TAGS[gear.kind], ENCHANTABLE_DURABILITY_TAG, ENCHANTABLE_EQUIPPABLE_TAG]
+    upgradable = [NETHERITE_UPGRADABLE_CASTER_TAG] if gear.netherite_upgradable else []
+    return [
+        ENCHANTABLE_ARMOR_TAGS[gear.kind],
+        ENCHANTABLE_DURABILITY_TAG,
+        ENCHANTABLE_EQUIPPABLE_TAG,
+        *upgradable,
+    ]
 
 
 def _looks(content: Content, assets: Path) -> dict[Path, bytes]:

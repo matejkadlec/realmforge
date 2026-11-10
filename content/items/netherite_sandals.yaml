@@ -19,6 +19,7 @@ gear:
   repair_with: "#minecraft:repairs_netherite_armor"
   look: netherite
   equip_sound: minecraft:item.armor.equip_netherite
+  netherite_upgradable: true
   modifiers:
     - {attribute: realmforge:magic_shield, operation: add_value, amount: 3}
     - {attribute: realmforge:spell_power, operation: add_value, amount: 0.9}

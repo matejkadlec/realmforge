@@ -298,9 +298,16 @@ builds them):
   modifier multiplies the flat total).
 - The ranged Sapphire's Dodge Chance is Claude's suggestion (Matěj was unsure of it): 2 % a piece, 8 % for a full set.
 - **Every gem has other uses too:** Topaz is also the curio material, and Ruby and Sapphire go into curios or other
-  recipes, never only into the upgrade.
-- The upgrade is a smithing recipe (template, piece, upgrade) that sets a data component of ours, shown as a tooltip
-  line. The gems drop from the Hewn Sentinel today and go into Undervault's stones with RLM-433.
+  recipes, never only into the upgrade. As of RLM-566 no other use exists yet: the upgrade items are the gems' first
+  recipes, and the others come with the curio items (RLM-556) and the recipes of Undervault's tier.
+- **Built (RLM-566):** eight gems around one diamond craft the Ruby, Sapphire or Topaz Upgrade (the diamond as the base
+  item is Claude's pick, for Matěj's playtest), and a smithing table puts it on a netherite piece with a Netherite
+  Upgrade Smithing Template, which it uses up as vanilla's netherite upgrade does. The recipe is of our own type and
+  sets a data component of ours; the piece's tooltip shows the upgrade's name in its gem's colour below its stats, and
+  its slot's heading lists the bonus. A piece that carries an upgrade takes no other, so the table shows no result.
+  Melee pieces are vanilla's four netherite armor pieces, caster pieces our Netherite robes
+  (`content/netherite_upgrades/`, [architecture 13](../architecture.md#13-items-gear-and-loot)). The gems drop from the
+  Hewn Sentinel today and go into Undervault's stones with RLM-433.
 
 ## Gems
 

@@ -28,6 +28,7 @@ from realmforge_tools.schema.enchantment import EnchantmentDef
 from realmforge_tools.schema.item import ItemDef
 from realmforge_tools.schema.kill_xp_multiplier import KillXpMultiplierDef
 from realmforge_tools.schema.mob import MobDef
+from realmforge_tools.schema.netherite_upgrade import NetheriteUpgradeDef
 from realmforge_tools.schema.quest import QuestDef
 from realmforge_tools.schema.realm import RealmDef
 from realmforge_tools.schema.recipe import RecipeOverrideDef
@@ -73,6 +74,7 @@ CONTENT_TYPES: dict[str, type] = {
     "apotheosis_stat_remaps": ApotheosisStatRemapDef,
     "recipes": RecipeOverrideDef,
     "recipe_removals": RecipeRemovalDef,
+    "netherite_upgrades": NetheriteUpgradeDef,
 }
 
 # content/worldgen/ holds vanilla worldgen JSON instead of YAML; it is validated and copied (content.py, validate.py).
@@ -102,6 +104,7 @@ DATAPACK_TYPES: tuple[DatapackType, ...] = (
     DatapackType("spells", "spell"),
     DatapackType("realms", "realm"),
     DatapackType("bosses", "boss"),
+    DatapackType("netherite_upgrades", "netherite_upgrade"),
 )
 
 __all__ = [
@@ -127,6 +130,7 @@ __all__ = [
     "ItemDef",
     "KillXpMultiplierDef",
     "MobDef",
+    "NetheriteUpgradeDef",
     "QuestDef",
     "RaceDef",
     "RealmDef",

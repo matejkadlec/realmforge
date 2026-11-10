@@ -465,7 +465,9 @@ public final class ClassKitGameTests {
 
     /**
      * Sword Specialization: a Human with a sword-like weapon in the main hand has 10 % more attack damage, and the
-     * weapon's tooltip says so; another weapon, or a player without the race, gets neither.
+     * weapon's tooltip says so with its short line, indented like vanilla's attribute lines (RLM-563); another weapon
+     * (an axe, the Mace as vanilla's hammer: never sword-like, Matěj, 2026-11-04), or a player without the race, gets
+     * neither.
      */
     @QaGameTest
     public static void swordSpecializationRaisesAHumansSwordDamage(GameTestHelper helper) {
@@ -478,8 +480,8 @@ public final class ClassKitGameTests {
                 && close(attackDamage.getModifier(passive).amount(), 0.1), "+10 % with a sword: "
                         + attackDamage.getModifier(passive));
         List<Component> tooltip = RacialPassives.tooltip(player, new ItemStack(Items.IRON_SWORD));
-        helper.assertValueEqual(lines(tooltip), List.of("Sword Specialization", "+10% damage with swords"),
-                "the sword's tooltip lines");
+        helper.assertValueEqual(lines(tooltip), List.of("Sword Specialization", " +10% Damage"),
+                "the sword's tooltip lines: the bonus alone, indented by one space as vanilla's attribute lines");
         helper.assertValueEqual(tooltip.stream().map(line -> line.getStyle().getColor()).toList(),
                 List.of(TextColor.fromLegacyFormat(ChatFormatting.GOLD),
                         TextColor.fromLegacyFormat(ChatFormatting.YELLOW)),
@@ -490,6 +492,11 @@ public final class ClassKitGameTests {
         helper.assertTrue(attackDamage.getModifier(passive) == null, "nothing with an axe");
         helper.assertValueEqual(RacialPassives.tooltip(player, new ItemStack(Items.IRON_AXE)), List.of(),
                 "and no tooltip lines on it");
+        player.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.MACE));
+        CharacterStats.recompute(player);
+        helper.assertTrue(attackDamage.getModifier(passive) == null, "nothing with the Mace, a hammer");
+        helper.assertValueEqual(RacialPassives.tooltip(player, new ItemStack(Items.MACE)), List.of(),
+                "and no tooltip lines on the Mace");
 
         ServerPlayer stranger = QaPlayers.loginOnPlatform(helper, "qa-kit-sword-none");
         helper.assertValueEqual(RacialPassives.tooltip(stranger, new ItemStack(Items.IRON_SWORD)), List.of(),
