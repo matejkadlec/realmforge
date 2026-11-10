@@ -19,6 +19,12 @@ those points on their tickets:
 0040 left the converter's form open ("for example a coin pouch, or using a stack of coins"). The batch that built
 the coins (RLM-284, RLM-286) chose it; that choice is the agent's and waits for Matěj's playtest (below).
 
+That playtest comes after the merge. Matěj deferred it on 2026-11-10, in the session of the `flow1 cloud` marathon
+that built the batch: "Carry a playtest batch through its handoff, with every automated check. Then don't wait for
+Matěj: continue as if he answered `qa1`, and carry the pull request through `finalize-pr` to its merge." It is his
+waiver of [0022](0022-playtest-before-the-pull-request.md)'s playtest before the pull request for that run, not a
+change of 0022, and RLM-638 records the playtest he still owes this batch, with his words.
+
 ## Decision
 
 1. **Four coins:** Copper, Silver, Gold and Platinum Coin, each worth 100 of the coin below it, stacking to 99

@@ -82,8 +82,11 @@ Matěj finds that right (2026-10-22): Oblivion fairly affordable early, Rebirth 
 
 ## Open questions for Matěj
 
-Each is the agent's choice from RLM-284 and RLM-286's batch, built that way and merged unplayed (the deferred playtest
-is RLM-638):
+Each is the agent's choice from RLM-284 and RLM-286's batch, built that way and merged unplayed. That is Matěj's
+decision of 2026-11-10 for the `flow1 cloud` marathon that built it, a waiver of
+[ADR 0022](../decisions/0022-playtest-before-the-pull-request.md)'s playtest before the pull request for that run,
+given in its session and quoted in RLM-638: "Carry a playtest batch through its handoff, with every automated check.
+Then don't wait for Matěj: continue as if he answered `qa1`". RLM-638 is the deferred playtest he still owes it:
 
 1. **The converter's form:** using a coin (merge) and sneaking while using it (break), instead of a pouch item or a
    block. Is merging the right plain use, and should a use merge every full hundred at once or one hundred at a time?
