@@ -2,6 +2,7 @@ package io.github.matejkadlec.realmforge.client.render;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -107,5 +108,13 @@ class FormingCurvesTest {
             assertTrue(FormingCurves.left(ticks) >= before - CLOSE, "it never comes back toward the hands");
             before = FormingCurves.left(ticks);
         }
+    }
+
+    @Test
+    void nothingSwirlsWhileTheGameIsPausedOrItsTicksAreFrozen() {
+        assertTrue(FormingCurves.swirls(false, true), "a running game");
+        assertFalse(FormingCurves.swirls(true, true), "the pause menu: particles would pile up unseen");
+        assertFalse(FormingCurves.swirls(false, false), "/tick freeze");
+        assertFalse(FormingCurves.swirls(true, false));
     }
 }

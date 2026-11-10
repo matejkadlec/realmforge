@@ -86,4 +86,13 @@ final class FormingCurves {
     static float fade(float ticks) {
         return Mth.clamp(1 - ticks / FADE_TICKS, 0.0F, 1.0F);
     }
+
+    /**
+     * Whether a forming cast's swirl spawns its particles this client tick: only while the game runs. Paused (a
+     * singleplayer pause menu) or with the tick rate frozen ({@code /tick freeze}), the particle engine ages nothing
+     * and the cast does not move on, so every particle spawned then would wait and appear at once.
+     */
+    static boolean swirls(boolean paused, boolean ticksRunNormally) {
+        return !paused && ticksRunNormally;
+    }
 }

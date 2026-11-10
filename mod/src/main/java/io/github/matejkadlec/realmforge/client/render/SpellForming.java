@@ -252,21 +252,29 @@ public final class SpellForming {
         }
     }
 
-    /** Every tick: the swirl round each caster's hands, and what is over is forgotten. */
+    /**
+     * Every tick: the swirl round each caster's hands, and what is over is forgotten. The client's tick event fires
+     * while the game is paused too, when no particle ages and no cast moves on, so nothing swirls then
+     * ({@link FormingCurves#swirls}): the particles would pile up unseen and all appear at once on resume.
+     */
     private static void tick() {
-        ClientLevel level = Minecraft.getInstance().level;
+        Minecraft minecraft = Minecraft.getInstance();
+        ClientLevel level = minecraft.level;
         if (level == null) {
             clear();
             return;
         }
         long now = level.getGameTime();
+        boolean swirls = FormingCurves.swirls(minecraft.isPaused(), level.tickRateManager().runsNormally());
         ClientCasts.all().forEach((casterId, cast) -> {
             float formed = CurrentCasts.progress(cast, now);
             hands(level, casterId, cast, 1, formed, 1).ifPresent(hands -> {
                 Entity caster = level.getEntity(casterId);
                 boolean shrunk = hands.model().isPresent() && caster instanceof Player;
                 CASTING.put(casterId, new Casting(now, shrunk ? PLAYER_SHARE : 1));
-                swirl(level, hands, firstPerson(caster));
+                if (swirls) {
+                    swirl(level, hands, firstPerson(caster));
+                }
             });
         });
         FADING.values().removeIf(fading -> now - fading.endedAt() >= FormingCurves.FADE_TICKS);
