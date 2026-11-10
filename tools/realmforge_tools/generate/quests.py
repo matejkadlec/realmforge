@@ -216,15 +216,18 @@ def sample_tasks(content: Content) -> list[tuple[str, OwnTaskDef]]:
 
 def castable_sample(spell: SpellDef) -> bool:
     """Whether the GameTest's bare caster can cast ``spell`` on itself at once (RLM-472): a player's spell that is
-    cast (no passive, no aura), targets its caster, is instant, needs nothing in hand and is free or costs mana, the
-    one resource that caster has. A self-targeted shout that costs rage, a self channel or a spell that needs a weapon
-    would fail the test's cast, in whatever content pull request added it."""
+    cast (no passive, no aura), targets its caster, is instant, needs nothing in hand, waits for no window (a kill, a
+    block), and is free or costs mana, the one resource that caster has. A self-targeted shout that costs rage, a self
+    channel, a spell that needs a weapon or one that only a kill opens would fail the test's cast
+    (``SpellCaster#cast``'s refusals), in whatever content pull request added it. A target's health or distance is
+    no condition of a self-targeted spell: validation keeps those to spells at an enemy."""
     return (
         not spell.npc_only
         and spell.is_cast
         and spell.targeting.type == SELF
         and spell.cast.type == "instant"
         and not spell.requires
+        and spell.window is None
         and (spell.cost is None or spell.cost.resource == MANA)
     )
 

@@ -402,10 +402,19 @@ def test_the_sample_spell_stays_one_a_bare_caster_casts_at_once(repo: RepoPaths)
             id="aab_self_channel", cast="{type: channel, duration_seconds: 4, interval_seconds: 0.5}", cost=""
         ),
     )
+    # A spell that only a kill opens is refused to a caster who just logged in (SpellCaster: NO_WINDOW).
+    write(
+        repo.content / "spells" / "aab_windowed_shout.yaml",
+        SHOUT.format(
+            id="aab_windowed_shout",
+            cast="{type: instant}",
+            cost="window: {duration_seconds: 20, opened_by: [kill]}\n",
+        ),
+    )
     content, _ = load_and_validate(repo)
     spells = {f"realmforge:{entry.model.id}": entry.model for entry in content.spells}
-    assert not castable_sample(spells["realmforge:aaa_rage_shout"])
-    assert not castable_sample(spells["realmforge:aab_self_channel"])
+    for refused in ("aaa_rage_shout", "aab_self_channel", "aab_windowed_shout"):
+        assert not castable_sample(spells[f"realmforge:{refused}"]), refused
     after = dict(sample_tasks(content))["quest_task/spell"]
     assert isinstance(after, SpellTaskDef)
     assert after.spell == before.spell
@@ -414,6 +423,7 @@ def test_the_sample_spell_stays_one_a_bare_caster_casts_at_once(repo: RepoPaths)
     assert sample.cast.type == "instant"
     assert sample.cost is None or sample.cost.resource == "realmforge:mana"
     assert not sample.requires and not sample.npc_only and sample.is_cast
+    assert sample.window is None
     # A free instant self spell that sorts first does become the sample: the choice is by what it needs, not by name.
     write(
         repo.content / "spells" / "aac_free_shout.yaml",
