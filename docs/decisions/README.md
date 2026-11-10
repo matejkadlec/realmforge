@@ -83,6 +83,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0069](0069-spell-slots-5-and-6-on-c-and-y-and-a-lone-alt-press-toggles-the-highlight.md) | Spell slots 5 and 6 on C and Y, and a lone Alt press toggles the highlight | Accepted (amends 0046 and 0061) |
 | [0070](0070-batches-may-share-generated-files.md) | Batches may share generated files: the second merge regenerates them | Accepted (amends 0016) |
 | [0071](0071-the-pack-boots-are-required-checks.md) | The pack boots are required checks | Accepted (amends 0018) |
+| [0072](0072-a-fourth-coin-the-converter-by-use-and-coin-drops-by-level-and-rank.md) | A fourth coin (platinum), the converter by using a coin, and coin drops by mob level and rank that Luck and Looting never change | Accepted (amends 0040) |
 
 ## Open questions (not decided)
 

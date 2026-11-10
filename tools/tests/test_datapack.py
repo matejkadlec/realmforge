@@ -47,6 +47,7 @@ def curve(points: str, extra: str = "") -> str:
 def test_repository_curves_are_valid() -> None:
     content, universe = load_and_validate(RepoPaths())
     assert [e.model.id for e in content.curves] == [
+        "coin_drop",
         "kill_xp",
         "kill_xp_above_player",
         "kill_xp_below_player",
@@ -139,7 +140,7 @@ def test_curve_outputs(repo: RepoPaths) -> None:
     keys = files[CURVE_KEYS].decode()
     assert 'public static final ResourceKey<Curve> TEST_CURVE = key("test_curve");' in keys
     assert (
-        "public static final List<ResourceKey<Curve>> ALL = List.of(KILL_XP, KILL_XP_ABOVE_PLAYER, "
+        "public static final List<ResourceKey<Curve>> ALL = List.of(COIN_DROP, KILL_XP, KILL_XP_ABOVE_PLAYER, "
         "KILL_XP_BELOW_PLAYER, MOB_ARMOR, MOB_DAMAGE, MOB_HEALTH, STAT_POINTS_PER_LEVEL, TEST_CURVE, "
         "XP_TO_NEXT_LEVEL);" in keys
     )

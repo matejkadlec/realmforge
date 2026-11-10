@@ -184,6 +184,16 @@ public final class GeneratedItems {
                             .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/feet/3", 0.03, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.FEET)
                             .build()));
 
+    /** {@code realmforge:copper_coin} from {@code content/items/copper_coin.yaml}. */
+    public static final DeferredItem<Item> COPPER_COIN =
+            ITEMS.registerSimpleItem("copper_coin", properties -> properties.stacksTo(99)
+                    .component(DataComponents.LORE, new ItemLore(List.of(
+                            Component.translatable("tooltip.realmforge.coin_merge", 100,
+                                    Component.translatable("item.realmforge.copper_coin.plural"),
+                                    Component.translatable("item.realmforge.silver_coin"))
+                                    .withStyle(style -> style.withColor(ChatFormatting.GREEN).withItalic(false)),
+                            Component.translatable("item.realmforge.copper_coin.flavor")))));
+
     /** {@code realmforge:copper_wand} from {@code content/items/copper_wand.yaml}. */
     public static final DeferredItem<Item> COPPER_WAND =
             ITEMS.registerSimpleItem("copper_wand", properties -> properties
@@ -215,6 +225,19 @@ public final class GeneratedItems {
                             .add(attribute(context, "realmforge:cast_time_reduction"), modifier("realmforge:gear/mainhand/1", 0.1, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .add(attribute(context, "realmforge:cooldown_reduction"), modifier("realmforge:gear/mainhand/2", 0.1, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                             .build()));
+
+    /** {@code realmforge:gold_coin} from {@code content/items/gold_coin.yaml}. */
+    public static final DeferredItem<Item> GOLD_COIN =
+            ITEMS.registerSimpleItem("gold_coin", properties -> properties.stacksTo(99)
+                    .component(DataComponents.LORE, new ItemLore(List.of(
+                            Component.translatable("tooltip.realmforge.coin_merge", 100,
+                                    Component.translatable("item.realmforge.gold_coin.plural"),
+                                    Component.translatable("item.realmforge.platinum_coin"))
+                                    .withStyle(style -> style.withColor(ChatFormatting.GREEN).withItalic(false)),
+                            Component.translatable("tooltip.realmforge.coin_break", Component.keybind("key.sneak"),
+                                    100, Component.translatable("item.realmforge.silver_coin.plural"))
+                                    .withStyle(style -> style.withColor(ChatFormatting.GREEN).withItalic(false)),
+                            Component.translatable("item.realmforge.gold_coin.flavor")))));
 
     /** {@code realmforge:golden_wand} from {@code content/items/golden_wand.yaml}. */
     public static final DeferredItem<Item> GOLDEN_WAND =
@@ -354,6 +377,15 @@ public final class GeneratedItems {
                                     .withStyle(style -> style.withColor(ChatFormatting.GREEN).withItalic(false)),
                             Component.translatable("item.realmforge.oblivion_scroll.flavor")))));
 
+    /** {@code realmforge:platinum_coin} from {@code content/items/platinum_coin.yaml}. */
+    public static final DeferredItem<Item> PLATINUM_COIN =
+            ITEMS.registerSimpleItem("platinum_coin", properties -> properties.stacksTo(99)
+                    .component(DataComponents.LORE, new ItemLore(List.of(
+                            Component.translatable("tooltip.realmforge.coin_break", Component.keybind("key.sneak"),
+                                    100, Component.translatable("item.realmforge.gold_coin.plural"))
+                                    .withStyle(style -> style.withColor(ChatFormatting.GREEN).withItalic(false)),
+                            Component.translatable("item.realmforge.platinum_coin.flavor")))));
+
     /** {@code realmforge:ruby} from {@code content/items/ruby.yaml}. */
     public static final DeferredItem<Item> RUBY =
             ITEMS.registerSimpleItem("ruby");
@@ -369,6 +401,19 @@ public final class GeneratedItems {
     /** {@code realmforge:sapphire_upgrade} from {@code content/items/sapphire_upgrade.yaml}. */
     public static final DeferredItem<Item> SAPPHIRE_UPGRADE =
             ITEMS.registerSimpleItem("sapphire_upgrade");
+
+    /** {@code realmforge:silver_coin} from {@code content/items/silver_coin.yaml}. */
+    public static final DeferredItem<Item> SILVER_COIN =
+            ITEMS.registerSimpleItem("silver_coin", properties -> properties.stacksTo(99)
+                    .component(DataComponents.LORE, new ItemLore(List.of(
+                            Component.translatable("tooltip.realmforge.coin_merge", 100,
+                                    Component.translatable("item.realmforge.silver_coin.plural"),
+                                    Component.translatable("item.realmforge.gold_coin"))
+                                    .withStyle(style -> style.withColor(ChatFormatting.GREEN).withItalic(false)),
+                            Component.translatable("tooltip.realmforge.coin_break", Component.keybind("key.sneak"),
+                                    100, Component.translatable("item.realmforge.copper_coin.plural"))
+                                    .withStyle(style -> style.withColor(ChatFormatting.GREEN).withItalic(false)),
+                            Component.translatable("item.realmforge.silver_coin.flavor")))));
 
     /** {@code realmforge:spellweave} from {@code content/items/spellweave.yaml}. */
     public static final DeferredItem<Item> SPELLWEAVE =
@@ -548,12 +593,16 @@ public final class GeneratedItems {
             case "minecraft:ingredients" -> {
                 event.accept(ARCANE_DUST);
                 event.accept(ARCANE_SILK);
+                event.accept(COPPER_COIN);
+                event.accept(GOLD_COIN);
                 event.accept(ICE_SIGNET_SHARD);
                 event.accept(MAGIC_STONE_DUST);
+                event.accept(PLATINUM_COIN);
                 event.accept(RUBY);
                 event.accept(RUBY_UPGRADE);
                 event.accept(SAPPHIRE);
                 event.accept(SAPPHIRE_UPGRADE);
+                event.accept(SILVER_COIN);
                 event.accept(SPELLWEAVE);
                 event.accept(STONE_HEART);
                 event.accept(SUN_SIGNET_SHARD);

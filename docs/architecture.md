@@ -184,14 +184,14 @@ io.github.matejkadlec.realmforge
 ├─ core/              shared infrastructure: registry keys, codec helpers, requirements, curves, the welcome line
 ├─ network/           payload registration (one place), versioned by the mod version
 ├─ progression/       chapters, criteria triggers, statistics: the bridge to quests
-├─ stats/             attributes, entity levels, stat sources, derived stats, caps
+├─ stats/             attributes, entity levels, mob ranks, stat sources, derived stats, caps
 ├─ combat/            spell schools, damage pipeline, crit, dodge, resistances, armor formula, pierce and shred,
 │                     lifesteal, overheal, health regeneration, magic shield, combat text, damage over time
 ├─ effect/            behaviour classes of our status effects
 ├─ spell/             spells, effect types, casting, cooldowns, resources, procs, spell entities
 ├─ talent/            F3's talents attachment only: no talents as of v1.0.0 (12)
-├─ item/              item behaviours, gear components; affixes and gems later
-├─ loot/              loot functions and conditions, reward rolls
+├─ item/              item behaviours, gear components, coins and their converter; affixes and gems later
+├─ loot/              loot functions and conditions, reward rolls, mob coin drops
 ├─ character/         races, classes, character data, leveling, level caps, the character sheet's view
 ├─ world/             dimension rules and access, realms, world blocks, world defaults, Night Vision, griefing
 │                     protection
@@ -268,7 +268,9 @@ How features cooperate without breaking the direction:
   registries are filled by their users: `core` declares `realmforge:requirement_type`, `character` registers
   `level_at_least` in it and `progression` registers `chapter_completed`.
 - **Facts that many features read live low:** every living entity's level is one attachment in `stats`
-  ([7](#7-player-state)), written by `character` for players and by `mob` for mobs.
+  ([7](#7-player-state)), written by `character` for players and by `mob` for mobs. A mob's rank is there too
+  (`stats/MobRanks`): `character` owns the kill XP multipliers and provides the rank at mod construction, and the
+  features below `character` read it, aim assistance in `spell` and coin drops in `loot`.
 
 ### 4.5 Startup and lifecycle
 
@@ -1692,7 +1694,7 @@ spell a player aims at an enemy goes to a hostile mob near the crosshair (Matěj
   adds (a flag a boss's fight may set later; none yet), a boss (`#c:bosses`), below 25 % health, the current target (the
   `combat` attachment's `CombatState#isCurrentTarget`: the entity a player's targeted cast aimed at, or their last
   `CombatEvent.Hit` victim, within the in-combat time, server only, never saved or synced), a higher rank (the kill XP
-  multiplier, which `character` hands over through `AimAssist#rankBy`, [4.4](#44-dependencies-between-features)), a
+  multiplier, which `character` hands over through `stats/MobRanks`, [4.4](#44-dependencies-between-features)), a
   higher level, the smallest miss for its distance, then the nearest. `AimAssistTest` covers the cone, the ranking and
   the passive-mob rule.
 - **Targeted spells:** `spell/SpellBar` assists an `enemy` or `ally` spell whose payload names no entity, up to the
@@ -2563,6 +2565,41 @@ for reference, should talents ever come; the proc engine at its end exists since
   `EQUIPPABLE` slot is an armor slot for armor, our robes too, so the [gear design](design/gear.md#loot-categories)
   proposes robe categories as well. Apothic Attributes' own crit and dodge are switched off
   ([19.4](#194-optional-integrations)).
+- **Coins** (RLM-284; [ADR 0040](decisions/0040-coins-and-data-driven-merchant-trades.md),
+  [ADR 0072](decisions/0072-a-fourth-coin-the-converter-by-use-and-coin-drops-by-level-and-rank.md);
+  [coins design](design/coins.md)): Copper, Silver, Gold and Platinum Coin, items of `content/items/` with a `coin`
+  block (its `value` in copper: 1, 100, 10000, 1000000), stacking to 99, in the item tag `realmforge:coins`. Money is
+  an amount of copper, paid in the largest coins. The pipeline writes the chain into `GeneratedCoins` (smallest first),
+  which `item/Coins`, the coins' public API, reads: `chain`, `indexOf`, `value` of a stack and `stacks` of an amount;
+  the arithmetic is the pure `item/CoinMath` (`split`, `merges`, `rate`), which the pipeline computes too
+  (`schema/coin.py`; a GameTest compares the two). No currency mod, no wallet and no balance: coins are plain items.
+  - **The converter is using a coin** (`item/CoinConverter`, on `PlayerInteractEvent.RightClickItem`; no block, no
+    screen, no crafting grid): a use merges every full hundred of that coin in the inventory (every slot, the hotbar
+    last) into the next larger coin and leaves the rest below a hundred; sneaking while using it breaks one coin of
+    the held stack into 100 of the next smaller. Merging is the plain use because it is the common and the harmless
+    one. With fewer than a hundred a use fails, and the action bar says how many it takes; the smallest coin does not
+    break and the largest does not merge (the use passes). Each conversion puts vanilla's item cooldown on that coin
+    for 10 ticks, so a held button converts at a pace a player can follow (vanilla refuses a use during it before the
+    event fires). The event runs on both sides and answers the same from the client's copy of the inventory, so the
+    arm swings exactly when the server converts; only the server changes anything.
+  - **Change that does not fit drops at the player's feet** (`Coins#give`): stacks of the coin first, then free slots,
+    slot by slot (`Inventory#add(ItemStack)` would void the rest for a player in creative mode), and what is left as
+    a plain drop without motion, as a locked shield's.
+  - **The tooltip** names both uses in green where the chain has that neighbour: "Use: Merge every 100 Copper Coins
+    into 1 Silver Coin", and the break with the sneak key as a keybind component, so it shows the player's own binding.
+- **Mob coin drops** (RLM-286; ADR 0072): a hostile mob (vanilla's `Enemy`) a player killed drops coins next to its
+  own loot. `loot/CoinDrops` adds them in `LivingDropsEvent`, from our own code rather than a loot table (Matěj,
+  2026-10-21): the curve `realmforge:coin_drop` at the mob's level (`realmforge:level`,
+  [14.1](#141-mob-levels)), times its rank (`stats/MobRanks`, its kill XP multiplier: 0.1 for a swarm mob, 1.5 strong,
+  2 elite, 5 miniboss, 10 dungeon boss, 20 realm guardian), times a share between 50 and 150 % picked uniformly,
+  rounded half up and at least 1 copper (`loot/CoinDropMath`, pure; the pipeline computes the same). The curve is
+  e^(-0.2109 + 0.2113 L - 0.000458 L²): about 1 copper at level 1, 31 at 18, 1 gold at 50 and 5 gold at 60. A mob of
+  rank 0 (the smallest slime) drops nothing. **Neither Looting nor any luck attribute is read**, so nothing raises
+  it. A drop needs what vanilla's experience orbs need: a player's kill credit (`LivingDropsEvent#isRecentlyHit`, a
+  hit of theirs within the last 5 seconds) and the gamerule `mob_drops`; a mob that falls to its death in a farm
+  leaves none. Babies drop as their parents do, as with experience. `CoinGameTests` and `CoinDropGameTests` cover the
+  chain, both conversions along it, a full inventory in survival and creative, the ranges at levels 1, 50 and 60,
+  Looting III with a luck of 1024, the rank and who gets coins.
 - **Loot:** loot tables generated from YAML, with our own loot functions (`Registries.LOOT_FUNCTION_TYPE`) where
   vanilla's and Apotheosis's are not enough, so other mods and data packs see ordinary loot tables. A vanilla mob's
   loot keeps its own table: an item's `dropped_by` adds a drop to it through NeoForge's loot modifier

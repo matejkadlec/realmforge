@@ -446,6 +446,9 @@ public final class GeneratedTexts {
     /** {@code message.realmforge.cannot_use_in_combat} from {@code content/texts/message.yaml}: "You can't use this in combat." */
     public static final String MESSAGE_CANNOT_USE_IN_COMBAT = "message.realmforge.cannot_use_in_combat";
 
+    /** {@code message.realmforge.coin_merge_too_few} from {@code content/texts/message.yaml}: "You need %1$s %2$s to make 1 %3$s." */
+    public static final String MESSAGE_COIN_MERGE_TOO_FEW = "message.realmforge.coin_merge_too_few";
+
     /** {@code message.realmforge.dungeon_completed} from {@code content/texts/message.yaml}: "You completed the instance and will be automatically teleported out in 5 minutes. Use '/instance leave' to exit immediately." */
     public static final String MESSAGE_DUNGEON_COMPLETED = "message.realmforge.dungeon_completed";
 
@@ -817,6 +820,12 @@ public final class GeneratedTexts {
 
     /** {@code stat_tooltip.realmforge.xp_multiplier} from {@code content/texts/stat_tooltip.yaml}: "Multiplies the character XP you gain. 100% is normal." */
     public static final String STAT_TOOLTIP_XP_MULTIPLIER = "stat_tooltip.realmforge.xp_multiplier";
+
+    /** {@code tooltip.realmforge.coin_break} from {@code content/texts/tooltip.yaml}: "%1$s + Use: Break one into %2$s %3$s" */
+    public static final String TOOLTIP_COIN_BREAK = "tooltip.realmforge.coin_break";
+
+    /** {@code tooltip.realmforge.coin_merge} from {@code content/texts/tooltip.yaml}: "Use: Merge every %1$s %2$s into 1 %3$s" */
+    public static final String TOOLTIP_COIN_MERGE = "tooltip.realmforge.coin_merge";
 
     /** {@code tooltip.realmforge.signet_not_consumed} from {@code content/texts/tooltip.yaml}: "Does not consume on use" */
     public static final String TOOLTIP_SIGNET_NOT_CONSUMED = "tooltip.realmforge.signet_not_consumed";

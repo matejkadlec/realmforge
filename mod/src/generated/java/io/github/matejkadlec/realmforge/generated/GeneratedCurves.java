@@ -11,6 +11,9 @@ import net.minecraft.resources.ResourceKey;
 
 /** Keys of the curves in {@code content/curves/}, so Java names a curve without typing its id. */
 public final class GeneratedCurves {
+    /** {@code realmforge:coin_drop} from {@code content/curves/coin_drop.yaml}. */
+    public static final ResourceKey<Curve> COIN_DROP = key("coin_drop");
+
     /** {@code realmforge:kill_xp} from {@code content/curves/kill_xp.yaml}. */
     public static final ResourceKey<Curve> KILL_XP = key("kill_xp");
 
@@ -39,7 +42,7 @@ public final class GeneratedCurves {
     public static final ResourceKey<Curve> XP_TO_NEXT_LEVEL = key("xp_to_next_level");
 
     /** Every key above, in id order. */
-    public static final List<ResourceKey<Curve>> ALL = List.of(KILL_XP, KILL_XP_ABOVE_PLAYER, KILL_XP_BELOW_PLAYER, MOB_ARMOR, MOB_DAMAGE, MOB_HEALTH, STAT_POINTS_PER_LEVEL, TEST_CURVE, XP_TO_NEXT_LEVEL);
+    public static final List<ResourceKey<Curve>> ALL = List.of(COIN_DROP, KILL_XP, KILL_XP_ABOVE_PLAYER, KILL_XP_BELOW_PLAYER, MOB_ARMOR, MOB_DAMAGE, MOB_HEALTH, STAT_POINTS_PER_LEVEL, TEST_CURVE, XP_TO_NEXT_LEVEL);
 
     private GeneratedCurves() {
     }

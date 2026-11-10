@@ -45,6 +45,7 @@ from realmforge_tools.schema.apotheosis import (
 from realmforge_tools.schema.block import ITEMLESS_KINDS, REALM_PORTAL_KINDS, SINGLE_BLOCK_KINDS
 from realmforge_tools.schema.chapter import advancement_id as chapter_advancement
 from realmforge_tools.schema.character import STARTING_BREAD, CharacterModifierDef
+from realmforge_tools.schema.coin import COIN_DROP
 from realmforge_tools.schema.dimension_rules import WORLDGEN_STRUCTURE_REGISTRY
 from realmforge_tools.schema.dungeon import (
     CORRIDOR_ROLES,
@@ -58,6 +59,8 @@ from realmforge_tools.schema.dungeon import (
 )
 from realmforge_tools.schema.effect import PeriodicDef, StacksDef, effect_id
 from realmforge_tools.schema.item import (
+    COIN_BREAK_TEXT,
+    COIN_MERGE_TEXT,
     FIXED_ITEM_TAGS,
     GEAR_FORBIDDEN_ATTRIBUTES,
     USE_TEXT_GROUP,
@@ -294,6 +297,7 @@ def validate_content(content: Content, universe: IdUniverse) -> list[Problem]:
     problems += _check_recipes(content, universe)
     problems += _check_gear(content, universe)
     problems += _check_item_drops(content, universe)
+    problems += _check_coins(content)
     problems += _check_netherite_upgrades(content, universe)
     problems += _check_chapters(content)
     problems += _check_quests(content, universe)
@@ -2307,6 +2311,67 @@ def _check_gear(content: Content, universe: IdUniverse) -> list[Problem]:
                         "color",
                         f"the items of look {gear.look} share one colour, its placeholder's: {seen[1]} has "
                         f"{seen[0] or 'none'}, this one {entry.model.color or 'none'}",
+                    )
+                )
+    return problems
+
+
+def _check_coins(content: Content) -> list[Problem]:
+    """The coins form one chain (RLM-284): the smallest is worth 1, and each larger one a whole multiple, at least
+    double, of the coin below it, so breaking and merging never leave a rest. The curve of mob coin drops exists and
+    is never negative (RLM-286): Java names it through GeneratedCurves, and a mob never takes coins away. The two
+    tooltip lines of a coin exist."""
+    problems: list[Problem] = []
+    coins = [entry for entry in content.items if entry.model.coin is not None]
+    coins.sort(key=lambda entry: entry.model.coin.value)  # type: ignore[union-attr]
+    below: tuple[int, str] | None = None
+    for entry in coins:
+        assert entry.model.coin is not None
+        value = entry.model.coin.value
+        if below is None:
+            if value != 1:
+                problems.append(
+                    Problem(entry.source, "coin.value", f"the smallest coin is worth 1, not {value}")
+                )
+        elif value == below[0]:
+            problems.append(
+                Problem(entry.source, "coin.value", f"{below[1]} is worth {value} too: one coin per value")
+            )
+        elif value % below[0] != 0:
+            problems.append(
+                Problem(
+                    entry.source,
+                    "coin.value",
+                    f"{value} is no whole multiple of {below[0]}, the coin below it ({below[1]}): "
+                    "breaking it would leave a rest",
+                )
+            )
+        below = (value, entry.source)
+    if coins:
+        texts = {(group.model.id, name) for group in content.texts for name in group.model.texts}
+        for group, name in (COIN_MERGE_TEXT, COIN_BREAK_TEXT):
+            if (group, name) not in texts:
+                problems.append(
+                    Problem(
+                        f"content/texts/{group}.yaml",
+                        f"texts.{name}",
+                        "the coins' tooltips need this line (generate/items.py)",
+                    )
+                )
+    curves = {entry.model.id: entry for entry in content.curves}
+    curve = curves.get(COIN_DROP)
+    if curve is None:
+        problems.append(
+            Problem(
+                f"content/curves/{COIN_DROP}.yaml", "", "mob coin drops need this curve (architecture 13)"
+            )
+        )
+    else:
+        for n, point in enumerate(curve.model.points):
+            if point.value < 0:
+                problems.append(
+                    Problem(
+                        curve.source, f"points.{n}.value", f"{point.value} is negative: a mob drops no debt"
                     )
                 )
     return problems

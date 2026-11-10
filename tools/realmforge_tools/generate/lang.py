@@ -22,6 +22,7 @@ from realmforge_tools.generate import (
 )
 from realmforge_tools.generate.items import flavor_key, translation_key
 from realmforge_tools.project import MOD_ID, SUPPORTED_LOCALES, RepoPaths
+from realmforge_tools.schema.coin import plural_key
 
 
 def collect(content: Content) -> dict[str, dict[str, str]]:
@@ -33,6 +34,9 @@ def collect(content: Content) -> dict[str, dict[str, str]]:
         if entry.model.flavor is not None:
             for locale, text in entry.model.flavor.translations().items():
                 by_locale[locale][flavor_key(entry.model.id)] = text
+        if entry.model.coin is not None:
+            for locale, text in entry.model.coin.plural.translations().items():
+                by_locale[locale][plural_key(entry.model.id)] = text
     for entry in content.blocks:
         for locale, text in entry.model.name.translations().items():
             by_locale[locale][blocks.translation_key(entry.model.id)] = text

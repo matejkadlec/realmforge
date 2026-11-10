@@ -87,11 +87,15 @@ def test_item_use_and_flavor_become_tooltip_lines_and_a_use_tag(repo: RepoPaths)
 
 
 def test_items_without_lore_import_nothing_for_it(repo: RepoPaths) -> None:
-    # The Scroll of Oblivion has a use line, a realm's signet its "Does not consume on use" line, and Astone's drops a
-    # flavor line each: without them, no item has lore.
+    # The Scroll of Oblivion has a use line, a realm's signet its "Does not consume on use" line, the coins their
+    # merge and break lines, and Astone's drops a flavor line each: without them, no item has lore.
     for path in (
         "items/oblivion_scroll.yaml",
         "items/undervault_signet.yaml",
+        "items/copper_coin.yaml",
+        "items/silver_coin.yaml",
+        "items/gold_coin.yaml",
+        "items/platinum_coin.yaml",
         "realms/stone.yaml",
         "dimensions/stone.yaml",
     ):

@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../../tools/schemas/items.schema.json
+# Worth 100 Copper Coins (RLM-284; ADR 0040, ADR 0072). Using it merges every 100 in the inventory into Gold Coins,
+# and sneaking while using it breaks one into 100 Copper Coins (item/CoinConverter). The generated placeholder texture
+# until A1's art.
+id: silver_coin
+name:
+  en_us: Silver Coin
+max_stack_size: 99
+creative_tabs:
+  - minecraft:ingredients
+coin:
+  value: 100
+  plural:
+    en_us: Silver Coins
+flavor:
+  en_us: It rings clear when you flick it.
+color: "#C4C9D1"

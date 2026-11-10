@@ -56,6 +56,11 @@ TWO_HANDED_WEAPONS_TAG = f"{MOD_ID}:two_handed_weapons"
 NETHERITE_UPGRADABLE_TAG = f"{MOD_ID}:netherite_upgradable"
 NETHERITE_UPGRADABLE_MELEE_TAG = f"{MOD_ID}:netherite_upgradable/melee"
 NETHERITE_UPGRADABLE_CASTER_TAG = f"{MOD_ID}:netherite_upgradable/caster"
+# The item tag of the coins (RLM-284; ADR 0040, ADR 0072): every item with a coin block, for trades, loot and other mods.
+COINS_TAG = f"{MOD_ID}:coins"
+# A coin's tooltip lines, texts in content/texts/tooltip.yaml: what using it does (merge, generate/items.py).
+COIN_MERGE_TEXT = ("tooltip", "coin_merge")
+COIN_BREAK_TEXT = ("tooltip", "coin_break")
 # Item tags whose members are fixed here rather than coming from content/items/ (generate/items.py writes them).
 FIXED_ITEM_TAGS: dict[str, tuple[str, ...]] = {
     MELEE_WEAPONS_TAG: (
@@ -226,6 +231,25 @@ class ItemDropDef(DropDef):
     entity: ResourceId = Field(description="The mob, e.g. minecraft:witch.")
 
 
+class CoinDef(StrictModel):
+    """What makes the item a coin (RLM-284; ADR 0040, ADR 0072): its worth in the smallest coin. The coins form one
+    chain by value (copper 1, silver 100, gold 10000, platinum 1000000): using a coin merges every full rate of it in
+    the player's inventory into the next larger coin, and sneaking while using it breaks one into the next smaller
+    (``item/CoinConverter``). Mob coin drops and prices are amounts of the smallest coin, paid in the largest coins."""
+
+    value: int = Field(
+        ge=1,
+        le=10**12,
+        description=(
+            "What one coin is worth, in the smallest coin (copper): 1 for the smallest, and each larger coin a whole "
+            "multiple of the one below it (100 by Matěj's decision, WoW's ratio)."
+        ),
+    )
+    plural: LocalizedText = Field(
+        description="Its name for more than one, in tooltips and messages: Copper Coins.",
+    )
+
+
 class ItemDef(StrictModel):
     """A simple item. Generates its registration, model, lang entries and (for now) a placeholder texture; a use and a
     flavor line become its tooltip, a recipe its recipe, and gear its durability, slot and fixed stats."""
@@ -260,6 +284,13 @@ class ItemDef(StrictModel):
     gear: GearDef | None = Field(
         default=None, description="Optional: makes the item a wand or a piece of armor, with its fixed stats."
     )
+    coin: CoinDef | None = Field(
+        default=None,
+        description=(
+            "Optional: makes the item a coin, with its worth in the smallest coin. Using it merges, sneaking and "
+            "using it breaks one."
+        ),
+    )
     dropped_by: list[ItemDropDef] = Field(
         default_factory=list,
         description="Mobs that are not ours (vanilla's) that drop the item, one entry per mob.",
@@ -283,6 +314,8 @@ class ItemDef(StrictModel):
                 raise ValueError("gear stacks to 1: leave max_stack_size out")
             if self.use is not None:
                 raise ValueError("gear has no use: right-clicking armor puts it on")
+        if self.coin is not None and (self.gear is not None or self.use is not None):
+            raise ValueError("a coin is neither gear nor an item with a use: using a coin converts it")
         entities = [drop.entity for drop in self.dropped_by]
         repeated = sorted({entity for entity in entities if entities.count(entity) > 1})
         if repeated:

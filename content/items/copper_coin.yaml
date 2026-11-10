@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../../tools/schemas/items.schema.json
+# The smallest of the four coins (RLM-284; ADR 0040, ADR 0072): what low mobs drop and what cheap things cost. Using
+# it merges every 100 in the inventory into Silver Coins (item/CoinConverter). The generated placeholder texture until
+# A1's art.
+id: copper_coin
+name:
+  en_us: Copper Coin
+max_stack_size: 99
+creative_tabs:
+  - minecraft:ingredients
+coin:
+  value: 1
+  plural:
+    en_us: Copper Coins
+flavor:
+  en_us: Worn smooth by more hands than anyone could count.
+color: "#B87333"

@@ -156,3 +156,7 @@ texts:
     en_us: You left the dungeon.
   not_in_dungeon:
     en_us: You are not in a dungeon.
+  # Coins (RLM-284), in the action bar. Using a coin with too few of it to merge: %1$s how many it takes, %2$s the
+  # coin's plural, %3$s the next larger coin.
+  coin_merge_too_few:
+    en_us: "You need %1$s %2$s to make 1 %3$s."

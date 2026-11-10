@@ -6,3 +6,11 @@ texts:
   # (Matěj's wording, 2026-10-20; the tooltip's only line).
   signet_not_consumed:
     en_us: Does not consume on use
+  # A coin's two uses (RLM-284), green lines the pipeline writes where the chain of coins has that neighbour. Merge:
+  # %1$s how many of this coin make one of the next, %2$s this coin's plural, %3$s the next larger coin.
+  coin_merge:
+    en_us: "Use: Merge every %1$s %2$s into 1 %3$s"
+  # Break: %1$s the sneak key (the player's own binding), %2$s how many of the next smaller coin one of this coin makes,
+  # %3$s that coin's plural.
+  coin_break:
+    en_us: "%1$s + Use: Break one into %2$s %3$s"

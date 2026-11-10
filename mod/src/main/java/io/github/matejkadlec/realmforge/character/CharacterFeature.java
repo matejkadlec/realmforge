@@ -3,9 +3,9 @@ package io.github.matejkadlec.realmforge.character;
 import com.mojang.serialization.MapCodec;
 import io.github.matejkadlec.realmforge.core.Requirement;
 import io.github.matejkadlec.realmforge.core.RequirementTypes;
-import io.github.matejkadlec.realmforge.spell.AimAssist;
 import io.github.matejkadlec.realmforge.spell.Rage;
 import io.github.matejkadlec.realmforge.stats.CharacterStats;
+import io.github.matejkadlec.realmforge.stats.MobRanks;
 import java.util.Optional;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.IEventBus;
@@ -28,9 +28,10 @@ public final class CharacterFeature {
 
     /**
      * Registers the feature's registries and event listeners (leveling's and the stat points' among them), hands
-     * {@code stats} the race and class modifiers, those of spent stat points and the main class's role, and
-     * {@code spell} a rage class's rage numbers and a mob's rank for aim assistance (its kill XP multiplier). At common
-     * setup, once every attribute is registered, it makes the attributes the character sheet shows sync to the client.
+     * {@code stats} the race and class modifiers, those of spent stat points, the main class's role and a mob's rank
+     * (its kill XP multiplier, which aim assistance and coin drops read), and {@code spell} a rage class's rage
+     * numbers. At common setup, once every attribute is registered, it makes the attributes the character sheet shows
+     * sync to the client.
      * Called once from {@code Realmforge}.
      */
     public static void register(IEventBus modBus) {
@@ -43,7 +44,7 @@ public final class CharacterFeature {
         Rage.addSource(holder -> holder instanceof Player player
                 ? Characters.mainClass(player).flatMap(playerClass -> playerClass.value().rage())
                 : Optional.empty());
-        AimAssist.rankBy(mob -> Leveling.killXpMultiplier(mob.registryAccess(), mob));
+        MobRanks.rankBy(mob -> Leveling.killXpMultiplier(mob.registryAccess(), mob));
         Leveling.register();
         CharacterCreation.register();
         Scrolls.register();

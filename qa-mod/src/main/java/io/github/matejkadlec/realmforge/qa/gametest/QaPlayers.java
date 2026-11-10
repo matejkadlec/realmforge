@@ -169,6 +169,17 @@ public final class QaPlayers {
         return packets.stream().filter(packet -> !packet.overlay()).map(ClientboundSystemChatPacket::content).toList();
     }
 
+    /** As {@link #sentChatLines}, but the action bar's lines (overlay messages). Drains the channel too. */
+    static List<Component> sentOverlayLines(ServerPlayer player) {
+        EmbeddedChannel channel = (EmbeddedChannel) player.connection.getConnection().channel();
+        List<ClientboundSystemChatPacket> packets = new ArrayList<>();
+        for (Object message = channel.readOutbound(); message != null; message = channel.readOutbound()) {
+            collectPackets(message, ClientboundSystemChatPacket.class, packets);
+        }
+        return packets.stream().filter(ClientboundSystemChatPacket::overlay).map(ClientboundSystemChatPacket::content)
+                .toList();
+    }
+
     private static <T> void collectPackets(Object packet, Class<T> type, List<T> into) {
         if (type.isInstance(packet)) {
             into.add(type.cast(packet));
