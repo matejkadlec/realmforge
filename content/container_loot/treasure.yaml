@@ -1,0 +1,65 @@
+# yaml-language-server: $schema=../../tools/schemas/container_loot.schema.json
+# What a chest in a treasure room holds (RLM-289; ADR 0041, the container loot design): loot worth about 5, 10 or 20
+# mob kills, the same ratio to the normal table as Matěj's kill-equivalents (2, 4 and 10). Besides more points it has
+# better things for the same tier: a gem is the purest of three rolls, the tier's better ores come as blocks
+# (diamonds rather than iron at Haven), and books are enchanted with more levels, which gives levels III and IV. The
+# numbers are the agent's proposal for Matěj's playtest (he left them to Claude, 2026-10-21).
+id: treasure
+budget: {min: 750, medium: 1500, max: 3000}
+kill_points: 150
+luck_percent: 5
+tiers:
+  haven: {level: 5, budget_percent: 100}
+  frontier: {level: 12, budget_percent: 110}
+  ascent: {level: 28, budget_percent: 120}
+  summit: {level: 44, budget_percent: 130}
+  pinnacle: {level: 56, budget_percent: 140}
+options:
+  - {type: coins, kills: 2, weight: 20}
+  - {type: coins, kills: 5, weight: 10}
+  # The picks that use up what is left.
+  - {type: item, item: minecraft:golden_carrot, count: {min: 3, max: 5}, cost: 150, weight: 8}
+  - {type: item, item: minecraft:golden_apple, cost: 300, weight: 5}
+  - {type: item, item: minecraft:enchanted_golden_apple, cost: 1500, weight: 1, limit: 1}
+  # The tier's better ores, as blocks: gold and diamonds at Haven, more of them and Undervault's gems later.
+  - {type: item, item: minecraft:gold_ingot, count: {min: 3, max: 6}, cost: 300, weight: 8, tiers: [haven]}
+  - {type: item, item: minecraft:diamond_ore, count: {min: 1, max: 2}, cost: 450, weight: 8, tiers: [haven]}
+  - {type: item, item: minecraft:diamond, count: {min: 1, max: 2}, cost: 450, weight: 6, tiers: [haven]}
+  - type: item
+    item: minecraft:deepslate_diamond_ore
+    count: {min: 2, max: 4}
+    cost: 600
+    weight: 8
+    tiers: [frontier, ascent, summit, pinnacle]
+  - type: item
+    item: minecraft:diamond
+    count: {min: 2, max: 3}
+    cost: 600
+    weight: 6
+    tiers: [frontier, ascent, summit, pinnacle]
+  - type: item
+    item: realmforge:ruby
+    count: {min: 1, max: 2}
+    cost: 450
+    weight: 3
+    tiers: [frontier, ascent, summit, pinnacle]
+  - type: item
+    item: realmforge:sapphire
+    count: {min: 1, max: 2}
+    cost: 450
+    weight: 3
+    tiers: [frontier, ascent, summit, pinnacle]
+  - type: item
+    item: realmforge:topaz
+    count: {min: 1, max: 2}
+    cost: 450
+    weight: 3
+    tiers: [frontier, ascent, summit, pinnacle]
+  # A gem of higher quality for the tier: the purest of three rolls.
+  - {type: gem, rolls: 3, cost: 450, weight: 12}
+  - {type: affix_item, cost: 450, weight: 12}
+  # Better enchantments: 20 to 30 levels, as a full enchanting table gives.
+  - {type: item, item: minecraft:book, enchant: {min: 20, max: 30}, cost: 450, weight: 8}
+  - {type: item, item: minecraft:diamond_sword, enchant: {min: 20, max: 30}, cost: 750, weight: 2}
+  - {type: item, item: minecraft:diamond_pickaxe, enchant: {min: 20, max: 30}, cost: 750, weight: 2}
+  - {type: item, item: minecraft:diamond_chestplate, enchant: {min: 20, max: 30}, cost: 900, weight: 1, limit: 1}

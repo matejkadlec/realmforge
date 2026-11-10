@@ -1,0 +1,68 @@
+# yaml-language-server: $schema=../../tools/schemas/container_loot.schema.json
+# What a normal chest or barrel of a dungeon holds (RLM-289; ADR 0041, the container loot design): loot worth about
+# 2, 4 or 10 mob kills (the least, the roll in the middle, a high roll), drawn by loot points for the player who opens
+# it. 150 points are one kill: the coins of a kill at the opener's world tier cost exactly that, and every other
+# option is priced against it. A later tier raises the budget by a tenth and brings its own materials; each point of
+# luck adds 5 %. The numbers are the agent's proposal for Matěj's playtest (he left them to Claude, 2026-10-21).
+id: normal
+budget: {min: 300, medium: 600, max: 1500}
+kill_points: 150
+luck_percent: 5
+tiers:
+  # The mob level a kill is counted at: about the middle of what a player meets while that tier is their highest.
+  haven: {level: 5, budget_percent: 100}        # Overworld
+  frontier: {level: 12, budget_percent: 110}    # from Undervault
+  ascent: {level: 28, budget_percent: 120}      # from Everwinter
+  summit: {level: 44, budget_percent: 130}      # from Quagmire
+  pinnacle: {level: 56, budget_percent: 140}    # from Unmade Isles
+options:
+  # Coins, as a mob drops them: one kill's, or three kills' in one pick.
+  - {type: coins, kills: 1, weight: 30}
+  - {type: coins, kills: 3, weight: 8}
+  # Food: the cheap picks that use up what is left, so a container is never empty.
+  - {type: item, item: minecraft:bread, count: {min: 2, max: 4}, cost: 60, weight: 12}
+  - {type: item, item: minecraft:cooked_beef, count: {min: 2, max: 3}, cost: 90, weight: 8}
+  - {type: item, item: minecraft:golden_carrot, count: {min: 2, max: 3}, cost: 120, weight: 5}
+  - {type: item, item: minecraft:golden_apple, cost: 300, weight: 2}
+  # Materials of the tier: Overworld's metals at Haven, diamonds and Undervault's gems from Frontier on.
+  - {type: item, item: minecraft:coal, count: {min: 4, max: 8}, cost: 60, weight: 8, tiers: [haven]}
+  - {type: item, item: minecraft:copper_ingot, count: {min: 4, max: 8}, cost: 90, weight: 8, tiers: [haven]}
+  - {type: item, item: minecraft:iron_ingot, count: {min: 2, max: 4}, cost: 150, weight: 10, tiers: [haven]}
+  - {type: item, item: minecraft:gold_ingot, count: {min: 1, max: 3}, cost: 180, weight: 6, tiers: [haven]}
+  - type: item
+    item: minecraft:iron_ingot
+    count: {min: 4, max: 8}
+    cost: 120
+    weight: 8
+    tiers: [frontier, ascent, summit, pinnacle]
+  - type: item
+    item: minecraft:gold_ingot
+    count: {min: 2, max: 5}
+    cost: 150
+    weight: 6
+    tiers: [frontier, ascent, summit, pinnacle]
+  - {type: item, item: minecraft:diamond, cost: 300, weight: 5, tiers: [frontier, ascent, summit, pinnacle]}
+  - {type: item, item: realmforge:ruby, cost: 300, weight: 2, tiers: [frontier, ascent, summit, pinnacle]}
+  - {type: item, item: realmforge:sapphire, cost: 300, weight: 2, tiers: [frontier, ascent, summit, pinnacle]}
+  - {type: item, item: realmforge:topaz, cost: 300, weight: 2, tiers: [frontier, ascent, summit, pinnacle]}
+  # Apotheosis's gems and affix gear, of the opener's tier; they come only from the budget (the table lies outside
+  # chests/, so Apotheosis's own chest injection skips it).
+  - {type: gem, cost: 300, weight: 7}
+  - {type: affix_item, cost: 450, weight: 6}
+  # Enchanted books and gear, enchanted as at a table with these levels.
+  - {type: item, item: minecraft:book, enchant: {min: 5, max: 15}, cost: 300, weight: 4}
+  - {type: item, item: minecraft:iron_sword, enchant: {min: 5, max: 15}, cost: 300, weight: 1, tiers: [haven, frontier]}
+  - {type: item, item: minecraft:iron_pickaxe, enchant: {min: 5, max: 15}, cost: 300, weight: 1, tiers: [haven, frontier]}
+  - {type: item, item: minecraft:bow, enchant: {min: 5, max: 15}, cost: 300, weight: 1, tiers: [haven, frontier]}
+  - type: item
+    item: minecraft:diamond_sword
+    enchant: {min: 10, max: 20}
+    cost: 450
+    weight: 1
+    tiers: [ascent, summit, pinnacle]
+  - type: item
+    item: minecraft:diamond_pickaxe
+    enchant: {min: 10, max: 20}
+    cost: 450
+    weight: 1
+    tiers: [ascent, summit, pinnacle]

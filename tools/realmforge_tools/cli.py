@@ -281,6 +281,7 @@ def main(argv: list[str] | None = None) -> int:
             f"{len(content.kill_xp_multipliers)} kill XP multiplier(s), "
             f"{len(content.effects)} effect(s), {len(content.spells)} spell(s), {len(content.mobs)} mob(s), "
             f"{len(content.bosses)} boss(es), {len(content.merchants)} merchant(s), "
+            f"{len(content.container_loot)} container loot table(s), "
             f"{len(content.sounds)} sound group(s)."
         )
         return 0

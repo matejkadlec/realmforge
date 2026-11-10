@@ -20,6 +20,7 @@ from realmforge_tools.schema.block import BlockDef
 from realmforge_tools.schema.boss import BossDef
 from realmforge_tools.schema.chapter import ChapterDef
 from realmforge_tools.schema.character import ClassDef, RaceDef
+from realmforge_tools.schema.container_loot import ContainerLootDef
 from realmforge_tools.schema.curve import CurveDef
 from realmforge_tools.schema.dimension_rules import DimensionRulesDef
 from realmforge_tools.schema.dungeon import DungeonTypeDef
@@ -87,6 +88,7 @@ CONTENT_TYPES: dict[str, type] = {
     "recipe_removals": RecipeRemovalDef,
     "netherite_upgrades": NetheriteUpgradeDef,
     "merchants": MerchantDef,
+    "container_loot": ContainerLootDef,
 }
 
 # content/worldgen/ holds vanilla worldgen JSON instead of YAML; it is validated and copied (content.py, validate.py).
@@ -136,6 +138,7 @@ __all__ = [
     "BossDef",
     "ChapterDef",
     "ClassDef",
+    "ContainerLootDef",
     "CurveDef",
     "DatapackType",
     "DimensionRulesDef",

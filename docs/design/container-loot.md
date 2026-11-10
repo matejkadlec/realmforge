@@ -2,7 +2,9 @@
 
 > What every chest and barrel in a dungeon holds. Written on 2026-10-19 from Matěj's decisions of that day, made
 > while he reviewed the [set-piece design](set-pieces.md) (RLM-175); [ADR 0041](../decisions/0041-dungeon-containers-hold-loot-through-lootr.md)
-> records them. Numbers are his; the mechanics are the proposal for the loot ticket (RLM-289), which tunes them.
+> records them. Numbers are his; the mechanics were built by the loot ticket (RLM-289, 2026-11-10), whose own numbers
+> are the agent's and wait for his playtest ([open questions](#open-questions)). How it is built:
+> [architecture 13](../architecture.md#13-items-gear-and-loot).
 
 ## At a glance
 
@@ -41,15 +43,18 @@ get their own, better table: more points, higher-quality gems for the tier, the 
 example diamonds rather than iron at Haven, the first tier), better enchantments (levels III and IV), all still
 relative to the player's level and world tier.
 
-## How it works (proposal)
+## How it works
 
-1. **The budget** is a loot entry of our own (Java, a `LootPoolEntryContainer` type): it draws a budget from the
-   container's range, scaled up by the world tier and by luck, then rolls items from weighted lists, each item with
-   its cost in points, until no affordable item is left. Vanilla loot tables roll each pool on its own and cannot
-   share a budget between rolls.
-2. **Calibration:** a mob kill's loot (its coins, drops and XP worth) gets a value in points per world tier, and a
-   container's budget is set to the table above in those kill-equivalents. The tables are generated from our YAML,
-   and a pytest simulation checks the averages per tier.
+Built by RLM-289 from `content/container_loot/` (`normal.yaml`, `treasure.yaml`).
+
+1. **The budget** is a loot entry of our own (`realmforge:budget`): it draws a budget from the container's range,
+   scaled up by the world tier and by luck, then buys options by weight, each with its cost in points, until none is
+   affordable. Vanilla loot tables roll each pool on its own and cannot share a budget between rolls. An option with
+   a limit of 1 is unique: it never comes twice from one container.
+2. **Calibration:** 150 points are one mob kill. The measure is the coins of a kill at the opener's world tier (the
+   curve `coin_drop` at the tier's level): a coins option costs its kills times 150, and every other option is
+   priced against that by hand. A pytest simulation rolls both tables at every tier and checks them against the
+   table above.
 3. **Per player:** Lootr gives each player their own roll of the container's loot table, with that player's tier and
    luck. Our dungeon builder places Lootr's chests and barrels with the loot table set (`loot/LootContainers`).
    Checked when Lootr went in (RLM-288): Lootr also takes over a vanilla container with a loot table by itself, but
@@ -59,6 +64,51 @@ relative to the player's level and world tier.
    the import turns into loot spots of the normal table (RLM-290); the import dressing's barrels; set-piece
    containers ([set-piece design](set-pieces.md#gameplay-rules)).
 5. **Progression items** (keys, chain items) never depend on a container roll: they drop at 100 % (LE-1).
+
+## The tables
+
+| | Normal | Treasure |
+| --- | --- | --- |
+| Budget (least, medium, most) | 300, 600, 1,500 | 750, 1,500, 3,000 |
+| In kills, at Haven | 2, 4, 10 | 5, 10, 20 |
+| Coins | 1 kill's (weight 30), 3 kills' (8) | 2 kills' (20), 5 kills' (10) |
+| Food | bread, cooked beef, golden carrots, a golden apple | golden carrots, golden apples, an enchanted golden apple (unique, 1,500) |
+| Materials at Haven | coal, copper, iron, gold | gold, diamonds, diamond ore |
+| Materials from Frontier on | iron, gold, a diamond, a Ruby, Sapphire or Topaz | diamonds, deepslate diamond ore, Rubies, Sapphires, Topazes |
+| Apotheosis | a gem (300), an affix item (450) | a gem, the purest of three rolls (450), an affix item (450) |
+| Enchanted | a book with 5 to 15 levels, iron gear, later diamond gear | a book with 20 to 30 levels (levels III and IV), diamond gear |
+
+- **Half of all containers lie below the medium:** a roll's budget is spread evenly between the least and the medium
+  for one half and between the medium and the most for the other, so a high roll is rare. Simulated at Haven, a
+  normal container is worth 1.8 to 10 kills, 3.8 in the middle and 4.8 on average; a treasure chest 5 to 20, 10 in
+  the middle and 10.8 on average.
+- **A later tier gives more and better:** the budget grows by a tenth per tier (110 % at Frontier, 140 % at
+  Pinnacle), a kill's coins grow with the tier's level, and the materials are the tier's.
+
+  | Tier | Opens with | A kill is counted at | One kill's coins |
+  | --- | --- | --- | --- |
+  | Haven | Overworld | level 5 | 1 to 3 copper |
+  | Frontier | Undervault | level 12 | 5 to 14 copper |
+  | Ascent | Everwinter | level 28 | 1 to 3 silver |
+  | Summit | Quagmire | level 44 | 18 to 55 silver |
+  | Pinnacle | Unmade Isles | level 56 | 1.3 to 4 gold |
+
+- **Luck:** each point adds 5 % to the budget. Apotheosis itself raises a player's luck with the tier (a fifth more
+  at Frontier, twice as much at Pinnacle), so luck from gear and potions counts for more later.
+- **How often Apotheosis's things come** (simulated at Haven): a gem in 18 % of normal containers and an affix item
+  in 11 %; in a treasure chest each in 35 %. Apotheosis's own injection would put an affix item into 30 % and a gem
+  into 20 % of every chest; with about 41 containers in a run that is too much, and it does not reach our tables.
+- **Outside `chests/`** (left to Claude by Matěj, 2026-10-21, RLM-289): the tables are
+  `realmforge:containers/<id>`, so Apotheosis's chest injection, which matches `chests/`, skips them, and its gems
+  and affix items are drawn inside the budget. The simulation therefore sees everything a container holds.
+- **No progression item** comes from a roll: validation refuses a realm's signet and a dungeon's key in a table
+  (research LE-1).
+- **Not in the tables yet:** curios, loot-only or not, because the pack has none (RLM-657); and materials of
+  their own for Ascent, Summit and Pinnacle, and gem ores as blocks, because those realms' content does not exist
+  (RLM-658). Until then the three later tiers use Frontier's materials.
+- **Trying it:** `/qa loot chest normal` and `/qa loot barrel treasure` place a loot container in front of the
+  player, as the dungeon builder does; `/apoth set_world_tier @s frontier` sets the world tier. The rooms'
+  containers get the tables with RLM-290 and W6.
 
 ## How many containers a room keeps
 
@@ -97,7 +147,20 @@ The test dungeon's tables (`content/dungeons/test_dungeon.yaml`):
 
 ## Open questions
 
-Both are answered.
+The two questions of the first version are answered. The tables' own numbers are the agent's (RLM-289, built and
+merged unplayed by Matěj's decision of 2026-11-10 for the `flow1 cloud` marathon, quoted in RLM-DEFERRED4: "Carry a
+playtest batch through its handoff, with every automated check. Then don't wait for Matěj: continue as if he answered
+`qa1`"); RLM-DEFERRED4 is the playtest he still owes them:
+
+- **The measure:** 150 points a kill, counted in the coins a mob of the tier's level drops. At Haven that makes a
+  pick of coins 1 to 3 copper, next to 2 to 4 iron ingots for the same points.
+- **The tiers' levels** (5, 12, 28, 44, 56) and a tenth more budget per tier; 5 % more per point of luck.
+- **What the tables hold** and at what cost and weight ([above](#the-tables)), and how often a gem and an affix
+  item come.
+- **A treasure room's better gem** as the purest of three rolls, and its books at 20 to 30 levels.
+- **Lootr's defaults:** its own chest textures and the particles on a container a player has not opened yet stay
+  on, a Lootr container breaks only while sneaking, and Lootr's advancement tab stays
+  ([pack README](../../pack/README.md#configuration)).
 
 1. **Budget ranges for the treasure table.** **Decided 2026-10-21 (left to Claude by Matěj, RLM-289): about 750 to
    3,000 points,** in the same ratio to the normal table as Matěj's kill-equivalents (5 to 20 against 2 to 10), tuned

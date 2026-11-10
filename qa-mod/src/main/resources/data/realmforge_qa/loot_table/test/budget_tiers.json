@@ -1,0 +1,40 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "realmforge:budget",
+          "budget": {
+            "min": 500,
+            "medium": 500,
+            "max": 500
+          },
+          "options": [
+            {
+              "cost": 100,
+              "tiers": [
+                "haven"
+              ],
+              "entry": {
+                "type": "minecraft:item",
+                "name": "minecraft:iron_ingot"
+              }
+            },
+            {
+              "cost": 100,
+              "tiers": [
+                "frontier"
+              ],
+              "entry": {
+                "type": "minecraft:item",
+                "name": "minecraft:gold_ingot"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

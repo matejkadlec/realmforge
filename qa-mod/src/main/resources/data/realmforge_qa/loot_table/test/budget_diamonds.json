@@ -1,0 +1,31 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "realmforge:budget",
+          "budget": {
+            "min": 1000,
+            "medium": 1000,
+            "max": 1000
+          },
+          "tier_percent": {
+            "frontier": 150
+          },
+          "luck_percent": 10,
+          "options": [
+            {
+              "cost": 100,
+              "entry": {
+                "type": "minecraft:item",
+                "name": "minecraft:diamond"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

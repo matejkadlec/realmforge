@@ -132,6 +132,13 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   and a fixed trade list as vanilla trade data, paid in coins at prices no reputation or Hero of the Village changes,
   without villager levels (`mob/merchant/Merchants`). The first two sell the Nether's and the End's materials
   (RLM-241, ADR 0034): the Ancient Builder at the Ancient Casting and the Ancient Specialist at the Ancient Workbench.
+  Lootr is in the pack (RLM-288, ADR 0041): every player gets their own contents of a loot container, and the dungeon
+  builder's way to place one is `loot/LootContainers` (Lootr's chest or barrel with the loot table). What a container
+  holds is drawn by loot points (RLM-289): the tables `normal` and `treasure` of `content/container_loot/`, a budget
+  per roll that the opener's world tier (Apotheosis's) and luck raise, spent on weighted options until none is
+  affordable (our loot entry `realmforge:budget`), worth about 2, 4 and 10 mob kills for a normal container and 5, 10
+  and 20 for a treasure chest. No room's container carries a table yet (RLM-290, W6); `/qa loot chest normal` places
+  one.
   Characters level up (C2): character XP from kills (by the victim's level and rank) and `/realmforge xp`, an XP
   bar, and a level cap from chapter advancements (10, then 18 after chapter 1 and 30 after chapter 2). The spell
   engine is done (C3a): spells as data in `content/spells/`, cast by players and mobs through one `SpellCaster` (from

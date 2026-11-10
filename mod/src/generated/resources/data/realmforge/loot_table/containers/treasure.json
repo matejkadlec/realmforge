@@ -1,0 +1,469 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": 1.0,
+      "bonus_rolls": 0.0,
+      "entries": [
+        {
+          "type": "realmforge:budget",
+          "budget": {
+            "min": 750,
+            "medium": 1500,
+            "max": 3000
+          },
+          "tier_percent": {
+            "haven": 100.0,
+            "frontier": 110.0,
+            "ascent": 120.0,
+            "summit": 130.0,
+            "pinnacle": 140.0
+          },
+          "luck_percent": 5.0,
+          "options": [
+            {
+              "weight": 20,
+              "cost": 300,
+              "tiers": [
+                "haven"
+              ],
+              "entry": {
+                "type": "realmforge:money",
+                "min": 2,
+                "max": 7
+              }
+            },
+            {
+              "weight": 20,
+              "cost": 300,
+              "tiers": [
+                "frontier"
+              ],
+              "entry": {
+                "type": "realmforge:money",
+                "min": 10,
+                "max": 29
+              }
+            },
+            {
+              "weight": 20,
+              "cost": 300,
+              "tiers": [
+                "ascent"
+              ],
+              "entry": {
+                "type": "realmforge:money",
+                "min": 210,
+                "max": 630
+              }
+            },
+            {
+              "weight": 20,
+              "cost": 300,
+              "tiers": [
+                "summit"
+              ],
+              "entry": {
+                "type": "realmforge:money",
+                "min": 3640,
+                "max": 10920
+              }
+            },
+            {
+              "weight": 20,
+              "cost": 300,
+              "tiers": [
+                "pinnacle"
+              ],
+              "entry": {
+                "type": "realmforge:money",
+                "min": 26519,
+                "max": 79557
+              }
+            },
+            {
+              "weight": 10,
+              "cost": 750,
+              "tiers": [
+                "haven"
+              ],
+              "entry": {
+                "type": "realmforge:money",
+                "min": 6,
+                "max": 17
+              }
+            },
+            {
+              "weight": 10,
+              "cost": 750,
+              "tiers": [
+                "frontier"
+              ],
+              "entry": {
+                "type": "realmforge:money",
+                "min": 24,
+                "max": 72
+              }
+            },
+            {
+              "weight": 10,
+              "cost": 750,
+              "tiers": [
+                "ascent"
+              ],
+              "entry": {
+                "type": "realmforge:money",
+                "min": 525,
+                "max": 1574
+              }
+            },
+            {
+              "weight": 10,
+              "cost": 750,
+              "tiers": [
+                "summit"
+              ],
+              "entry": {
+                "type": "realmforge:money",
+                "min": 9100,
+                "max": 27300
+              }
+            },
+            {
+              "weight": 10,
+              "cost": 750,
+              "tiers": [
+                "pinnacle"
+              ],
+              "entry": {
+                "type": "realmforge:money",
+                "min": 66298,
+                "max": 198893
+              }
+            },
+            {
+              "weight": 8,
+              "cost": 150,
+              "entry": {
+                "type": "minecraft:item",
+                "name": "minecraft:golden_carrot",
+                "functions": [
+                  {
+                    "function": "minecraft:set_count",
+                    "count": {
+                      "type": "minecraft:uniform",
+                      "min": 3.0,
+                      "max": 5.0
+                    },
+                    "add": false
+                  }
+                ]
+              }
+            },
+            {
+              "weight": 5,
+              "cost": 300,
+              "entry": {
+                "type": "minecraft:item",
+                "name": "minecraft:golden_apple"
+              }
+            },
+            {
+              "weight": 1,
+              "cost": 1500,
+              "limit": 1,
+              "entry": {
+                "type": "minecraft:item",
+                "name": "minecraft:enchanted_golden_apple"
+              }
+            },
+            {
+              "weight": 8,
+              "cost": 300,
+              "tiers": [
+                "haven"
+              ],
+              "entry": {
+                "type": "minecraft:item",
+                "name": "minecraft:gold_ingot",
+                "functions": [
+                  {
+                    "function": "minecraft:set_count",
+                    "count": {
+                      "type": "minecraft:uniform",
+                      "min": 3.0,
+                      "max": 6.0
+                    },
+                    "add": false
+                  }
+                ]
+              }
+            },
+            {
+              "weight": 8,
+              "cost": 450,
+              "tiers": [
+                "haven"
+              ],
+              "entry": {
+                "type": "minecraft:item",
+                "name": "minecraft:diamond_ore",
+                "functions": [
+                  {
+                    "function": "minecraft:set_count",
+                    "count": {
+                      "type": "minecraft:uniform",
+                      "min": 1.0,
+                      "max": 2.0
+                    },
+                    "add": false
+                  }
+                ]
+              }
+            },
+            {
+              "weight": 6,
+              "cost": 450,
+              "tiers": [
+                "haven"
+              ],
+              "entry": {
+                "type": "minecraft:item",
+                "name": "minecraft:diamond",
+                "functions": [
+                  {
+                    "function": "minecraft:set_count",
+                    "count": {
+                      "type": "minecraft:uniform",
+                      "min": 1.0,
+                      "max": 2.0
+                    },
+                    "add": false
+                  }
+                ]
+              }
+            },
+            {
+              "weight": 8,
+              "cost": 600,
+              "tiers": [
+                "frontier",
+                "ascent",
+                "summit",
+                "pinnacle"
+              ],
+              "entry": {
+                "type": "minecraft:item",
+                "name": "minecraft:deepslate_diamond_ore",
+                "functions": [
+                  {
+                    "function": "minecraft:set_count",
+                    "count": {
+                      "type": "minecraft:uniform",
+                      "min": 2.0,
+                      "max": 4.0
+                    },
+                    "add": false
+                  }
+                ]
+              }
+            },
+            {
+              "weight": 6,
+              "cost": 600,
+              "tiers": [
+                "frontier",
+                "ascent",
+                "summit",
+                "pinnacle"
+              ],
+              "entry": {
+                "type": "minecraft:item",
+                "name": "minecraft:diamond",
+                "functions": [
+                  {
+                    "function": "minecraft:set_count",
+                    "count": {
+                      "type": "minecraft:uniform",
+                      "min": 2.0,
+                      "max": 3.0
+                    },
+                    "add": false
+                  }
+                ]
+              }
+            },
+            {
+              "weight": 3,
+              "cost": 450,
+              "tiers": [
+                "frontier",
+                "ascent",
+                "summit",
+                "pinnacle"
+              ],
+              "entry": {
+                "type": "minecraft:item",
+                "name": "realmforge:ruby",
+                "functions": [
+                  {
+                    "function": "minecraft:set_count",
+                    "count": {
+                      "type": "minecraft:uniform",
+                      "min": 1.0,
+                      "max": 2.0
+                    },
+                    "add": false
+                  }
+                ]
+              }
+            },
+            {
+              "weight": 3,
+              "cost": 450,
+              "tiers": [
+                "frontier",
+                "ascent",
+                "summit",
+                "pinnacle"
+              ],
+              "entry": {
+                "type": "minecraft:item",
+                "name": "realmforge:sapphire",
+                "functions": [
+                  {
+                    "function": "minecraft:set_count",
+                    "count": {
+                      "type": "minecraft:uniform",
+                      "min": 1.0,
+                      "max": 2.0
+                    },
+                    "add": false
+                  }
+                ]
+              }
+            },
+            {
+              "weight": 3,
+              "cost": 450,
+              "tiers": [
+                "frontier",
+                "ascent",
+                "summit",
+                "pinnacle"
+              ],
+              "entry": {
+                "type": "minecraft:item",
+                "name": "realmforge:topaz",
+                "functions": [
+                  {
+                    "function": "minecraft:set_count",
+                    "count": {
+                      "type": "minecraft:uniform",
+                      "min": 1.0,
+                      "max": 2.0
+                    },
+                    "add": false
+                  }
+                ]
+              }
+            },
+            {
+              "weight": 12,
+              "cost": 450,
+              "entry": {
+                "type": "realmforge:tier_gem",
+                "rolls": 3
+              }
+            },
+            {
+              "weight": 12,
+              "cost": 450,
+              "entry": {
+                "type": "realmforge:tier_affix_item"
+              }
+            },
+            {
+              "weight": 8,
+              "cost": 450,
+              "entry": {
+                "type": "minecraft:item",
+                "name": "minecraft:book",
+                "functions": [
+                  {
+                    "function": "minecraft:enchant_with_levels",
+                    "levels": {
+                      "type": "minecraft:uniform",
+                      "min": 20.0,
+                      "max": 30.0
+                    },
+                    "options": "#minecraft:on_random_loot"
+                  }
+                ]
+              }
+            },
+            {
+              "weight": 2,
+              "cost": 750,
+              "entry": {
+                "type": "minecraft:item",
+                "name": "minecraft:diamond_sword",
+                "functions": [
+                  {
+                    "function": "minecraft:enchant_with_levels",
+                    "levels": {
+                      "type": "minecraft:uniform",
+                      "min": 20.0,
+                      "max": 30.0
+                    },
+                    "options": "#minecraft:on_random_loot"
+                  }
+                ]
+              }
+            },
+            {
+              "weight": 2,
+              "cost": 750,
+              "entry": {
+                "type": "minecraft:item",
+                "name": "minecraft:diamond_pickaxe",
+                "functions": [
+                  {
+                    "function": "minecraft:enchant_with_levels",
+                    "levels": {
+                      "type": "minecraft:uniform",
+                      "min": 20.0,
+                      "max": 30.0
+                    },
+                    "options": "#minecraft:on_random_loot"
+                  }
+                ]
+              }
+            },
+            {
+              "weight": 1,
+              "cost": 900,
+              "limit": 1,
+              "entry": {
+                "type": "minecraft:item",
+                "name": "minecraft:diamond_chestplate",
+                "functions": [
+                  {
+                    "function": "minecraft:enchant_with_levels",
+                    "levels": {
+                      "type": "minecraft:uniform",
+                      "min": 20.0,
+                      "max": 30.0
+                    },
+                    "options": "#minecraft:on_random_loot"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "random_sequence": "realmforge:containers/treasure"
+}

@@ -79,8 +79,8 @@ public final class LootrGameTests {
         helper.assertFalse(LootContainers.place(helper.getLevel(), helper.absolutePos(SPOT),
                 Blocks.STONE.defaultBlockState(), THREE_DIAMONDS, 0L), "stone takes no loot table");
         helper.assertValueEqual(blockId(helper), "minecraft:stone", "the block placed");
-        helper.assertTrue(LootContainers.isPerPlayer(LootContainers.perPlayer(Blocks.TRAPPED_CHEST.defaultBlockState())),
-                "a trapped chest has a twin");
+        BlockState trapped = LootContainers.perPlayer(Blocks.TRAPPED_CHEST.defaultBlockState());
+        helper.assertTrue(LootContainers.isPerPlayer(trapped), "a trapped chest has a twin");
         helper.succeed();
     }
 
