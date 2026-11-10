@@ -3,8 +3,8 @@
 A piece of armor is drawn on the wearer with vanilla's humanoid armor model, which reads two textures of vanilla's
 classic 64 x 32 layout (``HumanoidModel#createMesh``): ``humanoid`` for the helmet (head and hat), the chestplate
 (body and arms) and the boots (legs), and ``humanoid_leggings`` for the leggings (body and legs, a little slimmer).
-A texture generator cannot paint that layout, so the pipeline composes it, as ADR 0007 says for entity textures (the
-model first, a texture per face): each face is filled from the look's **cloth** tile, and the bands that make it
+A texture generator cannot paint that layout, so the pipeline composes it, as ADR 0023 keeps it for entity textures
+(the model first, a texture per face): each face is filled from the look's **cloth** tile, and the bands that make it
 clothing come from its **trim** tile. Both are approved art (``art/approved.py``, kinds ``armor`` and ``armor_trim``):
 16 x 16 tileable textures from the texture generator, cleaned to the project palette.
 
