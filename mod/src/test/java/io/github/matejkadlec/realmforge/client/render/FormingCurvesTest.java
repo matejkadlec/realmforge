@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import net.minecraft.world.phys.Vec3;
 import org.junit.jupiter.api.Test;
 
 /** Which cube of a forming model shows at which moment of the cast (RLM-640). */
@@ -116,5 +117,15 @@ class FormingCurvesTest {
         assertFalse(FormingCurves.swirls(true, true), "the pause menu: particles would pile up unseen");
         assertFalse(FormingCurves.swirls(false, false), "/tick freeze");
         assertFalse(FormingCurves.swirls(true, false));
+    }
+
+    @Test
+    void aProjectilesLaunchPointIsTheSameBeforeAndAfterItsFirstTicks() {
+        Vec3 origin = new Vec3(10, 65, -3);
+        Vec3 velocity = new Vec3(1.5, 0, 0);
+        for (int flown : new int[] {0, 1, 3}) {
+            Vec3 launched = FormingCurves.launchPoint(origin.add(velocity.scale(flown)), velocity, flown);
+            assertEquals(0, launched.distanceTo(origin), 1e-9, "after " + flown + " ticks of flight");
+        }
     }
 }

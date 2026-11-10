@@ -3,6 +3,7 @@ package io.github.matejkadlec.realmforge.client.render;
 import java.util.Arrays;
 import java.util.Comparator;
 import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * How a projectile's model shows while it forms in a caster's hands (RLM-640, ADR 0073 decision 7,
@@ -94,5 +95,16 @@ final class FormingCurves {
      */
     static boolean swirls(boolean paused, boolean ticksRunNormally) {
         return !paused && ticksRunNormally;
+    }
+
+    /**
+     * Where a projectile was launched, from where it is now ({@code middle}, after its last tick's move, not the
+     * renderer's interpolated position, which lags a tick behind), its velocity in blocks per tick and the ticks it
+     * has flown. The interpolated position with the same tick count would put the launch point up to a whole step
+     * behind, by an amount that changes with the frame it is first drawn in, and the bolt would appear that far
+     * ahead of the hands.
+     */
+    static Vec3 launchPoint(Vec3 middle, Vec3 velocity, int flownTicks) {
+        return middle.subtract(velocity.scale(flownTicks));
     }
 }

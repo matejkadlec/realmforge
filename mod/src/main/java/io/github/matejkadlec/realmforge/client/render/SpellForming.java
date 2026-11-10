@@ -356,8 +356,8 @@ public final class SpellForming {
         float yaw = firstPerson ? owner.getViewYRot(partialTick) : owner.yHeadRot;
         Vec3 hands = HandPoints.player(owner.getPosition(partialTick), owner.getEyeHeight(), owner.getScale(), pitch,
                 yaw, firstPerson);
-        Vec3 launched = projectile.getPosition(partialTick).add(0, projectile.getBbHeight() / 2, 0)
-                .subtract(projectile.getDeltaMovement().scale(projectile.flownTicks() + partialTick));
+        Vec3 launched = FormingCurves.launchPoint(projectile.position().add(0, projectile.getBbHeight() / 2, 0),
+                projectile.getDeltaMovement(), projectile.flownTicks());
         return new Launch(hands.subtract(launched), casting.share());
     }
 }
