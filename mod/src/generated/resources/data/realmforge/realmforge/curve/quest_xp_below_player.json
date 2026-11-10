@@ -1,0 +1,29 @@
+{
+  "name": "curve.realmforge.quest_xp_below_player.name",
+  "points": [
+    {
+      "level": 0,
+      "value": 1.0
+    },
+    {
+      "level": 4,
+      "value": 1.0
+    },
+    {
+      "level": 5,
+      "value": 0.75
+    },
+    {
+      "level": 6,
+      "value": 0.5
+    },
+    {
+      "level": 7,
+      "value": 0.25
+    },
+    {
+      "level": 8,
+      "value": 0.1
+    }
+  ]
+}

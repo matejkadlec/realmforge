@@ -5,8 +5,11 @@ quests it depends on, and is completed by its tasks: items to bring (detected or
 statistic, kills, a dimension to enter, a checkmark the player clicks, or one of our own (Q1-2): a character level to
 reach, a dungeon to complete or a spell to cast. FTB Quests has no task type of ours (ADR 0006), so each of our tasks
 becomes an advancement without a display, completed by one of our criteria triggers, that FTB Quests' advancement task
-reads. Its rewards are items, character XP (a ``CommandReward`` that runs our operator command ``/realmforge xp add``)
-and our own advancements, such as a realm's unlock ``realmforge:realm/<id>``. A chapter's last quest says
+reads. Its rewards are items and our own advancements, such as a realm's unlock ``realmforge:realm/<id>``, and its
+character XP, which nobody writes: the pipeline computes it from the quest's ``level`` and ``type`` (``quest_xp``,
+RLM-189; ``xp`` replaces it) and adds it as a ``CommandReward`` that runs our operator command ``/realmforge xp
+quest``. A quest with ``buy`` is a purchase in the quest shop (Q1-4, RLM-424): the book holds one quest per allowed
+purchase, each taking the price in coins and giving the item (``book_quests``). A chapter's last quest says
 ``completes_chapter: true`` and grants the chapter's advancement ``realmforge:chapter/<id>``, which raises the level cap
 (C2). Every advancement reward is per player and claims itself, so each member of an FTB Teams team gets it
 (architecture 16, RLM-73).
@@ -36,10 +39,11 @@ import re
 from collections.abc import Iterable
 from typing import Annotated, Literal
 
-from pydantic import Field, StringConstraints, model_validator
+from pydantic import Field, PrivateAttr, StringConstraints, model_validator
 
 from realmforge_tools.project import MOD_ID
 from realmforge_tools.schema.chapter import MAX_LEVEL, advancement_id
+from realmforge_tools.schema.coin import split
 from realmforge_tools.schema.common import (
     ContentId,
     LocalizedText,
@@ -48,6 +52,8 @@ from realmforge_tools.schema.common import (
     UniqueContentIds,
     UniqueResourceIds,
 )
+from realmforge_tools.schema.curve import CurveDef
+from realmforge_tools.schema.leveling import java_round
 
 # FTB Quests reads a quest object's id as 16 hex digits into a Java long and rejects 0 and 1 (BaseQuestFile#readID;
 # 1 is the quest file itself), so ids are positive longs from 2 up.
@@ -103,6 +109,8 @@ def reward_key(quest_id: str, key: str) -> str:
 # may name: dungeons completed, for repeatable quests.
 CUSTOM_STATS = ("dungeons_completed",)
 
+# The key of a quest's character XP reward, which the pipeline adds: no reward a quest writes may take it.
+XP_REWARD_KEY = "xp"
 # A level typed into a quest's text: "level 12", "Lv. 12", "lvl 12". A quest names levels only through its data.
 TYPED_LEVEL = re.compile(r"\b(?:level|lvl|lv)\.?\s*\d", re.IGNORECASE)
 
@@ -290,13 +298,17 @@ class ItemRewardDef(_RewardDef):
 
 
 class XpRewardDef(_RewardDef):
-    """Character XP: ``/realmforge xp add``, with the player's XP multiplier and level-ups (architecture 10.2)."""
+    """Character XP, with the player's XP multiplier and level-ups (architecture 10.2). Never written in a quest's
+    ``rewards``: the pipeline computes it from the quest's ``level`` and ``type``, or takes the quest's ``xp``
+    (``quest_xp``, RLM-189). With a ``level`` it is paid by ``/realmforge xp quest``, which lowers it for a player far
+    above the quest; without one by ``/realmforge xp add``."""
 
     type: Literal["xp"]
     amount: int = Field(ge=1, le=_LONG_MAX)
+    level: int | None = Field(default=None, ge=1, le=MAX_LEVEL, description="The quest's level.")
 
     def default_key(self) -> str:
-        return "xp"
+        return XP_REWARD_KEY
 
 
 class AdvancementRewardDef(_RewardDef):
@@ -338,6 +350,53 @@ class PlaceDef(StrictModel):
         if (self.structure is None) != (self.name is None):
             raise ValueError("a structure needs its name, and a name belongs to a structure")
         return self
+
+
+# What a quest is, which scales its XP (Matěj's XP model, 2026-10-15, RLM-189): a small errand, a standard quest, a
+# step of a chapter's main questline, a dungeon quest, a chapter's finale.
+QuestType = Literal["small", "standard", "main", "dungeon", "finale"]
+QUEST_TYPE_FACTORS: dict[str, float] = {
+    "small": 0.5,
+    "standard": 1.0,
+    "main": 1.5,
+    "dungeon": 2.0,
+    "finale": 4.0,
+}
+# The most purchases a buy quest allows: each is a quest of its own in the book.
+MAX_PURCHASES = 9
+# How far apart the purchases of a buy quest stand, to the right of the first, in FTB Quests' grid units.
+PURCHASE_SPACING = 1.0
+
+
+def quest_xp(kill_xp: CurveDef, level: int, quest_type: str) -> int:
+    """The character XP of a quest of ``quest_type`` at ``level`` (RLM-189): ``(10 + 0.25 x level)`` kills of a normal
+    mob of that level (the curve ``kill_xp``, 45 + 5 x level) times the type's factor, rounded to the nearest 10,
+    halves up: a standard quest gives 510 at level 1, 2180 at 20 and 8630 at 60."""
+    kills = 10 + 0.25 * level
+    return 10 * java_round(kills * kill_xp.value_at(level) * QUEST_TYPE_FACTORS[quest_type] / 10)
+
+
+class BuyDef(StrictModel):
+    """Makes the quest a purchase in the quest shop (Q1-4, RLM-424; realm portal design, "Realm signets"): its task
+    takes coins and its reward is an item. The pipeline writes one quest per allowed purchase, each opening with the
+    one before it, since FTB Quests has no repeat limit of its own; after the last, the shop is closed for good."""
+
+    item: ResourceId = Field(description="What is bought, e.g. realmforge:undervault_signet.")
+    count: int = Field(default=1, ge=1, le=_MAX_REWARD_COUNT, description="How many a purchase gives.")
+    price: int = Field(
+        ge=1,
+        le=_INT_MAX,
+        description=(
+            "What a purchase costs, in the smallest coin (copper), the same every time: 50 is 50 Copper Coins, 250 "
+            "is 2 Silver Coins and 50 Copper Coins. The quest takes the coins."
+        ),
+    )
+    limit: int = Field(
+        default=1,
+        ge=1,
+        le=MAX_PURCHASES,
+        description="How often it can be bought, then never again: 3 for a realm's lost signet.",
+    )
 
 
 class QuestDef(StrictModel):
@@ -401,8 +460,43 @@ class QuestDef(StrictModel):
             "and claimed by itself, which raises the level cap."
         ),
     )
-    tasks: list[TaskDef] = Field(min_length=1, description="Every task must be done to complete the quest.")
-    rewards: list[RewardDef] = Field(default_factory=list)
+    hide_until_dependencies_complete: bool = Field(
+        default=False,
+        description="Show the quest on its chapter's page only once every quest it depends on is completed.",
+    )
+    type: QuestType = Field(
+        default="standard",
+        description=(
+            "What the quest is, which scales its XP: small (x 0.5), standard (x 1), main (a step of the chapter's "
+            "main questline, x 1.5), dungeon (x 2) or finale (the chapter's last quest, x 4)."
+        ),
+    )
+    xp: int | None = Field(
+        default=None,
+        ge=0,
+        le=_LONG_MAX,
+        description=(
+            "Replaces the character XP the pipeline computes from the quest's level and type, for a special quest; 0 "
+            "for none. A quest without a level gives XP only through this."
+        ),
+    )
+    buy: BuyDef | None = Field(
+        default=None,
+        description=(
+            "Makes the quest a purchase in the quest shop: it takes coins and gives an item, up to its limit. Such "
+            "a quest has no tasks, rewards or XP of its own and is optional."
+        ),
+    )
+    tasks: list[TaskDef] = Field(
+        default_factory=list,
+        description="Every task must be done to complete the quest. At least one, unless the quest buys something.",
+    )
+    rewards: list[RewardDef] = Field(
+        default_factory=list,
+        description="Items and advancements. Character XP is computed from the quest's level and type (or its xp).",
+    )
+    # Which purchase of a buy quest this is, from 1; 0 for a quest as written. Set by book_quests on its copies.
+    _purchase: int = PrivateAttr(default=0)
 
     @model_validator(mode="after")
     def _consistent(self) -> QuestDef:
@@ -414,6 +508,29 @@ class QuestDef(StrictModel):
             raise ValueError(
                 "a quest that waits for its realm's mandatory quests (a final boss) cannot be optional"
             )
+        if any(isinstance(reward, XpRewardDef) for reward in self.rewards):
+            raise ValueError(
+                "character XP is no reward to write: the pipeline computes it from the quest's level and type; set "
+                "the quest's xp to give another amount"
+            )
+        if any(reward.effective_key() == XP_REWARD_KEY for reward in self.rewards):
+            raise ValueError(
+                f"the reward key {XP_REWARD_KEY!r} is taken: it is the key of the quest's computed character XP"
+            )
+        if self.buy is None:
+            if not self.tasks:
+                raise ValueError("a quest needs at least one task")
+        else:
+            if self.tasks or self.rewards or self.xp is not None:
+                raise ValueError(
+                    "a quest that buys something has no tasks, rewards or xp of its own: the price is its task and "
+                    "the item its reward"
+                )
+            if not self.optional or self.completes_chapter or self.requires_mandatory:
+                raise ValueError(
+                    "a quest that buys something is optional (optional: true), and neither completes its chapter "
+                    "nor is a final boss quest: a purchase never counts towards the story"
+                )
         errands = sorted({task.type for task in self.tasks if isinstance(task, ERRAND_TASKS)})
         if errands and self.level is None:
             raise ValueError(
@@ -450,6 +567,11 @@ class QuestDef(StrictModel):
                 )
         return self
 
+    @property
+    def purchase(self) -> int:
+        """Which purchase of a buy quest this book quest is, from 1; 0 for a quest as written (``book_quests``)."""
+        return self._purchase
+
     def texts(self) -> list[tuple[str, LocalizedText]]:
         """Every text written by hand, with its field: the title, subtitle, description, place name and task titles."""
         texts: list[tuple[str, LocalizedText]] = [("title", self.title)]
@@ -467,6 +589,75 @@ class QuestDef(StrictModel):
 def chapter_advancement_reward(chapter_id: str) -> AdvancementRewardDef:
     """The reward of a chapter's last quest: the chapter's advancement (``completes_chapter``)."""
     return AdvancementRewardDef(type="advancement", advancement=f"realmforge:{advancement_id(chapter_id)}")
+
+
+def purchase_id(quest_id: str, number: int) -> str:
+    """The id of a buy quest's ``number``-th purchase (from 1): the quest's own id for the first, so the book keeps
+    it, then ``<id>_2``, ``<id>_3``."""
+    return quest_id if number == 1 else f"{quest_id}_{number}"
+
+
+def purchase_ids(quest: QuestDef) -> list[str]:
+    """The ids of the quests a buy quest becomes in the book; empty for any other quest."""
+    return [] if quest.buy is None else [purchase_id(quest.id, n) for n in range(1, quest.buy.limit + 1)]
+
+
+def book_quests(
+    quests: Iterable[QuestDef], coins: list[tuple[str, int]], kill_xp: CurveDef | None
+) -> list[QuestDef]:
+    """The quests as the quest book holds them, which the generator writes and the checks of ids and places read:
+
+    - a buy quest becomes one quest per allowed purchase (``purchase_ids``): each takes the price in the largest coins
+      of ``coins`` (item id and value, smallest first) and gives the item; the first keeps the quest's dependencies
+      and place, each later one depends on the purchase before it, stands ``PURCHASE_SPACING`` further right and is
+      hidden until that one is bought. They give no XP;
+    - any other quest gets its character XP as a reward, after its own rewards: its ``xp``, or ``quest_xp`` of its
+      level and type on the curve ``kill_xp`` (none without a level, an ``xp`` of 0, or the curve).
+    """
+    book: list[QuestDef] = []
+    for quest in quests:
+        if quest.buy is None:
+            book.append(_with_xp(quest, kill_xp))
+            continue
+        counts = split(quest.buy.price, [value for _, value in coins])
+        tasks = [
+            ItemTaskDef(type="item", item=coins[index][0], count=counts[index], consume=True)
+            for index in range(len(coins) - 1, -1, -1)
+            if counts[index] > 0
+        ]
+        reward = ItemRewardDef(type="item", item=quest.buy.item, count=quest.buy.count)
+        for number in range(1, quest.buy.limit + 1):
+            later = number > 1
+            copy = quest.model_copy(
+                update={
+                    "id": purchase_id(quest.id, number),
+                    "tasks": tasks,
+                    "rewards": [reward],
+                    "dependencies": [purchase_id(quest.id, number - 1)]
+                    if later
+                    else list(quest.dependencies),
+                    "position": PositionDef(
+                        x=quest.position.x + (number - 1) * PURCHASE_SPACING, y=quest.position.y
+                    ),
+                    "hide_until_dependencies_complete": later or quest.hide_until_dependencies_complete,
+                }
+            )
+            copy._purchase = number
+            book.append(copy)
+    return book
+
+
+def _with_xp(quest: QuestDef, kill_xp: CurveDef | None) -> QuestDef:
+    if quest.xp is not None:
+        amount = quest.xp
+    elif quest.level is not None and kill_xp is not None:
+        amount = quest_xp(kill_xp, quest.level, quest.type)
+    else:
+        amount = 0
+    if amount < 1:
+        return quest
+    reward = XpRewardDef(type="xp", amount=amount, level=quest.level)
+    return quest.model_copy(update={"rewards": [*quest.rewards, reward]})
 
 
 def quest_rewards(quest: QuestDef) -> list[RewardDef]:

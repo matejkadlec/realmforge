@@ -593,6 +593,9 @@ public final class GeneratedTexts {
     /** {@code quest.realmforge.level} from {@code content/texts/quest.yaml}: "Recommended level: %1$s" */
     public static final String QUEST_LEVEL = "quest.realmforge.level";
 
+    /** {@code quest.realmforge.purchase} from {@code content/texts/quest.yaml}: "Purchase %1$s of %2$s" */
+    public static final String QUEST_PURCHASE = "quest.realmforge.purchase";
+
     /** {@code quest.realmforge.structure_in_biome} from {@code content/texts/quest.yaml}: "%1$s in %2$s" */
     public static final String QUEST_STRUCTURE_IN_BIOME = "quest.realmforge.structure_in_biome";
 

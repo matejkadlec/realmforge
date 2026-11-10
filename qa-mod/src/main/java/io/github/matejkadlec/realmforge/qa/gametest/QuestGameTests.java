@@ -12,8 +12,6 @@ import io.github.matejkadlec.realmforge.qa.generated.GeneratedQuestBookExpectati
 import io.github.matejkadlec.realmforge.qa.instance.SpikeLayouts;
 import io.github.matejkadlec.realmforge.spell.CastResult;
 import io.github.matejkadlec.realmforge.spell.Casting;
-import io.github.matejkadlec.realmforge.spell.ResourceTypes;
-import io.github.matejkadlec.realmforge.spell.Resources;
 import io.github.matejkadlec.realmforge.spell.Spell;
 import io.github.matejkadlec.realmforge.spell.SpellAim;
 import io.github.matejkadlec.realmforge.spell.SpellCaster;
@@ -133,8 +131,8 @@ public final class QuestGameTests {
         AdvancementHolder anyTask = advancement(helper, sample(helper, "spell", false));
         ResourceKey<Spell> spell = ResourceKey.create(SpellRegistries.SPELL, Identifier.parse(named.target()));
         CastGameTests.learn(helper, player, spell);
-        // The sample is the first self-cast spell, a mana or a rage one (Battle Shout): the player has both.
-        Resources.set(player, ResourceTypes.RAGE, 100);
+        // The sample is an instant spell a player casts on themselves, free or for mana, which the caster has
+        // (generate/quests.py, castable_sample; RLM-472).
         helper.assertFalse(isDone(player, namedTask), "not done before the cast");
         CastResult result = SpellCaster.cast(player, spell, SpellAim.NONE);
         helper.assertTrue(result.success() && !result.begun(), named.target() + " was not cast at once: "

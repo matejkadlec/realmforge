@@ -38,12 +38,10 @@ description:
   - {en_us: Realmforge is wide.}
   - {en_us: Look around.}
 position: {x: 0, y: 0}
+xp: 500
 tasks:
   - type: checkmark
     title: {en_us: I am ready}
-rewards:
-  - type: xp
-    amount: 500
 """
 
 SECOND = """\
@@ -219,8 +217,15 @@ def test_quests_tasks_and_rewards(repo: RepoPaths) -> None:
     assert without_ids(first["rewards"]) == [
         {"type": "command", "command": "/realmforge xp add {p} 500", "permission_level": 2, "silent": True}
     ]
+    # A quest with a level pays the XP the pipeline computes from it, after its own rewards (RLM-189).
     assert without_ids(second["rewards"]) == [
-        {"type": "item", "item": {"id": "minecraft:bread", "count": 1}, "count": 4}
+        {"type": "item", "item": {"id": "minecraft:bread", "count": 1}, "count": 4},
+        {
+            "type": "command",
+            "command": "/realmforge xp quest {p} 650 3",
+            "permission_level": 2,
+            "silent": True,
+        },
     ]
     assert without_ids(last["rewards"]) == [
         {
@@ -229,6 +234,12 @@ def test_quests_tasks_and_rewards(repo: RepoPaths) -> None:
             "auto": "enabled",
             "advancement": "realmforge:realm/stone",
             "criterion": "",
+        },
+        {
+            "type": "command",
+            "command": "/realmforge xp quest {p} 1020 8",
+            "permission_level": 2,
+            "silent": True,
         },
         {
             "type": "advancement",
@@ -288,7 +299,7 @@ def test_ids_are_hex_longs_unique_and_derived_from_keys(repo: RepoPaths) -> None
     add_book(repo)
     files = book(repo)
     ids = object_ids(files[f"{BOOK}/chapters/chapter_1.json5"])
-    assert len(ids) == len(set(ids)) == 1 + 3 + 6 + 4  # the chapter, its quests, their tasks and rewards
+    assert len(ids) == len(set(ids)) == 1 + 3 + 6 + 6  # the chapter, its quests, their tasks and rewards
     for id_ in ids:
         assert HEX_ID.match(id_)
         assert 1 < int(id_, 16) <= 2**63 - 1

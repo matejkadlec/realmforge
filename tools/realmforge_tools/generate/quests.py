@@ -18,9 +18,9 @@ book of ours until Q2 adds quests. FTB Quests rewrites the book in the instance 
 (``Chapter#addQuest`` marks it changed), in its own JSON5 style and with its defaults added, keeping every id and value
 written here (checked with a GameTest server, 2026-10-25); packwiz-installer brings these files back at the next
 launch. Ids come from ``schema/quest.object_id``. A character XP reward is a
-``CommandReward`` that runs ``/realmforge xp add`` for the claiming player (FTB Quests puts the name in ``{p}``) with
-permission level 2, our command's level (FTB Quests' default is 0), quietly; its title reads as FTB Quests' own XP
-reward does ("XP: +500", in FTB Quests' translation of "XP"). An advancement reward is per player
+``CommandReward`` that runs ``/realmforge xp quest`` (``xp add`` for a quest without a level) for the claiming player
+(FTB Quests puts the name in ``{p}``) with permission level 2, our command's level (FTB Quests' default is 0), quietly;
+its title reads as FTB Quests' own XP reward does ("XP: +500", in FTB Quests' translation of "XP"). An advancement reward is per player
 (``team_reward: false``) and claims itself (``auto: "enabled"``), as architecture 16 explains.
 
 Our own tasks (Q1-2: a level, a dungeon, a spell) become advancements in the core mod's data,
@@ -31,6 +31,11 @@ is a JSON text component as one (``TextUtils#parseRawText``), so these titles an
 with what" block (Q1-3) are components that translate through our own texts (``content/texts/quest.yaml``) and the
 game's names of realms, items, biomes, dungeons and spells. A final boss quest's dependencies include its realm's
 mandatory quests (``schema/quest.quest_dependencies``, RLM-367).
+
+The generator writes the book's quests (``Content.book_quests``), not the files' one to one: a quest's character XP
+is a reward the pipeline computes from its level and type (RLM-189), paid by ``/realmforge xp quest`` with the quest's
+level, and a quest that buys something (Q1-4) becomes one quest per allowed purchase, each taking the price in coins
+(item tasks that consume) and hidden until the one before it is bought, since FTB Quests has no repeat limit.
 
 For the QA mod it writes ``GeneratedQuestBookExpectations`` (every chapter, quest, task and reward, which a GameTest
 compares with the book FTB Quests loaded) and, from sample tasks, advancements in the QA mod's own data that a
@@ -80,10 +85,12 @@ from realmforge_tools.schema.quest import (
     task_advancement_path,
     task_key,
 )
-from realmforge_tools.schema.spell import SELF
+from realmforge_tools.schema.spell import SELF, SpellDef
 from realmforge_tools.schema.text import text_key
 
 SOURCES = "content/quests/ and content/chapters/"
+# The resource the QA GameTest's bare caster has: a sample spell is free or costs it (castable_sample).
+MANA = f"{MOD_ID}:mana"
 LOCALE = "en_us"
 # BaseQuestFile.VERSION in FTB Quests 26.1.2.9: a file of another version is marked changed and saved again on load.
 FILE_VERSION = 13
@@ -128,7 +135,7 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
     root = paths.pack_quests
     lang = root / "lang" / LOCALE
     chapters = {entry.model.id: entry.model for entry in content.chapters}
-    every_quest = [entry.model for entry in content.quests]
+    every_quest = content.book_quests()
     by_chapter: dict[str, list[QuestDef]] = {}
     for quest in every_quest:
         by_chapter.setdefault(quest.chapter, []).append(quest)
@@ -191,7 +198,8 @@ def task_advancement(task: OwnTaskDef) -> dict[str, Any]:
 def sample_tasks(content: Content) -> list[tuple[str, OwnTaskDef]]:
     """One task of each of our kinds, for the QA mod's advancements (``realmforge_qa:quest_task/<name>``) that a
     GameTest completes: a level, any dungeon and the first dungeon type, any spell and the first spell a player casts on
-    themselves, which a test casts without a target. Without a dungeon type or such a spell, its sample is left out."""
+    themselves at once (``castable_sample``), which a test casts without a target. Without a dungeon type or such a
+    spell, its sample is left out."""
     samples: list[tuple[str, OwnTaskDef]] = [
         ("quest_task/level", LevelTaskDef(type="level", level=5)),
         ("quest_task/any_dungeon", DungeonTaskDef(type="dungeon")),
@@ -200,14 +208,25 @@ def sample_tasks(content: Content) -> list[tuple[str, OwnTaskDef]]:
     if content.dungeons:
         dungeon = f"{MOD_ID}:{content.dungeons[0].model.id}"
         samples.append(("quest_task/dungeon", DungeonTaskDef(type="dungeon", dungeon=dungeon)))
-    castable = [
-        entry.model.id
-        for entry in content.spells
-        if not entry.model.npc_only and not entry.model.is_passive and entry.model.targeting.type == SELF
-    ]
+    castable = [entry.model.id for entry in content.spells if castable_sample(entry.model)]
     if castable:
         samples.append(("quest_task/spell", SpellTaskDef(type="spell", spell=f"{MOD_ID}:{castable[0]}")))
     return samples
+
+
+def castable_sample(spell: SpellDef) -> bool:
+    """Whether the GameTest's bare caster can cast ``spell`` on itself at once (RLM-472): a player's spell that is
+    cast (no passive, no aura), targets its caster, is instant, needs nothing in hand and is free or costs mana, the
+    one resource that caster has. A self-targeted shout that costs rage, a self channel or a spell that needs a weapon
+    would fail the test's cast, in whatever content pull request added it."""
+    return (
+        not spell.npc_only
+        and spell.is_cast
+        and spell.targeting.type == SELF
+        and spell.cast.type == "instant"
+        and not spell.requires
+        and (spell.cost is None or spell.cost.resource == MANA)
+    )
 
 
 class _Names:
@@ -303,6 +322,13 @@ def where_with_what(quest: QuestDef, names: _Names) -> list[dict[str, Any]]:
     return lines
 
 
+def purchase_lines(quest: QuestDef) -> list[dict[str, Any]]:
+    """A buy quest's generated line (Q1-4): which purchase of how many it is, when it can be bought more than once. A
+    shop is nowhere in particular, so it gets no "where, with what" block; its price shows as its tasks."""
+    assert quest.buy is not None
+    return [_text("purchase", quest.purchase, quest.buy.limit)] if quest.buy.limit > 1 else []
+
+
 def _json5(data: dict[str, Any]) -> bytes:
     return header(Path(__file__), SOURCES).encode("utf-8") + dump_json(data)
 
@@ -372,6 +398,8 @@ def _quest(quest: QuestDef, every_quest: list[QuestDef]) -> dict[str, Any]:
         data["dependencies"] = [_code(quest_key(dependency)) for dependency in dependencies]
     if quest.optional:
         data["optional"] = True
+    if quest.hide_until_dependencies_complete:
+        data["hide_until_deps_complete"] = True
     data["tasks"] = [_task(quest, task) for task in quest.tasks]
     data["rewards"] = [_reward(quest, reward) for reward in quest_rewards(quest)]
     return data
@@ -414,7 +442,7 @@ def _reward(quest: QuestDef, reward: RewardDef) -> dict[str, Any]:
         case XpRewardDef():
             data |= {
                 "type": "command",
-                "command": f"/realmforge xp add {{p}} {reward.amount}",
+                "command": xp_command(reward),
                 "permission_level": COMMAND_PERMISSION_LEVEL,
                 "silent": True,
             }
@@ -429,6 +457,15 @@ def _reward(quest: QuestDef, reward: RewardDef) -> dict[str, Any]:
     return data
 
 
+def xp_command(reward: XpRewardDef) -> str:
+    """The command that pays a quest's character XP to the claiming player (FTB Quests puts the name in ``{p}``):
+    ``/realmforge xp quest`` with the quest's level, which lowers the XP of a player far above it (RLM-189), or
+    ``/realmforge xp add`` for a quest without a level."""
+    if reward.level is None:
+        return f"/realmforge xp add {{p}} {reward.amount}"
+    return f"/realmforge xp quest {{p}} {reward.amount} {reward.level}"
+
+
 def _quest_texts(quest: QuestDef, names: _Names) -> dict[str, Any]:
     key = quest_key(quest.id)
     texts: dict[str, Any] = {_translation_key("quest", key, "title"): quest.title.en_us}
@@ -438,7 +475,9 @@ def _quest_texts(quest: QuestDef, names: _Names) -> dict[str, Any]:
     lines: list[str] = []
     for paragraph in quest.description:
         lines += [*([""] if lines else []), paragraph.en_us]
-    lines += [*([""] if lines else []), *(_component(line) for line in where_with_what(quest, names))]
+    generated = purchase_lines(quest) if quest.buy is not None else where_with_what(quest, names)
+    if generated:
+        lines += [*([""] if lines else []), *(_component(line) for line in generated)]
     texts[_translation_key("quest", key, "quest_desc")] = lines
     for task in quest.tasks:
         title_key = _translation_key("task", task_key(quest.id, task.effective_key()), "title")
@@ -472,7 +511,7 @@ def _ftb_reward_type(reward: RewardDef) -> str:
 def _expectations(content: Content) -> bytes:
     """The quest book as FTB Quests should load it, and the sample task advancements."""
     chapters = {entry.model.id: entry.model for entry in content.chapters}
-    every_quest = [entry.model for entry in content.quests]
+    every_quest = content.book_quests()
     by_chapter: dict[str, list[QuestDef]] = {}
     for quest in every_quest:
         by_chapter.setdefault(quest.chapter, []).append(quest)

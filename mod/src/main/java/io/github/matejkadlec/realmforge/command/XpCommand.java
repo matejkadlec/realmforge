@@ -1,5 +1,6 @@
 package io.github.matejkadlec.realmforge.command;
 
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.LongArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -7,6 +8,8 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.matejkadlec.realmforge.character.CharacterData;
 import io.github.matejkadlec.realmforge.character.Characters;
 import io.github.matejkadlec.realmforge.generated.GeneratedTexts;
+import io.github.matejkadlec.realmforge.progression.LevelCaps;
+import io.github.matejkadlec.realmforge.stats.EntityLevel;
 import java.util.Collection;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -20,6 +23,9 @@ import net.minecraft.server.level.ServerPlayer;
  * <ul>
  *   <li>{@code /realmforge xp add <players> <xp>} gives XP as a reward: times each player's XP multiplier, with
  *   level-ups and their effects, up to the level cap, where XP stops; the reply says what each player gained.</li>
+ *   <li>{@code /realmforge xp quest <players> <xp> <level>} gives the XP of a quest of that level (RLM-189), which
+ *   the quest book's rewards run: as {@code add}, but a player far above the quest's level gets less of it
+ *   ({@link io.github.matejkadlec.realmforge.character.QuestXp}).</li>
  *   <li>{@code /realmforge xp set <players> <xp>} sets the total XP, at most the XP of the cap's level, and the level
  *   from it, quietly; the reply says the total each player holds.</li>
  *   <li>{@code /realmforge xp query <player>} shows the total XP, the level and the level cap; it returns the XP.</li>
@@ -36,6 +42,12 @@ final class XpCommand {
                         .then(Commands.argument("players", EntityArgument.players())
                                 .then(Commands.argument("xp", LongArgumentType.longArg(0))
                                         .executes(XpCommand::add))))
+                .then(Commands.literal("quest")
+                        .then(Commands.argument("players", EntityArgument.players())
+                                .then(Commands.argument("xp", LongArgumentType.longArg(0))
+                                        .then(Commands.argument("level",
+                                                        IntegerArgumentType.integer(EntityLevel.MIN, LevelCaps.MAX_LEVEL))
+                                                .executes(XpCommand::quest)))))
                 .then(Commands.literal("set")
                         .then(Commands.argument("players", EntityArgument.players())
                                 .then(Commands.argument("xp", LongArgumentType.longArg(0))
@@ -55,6 +67,24 @@ final class XpCommand {
                 continue;
             }
             long gained = Characters.rewardXp(player, xp);
+            context.getSource().sendSuccess(() -> Component.translatable(GeneratedTexts.COMMAND_XP_ADDED, gained,
+                    player.getDisplayName()), true);
+            changed++;
+        }
+        return changed;
+    }
+
+    private static int quest(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        Collection<ServerPlayer> players = EntityArgument.getPlayers(context, "players");
+        long xp = LongArgumentType.getLong(context, "xp");
+        int level = IntegerArgumentType.getInteger(context, "level");
+        int changed = 0;
+        for (ServerPlayer player : players) {
+            if (!Characters.exists(player)) {
+                noCharacter(context, player);
+                continue;
+            }
+            long gained = Characters.rewardQuestXp(player, xp, level);
             context.getSource().sendSuccess(() -> Component.translatable(GeneratedTexts.COMMAND_XP_ADDED, gained,
                     player.getDisplayName()), true);
             changed++;

@@ -28,6 +28,13 @@ public final class GeneratedLevelingExpectations {
     public record KillSample(int victimLevel, int playerLevel, double rank, double multiplier, long xp) {
     }
 
+    /**
+     * The XP a player of a level with an XP multiplier gets from a quest of a level that gives {@code amount}: a
+     * standard quest's XP of that level, lowered for a player far above the quest (RLM-189).
+     */
+    public record QuestSample(long amount, int questLevel, int playerLevel, double multiplier, long xp) {
+    }
+
     public static final List<LevelXp> LEVELS = List.of(
             new LevelXp(1, 1500L, 0L, 0),
             new LevelXp(2, 1770L, 1500L, 1),
@@ -274,6 +281,72 @@ public final class GeneratedLevelingExpectations {
             new KillSample(20, 20, 0.25, 1.0, 36L),
             new KillSample(20, 20, 1.5, 1.0, 218L),
             new KillSample(20, 20, 10.0, 1.0, 1450L));
+
+    public static final List<QuestSample> QUESTS = List.of(
+            new QuestSample(510L, 1, 1, 1.0, 510L),
+            new QuestSample(510L, 1, 1, 1.5, 765L),
+            new QuestSample(510L, 1, 2, 1.0, 510L),
+            new QuestSample(510L, 1, 2, 1.5, 765L),
+            new QuestSample(510L, 1, 4, 1.0, 510L),
+            new QuestSample(510L, 1, 4, 1.5, 765L),
+            new QuestSample(510L, 1, 5, 1.0, 510L),
+            new QuestSample(510L, 1, 5, 1.5, 765L),
+            new QuestSample(510L, 1, 6, 1.0, 383L),
+            new QuestSample(510L, 1, 6, 1.5, 574L),
+            new QuestSample(510L, 1, 7, 1.0, 255L),
+            new QuestSample(510L, 1, 7, 1.5, 383L),
+            new QuestSample(510L, 1, 8, 1.0, 128L),
+            new QuestSample(510L, 1, 8, 1.5, 191L),
+            new QuestSample(510L, 1, 9, 1.0, 51L),
+            new QuestSample(510L, 1, 9, 1.5, 77L),
+            new QuestSample(510L, 1, 10, 1.0, 51L),
+            new QuestSample(510L, 1, 10, 1.5, 77L),
+            new QuestSample(510L, 1, 31, 1.0, 51L),
+            new QuestSample(510L, 1, 31, 1.5, 77L),
+            new QuestSample(860L, 6, 3, 1.0, 860L),
+            new QuestSample(860L, 6, 3, 1.5, 1290L),
+            new QuestSample(860L, 6, 6, 1.0, 860L),
+            new QuestSample(860L, 6, 6, 1.5, 1290L),
+            new QuestSample(860L, 6, 7, 1.0, 860L),
+            new QuestSample(860L, 6, 7, 1.5, 1290L),
+            new QuestSample(860L, 6, 9, 1.0, 860L),
+            new QuestSample(860L, 6, 9, 1.5, 1290L),
+            new QuestSample(860L, 6, 10, 1.0, 860L),
+            new QuestSample(860L, 6, 10, 1.5, 1290L),
+            new QuestSample(860L, 6, 11, 1.0, 645L),
+            new QuestSample(860L, 6, 11, 1.5, 968L),
+            new QuestSample(860L, 6, 12, 1.0, 430L),
+            new QuestSample(860L, 6, 12, 1.5, 645L),
+            new QuestSample(860L, 6, 13, 1.0, 215L),
+            new QuestSample(860L, 6, 13, 1.5, 323L),
+            new QuestSample(860L, 6, 14, 1.0, 86L),
+            new QuestSample(860L, 6, 14, 1.5, 129L),
+            new QuestSample(860L, 6, 15, 1.0, 86L),
+            new QuestSample(860L, 6, 15, 1.5, 129L),
+            new QuestSample(860L, 6, 36, 1.0, 86L),
+            new QuestSample(860L, 6, 36, 1.5, 129L),
+            new QuestSample(1960L, 18, 15, 1.0, 1960L),
+            new QuestSample(1960L, 18, 15, 1.5, 2940L),
+            new QuestSample(1960L, 18, 18, 1.0, 1960L),
+            new QuestSample(1960L, 18, 18, 1.5, 2940L),
+            new QuestSample(1960L, 18, 19, 1.0, 1960L),
+            new QuestSample(1960L, 18, 19, 1.5, 2940L),
+            new QuestSample(1960L, 18, 21, 1.0, 1960L),
+            new QuestSample(1960L, 18, 21, 1.5, 2940L),
+            new QuestSample(1960L, 18, 22, 1.0, 1960L),
+            new QuestSample(1960L, 18, 22, 1.5, 2940L),
+            new QuestSample(1960L, 18, 23, 1.0, 1470L),
+            new QuestSample(1960L, 18, 23, 1.5, 2205L),
+            new QuestSample(1960L, 18, 24, 1.0, 980L),
+            new QuestSample(1960L, 18, 24, 1.5, 1470L),
+            new QuestSample(1960L, 18, 25, 1.0, 490L),
+            new QuestSample(1960L, 18, 25, 1.5, 735L),
+            new QuestSample(1960L, 18, 26, 1.0, 196L),
+            new QuestSample(1960L, 18, 26, 1.5, 294L),
+            new QuestSample(1960L, 18, 27, 1.0, 196L),
+            new QuestSample(1960L, 18, 27, 1.5, 294L),
+            new QuestSample(1960L, 18, 48, 1.0, 196L),
+            new QuestSample(1960L, 18, 48, 1.5, 294L));
 
     private GeneratedLevelingExpectations() {
     }
