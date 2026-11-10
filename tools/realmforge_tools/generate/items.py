@@ -8,7 +8,8 @@ attribute modifiers with ids per slot (architecture 8.2), a wand's attack damage
 modifiers, armor's slot, look and equip sound. Components that name registry entries (attributes, the repair tag, the
 sound) are built once the registries exist (``Item.Properties#delayedComponent``). A wand joins ``realmforge:wands``,
 which the spell engine reads; gear joins vanilla's enchantable tags of its kind. Armor's look is an equipment asset
-(``assets/realmforge/equipment/<look>.json``) with placeholder textures until its art exists.
+(``assets/realmforge/equipment/<look>.json``) whose two worn textures are composed from the look's approved cloth and
+trim tiles (``worn_armor.py``, RLM-505), or one placeholder for both until it has a cloth tile.
 
 A coin (``coin``, RLM-284) joins ``realmforge:coins`` and gets its tooltip lines from the chain of coins: what using it
 merges into, and what sneaking and using it breaks it into (``item/CoinConverter``).
@@ -21,8 +22,10 @@ from __future__ import annotations
 from pathlib import Path
 
 from realmforge_tools.art import approved
+from realmforge_tools.art.palette import DEFAULT_PALETTE, load_gpl
 from realmforge_tools.content import Content
 from realmforge_tools.formats.jsonfmt import dump_json
+from realmforge_tools.generate import worn_armor
 from realmforge_tools.generate.datapack import data_dir
 from realmforge_tools.generate.javagen import constant_name, header, java_file_path, string_literal
 from realmforge_tools.generate.mobs import drop_expectation, drop_pool
@@ -140,7 +143,7 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
         files[assets / "textures" / "item" / f"{item_id}.png"] = approved.placeholder_or_approved(
             paths, approved.ITEM, item_id, placeholder_texture(f"{MOD_ID}:{item_id}", _rgb(entry.model.color))
         )
-    files.update(_looks(content, assets))
+    files.update(_looks(content, paths, assets))
 
     tags: dict[str, list[str]] = {tag: list(members) for tag, members in FIXED_ITEM_TAGS.items()}
     for entry in content.items:
@@ -183,23 +186,36 @@ def _gear_tags(gear: GearDef | None) -> list[str]:
     ]
 
 
-def _looks(content: Content, assets: Path) -> dict[Path, bytes]:
-    """Each armor look's equipment asset, a body and a leggings layer of one texture, and its placeholder texture in
-    the colour of its items (validation makes them share one)."""
+def _looks(content: Content, paths: RepoPaths, assets: Path) -> dict[Path, bytes]:
+    """Each armor look's equipment asset, a body and a leggings layer, and their two textures: composed from the
+    look's approved cloth and trim tiles (``worn_armor``, RLM-505), or until it has a cloth tile one placeholder
+    texture for both, in the colour of its items (validation makes them share one)."""
     files: dict[Path, bytes] = {}
     colors: dict[str, str | None] = {}
     for entry in content.items:
         gear = entry.model.gear
         if gear is not None and gear.look is not None:
             colors.setdefault(gear.look, entry.model.color)
+    ramps: worn_armor.Ramps | None = None
     for look, color in sorted(colors.items()):
         layer = [{"texture": f"{MOD_ID}:{look}"}]
         files[assets / "equipment" / f"{look}.json"] = dump_json(
             {"layers": {name: layer for name in EQUIPMENT_LAYERS}}
         )
-        texture = placeholder_equipment_texture(f"{MOD_ID}:{look}", _rgb(color))
+        cloth = approved.image(paths, approved.ARMOR, look)
+        if cloth is None:
+            placeholder = placeholder_equipment_texture(f"{MOD_ID}:{look}", _rgb(color))
+            textures = dict.fromkeys(EQUIPMENT_LAYERS, placeholder)
+        else:
+            if ramps is None:
+                ramps = worn_armor.Ramps(load_gpl(paths.root / DEFAULT_PALETTE))
+            trim = approved.image(paths, approved.ARMOR_TRIM, look)
+            textures = {
+                "humanoid": worn_armor.outer_layer(cloth, trim, ramps),
+                "humanoid_leggings": worn_armor.inner_layer(cloth, trim, ramps),
+            }
         for name in EQUIPMENT_LAYERS:
-            files[assets / "textures" / "entity" / "equipment" / name / f"{look}.png"] = texture
+            files[assets / "textures" / "entity" / "equipment" / name / f"{look}.png"] = textures[name]
     return files
 
 

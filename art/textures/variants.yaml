@@ -1,0 +1,76 @@
+# Item textures scripted from one base (ADR 0007: an armor tier's icons are variants of one base, not generated one by
+# one). `rf gen` computes each from its base's texture in art/textures/item/: the base's pixels in the `from` ramps of
+# the project palette take the `to` colours (a ramp, or colour names from dark to light) by lightness
+# (tools/realmforge_tools/art/variants.py, art/README.md step 4).
+#
+# The caster robes (RLM-505): the Arcane Silk set's four icons are the base, and the other three sets are its cloth,
+# trim and gem in their own colours. The sandals keep their tan soles in every set.
+item:
+  # Apprentice's: slate wool, rope and leather for the trim, a plain fold where the gem is.
+  apprentice_hat:
+    base: arcane_silk_cap
+    recolor:
+      - {from: [arcane, shadow], to: slate}
+      - {from: [gold, wood, leather, skin], to: &rope [leather 1, leather 2, leather 3, leather 4]}
+      - {from: [frost], to: &fold [slate 5, slate 6]}
+  apprentice_robes:
+    base: arcane_silk_robes
+    recolor:
+      - {from: [arcane, shadow], to: slate}
+      - {from: [leather, skin, wood, dirt], to: *rope}
+      - {from: [frost, teal, steel], to: *fold}
+  apprentice_pants:
+    base: arcane_silk_pants
+    recolor:
+      - {from: [arcane, shadow], to: slate}
+      - {from: [gold, wood, leather, skin, parchment, fire], to: *rope}
+  apprentice_boots:
+    base: arcane_silk_sandals
+    recolor:
+      - {from: [arcane, royal], to: slate}
+      - {from: [frost, steel, iron], to: *fold}
+
+  # Spellweave: royal blue, silver thread, an amethyst.
+  spellweave_cap:
+    base: arcane_silk_cap
+    recolor:
+      - {from: [arcane, shadow], to: royal}
+      - {from: [gold, wood, leather, skin], to: &silver [stone 5, stone 6, stone 7, iron 1, iron 2, iron 3]}
+      - {from: [frost], to: &amethyst [arcane 2, arcane 3, arcane 4]}
+  spellweave_robes:
+    base: arcane_silk_robes
+    recolor:
+      - {from: [arcane, shadow], to: royal}
+      - {from: [leather, skin, wood, dirt], to: *silver}
+      - {from: [frost, teal, steel], to: *amethyst}
+  spellweave_pants:
+    base: arcane_silk_pants
+    recolor:
+      - {from: [arcane, shadow], to: royal}
+      - {from: [gold, wood, leather, skin, parchment, fire], to: *silver}
+  spellweave_sandals:
+    base: arcane_silk_sandals
+    recolor:
+      - {from: [arcane, royal], to: royal}
+      - {from: [frost, steel, iron], to: *amethyst}
+
+  # Netherite: black cloth, gold trim, and the Arcane Silk piece's diamond, which the smithing upgrade keeps.
+  netherite_cap:
+    base: arcane_silk_cap
+    recolor:
+      - {from: [arcane, shadow], to: &black [black, stone 1, stone 2, stone 3]}
+      - {from: [gold, wood, leather, skin], to: gold}
+  netherite_robes:
+    base: arcane_silk_robes
+    recolor:
+      - {from: [arcane, shadow], to: *black}
+      - {from: [leather, skin, wood, dirt], to: gold}
+  netherite_pants:
+    base: arcane_silk_pants
+    recolor:
+      - {from: [arcane, shadow], to: *black}
+      - {from: [gold, wood, leather, skin, parchment, fire], to: gold}
+  netherite_sandals:
+    base: arcane_silk_sandals
+    recolor:
+      - {from: [arcane, royal], to: *black}

@@ -185,7 +185,7 @@ def test_an_effect_icon_of_vanillas_size_is_taken_as_it_is(art_repo: RepoPaths) 
             "block/vaultstone.png",
             _icon(),
             16,
-            "approved art is art/textures/<item|spell|effect|gui>/<id>.png",
+            "approved art is art/textures/<item|spell|effect|gui|armor|armor_trim>/<id>.png",
         ),
     ],
 )

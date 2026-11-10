@@ -1,0 +1,127 @@
+# Labels, prompts and picks for `uv run rf art gallery art/robes/candidates` (RLM-505). Generated on 2026-11-10
+# through the Retro Diffusion MCP server: rd_fast__mc_item at 16x16 with the background removed for the item icons,
+# rd_fast__mc_texture at 16x16 with tiling on for the looks' cloth and trim tiles, four candidates a request, seeds
+# 5051 to 5079 in the order the requests were made (the icons set by set, a second Netherite round, the cloth
+# tiles, the trim tiles, a second Apprentice cloth and Netherite trim). `pick` names the candidate that art/textures/
+# holds, cleaned. Only the Arcane Silk icons have one: the other three sets' icons in the game are scripted from
+# them (art/textures/variants.yaml, ADR 0007), and their own candidates here are the alternative.
+title: Caster robes, their item icons and worn textures
+intro: >-
+  The item icons of the four caster sets (Apprentice's, Spellweave, Arcane Silk, Netherite: cap, robes, pants,
+  sandals) and, per set, the cloth tile and the trim tile its worn textures are composed from
+  (tools/realmforge_tools/generate/worn_armor.py). Each candidate is shown as Retro Diffusion returned it and after
+  rf art clean snapped it to the project palette; the tiles are also shown tiled. In the game, the Arcane Silk
+  icons are the picks marked here, and the Apprentice's, Spellweave and Netherite icons are those four recoloured
+  set by set (art/textures/variants.yaml), as ADR 0007 makes armor tiers from one base; the candidates generated
+  for those three sets are kept as the alternative. The picks were made by Claude while the playtest was deferred
+  (Matěj, 2026-11-10, ADR 0074) and are provisional until Matěj has reviewed this gallery, which RLM-652 owes: to
+  change one, name the subject and the candidate.
+candidates:
+  rd-fast-1: {label: "Retro Diffusion Fast, 1", note: "0.03 USD an image, 0.12 USD a request of four"}
+  rd-fast-2: {label: "Retro Diffusion Fast, 2"}
+  rd-fast-3: {label: "Retro Diffusion Fast, 3"}
+  rd-fast-4: {label: "Retro Diffusion Fast, 4"}
+  rd-fast-5: {label: "Retro Diffusion Fast, 5", note: "second request, another prompt"}
+  rd-fast-6: {label: "Retro Diffusion Fast, 6"}
+  rd-fast-7: {label: "Retro Diffusion Fast, 7"}
+  rd-fast-8: {label: "Retro Diffusion Fast, 8"}
+subjects:
+  apprentice_hat:
+    title: Apprentice's Cap (alternative; the game shows the Arcane Silk icon recoloured)
+    prompt: a soft floppy pointed wizard cap made of plain slate blue wool, a simple folded brim, front view, on a plain white background
+  apprentice_robes:
+    title: Apprentice's Robes (alternative; the game shows the Arcane Silk icon recoloured)
+    prompt: a long-sleeved robe top made of plain slate blue wool with wide sleeves spread to the sides and a rope belt, front view, on a plain white background
+  apprentice_pants:
+    title: Apprentice's Pants (alternative; the game shows the Arcane Silk icon recoloured)
+    prompt: a pair of loose baggy trousers made of plain slate blue wool with a drawstring waist, front view, on a plain white background
+  apprentice_boots:
+    title: Apprentice's Sandals (alternative; the game shows the Arcane Silk icon recoloured)
+    prompt: a pair of simple ankle boots made of plain slate blue wool cloth with soft leather soles, side by side, on a plain white background
+  spellweave_cap:
+    title: Spellweave Cap (alternative; the game shows the Arcane Silk icon recoloured)
+    prompt: a pointed wizard cap made of deep royal blue woven cloth with a silver embroidered band and a small purple amethyst gem at the front, front view, on a plain white background
+  spellweave_robes:
+    title: Spellweave Robes (alternative; the game shows the Arcane Silk icon recoloured)
+    prompt: a long-sleeved robe top made of deep royal blue woven cloth with silver embroidered trim along the collar and the wide sleeves, a silver clasp with a purple amethyst at the chest, front view, on a plain white background
+  spellweave_pants:
+    title: Spellweave Pants (alternative; the game shows the Arcane Silk icon recoloured)
+    prompt: a pair of loose trousers made of deep royal blue woven cloth with silver embroidered trim at the waist and the cuffs, front view, on a plain white background
+  spellweave_sandals:
+    title: Spellweave Sandals (alternative; the game shows the Arcane Silk icon recoloured)
+    prompt: a pair of open sandals with deep royal blue cloth straps and small silver buckles on tan leather soles, side by side, on a plain white background
+  arcane_silk_cap:
+    title: Arcane Silk Cap
+    prompt: a tall pointed wizard cap made of shimmering violet purple silk with a golden band and a glowing light blue diamond gem at the front, front view, on a plain white background
+    pick: rd-fast-4
+  arcane_silk_robes:
+    title: Arcane Silk Robes
+    prompt: a long-sleeved robe top made of shimmering violet purple silk with golden trim along the collar and the wide sleeves, a glowing light blue diamond clasp at the chest, front view, on a plain white background
+    pick: rd-fast-3
+  arcane_silk_pants:
+    title: Arcane Silk Pants
+    prompt: a pair of loose trousers made of shimmering violet purple silk with golden trim at the waist and the cuffs, front view, on a plain white background
+    pick: rd-fast-3
+  arcane_silk_sandals:
+    title: Arcane Silk Sandals
+    prompt: a pair of open sandals with violet purple silk straps and small golden buckles with light blue gems on tan leather soles, side by side, on a plain white background
+    pick: rd-fast-4
+  netherite_cap:
+    title: Netherite Cap (alternative; the game shows the Arcane Silk icon recoloured)
+    prompt: a pointed wizard cap made of dark charcoal cloth reinforced with dark grey netherite metal plates and a thin gold trim band, front view, on a plain white background
+  netherite_robes:
+    title: Netherite Robes (alternative; the game shows the Arcane Silk icon recoloured)
+    prompt: >-
+      a long-sleeved robe top made of black cloth with bright gold embroidered trim along the collar, down the front
+      opening and around the wide sleeve cuffs, dark grey metal shoulder plates, front view, on a plain white
+      background (candidates 5 to 8; 1 to 4: dark charcoal cloth with dark grey netherite metal shoulder plates and
+      thin gold trim, which came out without the gold)
+  netherite_pants:
+    title: Netherite Pants (alternative; the game shows the Arcane Silk icon recoloured)
+    prompt: >-
+      a pair of loose trousers made of black cloth with a bright gold waistband and bright gold cuffs, dark grey metal
+      knee plates, front view, on a plain white background (candidates 5 to 8; 1 to 4: dark charcoal cloth with
+      netherite knee plates and thin gold trim)
+  netherite_sandals:
+    title: Netherite Sandals (alternative; the game shows the Arcane Silk icon recoloured)
+    prompt: >-
+      a pair of open sandals with black straps, bright gold buckles and dark grey metal toe plates on black soles, side
+      by side, on a plain white background (candidates 5 to 8; 1 to 4: dark charcoal straps, netherite toe plates, thin
+      gold buckles)
+  cloth_apprentice:
+    title: Apprentice's set, the cloth tile (tileable)
+    prompt: >-
+      plain slate blue woven wool cloth, coarse soft weave, even colour (candidates 1 to 4; 5 to 8: muted greyish slate
+      blue wool cloth, coarse homespun weave, which came out grey)
+    pick: rd-fast-2
+  cloth_spellweave:
+    title: Spellweave set, the cloth tile (tileable)
+    prompt: deep royal blue finely woven cloth with a faint diamond pattern, even colour
+    pick: rd-fast-1
+  cloth_arcane_silk:
+    title: Arcane Silk set, the cloth tile (tileable)
+    prompt: shimmering violet purple silk cloth with soft vertical folds, smooth and glossy, even colour
+    pick: rd-fast-1
+  cloth_netherite:
+    title: Netherite set, the cloth tile (tileable)
+    prompt: black charcoal cloth with a faint dark grey weave, heavy and matte, even colour
+    pick: rd-fast-1
+  trim_apprentice:
+    title: Apprentice's set, the trim tile (tileable)
+    prompt: braided tan hemp rope cords laid side by side in horizontal rows
+    pick: rd-fast-3
+  trim_spellweave:
+    title: Spellweave set, the trim tile (tileable)
+    prompt: silver thread embroidery in horizontal braided bands, polished light grey metal thread
+    pick: rd-fast-4
+  trim_arcane_silk:
+    title: Arcane Silk set, the trim tile (tileable)
+    prompt: gold thread embroidery in horizontal braided bands, bright yellow gold brocade
+    pick: rd-fast-3
+  trim_netherite:
+    title: Netherite set, the trim tile (tileable)
+    prompt: >-
+      polished gold metal bands in horizontal rows with small dark grey netherite studs between them (candidates 5 to
+      8; 1 to 4: dark grey netherite metal plating in horizontal bands with small bright gold rivets, too dark to read
+      as a trim on black cloth)
+    pick: rd-fast-7

@@ -242,6 +242,12 @@ there while the game runs. The handoff gives the commands
   `run/client/screenshots/<label>-spelltree-<state>.png`, log
   `Spell tree check passed` or `FAILED` for what each click should do, and quit (RLM-333). Headless:
   `xvfb-run -a -s "-screen 0 1280x960x24"` before it, with the variable set.
+- **Gear screenshots without input.** `REALMFORGE_QA_GEAR_SHOTS=<label> ./gradlew runClient -PofflineClient
+  -PleanClient` makes the QA mod create a superflat world and a Mage, put on every armor look of ours in turn (the
+  pieces that share a `look`, each in its slot), save the player from the front and from the back to
+  `run/client/screenshots/<label>-gear-<look>-<front|back>.png` with the HUD hidden, then open the survival inventory
+  with every armor piece in it for the item icons (`<label>-gear-inventory.png`), and quit (RLM-505). Headless:
+  `xvfb-run -a -s "-screen 0 1280x960x24"` before it, with the variable set.
 - **A trace of real charges without input.** `REALMFORGE_QA_CHARGE_TRACE=<label> ./gradlew runClient -PofflineClient`
   makes the QA mod create a superflat world from the title screen, make a level-18 Warrior and cast Charge at a husk from
   several setups (from either side, diagonally, with forward held, at a mod's target dummy when the pack has one),

@@ -8,11 +8,12 @@ images before they are processed into game textures. Nothing here is loaded by t
 | --- | --- |
 | `branding/` | the mods' logos at full size (1254 × 1254, transparent), not game textures: no palette, no grid. Each mod ships a 256 × 256 Lanczos copy at its resources' root, which `logoFile` names (RLM-414) |
 | `palette/realmforge.gpl` | the project palette (GIMP palette; Aseprite and LibreSprite read it too). Every texture is snapped to it |
+| `robes/` | the caster robes' batch (RLM-505): the candidates of the four sets' item icons and of each set's cloth and trim tile, with their prompts and picks in `candidates/gallery.yaml`. Only the Arcane Silk icons are picks: the other three sets' icons are scripted from them (`textures/variants.yaml`), and their own candidates are kept as the alternative |
 | `rooms/` | the import rules of the third-party dungeon rooms in `content/rooms/third_party/`, one folder per source, and where each source comes from ([README](rooms/README.md)) |
 | `spell-icons/` | A1's first batch (RLM-588, RLM-591, RLM-609, RLM-642): the candidates of every M1 player spell's icon, the Frozen and Bleeding effect icons and the spellbook's two tiles, with their prompts and picks in `candidates/gallery.yaml` |
 | `spike5/` | spike 5: the same 10 textures from Retro Diffusion and PixelLab, and their review gallery ([README](spike5/README.md)) |
 | `spike-guide-ui/` | guide UI spike: window frames (two RD Fast rounds and an RD Pro version) and category icons from Retro Diffusion, nine-slice previews ([README](spike-guide-ui/README.md)) |
-| `textures/` | **approved art:** the cleaned texture of each picked candidate, `<kind>/<id>.png`, which `rf gen` writes in place of the generated placeholder (step 4 below) |
+| `textures/` | **approved art:** the cleaned texture of each picked candidate, `<kind>/<id>.png`, which `rf gen` writes in place of the generated placeholder, and `variants.yaml`, the item textures scripted from another one (step 4 below) |
 
 Texture pipeline ([ADR 0007](../docs/decisions/0007-asset-pipeline.md),
 [ADR 0023](../docs/decisions/0023-texture-generator.md)):
@@ -34,16 +35,36 @@ Texture pipeline ([ADR 0007](../docs/decisions/0007-asset-pipeline.md),
    | `spell` | `art/textures/spell/<spell id>.png`, 16 x 16 | the spell's icon in the spell bar, the spellbook, its tooltip and the cast bar (the GUI sprite `realmforge:spell/<id>`); a spell without one shows its initials |
    | `effect` | `art/textures/effect/<effect id>.png`, 18 x 18, or 16 x 16 centred on it | the status effect's icon |
    | `gui` | `art/textures/gui/<part>.png` | a tile of a GUI texture a generator composes: `spellbook_page` (64 x 64) and `spellbook_cover` (16 x 16) for the spellbook's book (`generate/spellbook.py`) |
+   | `armor` | `art/textures/armor/<look>.png`, 16 x 16, tileable | the cloth of an armor look (an item's `gear.look`): the pipeline composes the look's two worn textures from it (`generate/worn_armor.py`, below); a look without one keeps its woven placeholder |
+   | `armor_trim` | `art/textures/armor_trim/<look>.png`, 16 x 16, tileable | the look's trim, for the bands of its worn textures; it needs the cloth, and a look without one has its bands in darker cloth |
 
    `uv run rf validate` refuses a file there that names no content, has another size, or that the cleanup step did
    not write (half-transparent pixels, colours outside the palette). A texture touched up by hand must still be in
    palette colours. To change a pick, clean another candidate over the file, update `pick`, and run `rf gen`.
 
+   **Variants are scripted from one base** ([ADR 0007](../docs/decisions/0007-asset-pipeline.md): rarities, gem
+   colours, armor tiers), not generated one by one: `art/textures/variants.yaml` names an item whose texture is
+   another item's, recoloured (RLM-505, `tools/realmforge_tools/art/variants.py`). Each `recolor` group takes the
+   base's pixels in its `from` ramps of the palette (a role of the picture: its cloth, its trim, its gem) and gives
+   them its `to` colours, a ramp's name or palette colour names from dark to light, by lightness. Nothing is stored:
+   `rf gen` computes the variant from the base's file, so it follows the base and the palette. A variant has no file
+   of its own, and validation refuses one whose item, base, ramp or colour does not exist. The caster robes'
+   Apprentice's, Spellweave and Netherite icons are the Arcane Silk icons recoloured.
+
+   **Worn armor is composed, not painted** (RLM-505): vanilla's armor model reads two 64 x 32 textures in its own
+   layout (`humanoid` for the helmet, the chestplate and the boots, `humanoid_leggings` for the leggings), which no
+   generator paints. `generate/worn_armor.py` fills each face of the model from the look's cloth tile and draws the
+   bands from its trim tile, as a robe: a cap with a band and a brim, robes with a collar, a belt, a seam and cuffs,
+   pants with a hem, sandals with a strap and a sole. Its shadows are the cloth's own colour one or two steps down
+   its palette ramp (the colours named `<ramp> <n>` in the palette), so the result stays in palette colours. To
+   check a look, wear it: `REALMFORGE_QA_GEAR_SHOTS` ([dev setup](../docs/dev-setup.md#33-in-wsl-quick-checks))
+   saves every look from the front and the back.
+
 **A batch whose review Matěj deferred** ([ADR 0074](../docs/decisions/0074-an-agent-picks-the-art-of-a-batch-whose-review-matej-deferred.md):
 the marathon runs of 2026-11-10, and a later batch only when he defers it himself): an agent makes the picks in step
 2 and installs them. They are provisional: `gallery.yaml`'s intro says so and names the batch's "Playtest
 (deferred)" ticket, which asks him to review the gallery. "Approved art" names the folder `art/textures/`, not his
-review. The spell icon batch's ticket is RLM-648.
+review. The spell icon batch's ticket is RLM-648, the robes batch's RLM-652.
 
 Our font's symbols (the mob level's skull, RLM-340) are not generator output: they are pixel rows in
 `tools/realmforge_tools/generate/fonts.py`, on the default Minecraft font's 8x8 grid in palette colours, and `rf gen`
