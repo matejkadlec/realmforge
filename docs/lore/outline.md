@@ -78,7 +78,7 @@ never from distance (Matěj, 2026-10-22).
 | Lore | What it is in the game |
 | --- | --- |
 | A realm's **seal** opens only to its **signet**, and no signet opens more than one seal | the realm portal opens onto a realm when its signet is used on the sealstone ([realm portal](../design/realm-portal.md)); there is no master signet (RLM-395) |
-| One **gate design** for every realm, raised only in Overworld | one portal frame of Gatewright Bricks, with the Gatewright Sealstone as its keystone (RLM-394; the in-game names stay Realmforge Bricks and Realmforge Sealstone until RLM-394 renames them in `content/`); a frame inside a realm opens only back to Overworld (RLM-188) |
+| One **gate design** for every realm, raised only in Overworld | one portal frame of Gatewright Bricks, with the Gatewright Sealstone as its keystone (RLM-394, their names in the game too); a frame inside a realm opens only back to Overworld (RLM-188) |
 | Each realm's **guardian** holds a **shard** for each seal it opens (two when twin realms follow) | the main-path boss drops, at 100% on every kill, one material per realm it opens, two for the twins (RE-9, RLM-395) |
 | A signet is forged around its shard, with an ore or gem of the realm before it and a little of the realm it opens | the next signet is crafted from that drop in the middle, 4 of the previous realm's ore or gem and 4 of the new realm's theme block; the twins' signets each take a different Undervault gem, 2 Rubies for the Sunwastes' and 2 Sapphires for the Everwinter's, with 2 Netherite Scraps and 4 theme blocks (RLM-395, RLM-432) |
 | A traveler keeps their signet: a seal, or anyone who checks it, only needs to see it | no quest takes, cuts or sends a signet (RLM-395) |

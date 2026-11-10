@@ -101,7 +101,7 @@ def test_a_realms_rules_must_require_its_unlock(repo: RepoPaths) -> None:
 
 
 def test_a_realms_rules_require_its_entry_level_once(repo: RepoPaths) -> None:
-    """RLM-306, ADR 0075: a realm is entered from its entry level on, the number its mobs are floored at."""
+    """RLM-306, ADR 0076: a realm is entered from its entry level on, the number its mobs are floored at."""
     rules = repo.content / "dimensions" / "stone.yaml"
     text = rules.read_text(encoding="utf-8")
     level = "  - type: realmforge:level_at_least\n    level: 6\n"

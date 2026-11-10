@@ -43,7 +43,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0029](0029-independent-claude-review-before-every-merge.md) | Independent Claude review before every merge | Accepted (supersedes 0015) |
 | [0030](0030-adrs-bind-agents-not-the-owner.md) | ADRs bind agents, not the owner | Accepted (amends 0001), amended by [0060](0060-what-counts-as-the-owners-confirmation-of-an-adr-conflicting-change.md) (what counts as his confirmation) |
 | [0031](0031-instance-builder-background-chunks-and-shared-budget.md) | Instance builder: background chunk loads, a shared budget, clear-only cleanup | Accepted (amends 0019) |
-| [0032](0032-v1-realm-layout-amends-the-nether-and-end-removal.md) | The v1 realm layout amends the Nether and End removal | Accepted (amends 0025) |
+| [0032](0032-v1-realm-layout-amends-the-nether-and-end-removal.md) | The v1 realm layout amends the Nether and End removal | Accepted (amends 0025), its "no hard level lock" amended by [0076](0076-a-realm-is-entered-from-its-entry-level-on.md) |
 | [0033](0033-vanilla-armor-formula-amends-our-own.md) | Vanilla's armor formula amends "our own formula" | Accepted (amends 0014) |
 | [0034](0034-ancient-merchants-and-the-wither-amend-the-nether-and-end-removal.md) | Ancient merchants and the Wither amend the Nether and End removal | Accepted (amends 0025) |
 | [0035](0035-room-galleries-show-every-marker-with-its-label.md) | Room galleries show every marker with its label | Accepted |
@@ -86,6 +86,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0072](0072-a-fourth-coin-the-converter-by-use-and-coin-drops-by-level-and-rank.md) | A fourth coin (platinum), the converter by using a coin, and coin drops by mob level and rank that Luck and Looting never change | Accepted (amends 0040) |
 | [0073](0073-spell-visuals-are-reusable-parts-in-data.md) | Spell visuals are reusable parts in data (looks, models, trajectories, particles), drawn with GeckoLib, our own particles and the cast layer | Accepted (amends 0020) |
 | [0074](0074-an-agent-picks-the-art-of-a-batch-whose-review-matej-deferred.md) | An agent picks the art of a batch whose review Matěj deferred (the marathon runs of 2026-11-10); the picks stay provisional until his gallery review, which the batch's deferred ticket owes | Accepted (amends 0023 and 0007) |
+| [0076](0076-a-realm-is-entered-from-its-entry-level-on.md) | A realm is entered from its entry level on, beside its unlock; the refusal says which of the two the player lacks | Accepted (amends 0032) |
 
 ## Open questions (not decided)
 

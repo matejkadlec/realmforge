@@ -2729,7 +2729,7 @@ def _check_realms(content: Content, universe: IdUniverse) -> list[Problem]:
 def _realm_entry_level_problems(
     source: str, dimension: str, entry_level: int, access: Sequence[object]
 ) -> list[Problem]:
-    """A realm is entered from its entry level on (RLM-306, ADR 0075): its rules' access names that level, once, the
+    """A realm is entered from its entry level on (RLM-306, ADR 0076): its rules' access names that level, once, the
     same number its mobs are floored at, so the two never drift apart. A realm whose entry level is 1 needs none."""
     levels = [
         (n, requirement.level)

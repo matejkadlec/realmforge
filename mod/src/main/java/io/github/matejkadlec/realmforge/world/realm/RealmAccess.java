@@ -41,7 +41,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
  *
  * <ul>
  *   <li>A player enters a dimension only with every access requirement of its rules: a realm's are its unlock and
- *       its entry level (RLM-306, ADR 0075). A refused player stays where they are and gets a centre-screen message
+ *       its entry level (RLM-306, ADR 0076). A refused player stays where they are and gets a centre-screen message
  *       that says which they lack, at most once every 3 seconds.
  *   <li>No other entity enters or leaves a realm, except through a realm portal (Matěj, 2026-10-20: every entity
  *       travels through one): items, mobs and vehicles moved any other way stay where they are.
