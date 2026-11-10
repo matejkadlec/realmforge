@@ -7,10 +7,14 @@ import net.neoforged.neoforge.event.AnvilUpdateEvent;
 import net.neoforged.neoforge.event.ItemAttributeModifierEvent;
 import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.registries.DataPackRegistryEvent;
 
-/** Item behaviours and gear components: two-handed gear, the protection limit, netherite upgrades (architecture 13). */
+/**
+ * Item behaviours and gear components: two-handed gear, the protection limit, netherite upgrades, the coins and their
+ * converter (architecture 13).
+ */
 public final class ItemFeature {
     private ItemFeature() {
     }
@@ -33,5 +37,7 @@ public final class ItemFeature {
         ItemComponents.register(modBus);
         ItemRecipes.register(modBus);
         NeoForge.EVENT_BUS.addListener(ItemAttributeModifierEvent.class, NetheriteUpgrades::onItemAttributeModifiers);
+        // Coins (RLM-284): using one merges, sneaking and using it breaks one.
+        NeoForge.EVENT_BUS.addListener(PlayerInteractEvent.RightClickItem.class, CoinConverter::onRightClickItem);
     }
 }

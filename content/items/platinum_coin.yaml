@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../../tools/schemas/items.schema.json
+# Worth 100 Gold Coins, the largest coin (Matěj, 2026-10-21, RLM-284; ADR 0072): scroll prices stop at 99 of it
+# (RLM-354). Sneaking while using it breaks one into 100 Gold Coins (item/CoinConverter). The generated placeholder
+# texture until A1's art.
+id: platinum_coin
+name:
+  en_us: Platinum Coin
+max_stack_size: 99
+creative_tabs:
+  - minecraft:ingredients
+coin:
+  value: 1000000
+  plural:
+    en_us: Platinum Coins
+flavor:
+  en_us: Few purses in Realmforge have ever held one.
+color: "#D7E4E6"

@@ -4,12 +4,12 @@ import io.github.matejkadlec.realmforge.combat.CombatConfig;
 import io.github.matejkadlec.realmforge.combat.CombatEvent;
 import io.github.matejkadlec.realmforge.combat.SchoolDamageSource;
 import io.github.matejkadlec.realmforge.stats.EntityLevel;
+import io.github.matejkadlec.realmforge.stats.MobRanks;
 import io.github.matejkadlec.realmforge.stats.StatsAttachments;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.ToDoubleFunction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
@@ -59,24 +59,11 @@ public final class AimAssist {
 
     /** How precisely {@link #miss} measures, in halvings of the allowed miss. */
     private static final int MISS_STEPS = 20;
-    /** What a mob of no other rank counts as (rule 5): a normal mob's kill XP multiplier. */
-    private static final double DEFAULT_RANK = 1.0;
-
-    private static volatile ToDoubleFunction<LivingEntity> rank = entity -> DEFAULT_RANK;
-
     private AimAssist() {
     }
 
     static void register() {
         NeoForge.EVENT_BUS.addListener(CombatEvent.Hit.class, AimAssist::onHit);
-    }
-
-    /**
-     * Sets where a mob's rank comes from (rule 5): {@code character} provides the kill XP multiplier (architecture 4.4,
-     * lower asks higher through a provider).
-     */
-    public static void rankBy(ToDoubleFunction<LivingEntity> source) {
-        rank = source;
     }
 
     /**
@@ -238,7 +225,7 @@ public final class AimAssist {
             candidates.add(new Candidate<>(entity, along, miss, direct, allies || hostile(caster, entity), false,
                     entity.is(Tags.EntityTypes.BOSSES), entity.getHealth() / entity.getMaxHealth(),
                     state.isCurrentTarget(entity.getUUID(), now, CombatConfig.inCombatTicks()),
-                    entity instanceof Mob ? rank.applyAsDouble(entity) : DEFAULT_RANK,
+                    entity instanceof Mob ? MobRanks.of(entity) : MobRanks.NORMAL,
                     entity.getExistingData(StatsAttachments.LEVEL).map(EntityLevel::value).orElse(EntityLevel.MIN)));
         }
         return choose(candidates);

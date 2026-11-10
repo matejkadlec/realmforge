@@ -120,6 +120,11 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   (RLM-566, `content/netherite_upgrades/`): a Ruby, Sapphire or Topaz Upgrade (eight gems around a diamond) gives
   offense, defense or utility by the piece's archetype (melee: vanilla's netherite armor; caster: the Netherite robes)
   while worn, through a data component of ours that names the upgrade's registry entry.
+  The four coins exist (RLM-284, ADR 0072): Copper, Silver, Gold and Platinum Coin from an item's `coin` in YAML, each
+  100 of the coin below; using a coin merges every full hundred in the inventory into the next coin, sneaking while
+  using it breaks one, and change that does not fit drops at the player's feet. A hostile mob a player killed drops
+  coins by its level and rank (RLM-286: the curve `coin_drop`, 50 to 150 %, about 1 gold at level 50), which neither
+  Looting nor luck changes; a mob's rank, its kill XP multiplier, is read through `stats/MobRanks`.
   Characters level up (C2): character XP from kills (by the victim's level and rank) and `/realmforge xp`, an XP
   bar, and a level cap from chapter advancements (10, then 18 after chapter 1 and 30 after chapter 2). The spell
   engine is done (C3a): spells as data in `content/spells/`, cast by players and mobs through one `SpellCaster` (from

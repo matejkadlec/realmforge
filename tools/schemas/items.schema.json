@@ -1,5 +1,28 @@
 {
   "$defs": {
+    "CoinDef": {
+      "additionalProperties": false,
+      "description": "What makes the item a coin (RLM-284; ADR 0040, ADR 0072): its worth in the smallest coin. The coins form one\nchain by value (copper 1, silver 100, gold 10000, platinum 1000000): using a coin merges every full rate of it in\nthe player's inventory into the next larger coin, and sneaking while using it breaks one into the next smaller\n(``item/CoinConverter``). Mob coin drops and prices are amounts of the smallest coin, paid in the largest coins.",
+      "properties": {
+        "plural": {
+          "$ref": "#/$defs/LocalizedText",
+          "description": "Its name for more than one, in tooltips and messages: Copper Coins."
+        },
+        "value": {
+          "description": "What one coin is worth, in the smallest coin (copper): 1 for the smallest, and each larger coin a whole multiple of the one below it (100 by Matěj's decision, WoW's ratio).",
+          "maximum": 1000000000000,
+          "minimum": 1,
+          "title": "Value",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "value",
+        "plural"
+      ],
+      "title": "CoinDef",
+      "type": "object"
+    },
     "DropCountDef": {
       "additionalProperties": false,
       "description": "How many of the item one drop gives: a whole number from ``min`` to ``max``, each as likely. A ``min`` of 0\nsometimes gives none, as vanilla's witch drops 0 to 2 glowstone dust; Looting's extra still counts then.",
@@ -412,6 +435,18 @@
   "additionalProperties": false,
   "description": "A simple item. Generates its registration, model, lang entries and (for now) a placeholder texture; a use and a\nflavor line become its tooltip, a recipe its recipe, and gear its durability, slot and fixed stats.",
   "properties": {
+    "coin": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CoinDef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional: makes the item a coin, with its worth in the smallest coin. Using it merges, sneaking and using it breaks one."
+    },
     "color": {
       "anyOf": [
         {

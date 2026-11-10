@@ -10,6 +10,9 @@ sound) are built once the registries exist (``Item.Properties#delayedComponent``
 which the spell engine reads; gear joins vanilla's enchantable tags of its kind. Armor's look is an equipment asset
 (``assets/realmforge/equipment/<look>.json``) with placeholder textures until its art exists.
 
+A coin (``coin``, RLM-284) joins ``realmforge:coins`` and gets its tooltip lines from the chain of coins: what using it
+merges into, and what sneaking and using it breaks it into (``item/CoinConverter``).
+
 An item a vanilla mob drops (``dropped_by``) gets a loot table per mob and a NeoForge loot modifier that adds it to the
 mob's own loot (``neoforge:add_table``), so the mob's loot table stays vanilla's."""
 
@@ -25,8 +28,12 @@ from realmforge_tools.generate.mobs import drop_expectation, drop_pool
 from realmforge_tools.generate.textures import placeholder_equipment_texture, placeholder_texture
 from realmforge_tools.project import JAVA_PACKAGE, MOD_ID, QA_JAVA_PACKAGE, RepoPaths
 from realmforge_tools.schema.apotheosis import ROBE_LOOT_CATEGORIES
+from realmforge_tools.schema.coin import coin_chain, plural_key
 from realmforge_tools.schema.item import (
     ARMOR_KINDS,
+    COIN_BREAK_TEXT,
+    COIN_MERGE_TEXT,
+    COINS_TAG,
     FIXED_ITEM_TAGS,
     NETHERITE_UPGRADABLE_CASTER_TAG,
     PLAYER_ATTACK_DAMAGE,
@@ -138,6 +145,8 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
         item = f"{MOD_ID}:{entry.model.id}"
         if entry.model.use is not None:
             tags.setdefault(use_tag(entry.model.use), []).append(item)
+        if entry.model.coin is not None:
+            tags.setdefault(COINS_TAG, []).append(item)
         for tag in _gear_tags(entry.model.gear):
             tags.setdefault(tag, []).append(item)
     for tag, items in sorted(tags.items()):
@@ -246,6 +255,7 @@ def _registrations(content: Content, paths: RepoPaths) -> bytes:
     imports = {"net.minecraft.world.item.Item"}
     realms_by_signet = {entry.model.signet: entry.model for entry in content.realms if entry.model.signet}
     gear_items = [entry.model for entry in content.items if entry.model.gear is not None]
+    coins = coin_chain(entry.model for entry in content.items)
     for entry in content.items:
         item = entry.model
         # The register call sets the item's id on the properties; the lambda only adds to them.
@@ -259,7 +269,7 @@ def _registrations(content: Content, paths: RepoPaths) -> bytes:
             gear_properties, gear_imports = _gear_properties(item.gear)
             properties += gear_properties
             imports.update(gear_imports)
-        lore = _lore(item, realms_by_signet.get(f"{MOD_ID}:{item.id}"))
+        lore = _lore(item, realms_by_signet.get(f"{MOD_ID}:{item.id}"), coins)
         if lore:
             imports.update(LORE_IMPORTS)
             properties += (
@@ -402,10 +412,11 @@ def _gear_properties(gear: GearDef) -> tuple[str, set[str]]:
     return java, imports
 
 
-def _lore(item: ItemDef, realm: RealmDef | None) -> str:
+def _lore(item: ItemDef, realm: RealmDef | None, coins: list[ItemDef]) -> str:
     """The item's tooltip lines as Java: for a realm's signet, that it is not consumed on use (grey, not italic); its
-    use in green, as a "Use:" line; then its flavor line in vanilla's lore style (purple, italic). Empty when it has
-    none of them."""
+    use in green, as a "Use:" line; a coin's two uses in green, what it merges into and what it breaks into, each
+    only where the chain of ``coins`` has that neighbour; then its flavor line in vanilla's lore style (purple,
+    italic). Empty when it has none of them."""
     indent = " " * 28
     lines = []
     if realm is not None:
@@ -419,9 +430,40 @@ def _lore(item: ItemDef, realm: RealmDef | None) -> str:
             f"Component.translatable({string_literal(key)})\n"
             f"{indent}        .withStyle(style -> style.withColor(ChatFormatting.GREEN).withItalic(false))"
         )
+    lines += _coin_lines(item, coins, indent)
     if item.flavor is not None:
         lines.append(f"Component.translatable({string_literal(flavor_key(item.id))})")
     return ",\n".join(indent + line for line in lines)
+
+
+def _coin_lines(item: ItemDef, coins: list[ItemDef], indent: str) -> list[str]:
+    """A coin's green tooltip lines (RLM-284): "Use: Merge every 100 Copper Coins into 1 Silver Coin" where a larger
+    coin exists, and "<sneak key> + Use: Break one into 100 Copper Coins" where a smaller one does. The sneak key is a
+    keybind component, so the line shows the player's own binding (lore style guide)."""
+    if item.coin is None:
+        return []
+    green = f"\n{indent}        .withStyle(style -> style.withColor(ChatFormatting.GREEN).withItalic(false))"
+    index = coins.index(item)
+    lines = []
+    if index + 1 < len(coins):
+        larger = coins[index + 1]
+        assert larger.coin is not None
+        lines.append(
+            f"Component.translatable({string_literal(text_key(*COIN_MERGE_TEXT))}, "
+            f"{larger.coin.value // item.coin.value},\n"
+            f"{indent}        Component.translatable({string_literal(plural_key(item.id))}),\n"
+            f"{indent}        Component.translatable({string_literal(translation_key(larger.id))})){green}"
+        )
+    if index > 0:
+        smaller = coins[index - 1]
+        assert smaller.coin is not None
+        lines.append(
+            f"Component.translatable({string_literal(text_key(*COIN_BREAK_TEXT))}, "
+            f'Component.keybind("key.sneak"),\n'
+            f"{indent}        {item.coin.value // smaller.coin.value}, "
+            f"Component.translatable({string_literal(plural_key(smaller.id))})){green}"
+        )
+    return lines
 
 
 def _java_list(rows: list[str], indent: str) -> str:
