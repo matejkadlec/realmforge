@@ -84,6 +84,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0070](0070-batches-may-share-generated-files.md) | Batches may share generated files: the second merge regenerates them | Accepted (amends 0016) |
 | [0071](0071-the-pack-boots-are-required-checks.md) | The pack boots are required checks | Accepted (amends 0018) |
 | [0072](0072-a-fourth-coin-the-converter-by-use-and-coin-drops-by-level-and-rank.md) | A fourth coin (platinum), the converter by using a coin, and coin drops by mob level and rank that Luck and Looting never change | Accepted (amends 0040) |
+| [0073](0073-spell-visuals-are-reusable-parts-in-data.md) | Spell visuals are reusable parts in data (looks, models, trajectories, particles), drawn with GeckoLib, our own particles and the cast layer | Accepted (amends 0020) |
 | [0074](0074-an-agent-picks-the-art-of-a-batch-whose-review-matej-deferred.md) | An agent picks the art of a batch whose review Matěj deferred (the marathon runs of 2026-11-10); the picks stay provisional until his gallery review, which the batch's deferred ticket owes | Accepted (amends 0023 and 0007) |
 
 ## Open questions (not decided)
