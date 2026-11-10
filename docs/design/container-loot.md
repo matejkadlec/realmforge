@@ -51,8 +51,10 @@ relative to the player's level and world tier.
    container's budget is set to the table above in those kill-equivalents. The tables are generated from our YAML,
    and a pytest simulation checks the averages per tier.
 3. **Per player:** Lootr gives each player their own roll of the container's loot table, with that player's tier and
-   luck. Our dungeon builder places Lootr's chests and barrels with the loot table set; whether Lootr also takes
-   over a vanilla container placed from a template with a loot table is checked when Lootr goes in (RLM-288).
+   luck. Our dungeon builder places Lootr's chests and barrels with the loot table set (`loot/LootContainers`).
+   Checked when Lootr went in (RLM-288): Lootr also takes over a vanilla container with a loot table by itself, but
+   only once the 25 chunks around it are loaded, and a player who opens it earlier gets vanilla's one shared roll,
+   so the builder does not rely on it ([architecture 15.5](../architecture.md#155-instances)).
 4. **Where the containers come from:** W6's chest markers; the imported rooms' 100 chests and their barrels, which
    the import turns into loot spots of the normal table (RLM-290); the import dressing's barrels; set-piece
    containers ([set-piece design](set-pieces.md#gameplay-rules)).

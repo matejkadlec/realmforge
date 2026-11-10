@@ -100,6 +100,7 @@ public final class QaGameTests {
             InstanceGameTests.class,
             InstanceRulesGameTests.class,
             LevelingGameTests.class,
+            LootrGameTests.class,
             MagicProtectionGameTests.class,
             MerchantGameTests.class,
             MobLevelGameTests.class,

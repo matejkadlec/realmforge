@@ -3847,7 +3847,19 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   room from the layout's seed (salted apart from the planner's draws), a count per kind from the room's table, at most
   as many as it holds, keeps that many candidates at random (`plan/RoomContainers#draw`) and gives the plot's
   `RoomPlacement` a swap for each other one: the block it leaves behind, which `BlockSwapProcessor` places instead
-  of the container and its data. **A room's openings** (RLM-412, [design](design/instance-block-rules.md#7-hidden-spawners))
+  of the container and its data. **A container with loot is Lootr's** (RLM-288,
+  [ADR 0041](decisions/0041-dungeon-containers-hold-loot-through-lootr.md)): `loot/LootContainers#place` sets
+  Lootr's own chest, trapped chest or barrel (`lootr:chest`, `lootr:trapped_chest`, `lootr:barrel`, looked up by id,
+  so the core mod names no class of Lootr's) in the vanilla block's place, with the properties the two share and as
+  a single chest, and gives it the loot table; Lootr then rolls the table once for every player who opens it, with
+  that player as the loot context's `THIS_ENTITY` and their luck (`DefaultLootFiller`, read in Lootr 1.23.38.123's
+  jar). Lootr also takes over a vanilla container that has a loot table by itself, a world structure's or one saved
+  in a template, but only once the container's chunk and the 24 around it are fully loaded
+  (`BlockEntityTicker$Entry#getChunkLoadStatus`); until then a player who opens it gets vanilla's one roll for
+  everybody, and a dungeon is built before anyone stands in it, so the builder does not wait for that. A container
+  without a loot table stays vanilla's, and so does everything without Lootr (the lean dev client). `LootrGameTests`
+  checks all three; the tables themselves are RLM-289's, and the rooms' containers get them with RLM-290 and W6.
+  **A room's openings** (RLM-412, [design](design/instance-block-rules.md#7-hidden-spawners))
   are drawn the same way from their own salt: `DungeonPlan#wayIn` names the connector each room is entered through
   (the one it hangs off the room before it by, the first link that reaches it from an earlier room), and
   `plan/RoomOpenings#draw` picks one listed side at random that is not that connector's side (any side for a room
@@ -3859,7 +3871,10 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   entity hook of a structure processor: a template keeps it as it was where it was saved, and vanilla logs an invalid
   position before moving the entity into place) and made invulnerable (Adventure mode protects blocks, not these
   entities: a hit or an arrow popped a frame's flower out and broke it, so the lock could no longer be solved; a frame
-  still turns its item, and a creative player still breaks it), and the plot's chunks are held non-ticking, so none
+  still turns its item, and a creative player still breaks it). They stay vanilla's frames: Lootr turns every item
+  frame a structure template places into its own, which hands each player the item, and the pack's config switches
+  that off (`convert_structure_item_frames`, [pack README](../pack/README.md#configuration), RLM-288). The plot's
+  chunks are held non-ticking, so none
   falls or wanders before players arrive (RLM-362: `item_combination_lock` had come without the item frames its lock
   reads). The
   builder runs in `LevelTickEvent.Post` of
