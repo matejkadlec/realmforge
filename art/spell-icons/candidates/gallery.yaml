@@ -1,0 +1,149 @@
+# Labels, prompts and picks for `uv run rf art gallery art/spell-icons/candidates` (RLM-588, RLM-591, RLM-609,
+# RLM-642). Generated on 2026-11-10 through the Retro Diffusion MCP server: rd_fast__mc_item at 16x16 for the icons,
+# rd_fast__mc_texture with tiling on for the spellbook's two tiles, four candidates a request, seeds 4601 to 4633
+# in the order of the subjects below. `pick` names the candidate that art/textures/ holds, cleaned.
+title: Spell icons, effect icons and the spellbook's tiles
+intro: >-
+  Every M1 player spell's icon, the Frozen and Bleeding effect icons and the two tiles the spellbook's book texture is
+  composed of. Each candidate is shown as Retro Diffusion returned it and after rf art clean snapped it to the project
+  palette. The picks were made by Claude while the playtest was deferred (Matěj, 2026-11-10): to change one, name the
+  subject and the candidate.
+candidates:
+  rd-fast-1: {label: "Retro Diffusion Fast, 1", note: "0.03 USD an image, 0.12 USD a request of four"}
+  rd-fast-2: {label: "Retro Diffusion Fast, 2"}
+  rd-fast-3: {label: "Retro Diffusion Fast, 3"}
+  rd-fast-4: {label: "Retro Diffusion Fast, 4"}
+  rd-fast-5: {label: "Retro Diffusion Fast, 5", note: "second request, another prompt"}
+  rd-fast-6: {label: "Retro Diffusion Fast, 6"}
+  rd-fast-7: {label: "Retro Diffusion Fast, 7"}
+  rd-fast-8: {label: "Retro Diffusion Fast, 8"}
+  rd-fast-9: {label: "Retro Diffusion Fast, 9", note: "third request, another prompt"}
+  rd-fast-10: {label: "Retro Diffusion Fast, 10"}
+  rd-fast-11: {label: "Retro Diffusion Fast, 11"}
+  rd-fast-12: {label: "Retro Diffusion Fast, 12"}
+subjects:
+  frostbolt:
+    title: Frostbolt
+    prompt: a jagged bolt of pale blue ice flying diagonally to the upper right, frosty white sparkles trailing behind it
+    pick: rd-fast-2
+  improved_frostbolt:
+    title: Improved Frostbolt (passive)
+    prompt: a large glowing pale blue ice crystal shard pointing to the upper right, surrounded by a swirl of bright white frost sparkles and a golden glint
+    pick: rd-fast-1
+  cone_of_cold:
+    title: Cone of Cold
+    prompt: >-
+      five long sharp pale blue icicles spreading out like the ribs of an open fan from a single point in the lower left
+      corner toward the upper right, white frosty tips, snow mist between them (candidates 9 to 12; 1 to 4: a wide
+      fan-shaped blast of icy blue wind and snow; 5 to 8: a freezing wind blast shaped like a cone)
+    pick: rd-fast-12
+  ice_lance:
+    title: Ice Lance
+    prompt: a long thin sharp spear of clear light blue ice pointing to the upper right, glinting white tip, straight and narrow like a lance
+    pick: rd-fast-4
+  frost_nova:
+    title: Frost Nova
+    prompt: a ring of sharp blue ice spikes bursting outward in all directions from a bright white center, like a star of ice
+    pick: rd-fast-4
+  frostbite:
+    title: Frostbite (passive)
+    prompt: a frozen pale blue hand covered in white frost with small icicles hanging from the fingers
+    pick: rd-fast-3
+  shatter:
+    title: Shatter (passive)
+    prompt: a block of blue ice cracking and breaking apart into sharp flying shards, bright white cracks through its middle
+    pick: rd-fast-1
+  ice_barrier:
+    title: Ice Barrier
+    prompt: a round shield made of thick clear blue ice with a white frosty rim and a snowflake emblem in the middle
+    pick: rd-fast-3
+  blizzard:
+    title: Blizzard
+    prompt: a dark blue storm cloud with large white snowflakes and sharp blue ice shards falling down from it
+    pick: rd-fast-1
+  slam:
+    title: Slam
+    prompt: a big two-handed steel sword swinging downward with a bright orange curved motion arc behind the blade
+    pick: rd-fast-1
+  charge:
+    title: Charge
+    prompt: >-
+      the head of a charging dark brown bull seen from the front, lowered sharp white horns, angry glowing red eyes,
+      steam from its nostrils (candidates 5 to 8; 1 to 4: a steel armored boot running forward with orange speed lines)
+    pick: rd-fast-6
+  deep_wounds:
+    title: Deep Wounds (passive)
+    prompt: three deep parallel claw slash wounds in dark red, bright red blood dripping down from the gashes
+    pick: rd-fast-1
+  rend:
+    title: Rend
+    prompt: a jagged serrated steel dagger blade with bright red blood drops flying off its edge
+    pick: rd-fast-3
+  battle_shout:
+    title: Battle Shout
+    prompt: a curved brass war horn with orange sound waves blasting out of its wide end
+    pick: rd-fast-4
+  two_handed_weapon_specialization:
+    title: Two-Handed Specialization (passive)
+    prompt: a huge two-handed steel greatsword standing upright, long leather-wrapped grip, wide crossguard, golden glint on the blade
+    pick: rd-fast-2
+  bloodthirst:
+    title: Bloodthirst (passive)
+    prompt: a steel battle axe blade dripping with bright red blood, a red glow around it
+    pick: rd-fast-1
+  overpower:
+    title: Overpower
+    prompt: a clenched steel gauntlet fist punching upward, surrounded by a bright orange impact burst
+    pick: rd-fast-1
+  victory_rush:
+    title: Victory Rush
+    prompt: a red war banner flag flying on a wooden pole with a golden laurel wreath emblem on it
+    pick: rd-fast-4
+  execute:
+    title: Execute
+    prompt: a large executioner's axe with a wide curved dark steel blade and a blood red edge, blade down, wooden handle up
+    pick: rd-fast-4
+  arcane_missiles:
+    title: Arcane Missiles
+    prompt: three small glowing purple magic missiles streaking to the upper right one after another, violet sparkle trails behind them
+    pick: rd-fast-3
+  fireball:
+    title: Fireball
+    prompt: a blazing orange and yellow fireball flying to the upper right with a trail of red flames behind it
+    pick: rd-fast-1
+  reckless_strike:
+    title: Reckless Strike
+    prompt: two crossed steel swords clashing with bright red and orange sparks flying where the blades meet
+    pick: rd-fast-3
+  shield_bash:
+    title: Shield Bash
+    prompt: a round wooden shield with a steel rim and a steel boss in the middle, yellow impact stars bursting from its front
+    pick: rd-fast-2
+  battle_stance:
+    title: Battle Stance
+    prompt: a warrior's steel helmet with two horns seen from the front, a dark eye slit glowing red
+    pick: rd-fast-2
+  will_to_survive:
+    title: Will To Survive (the Human's racial spell)
+    prompt: a shining golden heart with broken grey iron chains falling off it, bright white rays around it
+    pick: rd-fast-1
+  effect_frozen:
+    title: Effect icon, Frozen
+    prompt: a solid cube of pale blue ice with white highlights, frost on its edges and small icicles hanging from the bottom
+    pick: rd-fast-1
+  effect_bleeding:
+    title: Effect icon, Bleeding
+    prompt: three glossy dark red blood drops falling, the biggest in the middle with a white highlight
+    pick: rd-fast-1
+  book_page:
+    title: Spellbook, the page's tile (64 x 64, tileable)
+    size: 64
+    prompt: >-
+      plain aged cream-coloured paper, uniform fine grain speckled with tiny slightly darker flecks, completely even,
+      no lines, no folds, no creases, no stains (candidates 5 to 8; 1 to 4: smooth old parchment paper, warm pale
+      beige, very subtle fibres and a few faint darker stains)
+    pick: rd-fast-7
+  book_cover:
+    title: Spellbook, the cover's tile (16 x 16, tileable)
+    prompt: dark brown leather book cover, fine wrinkled grain, worn and slightly cracked, even colour
+    pick: rd-fast-1

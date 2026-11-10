@@ -39,6 +39,15 @@ class CandidateInfo(_Strict):
 class SubjectInfo(_Strict):
     title: str
     prompt: str = ""
+    pick: str = Field(
+        default="",
+        description="The candidate whose cleaned texture art/textures/ holds: its card says 'In the game'.",
+    )
+    size: int | None = Field(
+        default=None,
+        gt=0,
+        description="This subject's texture width when it is not the gallery's (a 64 x 64 GUI tile among icons).",
+    )
 
 
 class GalleryInfo(_Strict):
@@ -65,21 +74,29 @@ class Subject:
 def collect(directory: Path, palette: Palette, size: int) -> tuple[GalleryInfo, tuple[Subject, ...]]:
     """Read and clean every candidate under ``directory``.
 
-    Subjects and candidates come in the order ``gallery.yaml`` lists them, then the unlisted ones by name.
+    Subjects and candidates come in the order ``gallery.yaml`` lists them, then the unlisted ones by name. A
+    subject's pick must be one of its candidates.
     """
     info = _load_info(directory / GALLERY_FILE)
     subjects: list[Subject] = []
     subject_dirs = [p for p in directory.iterdir() if p.is_dir()]
     for subject_dir in sorted(subject_dirs, key=lambda p: _rank(p.name, info.subjects)):
         candidates: list[Candidate] = []
+        meta = info.subjects.get(subject_dir.name)
+        subject_size = meta.size if meta is not None and meta.size is not None else size
         for png in sorted(subject_dir.glob("*.png"), key=lambda p: _rank(p.stem, info.candidates)):
             try:
                 width, height, pixels = decode_rgba(png.read_bytes())
                 raw = Image(width, height, tuple(pixels))
-                cleaned, report = clean(raw, palette, size)
+                cleaned, report = clean(raw, palette, subject_size)
             except (PngError, TextureError) as e:
                 raise GalleryError(f"{png}: {e}") from e
             candidates.append(Candidate(png.stem, raw, cleaned, report))
+        if meta is not None and meta.pick and meta.pick not in {candidate.name for candidate in candidates}:
+            raise GalleryError(
+                f"{directory / GALLERY_FILE}: subjects.{subject_dir.name}.pick: no candidate {meta.pick!r} "
+                f"in {subject_dir}"
+            )
         if candidates:
             subjects.append(Subject(subject_dir.name, tuple(candidates)))
     return info, tuple(subjects)
@@ -145,7 +162,7 @@ def render(info: GalleryInfo, subjects: tuple[Subject, ...], palette: Palette) -
             out.append(f'<p class="prompt">{esc(meta.prompt)}</p>')
         out.append('<div class="cards">')
         for candidate in subject.candidates:
-            out.append(_card(subject.name, candidate, info))
+            out.append(_card(subject.name, candidate, info, picked=bool(meta) and meta.pick == candidate.name))
         out.append("</div></section>")
 
     out.append('<section class="picks"><h2>Your picks</h2>')
@@ -170,7 +187,7 @@ def batch_id(subjects: tuple[Subject, ...]) -> str:
     return digest.hexdigest()[:16]
 
 
-def _card(subject: str, candidate: Candidate, info: GalleryInfo) -> str:
+def _card(subject: str, candidate: Candidate, info: GalleryInfo, *, picked: bool = False) -> str:
     esc = html.escape
     meta = info.candidates.get(candidate.name)
     label = meta.label if meta else candidate.name
@@ -180,9 +197,10 @@ def _card(subject: str, candidate: Candidate, info: GalleryInfo) -> str:
         f"{report.colors_before} → {report.colors_after} colors, "
         f"{report.changed_pixels} of {len(candidate.cleaned.pixels)} pixels recolored{scale}"
     )
+    in_game = ' <span class="in-game">In the game</span>' if picked else ""
     parts = [
-        '<article class="card">',
-        f"<h3>{esc(label)}</h3>",
+        f'<article class="card{" picked" if picked else ""}">',
+        f"<h3>{esc(label)}{in_game}</h3>",
         '<div class="views">',
         _figure("Generated", candidate.raw),
         _figure("Cleaned", candidate.cleaned),
@@ -262,6 +280,9 @@ img.px { width: 128px; height: auto; image-rendering: pixelated; background: var
   box-shadow: inset 0 0 0 2px var(--slot-edge); max-width: 100%; }
 img.px.tiled { width: 192px; }
 .stats { margin: 0; color: var(--muted); }
+.card.picked { border-color: var(--accent); }
+.in-game { font: 600 0.7rem var(--body); text-transform: uppercase; letter-spacing: 0.06em; color: var(--bg);
+  background: var(--accent); border-radius: 3px; padding: 2px 6px; margin-left: 6px; vertical-align: middle; }
 .pick { display: flex; gap: 6px; align-items: center; font-weight: 600; cursor: pointer; }
 .pick input { accent-color: var(--accent); width: 18px; height: 18px; }
 .picks pre { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 12px;
