@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import gzip
 import json
+import shutil
 import struct
 import zlib
 
@@ -102,6 +103,8 @@ def test_items_without_lore_import_nothing_for_it(repo: RepoPaths) -> None:
         (repo.content / path).unlink()
     for name in ("stone_heart", "sun_signet_shard", "ice_signet_shard"):
         write(repo.content / "items" / f"{name}.yaml", f"id: {name}\nname:\n  en_us: Plain\n")
+    # The merchants price their trades in the coins, so they go with them.
+    shutil.rmtree(repo.content / "merchants")
     files = generate(repo)
     assert "ItemLore" not in files[GENERATED_JAVA].decode()
     assert not any("/tags/item/use/" in path for path in files)

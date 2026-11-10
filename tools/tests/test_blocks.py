@@ -43,7 +43,9 @@ def generate(repo: RepoPaths) -> dict[str, bytes]:
     return {repo.rel(path): data for path, data in generate_all(content, repo).items()}
 
 
-def test_repository_blocks_are_undervaults_stones_their_bricks_and_the_portal_materials() -> None:
+def test_repository_blocks_are_undervaults_stones_their_bricks_the_portal_materials_and_workstations() -> (
+    None
+):
     content, universe = load_and_validate(RepoPaths())
     hardness = {e.model.id: e.model.hardness for e in content.blocks if e.model.kind == "simple"}
     # Matěj, 2026-10-26 (RLM-450): the common stone twice deepslate's 3, the others between 3 and 6.
@@ -52,7 +54,10 @@ def test_repository_blocks_are_undervaults_stones_their_bricks_and_the_portal_ma
     materials = {"realmforge_stone": 3, "diorite_bricks": 1.5, "granite_bricks": 1.5, "andesite_bricks": 1.5}
     # Matěj's playtest of W3, 2026-10-23: Undervault's stone bricks, the Hewn Sentinel's, as hard as Vaultstone.
     bricks = {"vaultstone_bricks": 6}
-    assert hardness == stones | materials | bricks
+    # RLM-241: the Ancient merchants' workstations, job sites that do nothing else (the agent's hardness, open until
+    # the deferred playtest RLM-647).
+    workstations = {"ancient_casting": 5, "ancient_workbench": 5}
+    assert hardness == stones | materials | bricks | workstations
     assert universe.contains("minecraft:block", "realmforge:vaultstone")
     assert universe.contains("minecraft:item", "realmforge:vaultstone")
 
