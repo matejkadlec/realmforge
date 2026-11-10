@@ -8,7 +8,7 @@
           "condition": "minecraft:survives_explosion"
         },
         {
-          "block": "realmforge:realmforge_bricks",
+          "block": "realmforge:gatewright_sealstone",
           "condition": "minecraft:block_state_property",
           "properties": {
             "generated": "false"
@@ -18,11 +18,11 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "realmforge:realmforge_bricks"
+          "name": "realmforge:gatewright_sealstone"
         }
       ],
       "rolls": 1.0
     }
   ],
-  "random_sequence": "realmforge:blocks/realmforge_bricks"
+  "random_sequence": "realmforge:blocks/gatewright_sealstone"
 }

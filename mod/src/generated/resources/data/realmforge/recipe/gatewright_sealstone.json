@@ -4,7 +4,7 @@
   "key": {
     "C": "minecraft:compass",
     "G": "minecraft:gold_ingot",
-    "P": "realmforge:realmforge_bricks"
+    "P": "realmforge:gatewright_bricks"
   },
   "pattern": [
     "PGP",
@@ -12,6 +12,6 @@
     "PGP"
   ],
   "result": {
-    "id": "realmforge:realmforge_sealstone"
+    "id": "realmforge:gatewright_sealstone"
   }
 }

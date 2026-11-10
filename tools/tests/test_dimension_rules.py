@@ -301,10 +301,15 @@ def test_no_rules_still_compile(repo: RepoPaths) -> None:
 # Access
 
 
-def test_the_stone_realms_rules_require_its_unlock(repo: RepoPaths) -> None:
+def test_the_stone_realms_rules_require_its_unlock_and_its_entry_level(repo: RepoPaths) -> None:
     files = generate(repo)
     data = json.loads(files[f"{DATA}/stone.json"])
-    assert data["access"] == [{"type": "realmforge:has_advancement", "advancement": "realmforge:realm/stone"}]
+    # The unlock first, so a player without either reads how to unlock the realm (RLM-306).
+    assert data["access"] == [
+        {"type": "realmforge:has_advancement", "advancement": "realmforge:realm/stone"},
+        {"type": "realmforge:level_at_least", "level": 6},
+    ]
+    assert data["mob_levels"]["entry_level"] == 6
     assert "access" not in json.loads(files[f"{DATA}/overworld.json"])
     assert (
         '"{\\n  \\"advancement\\": \\"realmforge:realm/stone\\",\\n  '

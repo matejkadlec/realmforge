@@ -77,24 +77,30 @@ texts:
   # would take them into a realm they have not unlocked (Matěj's wording, RLM-128); the realm's hint is the subtitle.
   realm_not_eligible:
     en_us: You are not eligible to pass through the portal.
-  # A bed in a realm, which sets no spawn: a player always respawns in Overworld (RLM-128).
+  # What a player below a level requirement reads (RLM-306: a realm's entry level): the hint under the refusal above,
+  # and the sealstone's refusal below, instead of the realm's unlock hint. %1$s is the level.
+  requires_level:
+    en_us: Requires level %1$s.
+  # A bed in a realm, which sets no spawn: a player always respawns in Overworld (RLM-128). In a sentence a realm
+  # takes "the", Overworld too (ADR 0045; Matěj, 2026-10-31, RLM-337).
   bed_only_overworld:
-    en_us: Beds only work in Overworld
+    en_us: Beds only work in the Overworld
   # The realm portal's sealstone (W2b, realm portal spec "The sealstone"), in the action bar. %1$s is a realm's
-  # name (no article, RLM-188), Overworld's for a return portal. A signet or the sneak gesture opened the portal:
+  # name as a sentence refers to it (its `in_sentence`: "the Undervault", ADR 0045, RLM-337), Overworld's for a return
+  # portal ("the Overworld"). A signet or the sneak gesture opened the portal:
   realm_portal_opens_onto:
     en_us: The portal opens onto %1$s
   # A signet of the realm the portal already shows.
   realm_portal_already_opens_onto:
     en_us: The portal already opens onto %1$s
-  # A signet of a realm the player has not unlocked: %1$s the realm's description ("stone realm"), %2$s its hint
-  # (Matěj's wording, 2026-10-20).
+  # A signet of a realm the player may not enter: %1$s the realm's description ("stone realm"), %2$s the hint of
+  # what they lack, the realm's unlock hint or the level it requires (Matěj's wording, 2026-10-20; RLM-306).
   realm_portal_not_eligible:
     en_us: You are not eligible to open a portal to the %1$s. %2$s
   # Another realm's signet on a frame inside a realm: those lead only back to Overworld (Matěj, RLM-188), and only the
   # realm's own signet opens them (Matěj, 2026-10-28).
   realm_portal_only_back:
-    en_us: This portal leads only back to Overworld
+    en_us: This portal leads only back to the Overworld
   # A signet or the gesture on a frame that is not complete, or whose opening is blocked; particles mark the problems.
   realm_portal_frame_incomplete:
     en_us: The frame is incomplete

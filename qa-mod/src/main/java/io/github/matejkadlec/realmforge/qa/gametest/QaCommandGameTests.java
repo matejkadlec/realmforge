@@ -236,8 +236,9 @@ public final class QaCommandGameTests {
     }
 
     /**
-     * W2a's playtest: {@code /qa realm enter} is refused before the unlock and lands on Undervault's floor after it;
-     * {@code /qa realm lock} and vanilla's {@code /advancement} lock and unlock it again.
+     * W2a's playtest: {@code /qa realm enter} is refused before the unlock, and after it below the realm's entry level
+     * (RLM-306), and lands on Undervault's floor once {@code /qa level 6} gave the level; {@code /qa realm lock} and
+     * vanilla's {@code /advancement} lock and unlock it again.
      */
     @QaGameTest
     public static void realmCommandsReachTheirStates(GameTestHelper helper) {
@@ -249,8 +250,12 @@ public final class QaCommandGameTests {
             helper.assertTrue(player.level() == helper.getLevel(), "/qa realm enter is refused without the unlock");
             run(server, player, "qa realm unlock realmforge:stone");
             run(server, player, "qa realm enter realmforge:stone");
+            helper.assertTrue(player.level() == helper.getLevel(),
+                    "/qa realm enter is refused with the unlock below the realm's entry level");
+            run(server, player, "qa level 6");
+            run(server, player, "qa realm enter realmforge:stone");
             helper.assertTrue(player.level().dimension().identifier().toString().equals("realmforge:stone"),
-                    "/qa realm enter takes an unlocked player into Undervault");
+                    "/qa realm enter takes an unlocked player at the entry level into Undervault");
             helper.assertTrue(player.getY() >= 24 && player.getY() <= 42 && player.level().getBlockState(
                     player.blockPosition().below()).isFaceSturdy(player.level(), player.blockPosition().below(),
                     Direction.UP), "the player stands on the floor, at y " + player.getY());

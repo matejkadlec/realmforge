@@ -3,9 +3,12 @@ package io.github.matejkadlec.realmforge.qa.gametest;
 import com.mojang.logging.LogUtils;
 import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceDimension;
+import io.github.matejkadlec.realmforge.generated.GeneratedTexts;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedRealmExpectations.RealmExpectation;
+import io.github.matejkadlec.realmforge.world.WorldRegistries;
 import io.github.matejkadlec.realmforge.world.realm.PortalFrame;
-import io.github.matejkadlec.realmforge.world.realm.RealmforgeBricksBlock;
+import io.github.matejkadlec.realmforge.world.realm.GatewrightBricksBlock;
+import io.github.matejkadlec.realmforge.world.realm.Realm;
 import io.github.matejkadlec.realmforge.world.realm.RealmPortalBlock;
 import io.github.matejkadlec.realmforge.world.realm.RealmPortalBlocks;
 import io.github.matejkadlec.realmforge.world.realm.RealmPortalLinker;
@@ -23,6 +26,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.locale.Language;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -90,7 +95,7 @@ public final class RealmPortalGameTests {
             use(player, level, frame.sealstone(), signet(stone), ItemStack.EMPTY, false);
             helper.assertFalse(lit(level, frame), "a signet opens nothing for a player without the realm's unlock");
 
-            RealmGameTests.award(helper, player, stone.unlockAdvancement());
+            RealmGameTests.unlock(helper, player, stone);
             use(player, level, frame.sealstone(), signet(stone), ItemStack.EMPTY, false);
             helper.assertTrue(lit(level, frame), "the signet lights the complete frame");
             helper.assertValueEqual(RealmPortals.destination(level, frame.sealstone()), Optional.of(id(stone)),
@@ -112,6 +117,47 @@ public final class RealmPortalGameTests {
         helper.succeed();
     }
 
+    /**
+     * RLM-306, RLM-337: below the realm's entry level a signet opens nothing, and the sealstone names the level the
+     * player needs, not the unlock they have; at the level it opens the portal and says where it leads, with the
+     * realm's name as a sentence takes it ("the Undervault").
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_9X9)
+    public static void aSignetOpensNothingBelowTheEntryLevelAndTheSealstoneNamesTheLevel(GameTestHelper helper) {
+        RealmExpectation stone = RealmGameTests.stone();
+        ServerLevel level = helper.getLevel();
+        int entryLevel = RealmGameTests.entryLevel(helper, stone);
+        Realm entry = level.registryAccess().lookupOrThrow(WorldRegistries.REALM).getValue(id(stone));
+        PortalFrame.Frame frame = new PortalFrame.Frame(helper.absolutePos(SEALSTONE), Direction.Axis.X);
+        buildFrame(level, frame);
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-portal-level", new Vec3(4.5, 1, 7.5));
+        try {
+            RealmGameTests.award(helper, player, stone.unlockAdvancement());
+            RealmGameTests.setLevel(player, entryLevel - 1);
+            QaPlayers.sentOverlayLines(player);
+            use(player, level, frame.sealstone(), signet(stone), ItemStack.EMPTY, false);
+            helper.assertFalse(lit(level, frame), "a signet opens nothing below the realm's entry level");
+            helper.assertValueEqual(QaPlayers.sentOverlayLines(player),
+                    List.of(Component.translatable(GeneratedTexts.MESSAGE_REALM_PORTAL_NOT_ELIGIBLE,
+                            Component.translatable(entry.description()),
+                            Component.translatable(GeneratedTexts.MESSAGE_REQUIRES_LEVEL, entryLevel))),
+                    "the sealstone names the level the realm requires");
+
+            RealmGameTests.setLevel(player, entryLevel);
+            use(player, level, frame.sealstone(), signet(stone), ItemStack.EMPTY, false);
+            helper.assertTrue(lit(level, frame), "at the entry level the signet lights the frame");
+            Component opens = Component.translatable(GeneratedTexts.MESSAGE_REALM_PORTAL_OPENS_ONTO,
+                    Component.translatable(stone.inSentenceKey()));
+            helper.assertValueEqual(QaPlayers.sentOverlayLines(player), List.of(opens),
+                    "the sealstone says where the portal leads, the realm's name as a sentence takes it");
+            helper.assertTrue(opens.getString().endsWith(Language.getInstance().getOrDefault(stone.inSentenceKey())),
+                    "the line ends with the realm in a sentence: " + opens.getString());
+        } finally {
+            level.getServer().getPlayerList().remove(player);
+        }
+        helper.succeed();
+    }
+
     /** A frame with a missing side block, or with a block in its opening, stays dark. */
     @QaGameTest(template = QaGameTests.PLATFORM_9X9)
     public static void anIncompleteOrBlockedFrameStaysDark(GameTestHelper helper) {
@@ -121,7 +167,7 @@ public final class RealmPortalGameTests {
         buildFrame(level, frame);
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-portal-incomplete", new Vec3(4.5, 1, 7.5));
         try {
-            RealmGameTests.award(helper, player, stone.unlockAdvancement());
+            RealmGameTests.unlock(helper, player, stone);
             BlockPos side = frame.at(3, 2);
             level.setBlockAndUpdate(side, Blocks.AIR.defaultBlockState());
             use(player, level, frame.sealstone(), signet(stone), ItemStack.EMPTY, false);
@@ -154,7 +200,7 @@ public final class RealmPortalGameTests {
         buildFrame(level, frame);
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-portal-gesture", new Vec3(4.5, 1, 7.5));
         try {
-            RealmGameTests.award(helper, player, stone.unlockAdvancement());
+            RealmGameTests.unlock(helper, player, stone);
             use(player, level, frame.sealstone(), signet(stone), ItemStack.EMPTY, false);
             helper.assertTrue(lit(level, frame), "the signet lights the frame");
 
@@ -194,14 +240,20 @@ public final class RealmPortalGameTests {
         buildFrame(realm, frame);
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-portal-realm-frame");
         try {
-            RealmGameTests.award(helper, player, stone.unlockAdvancement());
+            RealmGameTests.unlock(helper, player, stone);
             Vec3 inFront = Vec3.atBottomCenterOf(frame.at(1, 0).relative(frame.front()));
             helper.assertTrue(player.teleportTo(realm, inFront.x, inFront.y, inFront.z, Set.of(), 0.0F, 0.0F, true),
                     "the unlocked player enters the realm");
+            QaPlayers.sentOverlayLines(player);
             use(player, realm, frame.sealstone(), signet(stone), ItemStack.EMPTY, false);
             helper.assertTrue(lit(realm, frame), "the realm's own signet opens a frame inside the realm");
             helper.assertValueEqual(RealmPortals.destination(realm, frame.sealstone()),
                     Optional.of(Realmforge.id("overworld")), "the realm's signet opens the frame onto Overworld");
+            // "The portal opens onto the Overworld": Overworld takes "the" in a sentence too (RLM-337).
+            helper.assertValueEqual(QaPlayers.sentOverlayLines(player),
+                    List.of(Component.translatable(GeneratedTexts.MESSAGE_REALM_PORTAL_OPENS_ONTO,
+                            Component.translatable("realm.realmforge.overworld.in_sentence"))),
+                    "the sealstone says the portal opens onto Overworld, as a sentence names it");
 
             RealmPortals.close(realm, frame.sealstone());
             helper.assertTrue(dark(realm, frame), "the frame is dark again");
@@ -225,7 +277,7 @@ public final class RealmPortalGameTests {
         buildFrame(instances, frame);
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-portal-instance");
         try {
-            RealmGameTests.award(helper, player, stone.unlockAdvancement());
+            RealmGameTests.unlock(helper, player, stone);
             use(player, instances, frame.sealstone(), signet(stone), ItemStack.EMPTY, false);
             helper.assertFalse(lit(instances, frame), "the portal cannot open in the instance dimension");
         } finally {
@@ -329,7 +381,8 @@ public final class RealmPortalGameTests {
 
     /**
      * Done when of W2b: the portal refuses a player without the realm's unlock when they step in, so its countdown
-     * never starts, and lets them travel into the realm after the unlock.
+     * never starts, and lets them travel into the realm after the unlock. Done when of RLM-306: it refuses a player
+     * with the unlock below the realm's entry level too, and lets them travel at that level.
      */
     @QaGameTest
     public static void thePortalRefusesAPlayerBeforeTheUnlockAndPassesThemAfterIt(GameTestHelper helper) {
@@ -346,7 +399,14 @@ public final class RealmPortalGameTests {
             portal.entityInside(level, entry, player, InsideBlockEffectApplier.NOOP, true);
             helper.assertTrue(player.portalProcess == null, "the portal does not start for a player without the unlock");
 
+            // The unlock alone is not enough below the realm's entry level (RLM-306).
             RealmGameTests.award(helper, player, stone.unlockAdvancement());
+            RealmGameTests.setLevel(player, RealmGameTests.entryLevel(helper, stone) - 1);
+            portal.entityInside(level, entry, player, InsideBlockEffectApplier.NOOP, true);
+            helper.assertTrue(player.portalProcess == null,
+                    "the portal does not start for an unlocked player below the realm's entry level");
+
+            RealmGameTests.unlock(helper, player, stone);
             portal.entityInside(level, entry, player, InsideBlockEffectApplier.NOOP, true);
             helper.assertTrue(player.portalProcess != null, "the portal starts for the unlocked player");
             travel(helper, player, level, entry);
@@ -375,7 +435,7 @@ public final class RealmPortalGameTests {
         PortalFrame.Frame first = litOverworldFrame(level, cellX * scale + 1, cellZ * scale + 1, stone);
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-portal-trip");
         try {
-            RealmGameTests.award(helper, player, stone.unlockAdvancement());
+            RealmGameTests.unlock(helper, player, stone);
             travel(helper, player, level, first.at(1, 1));
             helper.assertTrue(player.level() == realm, "the trip leads into the realm");
 
@@ -389,8 +449,8 @@ public final class RealmPortalGameTests {
             // of carving a frame at the source's height clamped into the arrival heights, y 20.
             helper.assertTrue(built.sealstone().getY() != stoneArrivalMinY(realm),
                     "the trip found the floor in chunks nothing had loaded: " + built.sealstone());
-            helper.assertTrue(realm.getBlockState(built.sealstone()).getValue(RealmforgeBricksBlock.GENERATED)
-                    && realm.getBlockState(built.at(-1, 2)).getValue(RealmforgeBricksBlock.GENERATED),
+            helper.assertTrue(realm.getBlockState(built.sealstone()).getValue(GatewrightBricksBlock.GENERATED)
+                    && realm.getBlockState(built.at(-1, 2)).getValue(GatewrightBricksBlock.GENERATED),
                     "a frame a trip built is marked generated");
             assertCornersBuilt(helper, realm, built);
             assertArrivedAt(helper, player, built);
@@ -472,7 +532,7 @@ public final class RealmPortalGameTests {
         }
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-portal-rounding");
         try {
-            RealmGameTests.award(helper, player, stone.unlockAdvancement());
+            RealmGameTests.unlock(helper, player, stone);
             travel(helper, player, level, first.at(1, 1));
             helper.assertTrue(player.level() == realm, "the trip leads into the realm");
             PortalFrame.Frame built = realmPortalNear(helper, realm, new BlockPos(cellX, REALM_FLOOR, cellZ));
@@ -490,7 +550,7 @@ public final class RealmPortalGameTests {
     /**
      * A trip from a realm portal with no Overworld portal near its scaled-back position builds one there. Over the
      * flat GameTest world nothing fits at Overworld's arrival heights (63 to 310), so it is carved out set into a
-     * platform at y 63, with Realmforge Bricks in its corners; the trip back arrives at the realm portal it came from.
+     * platform at y 63, with Gatewright Bricks in its corners; the trip back arrives at the realm portal it came from.
      */
     @QaGameTest(timeoutTicks = 200)
     public static void aWayBackWithNoPortalNearBuildsOneOnAPlatform(GameTestHelper helper) {
@@ -503,7 +563,7 @@ public final class RealmPortalGameTests {
         RealmPortals.light(realm, start, Realmforge.id("overworld"));
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-portal-way-back");
         try {
-            RealmGameTests.award(helper, player, stone.unlockAdvancement());
+            RealmGameTests.unlock(helper, player, stone);
             Vec3 inFront = Vec3.atBottomCenterOf(start.at(1, 0).relative(start.front()));
             helper.assertTrue(player.teleportTo(realm, inFront.x, inFront.y, inFront.z, Set.of(), 0.0F, 0.0F, true),
                     "the unlocked player enters the realm");
@@ -517,7 +577,7 @@ public final class RealmPortalGameTests {
                     RealmPortalLinker.OVERWORLD_BUILD_RADIUS, id(stone));
             helper.assertTrue(built.isPresent(), "the way back built an Overworld portal near " + scaled);
             helper.assertValueEqual(built.get().sealstone().getY(), 63, "the built frame's bottom row is at y 63");
-            helper.assertTrue(level.getBlockState(built.get().sealstone()).getValue(RealmforgeBricksBlock.GENERATED),
+            helper.assertTrue(level.getBlockState(built.get().sealstone()).getValue(GatewrightBricksBlock.GENERATED),
                     "the built frame is marked generated");
             helper.assertTrue(level.getBlockState(built.get().at(1, -1).relative(built.get().front())).is(Blocks.STONE_BRICKS),
                     "the frame is set into a platform of Overworld's arrival block, which reaches in front of it");
@@ -537,7 +597,7 @@ public final class RealmPortalGameTests {
 
     // Blocks, fluids and entities ---------------------------------------------------------------------------------
 
-    /** Realmforge Bricks and the sealstone of a frame a trip built drop nothing; a player's frame drops its blocks. */
+    /** Gatewright Bricks and the sealstone of a frame a trip built drop nothing; a player's frame drops its blocks. */
     @QaGameTest
     public static void tripBuiltFramesDropNothing(GameTestHelper helper) {
         BlockPos pos = helper.absolutePos(new BlockPos(2, 1, 2));
@@ -547,7 +607,7 @@ public final class RealmPortalGameTests {
             List<ItemStack> drops = Block.getDrops(placed, helper.getLevel(), pos, null, null, pickaxe);
             helper.assertTrue(drops.size() == 1 && drops.getFirst().is(block.asItem()),
                     BuiltInRegistries.BLOCK.getKey(block) + " a player placed drops itself, not " + drops);
-            List<ItemStack> built = Block.getDrops(placed.setValue(RealmforgeBricksBlock.GENERATED, true),
+            List<ItemStack> built = Block.getDrops(placed.setValue(GatewrightBricksBlock.GENERATED, true),
                     helper.getLevel(), pos, null, null, pickaxe);
             helper.assertTrue(built.isEmpty(), BuiltInRegistries.BLOCK.getKey(block) + " a trip built drops nothing");
         }
@@ -625,7 +685,7 @@ public final class RealmPortalGameTests {
             portal.entityInside(level, entry, pig, InsideBlockEffectApplier.NOOP, true);
             helper.assertTrue(pig.portalProcess == null, "a pig carrying a player without the unlock stays out");
 
-            RealmGameTests.award(helper, player, stone.unlockAdvancement());
+            RealmGameTests.unlock(helper, player, stone);
             portal.entityInside(level, entry, pig, InsideBlockEffectApplier.NOOP, true);
             helper.assertTrue(pig.portalProcess != null, "with the unlock, the pig steps in with its rider");
             portal.entityInside(level, entry, player, InsideBlockEffectApplier.NOOP, true);
@@ -652,7 +712,7 @@ public final class RealmPortalGameTests {
         PortalFrame.Frame first = litOverworldFrame(level, cellX * scale(realm) + 1, cellZ * scale(realm) + 1, stone);
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-portal-instant");
         try {
-            RealmGameTests.award(helper, player, stone.unlockAdvancement());
+            RealmGameTests.unlock(helper, player, stone);
             player.getAbilities().invulnerable = false;
             standIn(player, level, first);
             stepIn(player, level, first);
@@ -747,7 +807,7 @@ public final class RealmPortalGameTests {
         return new ItemStack(BuiltInRegistries.ITEM.getValue(Identifier.parse(realm.signet())));
     }
 
-    /** The 13 Realmforge Bricks and the sealstone of {@code frame}, as a player places them, with an empty opening. */
+    /** The 13 Gatewright Bricks and the sealstone of {@code frame}, as a player places them, with an empty opening. */
     private static void buildFrame(ServerLevel level, PortalFrame.Frame frame) {
         level.setBlockAndUpdate(frame.sealstone(), RealmPortalBlocks.sealstone().defaultBlockState());
         for (BlockPos pos : frame.bricks()) {
@@ -838,12 +898,12 @@ public final class RealmPortalGameTests {
         return arrived;
     }
 
-    /** Every corner of a frame a trip built is Realmforge Bricks that drop nothing (Matěj, 2026-10-20). */
+    /** Every corner of a frame a trip built is Gatewright Bricks that drop nothing (Matěj, 2026-10-20). */
     private static void assertCornersBuilt(GameTestHelper helper, ServerLevel level, PortalFrame.Frame frame) {
         for (BlockPos corner : frame.corners()) {
             BlockState state = level.getBlockState(corner);
-            helper.assertTrue(state.is(RealmPortalBlocks.bricks()) && state.getValue(RealmforgeBricksBlock.GENERATED),
-                    "the built frame has generated Realmforge Bricks in its corner at " + corner + ", not " + state);
+            helper.assertTrue(state.is(RealmPortalBlocks.bricks()) && state.getValue(GatewrightBricksBlock.GENERATED),
+                    "the built frame has generated Gatewright Bricks in its corner at " + corner + ", not " + state);
         }
     }
 

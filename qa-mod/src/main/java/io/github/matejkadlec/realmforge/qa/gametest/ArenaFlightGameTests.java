@@ -139,7 +139,7 @@ public final class ArenaFlightGameTests {
                 .thenExecuteAfter(CHECK, () -> {
                     helper.assertTrue(ArenaFlight.isHeldBy(player, titan), "the titan's arena holds the player");
                     helper.assertTrue(undervault != null, "the GameTest server has Undervault");
-                    RealmGameTests.award(helper, player, "realmforge:realm/stone");
+                    RealmGameTests.unlock(helper, player, RealmGameTests.stone());
                     undervault.getChunk(Mth.floor(IN_UNDERVAULT.x) >> 4, Mth.floor(IN_UNDERVAULT.z) >> 4);
                     helper.assertTrue(player.teleportTo(undervault, IN_UNDERVAULT.x, IN_UNDERVAULT.y, IN_UNDERVAULT.z,
                             Set.of(), 0.0F, 0.0F, true), "the unlocked player enters Undervault");

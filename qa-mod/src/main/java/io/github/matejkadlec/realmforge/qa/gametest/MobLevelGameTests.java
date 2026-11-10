@@ -133,7 +133,9 @@ public final class MobLevelGameTests {
         helper.assertTrue(realm != null, "the GameTest world has Undervault");
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-mob-level-floor");
         try {
+            // The realm lets a player in from its entry level on (RLM-306); inside, the test lowers the level again.
             award(helper, player, "realmforge:realm/stone");
+            setPlayerLevel(player, 6);
             realm.getChunk(Mth.floor(IN_UNDERVAULT.x) >> 4, Mth.floor(IN_UNDERVAULT.z) >> 4);
             helper.assertTrue(player.teleportTo(realm, IN_UNDERVAULT.x, IN_UNDERVAULT.y, IN_UNDERVAULT.z, Set.of(),
                     0.0F, 0.0F, true), "the unlocked player enters Undervault");

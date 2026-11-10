@@ -79,8 +79,8 @@ public final class RealmCommands {
         boolean moved = player.teleportTo(level, floor.getX() + 0.5, floor.getY() + 1, floor.getZ() + 0.5, Set.of(),
                 player.getYRot(), player.getXRot(), true);
         if (!moved) {
-            context.getSource().sendFailure(Component.literal("Refused: you have not unlocked "
-                    + IdentifierArgument.getId(context, "realm") + " (/qa realm unlock)"));
+            context.getSource().sendFailure(Component.literal("Refused: you lack the unlock of "
+                    + IdentifierArgument.getId(context, "realm") + " (/qa realm unlock) or its entry level (/qa level)"));
             return 0;
         }
         context.getSource().sendSuccess(() -> Component.literal(String.format(Locale.ROOT, "Entered %s at %d %d %d",

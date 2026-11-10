@@ -51,6 +51,11 @@ public final class ContentRealmGameTests {
             helper.assertValueEqual(realm.name(), expected.nameKey(), expected.id() + " name");
             helper.assertValueEqual(realm.lockedHint(), expected.lockedHintKey(), expected.id() + " hint");
             helper.assertTrue(Language.getInstance().has(realm.name()), expected.id() + ": no en_us name");
+            // "the Undervault": the name as a sentence refers to the realm (ADR 0045, RLM-337), which holds the name.
+            helper.assertValueEqual(realm.inSentence(), expected.inSentenceKey(), expected.id() + " in a sentence");
+            helper.assertTrue(Language.getInstance().getOrDefault(realm.inSentence())
+                            .contains(Language.getInstance().getOrDefault(realm.name())),
+                    expected.id() + ": its in-sentence form does not hold its name");
             helper.assertValueEqual(realm.colour() & 0xFFFFFF, expected.colour(), expected.id() + " portal colour");
             helper.assertValueEqual(realm.signet().map(Identifier::toString).orElse(""), expected.signet(),
                     expected.id() + " signet");

@@ -188,13 +188,13 @@
     },
     "kind": {
       "default": "simple",
-      "description": "What it does: simple (a full block), dungeon_portal (a dungeon key opens it, W4d), dungeon_exit (the way out the builder puts where players arrive in a dungeon), or the realm portal's realmforge_bricks (its frame), realmforge_sealstone (the frame's bottom middle) and realm_portal (the portal block, without an item). One block at most of each kind but simple and dungeon_portal.",
+      "description": "What it does: simple (a full block), dungeon_portal (a dungeon key opens it, W4d), dungeon_exit (the way out the builder puts where players arrive in a dungeon), or the realm portal's gatewright_bricks (its frame), gatewright_sealstone (the frame's bottom middle) and realm_portal (the portal block, without an item). One block at most of each kind but simple and dungeon_portal.",
       "enum": [
         "simple",
         "dungeon_portal",
         "dungeon_exit",
-        "realmforge_bricks",
-        "realmforge_sealstone",
+        "gatewright_bricks",
+        "gatewright_sealstone",
         "realm_portal"
       ],
       "title": "Kind",

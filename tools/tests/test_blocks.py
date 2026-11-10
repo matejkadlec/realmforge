@@ -50,8 +50,9 @@ def test_repository_blocks_are_undervaults_stones_their_bricks_the_portal_materi
     hardness = {e.model.id: e.model.hardness for e in content.blocks if e.model.kind == "simple"}
     # Matěj, 2026-10-26 (RLM-450): the common stone twice deepslate's 3, the others between 3 and 6.
     stones = {"coreslate": 5, "mottlestone": 4.5, "siltstone": 4, "vaultstone": 6}
-    # Matěj, 2026-10-20: Realmforge Stone from 8 Overworld bricks, three of them ours, with vanilla's brick hardness.
-    materials = {"realmforge_stone": 3, "diorite_bricks": 1.5, "granite_bricks": 1.5, "andesite_bricks": 1.5}
+    # Matěj, 2026-10-20 and 2026-10-23 (RLM-394): Gatewright Bricks from 8 Overworld bricks, three of them ours, with
+    # vanilla's brick hardness; no Realmforge Stone in between.
+    materials = {"diorite_bricks": 1.5, "granite_bricks": 1.5, "andesite_bricks": 1.5}
     # Matěj's playtest of W3, 2026-10-23: Undervault's stone bricks, the Hewn Sentinel's, as hard as Vaultstone.
     bricks = {"vaultstone_bricks": 6}
     # RLM-241: the Ancient merchants' workstations, job sites that do nothing else (the agent's hardness, open until
@@ -222,7 +223,7 @@ def test_the_realm_portals_blocks_have_their_own_shapes_loot_and_items(repo: Rep
         files[EXPECTATIONS].decode()
     )
     # The frame's blocks: both states look alike, and only a block without the generated flag drops itself.
-    for block in ("realmforge_bricks", "realmforge_sealstone"):
+    for block in ("gatewright_bricks", "gatewright_sealstone"):
         assert json.loads(files[f"{ASSETS}/blockstates/{block}.json"]) == {
             "variants": {
                 "generated=false": {"model": f"realmforge:block/{block}"},
@@ -239,10 +240,10 @@ def test_the_realm_portals_blocks_have_their_own_shapes_loot_and_items(repo: Rep
 
 
 def test_the_realm_portal_needs_all_three_kinds(repo: RepoPaths) -> None:
-    (repo.content / "blocks" / "realmforge_sealstone.yaml").unlink()
+    (repo.content / "blocks" / "gatewright_sealstone.yaml").unlink()
     problems = problems_for(repo)
     assert any(
-        "kind: the realm portal needs a block of each of" in p and "none is realmforge_sealstone" in p
+        "kind: the realm portal needs a block of each of" in p and "none is gatewright_sealstone" in p
         for p in problems
     ), problems
 

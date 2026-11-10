@@ -63,7 +63,7 @@ public final class RealmPortals {
     }
 
     static PortalFrame.Part part(BlockState state) {
-        if (state.getBlock() instanceof RealmforgeBricksBlock) {
+        if (state.getBlock() instanceof GatewrightBricksBlock) {
             return PortalFrame.Part.BRICKS;
         }
         if (state.getBlock() instanceof SealstoneBlock) {
@@ -153,7 +153,7 @@ public final class RealmPortals {
         if (!RealmAccess.mayEnter(player, realm.value().dimension())) {
             tell(player, Component.translatable(GeneratedTexts.MESSAGE_REALM_PORTAL_NOT_ELIGIBLE,
                     Component.translatable(realm.value().description()),
-                    Component.translatable(realm.value().lockedHint())));
+                    RealmAccess.refusalHint(player, realm.value().dimension())));
             return;
         }
         open(player, level, sealstone, realm);
@@ -190,7 +190,7 @@ public final class RealmPortals {
         Optional<Realm> realm = level.registryAccess().lookupOrThrow(WorldRegistries.REALM).getOptional(destination.get());
         tell(player, realm.isPresent()
                 ? Component.translatable(GeneratedTexts.MESSAGE_REALM_PORTAL_OPENS_ONTO,
-                        Component.translatable(realm.get().name()))
+                        Component.translatable(realm.get().inSentence()))
                 : Component.translatable(GeneratedTexts.MESSAGE_REALM_PORTAL_UNKNOWN_REALM));
     }
 
@@ -199,7 +199,8 @@ public final class RealmPortals {
      * its opening free; otherwise particles mark what is missing or in the way.
      */
     private static void open(ServerPlayer player, ServerLevel level, BlockPos sealstone, Holder.Reference<Realm> entry) {
-        Component name = Component.translatable(entry.value().name());
+        // "The portal opens onto the Undervault": a realm's name in a sentence takes "the" (ADR 0045, RLM-337).
+        Component name = Component.translatable(entry.value().inSentence());
         PortalFrame.Check check = PortalFrame.around(lookup(level), sealstone);
         if (!check.canLight()) {
             tell(player, Component.translatable(GeneratedTexts.MESSAGE_REALM_PORTAL_FRAME_INCOMPLETE));
@@ -246,13 +247,13 @@ public final class RealmPortals {
     }
 
     /**
-     * Builds a frame a trip needs, lit onto {@code destination}: 13 Realmforge Bricks and a sealstone, and Realmforge
+     * Builds a frame a trip needs, lit onto {@code destination}: 13 Gatewright Bricks and a sealstone, and Realmforge
      * Bricks in the four corners too, which no frame needs but every built one has (Matěj, 2026-10-20: "without it it
-     * looks bad"); all {@link RealmforgeBricksBlock#GENERATED}, so they drop nothing, then the opening (realm portal
+     * looks bad"); all {@link GatewrightBricksBlock#GENERATED}, so they drop nothing, then the opening (realm portal
      * spec, "Building a portal").
      */
     public static void build(ServerLevel level, PortalFrame.Frame frame, Identifier destination) {
-        BlockState stone = RealmPortalBlocks.bricks().defaultBlockState().setValue(RealmforgeBricksBlock.GENERATED, true);
+        BlockState stone = RealmPortalBlocks.bricks().defaultBlockState().setValue(GatewrightBricksBlock.GENERATED, true);
         for (BlockPos pos : frame.bricks()) {
             level.setBlock(pos, stone, Block.UPDATE_ALL);
         }
@@ -260,7 +261,7 @@ public final class RealmPortals {
             level.setBlock(pos, stone, Block.UPDATE_ALL);
         }
         level.setBlock(frame.sealstone(),
-                RealmPortalBlocks.sealstone().defaultBlockState().setValue(RealmforgeBricksBlock.GENERATED, true),
+                RealmPortalBlocks.sealstone().defaultBlockState().setValue(GatewrightBricksBlock.GENERATED, true),
                 Block.UPDATE_ALL);
         light(level, frame, destination);
     }

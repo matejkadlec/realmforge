@@ -1,6 +1,7 @@
 {
   "dimension": "minecraft:overworld",
   "name": "realm.realmforge.overworld.name",
+  "in_sentence": "realm.realmforge.overworld.in_sentence",
   "colour": "#5DBB63",
   "sound_pitch": 1.0,
   "arrival": {

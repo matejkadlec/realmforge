@@ -56,6 +56,7 @@ def test_a_realm_becomes_its_entry_unlock_and_texts(repo: RepoPaths) -> None:
     assert json.loads(files[f"{DATA}/realmforge/realm/stone.json"]) == {
         "dimension": "realmforge:stone",
         "name": "realm.realmforge.stone.name",
+        "in_sentence": "realm.realmforge.stone.in_sentence",
         "subtitle": "realm.realmforge.stone.subtitle",
         "description": "realm.realmforge.stone.description",
         "locked_hint": "realm.realmforge.stone.locked_hint",
@@ -97,6 +98,36 @@ def test_a_realms_rules_must_require_its_unlock(repo: RepoPaths) -> None:
         in p
         for p in problems_for(repo)
     )
+
+
+def test_a_realms_rules_require_its_entry_level_once(repo: RepoPaths) -> None:
+    """RLM-306, ADR 0075: a realm is entered from its entry level on, the number its mobs are floored at."""
+    rules = repo.content / "dimensions" / "stone.yaml"
+    text = rules.read_text(encoding="utf-8")
+    level = "  - type: realmforge:level_at_least\n    level: 6\n"
+    assert level in text
+    rules.write_text(text.replace(level, ""), encoding="utf-8")
+    assert any(
+        "dimensions/stone.yaml: access: the rules of realmforge:stone need the realm's entry level in their access, "
+        "after its unlock: {type: realmforge:level_at_least, level: 6}" in p
+        for p in problems_for(repo)
+    )
+    rules.write_text(text.replace("    level: 6\n", "    level: 5\n"), encoding="utf-8")
+    assert any(
+        "dimensions/stone.yaml: access.1.level: a realm is entered from its entry level on, mob_levels.entry_level: "
+        "{type: realmforge:level_at_least, level: 6}, not level 5" in p
+        for p in problems_for(repo)
+    )
+    rules.write_text(text + level, encoding="utf-8")
+    assert any(
+        "dimensions/stone.yaml: access.2: a realm's access names its entry level once" in p
+        for p in problems_for(repo)
+    )
+    # A realm whose entry level is 1 needs no level requirement, and may still name level 1.
+    rules.write_text(text.replace("entry_level: 6", "entry_level: 1").replace(level, ""), encoding="utf-8")
+    stone = repo.content / "realms" / "stone.yaml"
+    stone.write_text(stone.read_text(encoding="utf-8").replace("levels: [6, 18]", "levels: [1, 18]"))
+    load_and_validate(repo)
 
 
 def test_a_realm_needs_rules(repo: RepoPaths) -> None:
@@ -171,6 +202,7 @@ def test_overworlds_entry_is_no_realm(repo: RepoPaths) -> None:
     assert json.loads(files[f"{DATA}/realmforge/realm/overworld.json"]) == {
         "dimension": "minecraft:overworld",
         "name": "realm.realmforge.overworld.name",
+        "in_sentence": "realm.realmforge.overworld.in_sentence",
         "colour": "#5DBB63",
         "sound_pitch": 1.0,
         "arrival": {"y": [63, 310], "floor": "minecraft:stone_bricks", "pocket_radius": 3},
@@ -256,6 +288,60 @@ def test_a_signets_tooltip_says_it_is_not_consumed_and_it_resists_fire(repo: Rep
     assert "realm.realmforge.stone.subtitle" not in java
     lang = json.loads(generate(repo)[LANG])
     assert lang["tooltip.realmforge.signet_not_consumed"] == "Does not consume on use"
+
+
+def test_a_realms_name_in_a_sentence_takes_the_and_holds_the_name(repo: RepoPaths) -> None:
+    """RLM-337, ADR 0045: a sentence that refers to a realm takes "the"; Overworld too (Matěj, 2026-10-31)."""
+    files = generate(repo)
+    lang = json.loads(files[LANG])
+    assert lang["realm.realmforge.stone.in_sentence"] == "the Undervault"
+    assert lang["realm.realmforge.overworld.in_sentence"] == "the Overworld"
+    assert json.loads(files[f"{DATA}/realmforge/realm/overworld.json"])["in_sentence"] == (
+        "realm.realmforge.overworld.in_sentence"
+    )
+    opens = lang["message.realmforge.realm_portal_opens_onto"]
+    already = lang["message.realmforge.realm_portal_already_opens_onto"]
+    undervault = lang["realm.realmforge.stone.in_sentence"]
+    overworld = lang["realm.realmforge.overworld.in_sentence"]
+    assert opens.replace("%1$s", undervault) == "The portal opens onto the Undervault"
+    assert opens.replace("%1$s", overworld) == "The portal opens onto the Overworld"
+    assert already.replace("%1$s", undervault) == "The portal already opens onto the Undervault"
+    # The fixed messages that name Overworld in a sentence follow the same rule.
+    assert lang["message.realmforge.realm_portal_only_back"] == "This portal leads only back to the Overworld"
+    assert lang["message.realmforge.bed_only_overworld"] == "Beds only work in the Overworld"
+    # A name, label or title keeps the bare name.
+    assert lang["realm.realmforge.stone.name"] == "Undervault"
+    assert '"realm.realmforge.stone.name",\n                    "realm.realmforge.stone.in_sentence",' in (
+        files[EXPECTATIONS].decode()
+    )
+
+    stone = repo.content / "realms" / "stone.yaml"
+    text = stone.read_text(encoding="utf-8")
+    stone.write_text(text.replace("en_us: the Undervault", "en_us: the deep"), encoding="utf-8")
+    assert any(
+        "realms/stone.yaml" in p and "in_sentence.en_us is the realm's name as a sentence refers to it" in p
+        for p in problems_for(repo)
+    )
+    stone.write_text(text.replace("in_sentence:\n  en_us: the Undervault\n", ""), encoding="utf-8")
+    assert any("realms/stone.yaml: in_sentence" in p for p in problems_for(repo))
+
+
+def test_a_level_requirement_fills_the_refusal_with_its_level(repo: RepoPaths) -> None:
+    """RLM-306: a player with the unlock below the realm's entry level reads the level, at the portal and at the
+    sealstone, instead of the realm's unlock hint."""
+    files = generate(repo)
+    lang = json.loads(files[LANG])
+    hint = lang["message.realmforge.requires_level"].replace("%1$s", "6")
+    assert hint == "Requires level 6."
+    message = lang["message.realmforge.realm_portal_not_eligible"]
+    description = lang["realm.realmforge.stone.description"]
+    assert message.replace("%1$s", description).replace("%2$s", hint) == (
+        "You are not eligible to open a portal to the stone realm. Requires level 6."
+    )
+    assert json.loads(files[f"{DATA}/realmforge/dimension_rules/stone.json"])["access"] == [
+        {"type": "realmforge:has_advancement", "advancement": "realmforge:realm/stone"},
+        {"type": "realmforge:level_at_least", "level": 6},
+    ]
 
 
 def test_a_realms_description_and_hint_fill_the_refusal_at_the_sealstone(repo: RepoPaths) -> None:

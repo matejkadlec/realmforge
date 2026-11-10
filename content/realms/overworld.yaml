@@ -9,6 +9,9 @@ id: overworld
 dimension: minecraft:overworld
 name:
   en_us: Overworld
+# Overworld is a realm in a sentence too and takes "the" (Matěj, 2026-10-31, RLM-337): "back onto the Overworld".
+in_sentence:
+  en_us: the Overworld
 colour: "#5DBB63"
 arrival:
   y: [63, 310]

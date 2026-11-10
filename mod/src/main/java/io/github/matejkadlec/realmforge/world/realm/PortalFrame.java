@@ -11,7 +11,7 @@ import net.minecraft.core.Direction;
 /**
  * The realm portal's frame as plain Java over a block lookup (realm portal spec, "The frame"): a vertical rectangle 5
  * wide and 6 tall around a 3x4 opening, along either horizontal axis. The 14 blocks that touch the opening are
- * required, 13 Realmforge Bricks and the sealstone in the middle of the bottom row; the four corners are decoration.
+ * required, 13 Gatewright Bricks and the sealstone in the middle of the bottom row; the four corners are decoration.
  * So every required block touches the opening, and breaking any of them reaches a portal block through a neighbour
  * update.
  */
@@ -79,7 +79,7 @@ public final class PortalFrame {
             return opening;
         }
 
-        /** The 13 positions of Realmforge Bricks: the rest of the bottom row, the sides and the top row. */
+        /** The 13 positions of Gatewright Bricks: the rest of the bottom row, the sides and the top row. */
         public List<BlockPos> bricks() {
             List<BlockPos> stones = new ArrayList<>(13);
             stones.add(at(0, -1));
@@ -138,7 +138,7 @@ public final class PortalFrame {
         }
     }
 
-    /** Checks {@code frame}: its 13 Realmforge Bricks, its sealstone and its opening. */
+    /** Checks {@code frame}: its 13 Gatewright Bricks, its sealstone and its opening. */
     public static Check check(Lookup lookup, Frame frame) {
         List<BlockPos> missing = new ArrayList<>();
         if (lookup.at(frame.sealstone()) != Part.SEALSTONE) {

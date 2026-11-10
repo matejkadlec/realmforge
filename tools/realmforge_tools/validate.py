@@ -6,7 +6,7 @@ import copy
 import difflib
 import math
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from itertools import pairwise
 from pathlib import PurePosixPath
 
@@ -97,7 +97,7 @@ from realmforge_tools.schema.quest import (
 )
 from realmforge_tools.schema.realm import FRAME_HEIGHT, PORTAL_PARTICLES, unlock_advancement
 from realmforge_tools.schema.recipe import is_tag
-from realmforge_tools.schema.requirement import ChapterCompletedDef, HasAdvancementDef
+from realmforge_tools.schema.requirement import ChapterCompletedDef, HasAdvancementDef, LevelAtLeastDef
 from realmforge_tools.schema.room_spec import FULL, LANTERN, SLAB, STAIRS, THEME_ROLES, WALL_TORCH
 from realmforge_tools.schema.sound import sound_id
 from realmforge_tools.schema.spell import (
@@ -2696,6 +2696,10 @@ def _check_realms(content: Content, universe: IdUniverse) -> list[Problem]:
                     f"{{type: realmforge:has_advancement, advancement: {unlock}}}",
                 )
             )
+        if rule is not None and rule.model.mob_levels is not None:
+            problems += _realm_entry_level_problems(
+                rule.source, realm.dimension, rule.model.mob_levels.entry_level, rule.model.access or []
+            )
         if rule is not None and rule.model.mob_levels is not None and realm.levels is not None:
             band = rule.model.mob_levels
             if realm.levels[0] != band.entry_level or realm.levels[1] > band.max_level:
@@ -2719,6 +2723,43 @@ def _check_realms(content: Content, universe: IdUniverse) -> list[Problem]:
         min_y, height = dimension_type.data.get("min_y"), dimension_type.data.get("height")
         if isinstance(min_y, int) and isinstance(height, int):
             problems += _arrival_height_problems(entry.source, realm.arrival.y, min_y, height)
+    return problems
+
+
+def _realm_entry_level_problems(
+    source: str, dimension: str, entry_level: int, access: Sequence[object]
+) -> list[Problem]:
+    """A realm is entered from its entry level on (RLM-306, ADR 0075): its rules' access names that level, once, the
+    same number its mobs are floored at, so the two never drift apart. A realm whose entry level is 1 needs none."""
+    levels = [
+        (n, requirement.level)
+        for n, requirement in enumerate(access)
+        if isinstance(requirement, LevelAtLeastDef)
+    ]
+    wanted = f"{{type: realmforge:level_at_least, level: {entry_level}}}"
+    if not levels:
+        if entry_level <= 1:
+            return []
+        return [
+            Problem(
+                source,
+                "access",
+                f"the rules of {dimension} need the realm's entry level in their access, after its unlock: {wanted}",
+            )
+        ]
+    problems = [
+        Problem(
+            source,
+            f"access.{n}.level",
+            f"a realm is entered from its entry level on, mob_levels.entry_level: {wanted}, not level {level}",
+        )
+        for n, level in levels
+        if level != entry_level
+    ]
+    if len(levels) > 1:
+        problems.append(
+            Problem(source, f"access.{levels[1][0]}", "a realm's access names its entry level once")
+        )
     return problems
 
 
