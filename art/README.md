@@ -39,8 +39,11 @@ Texture pipeline ([ADR 0007](../docs/decisions/0007-asset-pipeline.md),
    not write (half-transparent pixels, colours outside the palette). A texture touched up by hand must still be in
    palette colours. To change a pick, clean another candidate over the file, update `pick`, and run `rf gen`.
 
-While Matěj's review of a batch is deferred (his decision of 2026-11-10), an agent makes the picks, records them in
-`gallery.yaml`, and the deferred playtest ticket asks him to review the gallery.
+**A batch whose review Matěj deferred** ([ADR 0074](../docs/decisions/0074-an-agent-picks-the-art-of-a-batch-whose-review-matej-deferred.md):
+the marathon runs of 2026-11-10, and a later batch only when he defers it himself): an agent makes the picks in step
+2 and installs them. They are provisional: `gallery.yaml`'s intro says so and names the batch's "Playtest
+(deferred)" ticket, which asks him to review the gallery. "Approved art" names the folder `art/textures/`, not his
+review. The spell icon batch's ticket is RLM-648.
 
 Our font's symbols (the mob level's skull, RLM-340) are not generator output: they are pixel rows in
 `tools/realmforge_tools/generate/fonts.py`, on the default Minecraft font's 8x8 grid in palette colours, and `rf gen`

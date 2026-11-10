@@ -6,8 +6,9 @@ title: Spell icons, effect icons and the spellbook's tiles
 intro: >-
   Every M1 player spell's icon, the Frozen and Bleeding effect icons and the two tiles the spellbook's book texture is
   composed of. Each candidate is shown as Retro Diffusion returned it and after rf art clean snapped it to the project
-  palette. The picks were made by Claude while the playtest was deferred (Matěj, 2026-11-10): to change one, name the
-  subject and the candidate.
+  palette. The picks were made by Claude while the playtest was deferred (Matěj, 2026-11-10, ADR 0074) and are
+  provisional until Matěj has reviewed this gallery, which RLM-648 owes: to change one, name the subject and the
+  candidate.
 candidates:
   rd-fast-1: {label: "Retro Diffusion Fast, 1", note: "0.03 USD an image, 0.12 USD a request of four"}
   rd-fast-2: {label: "Retro Diffusion Fast, 2"}
