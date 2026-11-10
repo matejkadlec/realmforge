@@ -8,9 +8,11 @@ import static io.github.matejkadlec.realmforge.qa.gametest.CastGameTests.learn;
 import static io.github.matejkadlec.realmforge.qa.gametest.CastGameTests.logout;
 
 import io.github.matejkadlec.realmforge.Realmforge;
+import io.github.matejkadlec.realmforge.character.Characters;
 import io.github.matejkadlec.realmforge.generated.GeneratedParticles;
 import io.github.matejkadlec.realmforge.generated.GeneratedSpells;
 import io.github.matejkadlec.realmforge.qa.combat.SoundLog;
+import io.github.matejkadlec.realmforge.qa.combat.TrainingDummy;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedSpellVisualsExpectations;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedSpellVisualsExpectations.LookExpectation;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedSpellVisualsExpectations.ModelExpectation;
@@ -42,7 +44,11 @@ import net.minecraft.gametest.framework.GameTestSequence;
 import net.minecraft.network.protocol.game.ClientboundEntityEventPacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.PermissionSet;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.zombie.Husk;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
@@ -272,6 +278,39 @@ public final class SpellVisualsGameTests {
                     && QaPlayers.tracksChunkAt(player, helper.absoluteVec(new Vec3(2.5, 1, 4.5))),
                     "the player's client has the platform's chunks");
         }).thenExecute(() -> QaPlayers.sentPackets(player, ClientboundEntityEventPacket.class));
+    }
+
+    /**
+     * The playtest handoff's command block line, run through {@code /qa run} as the player (the handoff's
+     * {@code execute as @p at @p} only picks that player): a level 18 Human Mage who knows the four bolts at rank 5
+     * and the twins, with a training dummy ahead.
+     */
+    @QaGameTest
+    public static void thePlaytestsCommandLineGivesAMageItsBoltsAndADummy(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-visuals-cmd", new Vec3(2.5, 1, 0.5));
+        server.getCommands().performPrefixedCommand(
+                player.createCommandSourceStack().withPermission(PermissionSet.ALL_PERMISSIONS),
+                "qa run qa character reset; qa character create realmforge:human realmforge:mage; qa level 18; "
+                        + "qa spell learn realmforge:frostbolt 5; qa spell learn realmforge:fireball 5; "
+                        + "qa spell learn realmforge:arcane_missiles 5; qa spell learn realmforge:ice_lance 5; "
+                        + "qa spell learn realmforge:test_twin_frost; qa spell learn realmforge:test_twin_fire; "
+                        + "qa dummy");
+        helper.assertValueEqual(Characters.mainClass(player).map(entry -> entry.key().identifier().getPath()),
+                Optional.of("mage"), "the character's class");
+        for (ResourceKey<Spell> bolt : List.of(GeneratedSpells.FROSTBOLT, GeneratedSpells.FIREBALL,
+                GeneratedSpells.ARCANE_MISSILES, GeneratedSpells.ICE_LANCE)) {
+            helper.assertValueEqual(Spells.knownLevel(player, bolt), Optional.of(5), bolt.identifier() + "'s rank");
+        }
+        for (ResourceKey<Spell> twin : List.of(GeneratedSpells.TEST_TWIN_FROST, GeneratedSpells.TEST_TWIN_FIRE)) {
+            helper.assertValueEqual(Spells.knownLevel(player, twin), Optional.of(1), twin.identifier() + "'s rank");
+        }
+        List<Entity> dummies = helper.getLevel().getEntities(player, player.getBoundingBox().inflate(6),
+                TrainingDummy::isDummy);
+        helper.assertValueEqual(dummies.size(), 1, "training dummies ahead");
+        dummies.forEach(dummy -> TrainingDummy.remove((LivingEntity) dummy));
+        logout(player);
+        helper.succeed();
     }
 
     /** Casts {@code spell} along {@code player}'s look and returns the projectile it launched. */
