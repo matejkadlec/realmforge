@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../tools/schemas/effects.schema.json
+# A boss's 10 s after a stun ends (Matěj, 2026-11-04, RLM-615): a new stun does nothing until it wears off, so a boss
+# is never stun-locked. Stunned's on_bosses gives it; it blocks nothing else, so a freeze still lands. The boss bar
+# shows it with its time left, "Stun Immunity (00:10)", as players never see a mob's effects otherwise.
+id: stun_immunity
+name: {en_us: Stun Immunity}
+category: beneficial
+color: "#FFF1A8"
+immune_to: realmforge:stunned

@@ -116,6 +116,14 @@ class MobAttributesDef(StrictModel):
         description="How much less its hits wear a target's armor (realmforge:armor_wear_reduction), 0 to 100 "
         "(RLM-580: Astone's 50).",
     )
+    spell_resistance_percent: float = Field(
+        default=0,
+        ge=0,
+        le=75,
+        allow_inf_nan=False,
+        description="Less damage from every magic school (realmforge:spell_resistance), 0 to 75, the stat's cap "
+        "(RLM-616: Astone's 10).",
+    )
 
 
 class KitingDef(StrictModel):

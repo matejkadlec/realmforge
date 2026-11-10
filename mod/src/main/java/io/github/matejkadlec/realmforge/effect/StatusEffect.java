@@ -22,7 +22,8 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
  * vanilla's attribute modifiers, damage or healing at the end of every interval ({@link Periodic}), which takes the
  * stats of the caster that applied it ({@link EffectTicks}), damage over time kept per caster's spell
  * ({@link StackedDamage}, RLM-539), whether it stuns ({@link Stuns}, C4), how clients draw its holder ({@link Look}),
- * and the chance that damage ends it ({@link DamageBreaks}, RLM-542).
+ * the chance that damage ends it ({@link DamageBreaks}, RLM-542), the effect its holder is immune to while it lasts
+ * ({@link Immunities}) and how it works on a boss ({@link OnBosses}, RLM-615).
  */
 public class StatusEffect extends MobEffect {
     private final Optional<Periodic> periodic;
@@ -30,6 +31,8 @@ public class StatusEffect extends MobEffect {
     private Optional<Look> look = Optional.empty();
     private boolean stuns;
     private double breakChance;
+    private Optional<Identifier> immuneTo = Optional.empty();
+    private Optional<OnBosses> onBosses = Optional.empty();
 
     public StatusEffect(MobEffectCategory category, int color, Optional<Periodic> periodic) {
         super(category, color);
@@ -86,6 +89,39 @@ public class StatusEffect extends MobEffect {
         return breakChance;
     }
 
+    /**
+     * Makes its holder immune to the effect {@code effect} (a full id) while it lasts ({@link Immunities}; Stun
+     * Immunity's {@code realmforge:stunned}, RLM-615). The generated registration calls it while it builds the effect.
+     */
+    public StatusEffect immuneTo(String effect) {
+        immuneTo = Optional.of(Identifier.parse(effect));
+        return this;
+    }
+
+    /** Whether its holder never takes {@code effect} while it lasts. */
+    public boolean blocks(Holder<MobEffect> effect) {
+        return immuneTo.filter(effect::is).isPresent();
+    }
+
+    /** The id of the effect its holder is immune to while it lasts, if any. */
+    public Optional<Identifier> immuneTo() {
+        return immuneTo;
+    }
+
+    /**
+     * Makes it last {@code durationFraction} of its duration on a boss, and gives the boss the effect {@code immunity}
+     * (a full id) for {@code immunityTicks} when it ends (RLM-615). The generated registration calls it.
+     */
+    public StatusEffect onBosses(double durationFraction, String immunity, int immunityTicks) {
+        onBosses = Optional.of(new OnBosses(durationFraction, Identifier.parse(immunity), immunityTicks));
+        return this;
+    }
+
+    /** How it works on a boss, if differently from anywhere else. */
+    public Optional<OnBosses> onBosses() {
+        return onBosses;
+    }
+
     /** Whether it is a stun: its holder neither attacks nor casts, and a mob's AI stands still. */
     public boolean isStun() {
         return stuns;
@@ -134,6 +170,24 @@ public class StatusEffect extends MobEffect {
                 .ifPresent(ticks -> EffectTicks.tick(level, mob, holder, ticks, amplification));
         stacks.ifPresent(damage -> StackTicks.tick(level, mob, holder, damage));
         return true;
+    }
+
+    /**
+     * How an effect works on a boss (RLM-615; Matěj, 2026-11-04): it lasts {@code durationFraction} of its duration,
+     * and when it ends, however it ends, the boss gets {@code immunity} for {@code immunityTicks}, an effect of ours
+     * that blocks it ({@link #blocks}). So a boss is never stun-locked or kept frozen, and its crowd control still
+     * counts. The boss framework applies it ({@code boss/BossControl}).
+     *
+     * @param durationFraction the share of its duration it lasts on a boss, above 0 and at most 1
+     * @param immunity the id of the effect the boss gets when it ends
+     * @param immunityTicks how long that immunity lasts
+     */
+    public record OnBosses(double durationFraction, Identifier immunity, int immunityTicks) {
+        /** The immunity's effect, once the effects are registered. */
+        public Holder<MobEffect> immunityEffect() {
+            return BuiltInRegistries.MOB_EFFECT.get(immunity).orElseThrow(
+                    () -> new IllegalStateException("No status effect " + immunity + " for a boss's immunity"));
+        }
     }
 
     /** How clients draw the holder of an effect, which they learn through {@code realmforge:effect_looks}. */

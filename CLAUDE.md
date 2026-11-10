@@ -71,12 +71,13 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   [architecture 14.2](docs/architecture.md#142-custom-mobs)). Bosses run on the boss framework (W5a, RLM-490): a
   boss's body is a custom mob of archetype `boss` and its fight an entry of `content/bosses/` (phases named in the boss
   bar, entered by health or by time, abilities and `on_enter` spells through the spell engine, a short unhurt phase
-  change, an arena that resets it, a fixed level, never a despawn, a ring that marks where an area lands), tested with
-  the test titan. The first real boss is Astone, the Unbroken (W5b, RLM-491), Undervault's guardian: three phases
+  change, an arena that resets it, a fixed level, never a despawn, a ring that marks where an area lands, a stun or a
+  freeze at half its length followed by 10 s of its own immunity, shown on the boss bar, RLM-615), tested with the test
+  titan. The first real boss is Astone, the Unbroken (W5b, RLM-491), Undervault's guardian: three phases
   (a boulder, then a quake and a rockfall, then cracked stone), and the Stone Heart and the twins' shards on every
   kill; `/summon realmforge:astone` until W6's altar; buffed for the M1 class checks (RLM-580: 1,500 health, triple
   damage, her hits ignoring 15 % of armor and draining 15 % more of a magic shield, her spells 30 %, half the armor
-  wear). A new player
+  wear; 10 % Spell Resistance, RLM-616). A new player
   creates a character (C1): the Human race and the Warrior and Mage classes, with their stats and starting kits,
   and their specialization spell trees (C5, RLM-333): the spellbook (P) has a Spell Tree and a Spell Bar tab, a player
   picks a specialization there, which gives its first spell free, and spends points (1 per level from level 2) on any

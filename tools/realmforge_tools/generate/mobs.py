@@ -815,6 +815,7 @@ def _attributes(mob: MobDef) -> str:
         ("ARMOR_SHRED", percent_to_fraction(values.armor_shred_percent)),
         ("MAGIC_SHIELD_DAMAGE", percent_to_fraction(values.magic_shield_damage_percent)),
         ("ARMOR_WEAR_REDUCTION", percent_to_fraction(values.armor_wear_reduction_percent)),
+        ("SPELL_RESISTANCE", percent_to_fraction(values.spell_resistance_percent)),
     )
     adds += "".join(
         f"\n                .add(GeneratedStats.{name}, {_double(value)})"

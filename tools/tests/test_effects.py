@@ -62,7 +62,9 @@ def test_repository_effects_are_the_engine_tests() -> None:
         "burning",
         "cracked_stone",
         "frozen",
+        "frozen_immunity",
         "ice_barrier",
+        "stun_immunity",
         "stunned",
         "test_burning",
         "test_regrowth",
@@ -73,7 +75,7 @@ def test_repository_effects_are_the_engine_tests() -> None:
 @pytest.mark.parametrize(
     ("fields", "expected"),
     [
-        ({"periodic": None}, "an effect gives modifiers, periodic damage or healing, stacks, or both"),
+        ({"periodic": None}, "an effect gives modifiers, periodic damage or healing, stacks or an immunity"),
         ({"category": "cursed"}, "Input should be 'beneficial', 'harmful' or 'neutral'"),
         ({"color": "blue"}, "String should match pattern"),
         (
@@ -195,8 +197,8 @@ def test_registrations(repo: RepoPaths) -> None:
         "AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)\n"
     ) in java
     assert (
-        "ALL = List.of(BATTLE_SHOUT, BLEEDING, BURNING, CRACKED_STONE, FROZEN, ICE_BARRIER, STUNNED, TEST_BURNING, "
-        "TEST_REGROWTH, TEST_SAPPED);"
+        "ALL = List.of(BATTLE_SHOUT, BLEEDING, BURNING, CRACKED_STONE, FROZEN, FROZEN_IMMUNITY, ICE_BARRIER, "
+        "STUN_IMMUNITY, STUNNED, TEST_BURNING, TEST_REGROWTH, TEST_SAPPED);"
     ) in java
 
 
@@ -228,7 +230,9 @@ def test_expectations(repo: RepoPaths) -> None:
         '                    Optional.of(new PeriodicExpectation("heal", "realmforge:arcane", 2.0, 0.1, 20)),\n'
         "                    Optional.empty(),\n"
         "                    false,\n"
-        "                    0.0)"
+        "                    0.0,\n"
+        "                    Optional.empty(),\n"
+        "                    Optional.empty())"
     ) in expectations
     assert (
         'new ModifierExpectation("realmforge:spell_power", "realmforge:effect.test_sapped.realmforge.spell_power", '
@@ -345,3 +349,102 @@ def test_the_stacks_school_must_exist(repo: RepoPaths) -> None:
         'category: harmful\ncolor: "#8A0303"\nstacks: {school: realmforge:shadow, interval_seconds: 0.5}\n',
     )
     assert_problem(repo, "stacks.school")
+
+
+def test_an_immunity_needs_no_modifiers_and_is_never_harmful() -> None:
+    immunity = effect_model(periodic=None, category="beneficial", immune_to="realmforge:stunned")
+    assert immunity.immune_to == "realmforge:stunned"
+    with pytest.raises(ValueError) as excinfo:
+        effect_model(periodic=None, immune_to="realmforge:stunned")
+    assert "an immunity protects its holder, so it is beneficial or neutral" in str(excinfo.value)
+
+
+@pytest.mark.parametrize(
+    ("on_bosses", "expected"),
+    [
+        ({"duration_percent": 0, "immunity": "realmforge:a", "immunity_seconds": 10}, "greater than 0"),
+        (
+            {"duration_percent": 150, "immunity": "realmforge:a", "immunity_seconds": 10},
+            "less than or equal to 100",
+        ),
+        (
+            {"duration_percent": 50, "immunity": "realmforge:a", "immunity_seconds": 0},
+            "immunity_seconds is above 0",
+        ),
+    ],
+)
+def test_invalid_rules_on_bosses_are_rejected(on_bosses: dict, expected: str) -> None:
+    with pytest.raises(ValueError) as excinfo:
+        effect_model(on_bosses=on_bosses)
+    assert expected in str(excinfo.value)
+
+
+def test_stun_and_frozen_are_halved_on_bosses_then_immune() -> None:
+    """RLM-615 (Matěj, 2026-11-04): Stunned and Frozen last 50 % on a boss, then 10 s of their own immunity."""
+    content, _ = load_and_validate(RepoPaths())
+    effects = {entry.model.id: entry.model for entry in content.effects}
+    for name, immunity in (("stunned", "stun_immunity"), ("frozen", "frozen_immunity")):
+        rule = effects[name].on_bosses
+        assert rule is not None
+        assert (rule.duration_percent, rule.immunity, rule.immunity_seconds) == (
+            50,
+            f"realmforge:{immunity}",
+            10,
+        )
+        assert effects[immunity].immune_to == f"realmforge:{name}"
+        assert effects[immunity].category == "beneficial"
+
+
+def test_an_immunity_and_a_rule_on_bosses_are_generated(repo: RepoPaths) -> None:
+    effect(
+        repo,
+        "test_daze_immunity",
+        'category: beneficial\ncolor: "#FFFFFF"\nimmune_to: realmforge:test_daze\n',
+    )
+    effect(
+        repo,
+        "test_daze",
+        'category: harmful\ncolor: "#F4D35E"\nstun: true\n'
+        "modifiers:\n"
+        "  - {attribute: minecraft:movement_speed, operation: add_multiplied_total, amount_percent: -100}\n"
+        "  - {attribute: minecraft:jump_strength, operation: add_multiplied_total, amount_percent: -100}\n"
+        "on_bosses: {duration_percent: 25, immunity: realmforge:test_daze_immunity, immunity_seconds: 6}\n",
+    )
+    files = generate(repo)
+    registrations = files[REGISTRATIONS].decode()
+    assert '.immuneTo("realmforge:test_daze")' in registrations
+    assert '.onBosses(0.25, "realmforge:test_daze_immunity", 120)' in registrations
+    expectations = files[EXPECTATIONS].decode()
+    assert 'Optional.of("realmforge:test_daze"),' in expectations
+    assert 'Optional.of(new OnBossesExpectation(0.25, "realmforge:test_daze_immunity", 120))' in expectations
+    assert files[LANG] and f"{ICONS}/test_daze_immunity.png" in files
+
+
+def test_an_immunity_names_an_effect_that_exists(repo: RepoPaths) -> None:
+    effect(
+        repo, "test_daze_immunity", 'category: beneficial\ncolor: "#FFFFFF"\nimmune_to: realmforge:dazed\n'
+    )
+    assert_problem(repo, "immune_to: unknown id 'realmforge:dazed'")
+
+
+def test_a_rule_on_bosses_names_an_immunity_to_its_effect(repo: RepoPaths) -> None:
+    effect(
+        repo,
+        "test_slow",
+        'category: harmful\ncolor: "#7FBFFF"\n'
+        "modifiers: [{attribute: minecraft:movement_speed, operation: add_multiplied_total, amount_percent: -50}]\n"
+        "on_bosses: {duration_percent: 50, immunity: realmforge:stun_immunity, immunity_seconds: 10}\n",
+    )
+    assert_problem(
+        repo,
+        "on_bosses.immunity: realmforge:stun_immunity is no immunity to realmforge:test_slow: its immune_to names "
+        "realmforge:stunned",
+    )
+    effect(
+        repo,
+        "test_slow",
+        'category: harmful\ncolor: "#7FBFFF"\n'
+        "modifiers: [{attribute: minecraft:movement_speed, operation: add_multiplied_total, amount_percent: -50}]\n"
+        "on_bosses: {duration_percent: 50, immunity: minecraft:resistance, immunity_seconds: 10}\n",
+    )
+    assert_problem(repo, "on_bosses.immunity: minecraft:resistance is no effect of content/effects/")

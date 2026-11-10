@@ -195,6 +195,14 @@
           "minimum": 0.05,
           "title": "Movement Speed",
           "type": "number"
+        },
+        "spell_resistance_percent": {
+          "default": 0,
+          "description": "Less damage from every magic school (realmforge:spell_resistance), 0 to 75, the stat's cap (RLM-616: Astone's 10).",
+          "maximum": 75,
+          "minimum": 0,
+          "title": "Spell Resistance Percent",
+          "type": "number"
         }
       },
       "required": [

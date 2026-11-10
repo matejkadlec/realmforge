@@ -11,7 +11,9 @@
 # 21, her spells' amounts tripled too), and her regular attacks ignore 15 % of a player's armor and drain 15 % more of a
 # magic shield; her spells add 15 % of each, so they ignore 30 % and drain 30 % more. Her hits wear armor half as
 # much (Matěj's playtest of 2026-11-03: she should ignore armor, not destroy it; a fight took about 300 durability from
-# each netherite piece with Unbreaking V, and he chose about 150). Her final balance is RLM-503.
+# each netherite piece with Unbreaking V, and he chose about 150). Magic spells deal her 10 % less (Spell Resistance;
+# Matěj, 2026-11-04, RLM-616: she takes about 31 Frostbolts at about 48 damage from a Mage in full netherite, and
+# about 33 with it). Her final balance is RLM-503.
 id: astone
 name: {en_us: "Astone, the Unbroken"}
 archetype: boss
@@ -26,6 +28,7 @@ attributes:
   armor_shred_percent: 15
   magic_shield_damage_percent: 15
   armor_wear_reduction_percent: 50
+  spell_resistance_percent: 10
 melee: {attack_interval_seconds: 2, knock_up_blocks: 0.6}
 sounds:
   ambient: realmforge:entity.astone.ambient
