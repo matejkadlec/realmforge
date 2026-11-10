@@ -440,7 +440,7 @@ public final class GeneratedTexts {
     /** {@code message.realmforge.arena_no_flight_subtitle} from {@code content/texts/message.yaml}: "You entered a boss arena" */
     public static final String MESSAGE_ARENA_NO_FLIGHT_SUBTITLE = "message.realmforge.arena_no_flight_subtitle";
 
-    /** {@code message.realmforge.bed_only_overworld} from {@code content/texts/message.yaml}: "Beds only work in Overworld" */
+    /** {@code message.realmforge.bed_only_overworld} from {@code content/texts/message.yaml}: "Beds only work in the Overworld" */
     public static final String MESSAGE_BED_ONLY_OVERWORLD = "message.realmforge.bed_only_overworld";
 
     /** {@code message.realmforge.cannot_use_in_combat} from {@code content/texts/message.yaml}: "You can't use this in combat." */
@@ -536,7 +536,7 @@ public final class GeneratedTexts {
     /** {@code message.realmforge.realm_portal_not_eligible} from {@code content/texts/message.yaml}: "You are not eligible to open a portal to the %1$s. %2$s" */
     public static final String MESSAGE_REALM_PORTAL_NOT_ELIGIBLE = "message.realmforge.realm_portal_not_eligible";
 
-    /** {@code message.realmforge.realm_portal_only_back} from {@code content/texts/message.yaml}: "This portal leads only back to Overworld" */
+    /** {@code message.realmforge.realm_portal_only_back} from {@code content/texts/message.yaml}: "This portal leads only back to the Overworld" */
     public static final String MESSAGE_REALM_PORTAL_ONLY_BACK = "message.realmforge.realm_portal_only_back";
 
     /** {@code message.realmforge.realm_portal_opens_onto} from {@code content/texts/message.yaml}: "The portal opens onto %1$s" */
@@ -544,6 +544,9 @@ public final class GeneratedTexts {
 
     /** {@code message.realmforge.realm_portal_unknown_realm} from {@code content/texts/message.yaml}: "The portal opens onto an unknown realm" */
     public static final String MESSAGE_REALM_PORTAL_UNKNOWN_REALM = "message.realmforge.realm_portal_unknown_realm";
+
+    /** {@code message.realmforge.requires_level} from {@code content/texts/message.yaml}: "Requires level %1$s." */
+    public static final String MESSAGE_REQUIRES_LEVEL = "message.realmforge.requires_level";
 
     /** {@code message.realmforge.shield_locked} from {@code content/texts/message.yaml}: "You can't use this now." */
     public static final String MESSAGE_SHIELD_LOCKED = "message.realmforge.shield_locked";

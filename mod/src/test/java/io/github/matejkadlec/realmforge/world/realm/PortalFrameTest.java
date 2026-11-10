@@ -102,7 +102,7 @@ class PortalFrameTest {
 
     @Test
     void aSealstoneOffCentreIsNoFrame() {
-        // The frame of a sealstone one block further right: the real sealstone stands where Realmforge Bricks should.
+        // The frame of a sealstone one block further right: the real sealstone stands where Gatewright Bricks should.
         BlockPos offCentre = SEALSTONE.east();
         World world = new World().frame(SEALSTONE, Direction.Axis.X, false).put(offCentre, Part.SEALSTONE)
                 .put(SEALSTONE, Part.BRICKS);

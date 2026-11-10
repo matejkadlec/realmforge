@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "realmforge:block/realmforge_bricks"
+    "model": "realmforge:block/gatewright_bricks"
   }
 }

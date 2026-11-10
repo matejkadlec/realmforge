@@ -248,6 +248,14 @@ there while the game runs. The handoff gives the commands
   `run/client/screenshots/<label>-gear-<look>-<front|back>.png` with the HUD hidden, then open the survival inventory
   with every armor piece in it for the item icons (`<label>-gear-inventory.png`), and quit (RLM-505). Headless:
   `xvfb-run -a -s "-screen 0 1280x960x24"` before it, with the variable set.
+- **Realm portal screenshots without input.** `REALMFORGE_QA_PORTAL_SHOTS=<label> ./gradlew runClient -PofflineClient
+  -PleanClient` makes the QA mod create a superflat world and a level 1 Mage, build a frame of Gatewright Bricks round
+  a Gatewright Sealstone in front of them and save to `run/client/screenshots/<label>-portal-<state>.png`: the frame
+  with each block's name over the hotbar (`held-bricks`, `held-sealstone`), a trip into Undervault refused without its
+  unlock and then below its entry level (`refusal-unlock`, `refusal-level`: "Requires level 6."), and the signet on
+  the sealstone at level 1 and at level 6 (`sealstone-level`, `opens-onto`: the lit portal and "The portal opens onto
+  the Undervault"), then quit (RLM-306, RLM-337, RLM-394). Headless: `xvfb-run -a -s "-screen 0 1280x960x24"` before
+  it, with the variable set.
 - **A trace of real charges without input.** `REALMFORGE_QA_CHARGE_TRACE=<label> ./gradlew runClient -PofflineClient`
   makes the QA mod create a superflat world from the title screen, make a level-18 Warrior and cast Charge at a husk from
   several setups (from either side, diagonally, with forward held, at a mod's target dummy when the pack has one),

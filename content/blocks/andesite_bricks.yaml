@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=../../tools/schemas/blocks.schema.json
-# Andesite Bricks (W2b; Matěj, 2026-10-20): vanilla has none, and Realmforge Stone needs the bricks of eight Overworld
+# Andesite Bricks (W2b; Matěj, 2026-10-20): vanilla has none, and Gatewright Bricks need the bricks of eight Overworld
 # stones. 4 polished andesite make 4, as vanilla makes tuff bricks; as hard as polished andesite. The generated
 # placeholder texture until the A* textures.
 id: andesite_bricks

@@ -75,7 +75,7 @@ public final class GeneratedDimensionRuleExpectations {
                             new Sample(60, 6, 57, List.of(5, 10, 20, 30)),
                             new Sample(61, 6, 58, List.of(5, 10, 20)),
                             new Sample(64, 6, 60, List.of(1))),
-                    List.of("{\n  \"advancement\": \"realmforge:realm/stone\",\n  \"type\": \"realmforge:has_advancement\"\n}")));
+                    List.of("{\n  \"advancement\": \"realmforge:realm/stone\",\n  \"type\": \"realmforge:has_advancement\"\n}", "{\n  \"level\": 6,\n  \"type\": \"realmforge:level_at_least\"\n}")));
 
     private GeneratedDimensionRuleExpectations() {
     }

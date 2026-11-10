@@ -331,7 +331,7 @@ How features cooperate without breaking the direction:
 | `realmforge:chapter` | `content/chapters/` | story chapter (owned by `progression`, C2): order, the level cap while it is the player's current chapter and the one once it is completed; its advancement `realmforge:chapter/<id>` marks it completed (what a chapter unlocks names the chapter through `chapter_completed`) | yes | M1 |
 | `realmforge:kill_xp_multiplier` | `content/kill_xp_multipliers/` | how much kill XP the mobs of one entity type give (owned by `character`, C2), named in an `entity` field, by size for slimes and magma cubes; the XP model calls it the mob's rank. Validation allows one entry per entity type | no | M1 |
 | `realmforge:dimension_rules` | `content/dimensions/` | gameplay rules of one dimension, named in a `dimension` field (for example `minecraft:overworld`): mob levels and the access requirements ([15.1](#151-dimensions)); flags later. Validation allows one entry per dimension; the server indexes the entries by dimension | no | M1 |
-| `realmforge:realm` | `content/realms/` | a realm (owned by `world`, W2a): its dimension, name, subtitle, plain description ("stone realm"), locked hint, level band, flavour line and the icon of its unlock advancement `realmforge:realm/<id>`, and the realm portal's fields (W2b): its signet, colour, particle, sound pitch and arrival (where a trip may build a portal). Overworld has an entry too, which is no realm: no unlock, signet, description, hint or flavour, its colour the return portals'. Validation allows one entry per dimension and one realm per signet; `world/realm/Realms` indexes them by dimension and by signet, and `Realms#of` never returns Overworld's | yes | M2 |
+| `realmforge:realm` | `content/realms/` | a realm (owned by `world`, W2a): its dimension, name, the name as a sentence refers to it (`in_sentence`: "the Undervault", RLM-337, ADR 0045, which holds the name), subtitle, plain description ("stone realm"), locked hint, level band, flavour line and the icon of its unlock advancement `realmforge:realm/<id>`, and the realm portal's fields (W2b): its signet, colour, particle, sound pitch and arrival (where a trip may build a portal). Overworld has an entry too, which is no realm: no unlock, signet, description, hint or flavour, its colour the return portals', its in-sentence form "the Overworld". Validation allows one entry per dimension and one realm per signet; `world/realm/Realms` indexes them by dimension and by signet, and `Realms#of` never returns Overworld's | yes | M2 |
 | `realmforge:boss` | `content/bosses/` | a boss's fight (`boss/Boss`, W5a): the entity type of its body (a mob of archetype `boss`, whose attributes, loot and model come from `content/mobs/`), fixed level, arena, boss bar colour, phase change, phases (name, trigger, `on_enter` spells, abilities); [14.3](#143-bosses) | no | M2 |
 | `realmforge:netherite_upgrade` | `content/netherite_upgrades/` | a netherite upgrade (owned by `item`, RLM-566, [13](#13-items-gear-and-loot)): the line an upgraded piece's tooltip shows and its colour, and the bonus per archetype of the piece (melee, caster); the pipeline also writes its item and template, which its smithing recipe uses | yes | M1 |
 | `realmforge:dungeon_type` | `content/dungeons/` | rule set: the room pool it is built from, resolved into its rooms (template, size, role, weight, connectors), and its layout rules (W4a); its key and how long a portal to it stays open (W4d); its base level (RLM-459, [14.1](#141-mob-levels)); each room's set-piece spots, the pieces that fill them and the density per role (RLM-280, [15.4](#154-rooms)); theme, encounters and loot join with the tasks that use them | no | M2 |
@@ -356,7 +356,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | `realmforge:resource_type` | mana, rage (`spell/ResourceTypes`; C1 gave them ids and names, C3a-1 their pools, C3a-4 rage's gain and decay) | classes, spell costs |
 | `realmforge:phase_trigger_type` | health_below, time_in_phase (W5a, `boss/PhaseTriggerTypes`); adds_defeated with a spell that summons adds | bosses |
 | `realmforge:dungeon_ending_type` | boss_lair, treasury; later puzzle, wave_arena, escape, mounted_run, exploration | dungeon types |
-| `realmforge:requirement_type` | has_advancement (`core/HasAdvancement`), level_at_least (`character/LevelAtLeast`), chapter_completed (`progression/ChapterCompleted`), all W2a; class_is later | unlocks: dimensions (W2a), dungeons, items, talents |
+| `realmforge:requirement_type` | has_advancement (`core/HasAdvancement`), level_at_least (`character/LevelAtLeast`), chapter_completed (`progression/ChapterCompleted`), all W2a; class_is later. A requirement may say what a player who does not meet it reads (`Requirement#unmetHint`: a level's "Requires level 6.", RLM-306) | unlocks: dimensions (W2a), dungeons, items, talents |
 | `realmforge:affix_type` (M1) | attribute, on_hit, on_kill | affixes |
 
 ### 5.4 Using registry entries in Java
@@ -419,13 +419,13 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | every type | `tools/schemas/<type>.schema.json` | editor completion |
 
 **Block kinds.** A block in `content/blocks/` is `simple` (a full block) unless its `kind` names behavior that is game
-code: `dungeon_portal` and `dungeon_exit` ([15.5](#155-instances)), and the realm portal's `realmforge_bricks`,
-`realmforge_sealstone` and `realm_portal` ([15.1](#151-dimensions)). `GeneratedBlocks` belongs to `world`, below the
+code: `dungeon_portal` and `dungeon_exit` ([15.5](#155-instances)), and the realm portal's `gatewright_bricks`,
+`gatewright_sealstone` and `realm_portal` ([15.1](#151-dimensions)). `GeneratedBlocks` belongs to `world`, below the
 features that own most kinds, so it creates such a block through `world/BlockKinds`, a provider the owning feature fills
 when the mod is constructed (`dungeon/portal/DungeonBlocks`, `world/realm/RealmPortalBlocks`); the kind also decides the
 blockstate and models (`generate/blocks.py`), and `BlockKinds#blocks(kind)` hands the owner its blocks, for a block
 entity type, a point-of-interest type or for placing one. Kinds the game uses one block of (`dungeon_exit` and the realm
-portal's three) allow one block each. `realmforge_bricks` and `realmforge_sealstone` have the blockstate property
+portal's three) allow one block each. `gatewright_bricks` and `gatewright_sealstone` have the blockstate property
 `generated`, which a trip sets on the frames it builds, and their loot tables drop the block only without it. The
 sealstone also has `glow` (0 to 15), its block light, which its block entity's ticker sets (RLM-406); its blockstate
 names `generated` alone, which matches every `glow`.
@@ -3178,12 +3178,17 @@ Specialist (Ancient Workbench), which sell the Nether's and the End's materials.
   type registry `realmforge:requirement_type`: an advancement, a level, a chapter), flags later.
 - **Realms** (W2a, RLM-32; the [realm portal spec](design/realm-portal.md)): a realm is a dimension of ours that an
   entry of `realmforge:realm` names, sealed until the player's own unlock, the advancement `realmforge:realm/<id>`
-  (criterion `minecraft:impossible`), which its dimension rules require. `world/realm/RealmAccess` enforces it:
+  (criterion `minecraft:impossible`), which its dimension rules require, and until the realm's entry level, which
+  they require after it (RLM-306, [ADR 0076](decisions/0076-a-realm-is-entered-from-its-entry-level-on.md):
+  `level_at_least`, kept equal to `mob_levels.entry_level` by validation). `world/realm/RealmAccess` enforces both:
   - **every way in:** every move into another level goes through `Entity#teleport(TeleportTransition)`, which posts
     NeoForge's cancellable `EntityTravelToDimensionEvent` first (portals, `/tp`, `/execute in ... run tp`, ender
     pearls, other mods' warps). At `HIGH` priority, a player who fails the target's access requirements is refused
     and stays where they are, with the centre-screen "You are not eligible to pass through the portal." and the
-    realm's hint below it, at most once every 3 seconds: `RealmRefusedPayload` carries the hint, and
+    hint of what they lack below it, at most once every 3 seconds. The first requirement they do not meet, in the
+    rules' order, decides the hint (`RealmAccess#refusalHint`): what it says of itself (`Requirement#unmetHint`, a
+    level's "Requires level 6."), otherwise the realm's hint, how to unlock it; a realm's rules name the unlock first,
+    so a player with neither reads the unlock hint. `RealmRefusedPayload` carries the hint as a text component, and
     `client/hud/RealmRefusalHud` draws both like vanilla's title and subtitle, at 2x and 1x instead of vanilla's 4x
     and 2x (which run the sentence into a 1080p screen's edges, Matěj, 2026-10-19 and 2026-10-20), the title never
     wider than 80 % of the screen. A move within one level is left alone. There is no operator bypass;
@@ -3210,17 +3215,19 @@ Specialist (Ancient Workbench), which sell the Nether's and the End's materials.
   and no respawn anchors. A GameTest samples the density function over 2,048 blocks and generates the chunks at the
   origin, and another counts their ores.
 - **The realm portal** (W2b, RLM-154; the [realm portal spec](design/realm-portal.md)), in `world/realm/`:
-  - **blocks:** Realmforge Bricks (`RealmforgeBricksBlock`), the sealstone (`SealstoneBlock`, with
+  - **blocks:** Gatewright Bricks (`GatewrightBricksBlock`), the sealstone (`SealstoneBlock`, with
     `SealstoneBlockEntity`) and the portal block (`RealmPortalBlock`), the block kinds of `RealmPortalBlocks`, which
-    also registers the sealstone's block entity and its point-of-interest type `realmforge:realmforge_sealstone`. Frame
+    also registers the sealstone's block entity and its point-of-interest type `realmforge:gatewright_sealstone`. Frame
     blocks and the portal cannot be pushed;
   - **the frame:** `PortalFrame` is the check as plain Java over a block lookup: 5 by 6 around a 3x4 opening, along
-    either axis, the 13 Realmforge Bricks and the sealstone in the bottom middle required, the corners decoration
+    either axis, the 13 Gatewright Bricks and the sealstone in the bottom middle required, the corners decoration
     (JUnit `PortalFrameTest`);
   - **the sealstone** (`RealmPortals`): its block entity holds the entry of `realmforge:realm` it opens onto (a realm's,
     or Overworld's for a return portal), which counts only while the opening holds portal blocks, so a frame that
-    went dark leads nowhere. A realm's signet opens a complete frame onto that realm for a player with its unlock,
-    or switches a lit one; inside a realm that realm's own signet and the sneak gesture with an empty main hand open
+    went dark leads nowhere. A realm's signet opens a complete frame onto that realm for a player who may enter it
+    (its unlock and its entry level; otherwise the action bar says which they lack), or switches a lit one, and the
+    action bar names where it leads as a sentence names a realm ("The portal opens onto the Undervault", the entry's
+    `in_sentence`, RLM-337); inside a realm that realm's own signet and the sneak gesture with an empty main hand open
     the frame onto Overworld (Matěj, 2026-10-28), another realm's signet is refused, and in Overworld the gesture
     closes the portal. A common
     `PlayerInteractEvent.RightClickBlock` listener sets `useBlock` to `TRUE` for that gesture, so an item in the off
@@ -3249,7 +3256,7 @@ Specialist (Ancient Workbench), which sell the Nether's and the End's materials.
     floor with two free blocks lies in front of the opening at its height on one side; at the realm entry's arrival
     heights, ties by the source portal's height. The terrain's top loads each column's chunk (`Level#getHeight` answers
     the lowest height for a chunk that is not fully loaded). Where nothing fits, the frame is carved out set into a
-    floor of the arrival block with a pocket kept free of fluids and falling blocks. A built frame has Realmforge Bricks
+    floor of the arrival block with a pocket kept free of fluids and falling blocks. A built frame has Gatewright Bricks
     in its corners too, all `generated`, dropping nothing. The entity arrives in front of the exit portal, facing away
     from it (at the opening's height, or one step lower for a frame a player stood on top of the floor), or in the
     opening; the vanilla travel sound plays at the realm's pitch, and vanilla's portal ticket loads
@@ -4122,7 +4129,8 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   circle while the Highlight Spell Target is on, drawn by `client/spell/TargetCircle`), `CombatText` (exists:
   `combat/net/CombatTextPayload`, shown by `client/hud/CombatTextHud`), `HitDirection` (exists:
   `combat/net/HitDirectionPayload`, shown by `client/hud/HitDirectionHud`), `RealmRefused` (exists:
-  `world/net/RealmRefusedPayload`, the realm's hint, shown by `client/hud/RealmRefusalHud`, [15.1](#151-dimensions)),
+  `world/net/RealmRefusedPayload`, the hint of what the player lacks, shown by `client/hud/RealmRefusalHud`,
+  [15.1](#151-dimensions)),
   `DungeonStatus`.
 
 ## 18. Client code: rendering, GUI, input
@@ -4826,8 +4834,9 @@ that agents can read. So far:
   charge, and one client shows how other players see a charging scroll ([10.2](#102-leveling)); running it again
   replaces it;
 - `/qa realm enter <realm> [<x> <z>]`, `/qa realm unlock|lock <realm>` (W2a): take the player to a realm's floor at
-  x, z (0, 0 by default) the way `/tp` does, so a player without the realm's unlock is refused, and grant or revoke
-  the unlock advancement as `/advancement grant|revoke @s only realmforge:realm/<realm>` does
+  x, z (0, 0 by default) the way `/tp` does, so a player without the realm's unlock or below its entry level
+  (`/qa level 6`) is refused, and grant or revoke the unlock advancement as
+  `/advancement grant|revoke @s only realmforge:realm/<realm>` does
   ([15.1](#151-dimensions));
 - the combat log, `logs/realmforge-combat.log` in the game directory (`run/client/`, `run/gametest/`, ...): one line
   per hit or dodge that involves a player or a dummy, with the damage type, school, crit, attacker level, the

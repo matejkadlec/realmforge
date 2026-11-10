@@ -53,7 +53,7 @@ public final class RealmRefusalHud {
 
     /** Shows the refusal; called by the payload's handler on the main thread. */
     public static void show(RealmRefusedPayload payload) {
-        hint = payload.hintKey().isEmpty() ? Component.empty() : Component.translatable(payload.hintKey());
+        hint = payload.hint();
         startMs = Util.getMillis();
     }
 

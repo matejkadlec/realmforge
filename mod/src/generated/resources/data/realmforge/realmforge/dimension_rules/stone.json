@@ -17,6 +17,10 @@
     {
       "type": "realmforge:has_advancement",
       "advancement": "realmforge:realm/stone"
+    },
+    {
+      "type": "realmforge:level_at_least",
+      "level": 6
     }
   ]
 }

@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:block/cube_all",
   "textures": {
-    "all": "realmforge:block/realmforge_bricks"
+    "all": "realmforge:block/gatewright_sealstone"
   }
 }

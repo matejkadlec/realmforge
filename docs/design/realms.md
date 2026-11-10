@@ -106,7 +106,9 @@ to drop borrowed mythology (RLM-357,
   and the top of a band holds harder optional content a player comes back for.
 - **Levels 1–10 are Overworld's, and Undervault opens at about level 6.** The old "levels 1–5 in Overworld" is gone. Mob
   levels follow the player, never below a realm's entry level (Matěj, 2026-10-16, RLM-240;
-  [apotheosis.md](apotheosis.md#mob-levels-and-loot)), and the realm needs no hard level lock. Undervault opens through
+  [apotheosis.md](apotheosis.md#mob-levels-and-loot)). A realm is entered from its entry level on, beside its unlock
+  (RLM-306, [ADR 0076](../decisions/0076-a-realm-is-entered-from-its-entry-level-on.md), which replaces the earlier
+  "no hard level lock"). Undervault opens through
   chapter 1's main questline, whose last step is the realm's unlock quest and also gives the Signet of the Undervault
   ([realm portal spec](realm-portal.md#access-and-unlocks)). Overworld's own final boss gates Undervault once it exists
   (Matěj, 2026-10-16; [Overworld](#overworld)). The item rule of [Opening the next realm](#opening-the-next-realm)

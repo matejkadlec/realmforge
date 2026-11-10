@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=../../tools/schemas/blocks.schema.json
+# The Gatewright Sealstone (W2b, realm portal spec "The sealstone"; named by Matěj, 2026-10-23, RLM-394, once the
+# Realmforge Sealstone): the bottom middle of a realm portal's frame. A realm's signet right-clicked on it opens the
+# portal onto that realm, sneaking with an empty hand closes it (in a realm: opens it back to Overworld), an empty hand
+# shows where it leads. 4 Gatewright Bricks, 4 gold ingots and a compass. Pistons cannot move it; one a trip built
+# drops nothing. The numbers are proposals for Matěj's playtest.
+id: gatewright_sealstone
+name:
+  en_us: Gatewright Sealstone
+kind: gatewright_sealstone
+hardness: 3
+blast_resistance: 6
+tool: pickaxe
+requires_tool: true
+sound: stone
+map_color: color_gray
+creative_tabs:
+  - minecraft:functional_blocks
+recipe:
+  pattern:
+    - PGP
+    - GCG
+    - PGP
+  key:
+    P: realmforge:gatewright_bricks
+    G: minecraft:gold_ingot
+    C: minecraft:compass
+  category: building

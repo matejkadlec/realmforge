@@ -18,11 +18,12 @@ import net.minecraft.world.level.Level;
  * are translation keys.
  *
  * <p>Overworld has an entry too, which is no realm ({@link Realms#of} never returns it): always open, without a
- * subtitle, description, hint, flavour line, icon, signet or particle. Its colour is the return portals', and its arrival is where a
- * way back from a realm builds a portal.
+ * subtitle, description, hint, flavour line, icon, signet or particle. Its colour is the return portals', and its
+ * arrival is where a way back from a realm builds a portal.
  *
  * @param dimension the realm's dimension
  * @param name the realm's name, without an article ("Undervault")
+ * @param inSentence the name as a sentence refers to the realm ("the Undervault", "the Overworld"; ADR 0045, RLM-337)
  * @param subtitle its element ("Stone Realm"); empty for Overworld
  * @param description the realm in running text, lowercase and without an article ("stone realm"); empty for Overworld
  * @param lockedHint how to unlock it, the subtitle of a refusal; empty for Overworld
@@ -35,12 +36,13 @@ import net.minecraft.world.level.Level;
  * @param soundPitch the pitch of the vanilla portal sounds for this realm
  * @param arrival where a trip may build a portal in the dimension
  */
-public record Realm(ResourceKey<Level> dimension, String name, String subtitle, String description, String lockedHint,
-        Optional<Levels> levels, String flavour, Optional<Identifier> icon, Optional<Identifier> signet, int colour, Optional<Identifier> particle,
-        float soundPitch, Arrival arrival) {
+public record Realm(ResourceKey<Level> dimension, String name, String inSentence, String subtitle, String description,
+        String lockedHint, Optional<Levels> levels, String flavour, Optional<Identifier> icon,
+        Optional<Identifier> signet, int colour, Optional<Identifier> particle, float soundPitch, Arrival arrival) {
     public static final Codec<Realm> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                     Level.RESOURCE_KEY_CODEC.fieldOf("dimension").forGetter(Realm::dimension),
                     Codec.STRING.fieldOf("name").forGetter(Realm::name),
+                    Codec.STRING.fieldOf("in_sentence").forGetter(Realm::inSentence),
                     Codec.STRING.optionalFieldOf("subtitle", "").forGetter(Realm::subtitle),
                     Codec.STRING.optionalFieldOf("description", "").forGetter(Realm::description),
                     Codec.STRING.optionalFieldOf("locked_hint", "").forGetter(Realm::lockedHint),

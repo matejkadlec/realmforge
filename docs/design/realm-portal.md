@@ -23,7 +23,10 @@
 > (2026-10-27) let players travel at once and made the sealstone glow near a signet ([Decisions](#decisions), 18 and
 > 19), and RLM-341 let Overworld frames stand on ground at y 63. RLM-458 (2026-10-28) let a realm's own signet open a
 > frame inside the realm back onto Overworld, with the glow, and set the stone realm's scale to the Nether's 1:8
-> ([Decisions](#decisions), 22 to 24). Other block and item names
+> ([Decisions](#decisions), 22 to 24). RLM-394 (Matěj, 2026-10-23, built on 2026-11-11) renamed the frame's blocks
+> Gatewright Bricks and the Gatewright Sealstone and dropped Realmforge Stone, RLM-306 added the realm's entry level
+> to its access, and RLM-337 gave a realm its name's in-sentence form ([Decisions](#decisions), 25 to 27). Other
+> block and item names
 > are working names; realm names are the approved ones of the [lore outline](../lore/outline.md#the-realms)
 > (RLM-139, RLM-188), without an article. The v1 realm layout (RLM-188, 2026-10-16) moved the stone realm to
 > chapter 2 (levels 6–18) and its unlock to the end of chapter 1's main questline. APIs named here were checked
@@ -76,25 +79,25 @@ gets its own portal of Holy Stone bricks (RLM-302). Colours are proposals and li
 
 ## The frame
 
-- **Two block types** (Matěj, RLM-128, as in Advent of Ascension; named by him on 2026-10-20): **Realmforge Bricks**
-  for the frame and the **Realmforge Sealstone** (the sealstone) for its bottom middle. Both are crafted from
-  Overworld materials.
+- **Two block types** (Matěj, RLM-128, as in Advent of Ascension; named by him on 2026-10-23, RLM-394, once
+  Realmforge Bricks and the Realmforge Sealstone): **Gatewright Bricks** for the frame and the **Gatewright
+  Sealstone** (the sealstone) for its bottom middle. Both are crafted from Overworld materials.
 - **Shape:** a vertical rectangle, 5 wide and 6 tall, around a 3×4 opening, along either horizontal axis (like a
   nether portal). The four corners are optional decoration, as on a nether portal: the frame is the 14 blocks that
-  touch the opening, 13 Realmforge Bricks and one sealstone in the middle of the bottom row. So every required block
+  touch the opening, 13 Gatewright Bricks and one sealstone in the middle of the bottom row. So every required block
   touches a portal block, and breaking any of them reaches the portal through a neighbour update
   ([Edge cases](#edge-cases)). One fixed size keeps the check simple and every portal recognisable; AoA used the
   same outline (RE-1).
 - **Materials from Overworld,** because the first frame is built before any realm is open (Matěj, 2026-10-20):
-  - **Realmforge Stone:** the bricks of eight Overworld stones (stone, deepslate, quartz, mud, tuff, diorite, granite
-    and andesite bricks) around an ender pearl make 8. Vanilla has no diorite, granite or andesite bricks, so they
-    are blocks of ours: 4 of the polished stone make 4, as vanilla makes tuff bricks;
-  - **Realmforge Bricks:** 4 Realmforge Stone make 4, as stone makes stone bricks;
-  - **Realmforge Sealstone:** 4 Realmforge Bricks, 4 gold ingots and a compass;
-  - a whole frame takes 17 Realmforge Bricks (13 in the frame, 4 in the sealstone): 5 crafts of bricks from 20
-    Realmforge Stone, so 3 crafts of the stone (3 ender pearls and 3 of each of the eight bricks), plus 4 gold
-    ingots and a compass. The ender pearl makes the first frame a goal of Overworld's early levels; chapter 1's
-    quests walk through it. The numbers are proposals for Matěj's playtest.
+  - **Gatewright Bricks:** the bricks of eight Overworld stones (stone, deepslate, quartz, mud, tuff, diorite, granite
+    and andesite bricks) around an ender pearl make 8, directly (Matěj, 2026-10-23, RLM-394: no Realmforge Stone in
+    between, "it crafts directly into Bricks"). Vanilla has no diorite, granite or andesite bricks, so they are
+    blocks of ours: 4 of the polished stone make 4, as vanilla makes tuff bricks;
+  - **Gatewright Sealstone:** 4 Gatewright Bricks, 4 gold ingots and a compass;
+  - a whole frame takes 17 Gatewright Bricks (13 in the frame, 4 in the sealstone): 3 crafts of the bricks (3 ender
+    pearls and 3 of each of the eight bricks), plus 4 gold ingots and a compass. The ender pearl makes the first
+    frame a goal of Overworld's early levels; chapter 1's quests walk through it. The numbers are proposals for
+    Matěj's playtest.
 - **Lighting:** right-click the sealstone with a signet ([The sealstone](#the-sealstone)). The sealstone
   checks the player's unlock first, then the frame:
   - **complete,** with the opening empty (air, or blocks such as grass that are replaced when something is placed
@@ -189,8 +192,9 @@ hoppers have nothing to take.
   - **the Signet of the Undervault** is crafted around the **Stone Signet Shard**, the Illusioner's piece of the old
     signet: Overworld's final boss (M2, RLM-321) drops it. In M1 there is no Illusioner, so the signet stays a reward
     of the stone realm's unlock quest, the last quest of chapter 1's main questline, The Ominous Chief (the roadmap's
-    "locked until chapter 1's main questline unlocks it"; Undervault opens at about level 6, with no hard level lock,
-    [realm design](realms.md#chapters-and-levels)). The same quest grants the unlock in both milestones;
+    "locked until chapter 1's main questline unlocks it"; Undervault opens at about level 6, and since RLM-306 its
+    entry level, 6, is required too, [Access and unlocks](#access-and-unlocks)). The same quest grants the unlock in
+    both milestones;
   - **a lost signet comes back from the quest shop** or from its boss. After a realm's final boss quest, a shop in the
     quest journal (the Lodge Merchant tab, RLM-407, M2) sells the signet of the realm that boss unlocks, as a whole
     item, not its shard: repeatable up to 3 times, for a price relative to the signet's level that does not rise
@@ -241,15 +245,24 @@ hoppers have nothing to take.
 - **The access requirement:** the realm dimension's entry in `realmforge:dimension_rules` holds it
   ([architecture 15.1](../architecture.md#151-dimensions)). For a realm it is
   `{type: realmforge:has_advancement, advancement: realmforge:realm/<realm>}`, from the first set of
-  `realmforge:requirement_type` ([architecture 5.3](../architecture.md#53-type-registries)). A realm may add more
-  requirements, such as a level; validation fails a realm whose rules leave out its unlock advancement.
+  `realmforge:requirement_type` ([architecture 5.3](../architecture.md#53-type-registries)); validation fails a realm
+  whose rules leave out its unlock advancement.
+- **The entry level is required too** (Matěj, 2026-10-16, RLM-240: "Entry level (floor) = the level needed to enter
+  the realm", "a realm's portal checks the minimum level and the realm's quest"; RLM-306,
+  [ADR 0076](../decisions/0076-a-realm-is-entered-from-its-entry-level-on.md)). The realm's rules name it after the
+  unlock, `{type: realmforge:level_at_least, level: 6}` for the stone realm, and validation keeps it equal to
+  `mob_levels.entry_level`, the floor of the realm's mobs. A player with the unlock below that level is refused like
+  one without it, with a hint of its own: **"Requires level 6."** The first requirement a player does not meet, in
+  the rules' order, decides the hint, so a player with neither reads how to unlock the realm. A player whose level
+  falls below the entry level while they are inside stays, and the way out is always open.
 - **The sealstone checks it** before it opens or switches a portal to a realm
   ([The sealstone](#the-sealstone)).
 - **The portal checks it when a player steps into a portal block,** so the portal never starts its countdown for a
   player without access. That player stays where they are, and a centre-screen message says "You are not eligible
-  to pass through the portal." (Matěj's wording, RLM-128), with the realm's hint below it ("Unlocked by a chapter 1
-  quest"). The message comes at most once every 3 seconds, with a short refusal sound. The server sends it as a
-  payload of our own (`RealmRefusedPayload`, the realm's hint), and the client draws it like a title and subtitle at
+  to pass through the portal." (Matěj's wording, RLM-128), with the hint of what they lack below it: the realm's
+  ("Unlocked by a chapter 1 quest"), or the level it requires. The message comes at most once every 3 seconds, with
+  a short refusal sound. The server sends it as a payload of our own (`RealmRefusedPayload`, the hint as a text
+  component), and the client draws it like a title and subtitle at
   2x and 1x, half of vanilla's 4x and 2x, which run the sentence into the screen's edges (Matěj's playtests of W2a,
   2026-10-19, and W2b, 2026-10-20: "make both fonts 1 scale lower"), so the portal, `/tp` and a warp show the same
   refusal.
@@ -273,8 +286,9 @@ hoppers have nothing to take.
   colour, particles and sound), so a player sees where a friend went. The realm's hint says how to unlock it. A
   realm map with locked realms and their hints (RE-7) is a later view, in the guide (RLM-102, approved for M4 in
   RLM-116) or a screen of its own; M1 needs none.
-- **No operator bypass:** a creative player needs the unlock like anyone else, so tests and playtests see the real
-  rule. `/advancement grant @s only realmforge:realm/stone`, or a QA command, unlocks a realm for testing.
+- **No operator bypass:** a creative player needs the unlock and the entry level like anyone else, so tests and
+  playtests see the real rule. `/advancement grant @s only realmforge:realm/stone`, or a QA command, unlocks a realm
+  for testing, and `/qa level 6` gives the level.
 
 ## Travel
 
@@ -389,16 +403,16 @@ When no portal leads the right way within the search radius, the trip builds one
   carved out at the scaled position, clamped into the `y` range: set into a floor of the entry's arrival block
   (`arrival.floor`) that reaches in front of it, and air around it. A safe pocket of `arrival.pocket_radius` blocks
   keeps out fluids and falling blocks (RE-6: 3 by default, larger for a realm that needs it, such as an underwater one).
-- **Its corners are Realmforge Bricks too** (Matěj, 2026-10-20: "without it it looks bad"). A frame needs no corners
+- **Its corners are Gatewright Bricks too** (Matěj, 2026-10-20: "without it it looks bad"). A frame needs no corners
   to light, and a player's own frame may leave them out; every frame a trip builds has them.
 - **The new portal is lit:** in a realm its sealstone shows return, in Overworld the realm the player came from.
 - **It works like a frame a player built:** anyone may switch or close it, and breaking any of its blocks closes it
   ([Edge cases](#edge-cases)).
-- **Its blocks drop nothing.** Every frame a trip builds holds 17 Realmforge Bricks (its corners included) and a
+- **Its blocks drop nothing.** Every frame a trip builds holds 17 Gatewright Bricks (its corners included) and a
   sealstone, which cost ender
   pearls, eight kinds of bricks, 4 gold ingots and a compass to craft, and waystone warps are free in the pack. Entering
   a portal, breaking the return frame the trip built, warping back to the first portal and entering it again would yield
-  a frame each time: a farm. So Realmforge Bricks and the sealstone carry a block state flag, `generated` (a working
+  a frame each time: a farm. So Gatewright Bricks and the sealstone carry a block state flag, `generated` (a working
   name), which a trip sets on the blocks it places and a player's placement never does, and their loot tables drop the
   block only without it (vanilla's `minecraft:block_state_property` condition). The floor blocks a carved spot gets
   (`arrival.floor`) drop as usual: they are plain building blocks the realm or Overworld has in plenty.
@@ -576,6 +590,7 @@ without one; never in a realm. This answers the realm design's
 id: stone
 dimension: realmforge:stone          # the realm's dimension (content/worldgen/dimension/stone.json)
 name: {en_us: Undervault}            # the approved name (RLM-139), without an article (RLM-188)
+in_sentence: {en_us: the Undervault} # as a sentence names it (ADR 0045, RLM-337): "opens onto the Undervault"
 subtitle: {en_us: Stone Realm}       # shown with the name in the guide and the arrival title
 description: {en_us: stone realm}    # in running text: "a portal to the stone realm" (Matěj, 2026-10-20)
 locked_hint: {en_us: "Unlocked by completing The Ominous Chief quest."}   # the quest's name is a placeholder
@@ -593,15 +608,22 @@ arrival: {y: [20, 90], floor: realmforge:slate_bricks, pocket_radius: 3}   # whe
 id: overworld
 dimension: minecraft:overworld
 name: {en_us: Overworld}
+in_sentence: {en_us: the Overworld}  # Overworld takes "the" in a sentence too (Matěj, 2026-10-31)
 # W2b adds the portal's fields:
 colour: "#5DBB63"                    # return portals
 arrival: {y: [63, 310], floor: minecraft:stone_bricks, pocket_radius: 3}   # portals built on the way back
 ```
 
-- **The name in messages:** a realm's name takes no article (Matěj, RLM-188), so it reads the same alone (the
-  arrival title) and mid-sentence ("The portal opens onto Undervault"). The pydantic model carries one form and each
-  message a template; no message hard-codes a realm's name. The refusal at the sealstone names the realm by its
-  plain `description` instead: "You are not eligible to open a portal to the stone realm." (Matěj, 2026-10-20).
+- **The name in messages:** a realm's name takes no article as a name, label or title (Matěj, RLM-188: the arrival
+  title, the unlock toast), but a sentence that refers to the realm takes "the" where it reads naturally, as with the
+  Nether ([ADR 0045](../decisions/0045-asgard-and-atlantis-amend-the-v1-realm-layout.md), RLM-265), and Overworld
+  takes it like every realm (Matěj, 2026-10-31, RLM-337). So an entry carries two forms, `name` ("Undervault") and
+  `in_sentence` ("the Undervault", "the Overworld"), which holds the name and may be the bare name for a later
+  exception. The sealstone's messages use the second: "The portal opens onto the Undervault", "The portal already
+  opens onto the Overworld". Each message is a template and none hard-codes a realm's name, except the two that are
+  about Overworld alone ("This portal leads only back to the Overworld", "Beds only work in the Overworld"). The
+  refusal at the sealstone names the realm by its plain `description` instead: "You are not eligible to open a
+  portal to the stone realm." (Matěj, 2026-10-20).
 - **The coordinate scale is not here:** it is the `coordinate_scale` of the realm's dimension type
   (`content/worldgen/dimension_type/stone.json`, `8.0`), next to its `bed_rule` and `respawn_anchor_works`
   attributes, because vanilla reads it from there.
@@ -668,7 +690,7 @@ dimension rules and access:
     spot search as plain Java over a column of blocks;
   - the `PlayerInteractEvent.RightClickBlock` listener for the sneak gesture (common code: it runs on both sides);
 - `client/`: the portal block's tint source;
-- Realmforge Bricks, the sealstone and the signets as YAML content: blocks once the block content type exists, signets
+- Gatewright Bricks, the sealstone and the signets as YAML content: blocks once the block content type exists, signets
   as items. The two blocks' `generated` flag and the loot tables that check it come from that content type ([Building a
   portal](#building-a-portal)).
 
@@ -687,11 +709,16 @@ dimension rules and access:
   - the arrival in front of a frame a player stood on top of the floor, on that floor one step below the opening
     (RLM-341).
 - **pytest:** the schema, the references, the generated advancement (criterion `minecraft:impossible`), the access
-  requirement check, the dimension type checks (scale, bed rule).
+  requirement checks (the unlock, and the entry level equal to the mobs' floor, RLM-306), the in-sentence name and
+  the messages it fills (RLM-337), the dimension type checks (scale, bed rule).
 - **GameTests** (W2a's and W2b's "Done when"):
   - access is refused before the unlock advancement and allowed after it: through a teleport into the realm (as a
     waystone makes one), and through the portal, where the player stays put and gets the centre-screen message;
   - a player holding a signet without its unlock cannot open or switch a portal with it, and can after the unlock;
+  - a player with the unlock below the realm's entry level is refused the same three ways (the teleport, the portal,
+    the sealstone) and reads "Requires level 6.", a player with neither reads the unlock hint, and at the entry level
+    they travel (RLM-306);
+  - the sealstone says "The portal opens onto the Undervault" and, inside the realm, "onto the Overworld" (RLM-337);
   - a signet lights a complete frame, a second signet switches it, and an incomplete frame stays dark;
   - breaking a frame block closes the portal; closed by the sneak gesture, or broken and rebuilt, the frame relights
     with the signet it showed before (RLM-133);
@@ -706,7 +733,7 @@ dimension rules and access:
     back arrives at the realm portal it came from;
   - a built portal never stands outside the world border or outside its dimension's `y` range;
   - breaking the blocks of a frame a trip built closes the portal and drops nothing, while a frame a player built
-    drops its Realmforge Bricks and its sealstone;
+    drops its Gatewright Bricks and its sealstone;
   - a water bucket emptied into a lit portal's opening, by a player and by a dispenser, and water flowing into it,
     leave its portal blocks in place;
   - the sealstone refuses in the instance dimension;
@@ -828,6 +855,19 @@ His answer to RLM-458's playtest handoff (2026-10-28) added:
 24. **Realms link at 1:8 and pair like nether portals** ("make it exactly the same behavior as per nether, and note
     that the coordinates are 1:8, undervault is basically nether replacement"). This replaces 7's 1:16
     ([The coordinate scale](#the-coordinate-scale)).
+
+His later decisions, built together on 2026-11-11 (RLM-394, RLM-306, RLM-337), added:
+
+25. **The frame's blocks are Gatewright Bricks and the Gatewright Sealstone, and there is no Realmforge Stone**
+    (2026-10-23, on RLM-351's story beats: "I think it makes more sense than 'Realmforge Stone/Bricks/Sealstone'";
+    "it crafts directly into Bricks"; "yes, definitely change IDs too"). The bricks of eight Overworld stones around
+    an ender pearl make 8 Gatewright Bricks ([The frame](#the-frame)). This replaces 12's names and its Realmforge
+    Stone.
+26. **A realm is entered from its entry level on** (2026-10-16, RLM-240), beside its unlock
+    ([Access and unlocks](#access-and-unlocks),
+    [ADR 0076](../decisions/0076-a-realm-is-entered-from-its-entry-level-on.md)).
+27. **A sentence that names a realm takes "the", Overworld too** (2026-10-31, on RLM-337, after ADR 0045): "The
+    portal opens onto the Undervault", "onto the Overworld" ([Data](#data-contentrealms), "The name in messages").
 
 ## Open questions
 

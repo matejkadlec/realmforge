@@ -8,7 +8,11 @@ mob_levels:
   max_level: 60
   weights: [5, 10, 20, 30, 20, 10, 5]
 # Sealed until the player's own unlock (realm portal spec, "Access and unlocks"): chapter 1's last main quest grants
-# it (Q2); `/advancement grant @s only realmforge:realm/stone` until then.
+# it (Q2); `/advancement grant @s only realmforge:realm/stone` until then. And until the realm's entry level, the
+# number above (RLM-306, ADR 0076): the portal, `/tp` and a warp refuse a player below it. The unlock comes first, so
+# a player without either reads how to unlock the realm.
 access:
   - type: realmforge:has_advancement
     advancement: realmforge:realm/stone
+  - type: realmforge:level_at_least
+    level: 6

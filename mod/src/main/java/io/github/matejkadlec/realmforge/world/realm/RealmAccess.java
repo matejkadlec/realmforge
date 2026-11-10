@@ -7,10 +7,12 @@ import io.github.matejkadlec.realmforge.world.net.RealmRefusedPayload;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.WeakHashMap;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
@@ -38,8 +40,9 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * left alone.
  *
  * <ul>
- *   <li>A player enters a dimension only with every access requirement of its rules: a realm's is its unlock. A
- *       refused player stays where they are and gets a centre-screen message, at most once every 3 seconds.
+ *   <li>A player enters a dimension only with every access requirement of its rules: a realm's are its unlock and
+ *       its entry level (RLM-306, ADR 0076). A refused player stays where they are and gets a centre-screen message
+ *       that says which they lack, at most once every 3 seconds.
  *   <li>No other entity enters or leaves a realm, except through a realm portal (Matěj, 2026-10-20: every entity
  *       travels through one): items, mobs and vehicles moved any other way stay where they are.
  *   <li>A player's shoulder entities (a parrot) stay in the level the player leaves, on a trip into or out of a realm
@@ -138,10 +141,33 @@ public final class RealmAccess {
 
     /** Whether the player meets every access requirement of {@code dimension}'s rules; true without rules. */
     public static boolean mayEnter(ServerPlayer player, ResourceKey<Level> dimension) {
+        return firstUnmet(player, dimension).isEmpty();
+    }
+
+    /** The first access requirement of {@code dimension}'s rules the player does not meet, in the rules' order. */
+    private static Optional<Requirement> firstUnmet(ServerPlayer player, ResourceKey<Level> dimension) {
         List<Requirement> access = DimensionRules.of(player.level().registryAccess(), dimension)
                 .map(DimensionRules::access)
                 .orElse(List.of());
-        return Requirement.all(access, player);
+        return Requirement.firstUnmet(access, player);
+    }
+
+    /**
+     * What a player who may not enter {@code dimension} lacks, as one sentence: what the first requirement they do not
+     * meet says of itself (a level requirement: "Requires level 6.", RLM-306), otherwise the realm's hint, how to
+     * unlock it. A realm's rules name its unlock before its entry level, so a player without either reads the unlock
+     * hint. Empty for a player who may enter, and for a dimension that is no realm and whose requirement says nothing.
+     */
+    static Component refusalHint(ServerPlayer player, ResourceKey<Level> dimension) {
+        Optional<Requirement> unmet = firstUnmet(player, dimension);
+        if (unmet.isEmpty()) {
+            return Component.empty();
+        }
+        return unmet.get().unmetHint().orElseGet(() -> Realms.of(player.level().registryAccess(), dimension)
+                .map(realm -> realm.value().lockedHint())
+                .filter(hint -> !hint.isEmpty())
+                .<Component>map(Component::translatable)
+                .orElse(Component.empty()));
     }
 
     /**
@@ -200,8 +226,8 @@ public final class RealmAccess {
     }
 
     /**
-     * The centre-screen refusal, with the realm's hint below it ({@link RealmRefusedPayload}: the client draws it
-     * smaller than a vanilla title), and a short sound, once every 3 seconds at most.
+     * The centre-screen refusal, with what the player lacks below it ({@link #refusalHint}; the client draws
+     * {@link RealmRefusedPayload} smaller than a vanilla title), and a short sound, once every 3 seconds at most.
      */
     static void refuse(ServerPlayer player, ResourceKey<Level> dimension) {
         long now = player.level().getGameTime();
@@ -210,10 +236,7 @@ public final class RealmAccess {
             return;
         }
         LAST_REFUSAL.put(player, now);
-        String hint = Realms.of(player.level().registryAccess(), dimension)
-                .map(realm -> realm.value().lockedHint())
-                .orElse("");
-        PacketDistributor.sendToPlayer(player, new RealmRefusedPayload(hint));
+        PacketDistributor.sendToPlayer(player, new RealmRefusedPayload(refusalHint(player, dimension)));
         player.connection.send(new ClientboundSoundPacket(SoundEvents.NOTE_BLOCK_BASS, SoundSource.PLAYERS,
                 player.getX(), player.getY(), player.getZ(), 1.0F, 0.5F, player.getRandom().nextLong()));
     }

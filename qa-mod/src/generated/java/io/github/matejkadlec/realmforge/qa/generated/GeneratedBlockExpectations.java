@@ -60,6 +60,18 @@ public final class GeneratedBlockExpectations {
                     List.of("minecraft:mineable/pickaxe"),
                     "realmforge:blocks/dungeon_portal"),
             new BlockExpectation(
+                    "realmforge:gatewright_bricks",
+                    "block.realmforge.gatewright_bricks",
+                    3.0F, 6.0F, true,
+                    List.of("minecraft:mineable/pickaxe"),
+                    "realmforge:blocks/gatewright_bricks"),
+            new BlockExpectation(
+                    "realmforge:gatewright_sealstone",
+                    "block.realmforge.gatewright_sealstone",
+                    3.0F, 6.0F, true,
+                    List.of("minecraft:mineable/pickaxe"),
+                    "realmforge:blocks/gatewright_sealstone"),
+            new BlockExpectation(
                     "realmforge:granite_bricks",
                     "block.realmforge.granite_bricks",
                     1.5F, 6.0F, true,
@@ -77,24 +89,6 @@ public final class GeneratedBlockExpectations {
                     -1.0F, 0.0F, false,
                     List.of(),
                     ""),
-            new BlockExpectation(
-                    "realmforge:realmforge_bricks",
-                    "block.realmforge.realmforge_bricks",
-                    3.0F, 6.0F, true,
-                    List.of("minecraft:mineable/pickaxe"),
-                    "realmforge:blocks/realmforge_bricks"),
-            new BlockExpectation(
-                    "realmforge:realmforge_sealstone",
-                    "block.realmforge.realmforge_sealstone",
-                    3.0F, 6.0F, true,
-                    List.of("minecraft:mineable/pickaxe"),
-                    "realmforge:blocks/realmforge_sealstone"),
-            new BlockExpectation(
-                    "realmforge:realmforge_stone",
-                    "block.realmforge.realmforge_stone",
-                    3.0F, 6.0F, true,
-                    List.of("minecraft:mineable/pickaxe"),
-                    "realmforge:blocks/realmforge_stone"),
             new BlockExpectation(
                     "realmforge:siltstone",
                     "block.realmforge.siltstone",

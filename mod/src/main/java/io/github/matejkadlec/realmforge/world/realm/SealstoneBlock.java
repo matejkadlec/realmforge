@@ -27,7 +27,7 @@ import net.minecraft.world.phys.BlockHitResult;
  * The sealstone, the bottom middle of a realm portal's frame (realm portal spec, "The sealstone"): a realm's
  * signet used on it opens the portal onto that realm, or inside that realm back onto Overworld, an empty hand shows
  * where it leads, and sneaking with an empty main hand closes it, or opens it back to Overworld inside a realm. What
- * happens lives in {@link RealmPortals}; the setting lives in its block entity. A frame a trip built has {@link RealmforgeBricksBlock#GENERATED} set, and drops nothing.
+ * happens lives in {@link RealmPortals}; the setting lives in its block entity. A frame a trip built has {@link GatewrightBricksBlock#GENERATED} set, and drops nothing.
  *
  * <p>It glows while a player holding a signet that lights it stands near ({@link RealmPortals#tickGlow}, RLM-406): its
  * {@link #GLOW} is its block light, so every player sees it.
@@ -41,7 +41,7 @@ public final class SealstoneBlock extends BaseEntityBlock {
 
     public SealstoneBlock(BlockBehaviour.Properties properties) {
         super(properties);
-        registerDefaultState(stateDefinition.any().setValue(RealmforgeBricksBlock.GENERATED, false).setValue(GLOW, 0));
+        registerDefaultState(stateDefinition.any().setValue(GatewrightBricksBlock.GENERATED, false).setValue(GLOW, 0));
     }
 
     @Override
@@ -51,7 +51,7 @@ public final class SealstoneBlock extends BaseEntityBlock {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(RealmforgeBricksBlock.GENERATED, GLOW);
+        builder.add(GatewrightBricksBlock.GENERATED, GLOW);
     }
 
     @Override

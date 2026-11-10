@@ -8,7 +8,7 @@ requirements. Its portal fields (W2b) say how the realm portal looks and sounds 
 signet opens it, and where a trip may build a portal in the realm.
 
 Overworld has an entry too (``dimension: minecraft:overworld``), but it is no realm: it is always open, so it has no
-unlock, signet, hint or flavour line. Its colour is the return portals', and its arrival is where a way back from a realm
+unlock, signet, hint or flavour line; it has its name's in-sentence form, "the Overworld", like every realm. Its colour is the return portals', and its arrival is where a way back from a realm
 builds a portal (realm portal spec, "Building a portal").
 """
 
@@ -93,6 +93,13 @@ class RealmDef(StrictModel):
         )
     )
     name: LocalizedText = Field(description="The realm's name, without an article: Undervault (RLM-188).")
+    in_sentence: LocalizedText = Field(
+        description=(
+            "The realm's name as a sentence refers to it, which takes 'the' where it reads naturally, as with the "
+            "Nether (ADR 0045): the Undervault, and the Overworld too (Matěj, 2026-10-31). 'The portal opens onto the "
+            "Undervault' uses it; a name, label or title uses `name`. It contains the name."
+        )
+    )
     subtitle: LocalizedText | None = Field(
         default=None,
         description=(
@@ -168,6 +175,17 @@ class RealmDef(StrictModel):
     @property
     def is_overworld(self) -> bool:
         return self.dimension == OVERWORLD
+
+    @model_validator(mode="after")
+    def _in_sentence_holds_the_name(self) -> RealmDef:
+        for locale, text in self.in_sentence.translations().items():
+            name = self.name.translations().get(locale)
+            if name is not None and name not in text:
+                raise ValueError(
+                    f"in_sentence.{locale} is the realm's name as a sentence refers to it, so it contains the name "
+                    f"{name!r}: {text!r} does not"
+                )
+        return self
 
     @model_validator(mode="after")
     def _realm_fields(self) -> RealmDef:

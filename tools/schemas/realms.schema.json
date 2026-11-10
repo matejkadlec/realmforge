@@ -120,6 +120,10 @@
       "title": "Id",
       "type": "string"
     },
+    "in_sentence": {
+      "$ref": "#/$defs/LocalizedText",
+      "description": "The realm's name as a sentence refers to it, which takes 'the' where it reads naturally, as with the Nether (ADR 0045): the Undervault, and the Overworld too (Matěj, 2026-10-31). 'The portal opens onto the Undervault' uses it; a name, label or title uses `name`. It contains the name."
+    },
     "levels": {
       "anyOf": [
         {
@@ -209,6 +213,7 @@
     "id",
     "dimension",
     "name",
+    "in_sentence",
     "colour",
     "arrival"
   ],

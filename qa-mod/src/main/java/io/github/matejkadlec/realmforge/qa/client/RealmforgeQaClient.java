@@ -7,6 +7,7 @@ import io.github.matejkadlec.realmforge.qa.client.charge.QaChargeTrace;
 import io.github.matejkadlec.realmforge.qa.client.combat.TrainingDummyRenderer;
 import io.github.matejkadlec.realmforge.qa.client.gear.QaGearShots;
 import io.github.matejkadlec.realmforge.qa.client.keybinds.QaKeyBindShots;
+import io.github.matejkadlec.realmforge.qa.client.portal.QaPortalShots;
 import io.github.matejkadlec.realmforge.qa.client.spellshots.QaSpellShots;
 import io.github.matejkadlec.realmforge.qa.client.spelltree.QaSpellTreeShots;
 import io.github.matejkadlec.realmforge.qa.client.keybinds.QaKeyCategories;
@@ -26,6 +27,7 @@ public final class RealmforgeQaClient {
         QaSpellTreeShots.registerIfRequested();
         QaSpellShots.registerIfRequested();
         QaGearShots.registerIfRequested();
+        QaPortalShots.registerIfRequested();
         QaChargeTrace.registerIfRequested();
         FtbLibraryGreetingFilter.register();
     }

@@ -1,9 +1,16 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
 import com.mojang.logging.LogUtils;
+import io.github.matejkadlec.realmforge.character.Characters;
 import io.github.matejkadlec.realmforge.generated.GeneratedBlocks;
+import io.github.matejkadlec.realmforge.generated.GeneratedTexts;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedRealmExpectations;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedRealmExpectations.RealmExpectation;
+import io.github.matejkadlec.realmforge.stats.EntityLevel;
+import io.github.matejkadlec.realmforge.stats.StatsAttachments;
+import io.github.matejkadlec.realmforge.world.WorldRegistries;
+import io.github.matejkadlec.realmforge.world.net.RealmRefusedPayload;
+import io.github.matejkadlec.realmforge.world.realm.Realm;
 import io.github.matejkadlec.realmforge.world.realm.Realms;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -16,6 +23,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
@@ -44,7 +52,8 @@ import org.slf4j.Logger;
 
 /**
  * The stone realm, Undervault (W2a, RLM-32; realm portal spec, "Access and unlocks", "Multiplayer", "Respawn"): a
- * player teleported into the realm is refused before its unlock and let in after it, a mob is kept out of the realm
+ * player teleported into the realm is refused before its unlock and below its entry level (RLM-306), each with its own
+ * hint, and let in with both, a mob is kept out of the realm
  * and inside it, a death in the realm respawns in Overworld, a parrot on the shoulder stays behind, beds there set no
  * spawn and do not explode, the realm's terrain is one walkable cave floor under a ceiling, and its ores are Matěj's
  * ore table (RLM-449).
@@ -60,7 +69,10 @@ public final class RealmGameTests {
     private RealmGameTests() {
     }
 
-    /** Done when of W2a: a player teleported into the realm is refused before the unlock and allowed after it. */
+    /**
+     * Done when of W2a: a player teleported into the realm is refused before the unlock and allowed after it. The
+     * player here is at the realm's entry level all along, which the realm asks for too (RLM-306).
+     */
     @QaGameTest
     public static void playerIsRefusedBeforeTheUnlockAndLetInAfterIt(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
@@ -70,10 +82,15 @@ public final class RealmGameTests {
         try {
             Vec3 start = helper.absoluteVec(new Vec3(2.5, 1, 2.5));
             player.teleportTo(helper.getLevel(), start.x, start.y, start.z, Set.of(), 0.0F, 0.0F, true);
+            setLevel(player, entryLevel(helper, expected));
+            QaPlayers.sentPayloads(player, RealmRefusedPayload.class);
 
             helper.assertFalse(teleport(player, realm, IN_REALM), "a teleport into the realm is refused without its unlock");
             helper.assertTrue(player.level() == helper.getLevel(), "the refused player stays in Overworld");
             helper.assertTrue(player.position().closerThan(start, 0.01), "the refused player stays where they were");
+            helper.assertValueEqual(QaPlayers.sentPayloads(player, RealmRefusedPayload.class),
+                    List.of(new RealmRefusedPayload(Component.translatable(expected.lockedHintKey()))),
+                    "the refusal says how to unlock the realm");
 
             award(helper, player, expected.unlockAdvancement());
             helper.assertTrue(teleport(player, realm, IN_REALM), "a teleport into the realm passes with its unlock");
@@ -83,6 +100,54 @@ public final class RealmGameTests {
             helper.assertTrue(player.level() == helper.getLevel(), "the player is back in Overworld");
         } finally {
             server.getPlayerList().remove(player);
+        }
+        helper.succeed();
+    }
+
+    /**
+     * Done when of RLM-306: a player with the realm's unlock below its entry level is refused through {@code /tp}'s
+     * teleport, and reads the level they need, not how to unlock the realm; at the entry level they travel. A player
+     * with neither reads the unlock hint, the first of the two.
+     */
+    @QaGameTest
+    public static void aPlayerBelowTheEntryLevelIsRefusedAndReadsTheLevel(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        RealmExpectation expected = stone();
+        ServerLevel realm = realm(helper, expected);
+        int entryLevel = entryLevel(helper, expected);
+        helper.assertTrue(entryLevel > EntityLevel.MIN, "the stone realm has an entry level above 1: " + entryLevel);
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-realm-level");
+        ServerPlayer neither = QaPlayers.loginOnPlatform(helper, "qa-realm-neither");
+        try {
+            Vec3 start = helper.absoluteVec(new Vec3(2.5, 1, 2.5));
+            player.teleportTo(helper.getLevel(), start.x, start.y, start.z, Set.of(), 0.0F, 0.0F, true);
+            award(helper, player, expected.unlockAdvancement());
+            setLevel(player, entryLevel - 1);
+            QaPlayers.sentPayloads(player, RealmRefusedPayload.class);
+
+            helper.assertFalse(teleport(player, realm, IN_REALM),
+                    "a teleport into the realm is refused below its entry level, unlock or not");
+            helper.assertTrue(player.level() == helper.getLevel() && player.position().closerThan(start, 0.01),
+                    "the refused player stays where they were");
+            helper.assertValueEqual(QaPlayers.sentPayloads(player, RealmRefusedPayload.class),
+                    List.of(new RealmRefusedPayload(
+                            Component.translatable(GeneratedTexts.MESSAGE_REQUIRES_LEVEL, entryLevel))),
+                    "the refusal names the level the realm requires");
+
+            setLevel(neither, entryLevel - 1);
+            QaPlayers.sentPayloads(neither, RealmRefusedPayload.class);
+            helper.assertFalse(teleport(neither, realm, IN_REALM), "a player with neither is refused");
+            helper.assertValueEqual(QaPlayers.sentPayloads(neither, RealmRefusedPayload.class),
+                    List.of(new RealmRefusedPayload(Component.translatable(expected.lockedHintKey()))),
+                    "a player with neither the unlock nor the level reads how to unlock the realm first");
+
+            setLevel(player, entryLevel);
+            helper.assertTrue(teleport(player, realm, IN_REALM), "at the entry level the unlocked player travels");
+            helper.assertTrue(player.level() == realm, "the player is in the realm");
+            helper.assertTrue(teleport(player, helper.getLevel(), start), "the way back to Overworld is always open");
+        } finally {
+            server.getPlayerList().remove(player);
+            server.getPlayerList().remove(neither);
         }
         helper.succeed();
     }
@@ -133,7 +198,7 @@ public final class RealmGameTests {
         ServerLevel realm = realm(helper, expected);
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-realm-respawn");
         try {
-            award(helper, player, expected.unlockAdvancement());
+            unlock(helper, player, expected);
             helper.assertTrue(teleport(player, realm, IN_REALM), "the unlocked player enters the realm");
             player = server.getPlayerList().respawn(player, false, Entity.RemovalReason.KILLED);
             helper.assertTrue(player.level().dimension() == Level.OVERWORLD,
@@ -172,7 +237,7 @@ public final class RealmGameTests {
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-realm-parrot");
         Vec3 start = helper.absoluteVec(new Vec3(2.5, 1, 2.5));
         player.teleportTo(helper.getLevel(), start.x, start.y, start.z, Set.of(), 0.0F, 0.0F, true);
-        award(helper, player, expected.unlockAdvancement());
+        unlock(helper, player, expected);
 
         UUID first = perchParrot(helper, player, helper.getLevel());
         helper.assertTrue(teleport(player, realm, IN_REALM), "the player enters the realm");
@@ -208,7 +273,7 @@ public final class RealmGameTests {
         ServerLevel realm = realm(helper, expected);
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-realm-bed");
         try {
-            award(helper, player, expected.unlockAdvancement());
+            unlock(helper, player, expected);
             helper.assertTrue(teleport(player, realm, IN_REALM), "the player enters the realm");
             BlockPos foot = BlockPos.containing(IN_REALM).east();
             BlockPos head = foot.north();
@@ -452,6 +517,28 @@ public final class RealmGameTests {
         for (String criterion : holder.value().criteria().keySet()) {
             player.getAdvancements().award(holder, criterion);
         }
+    }
+
+    /**
+     * What a realm's dimension rules ask of a player: its unlock and its entry level (RLM-306). For the tests that are
+     * about something else than access.
+     */
+    static void unlock(GameTestHelper helper, ServerPlayer player, RealmExpectation expected) {
+        award(helper, player, expected.unlockAdvancement());
+        setLevel(player, Math.max(Characters.level(player), entryLevel(helper, expected)));
+    }
+
+    /** The realm's entry level: the lowest level of its band, which its dimension rules require and floor mobs at. */
+    static int entryLevel(GameTestHelper helper, RealmExpectation expected) {
+        Realm realm = helper.getLevel().registryAccess().lookupOrThrow(WorldRegistries.REALM)
+                .getValue(Identifier.parse(expected.id()));
+        helper.assertTrue(realm != null && realm.levels().isPresent(), expected.id() + " has a level band");
+        return realm.levels().orElseThrow().lowest();
+    }
+
+    /** Sets a player's character level, as the level attachment holds it for a player without a character too. */
+    static void setLevel(ServerPlayer player, int level) {
+        player.setData(StatsAttachments.LEVEL, new EntityLevel(level));
     }
 
     /** A teleport as {@code /tp} and waystone warps make one; true when it happened. */

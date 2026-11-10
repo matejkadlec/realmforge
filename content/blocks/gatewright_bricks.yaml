@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=../../tools/schemas/blocks.schema.json
+# Gatewright Bricks (W2b, realm portal spec "The frame"; named by Matěj, 2026-10-23, RLM-394, once Realmforge Bricks):
+# 13 of them and a Gatewright Sealstone frame a realm portal, 5 wide and 6 tall around a 3x4 opening. The bricks of
+# eight Overworld stones around an ender pearl make 8 (Matěj, 2026-10-20 and 2026-10-23): stone, deepslate, quartz, mud
+# and tuff bricks from vanilla, and our diorite, granite and andesite bricks. A frame and its sealstone take 17, so 3
+# crafts and 3 ender pearls. Pistons cannot move them. A frame a trip built drops nothing (its `generated` state). The
+# numbers are proposals for Matěj's playtest.
+id: gatewright_bricks
+name:
+  en_us: Gatewright Bricks
+kind: gatewright_bricks
+hardness: 3
+blast_resistance: 6
+tool: pickaxe
+requires_tool: true
+sound: stone
+map_color: color_gray
+creative_tabs:
+  - minecraft:functional_blocks
+recipe:
+  pattern:
+    - SDQ
+    - MET
+    - IGA
+  key:
+    S: minecraft:stone_bricks
+    D: minecraft:deepslate_bricks
+    Q: minecraft:quartz_bricks
+    M: minecraft:mud_bricks
+    E: minecraft:ender_pearl
+    T: minecraft:tuff_bricks
+    I: realmforge:diorite_bricks
+    G: realmforge:granite_bricks
+    A: realmforge:andesite_bricks
+  count: 8
+  category: building

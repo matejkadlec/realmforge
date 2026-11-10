@@ -17,15 +17,15 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
- * The realm portal's block kinds (architecture 6.2, 15.1; realm portal spec): Realmforge Bricks, the sealstone and the
+ * The realm portal's block kinds (architecture 6.2, 15.1; realm portal spec): Gatewright Bricks, the sealstone and the
  * portal block. Their blocks come from {@code content/blocks/} ({@code GeneratedBlocks}), one of each; this provides
  * their classes, the sealstone's block entity and its point-of-interest type, which the trip's search reads.
  */
 public final class RealmPortalBlocks {
-    /** {@code kind: realmforge_bricks} in {@code content/blocks/}. */
-    public static final String BRICKS_KIND = "realmforge_bricks";
-    /** {@code kind: realmforge_sealstone} in {@code content/blocks/}. */
-    public static final String SEALSTONE_KIND = "realmforge_sealstone";
+    /** {@code kind: gatewright_bricks} in {@code content/blocks/}. */
+    public static final String BRICKS_KIND = "gatewright_bricks";
+    /** {@code kind: gatewright_sealstone} in {@code content/blocks/}. */
+    public static final String SEALSTONE_KIND = "gatewright_sealstone";
     /** {@code kind: realm_portal} in {@code content/blocks/}. */
     public static final String PORTAL_KIND = "realm_portal";
     /** The portal's light, as the nether portal's. */
@@ -36,12 +36,12 @@ public final class RealmPortalBlocks {
     private static final DeferredRegister<PoiType> POI_TYPES =
             DeferredRegister.create(Registries.POINT_OF_INTEREST_TYPE, Realmforge.MOD_ID);
 
-    /** {@code realmforge:realmforge_sealstone}: where the sealstone's portal leads. */
+    /** {@code realmforge:gatewright_sealstone}: where the sealstone's portal leads. */
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<SealstoneBlockEntity>> SEALSTONE_ENTITY =
             BLOCK_ENTITIES.register(SEALSTONE_KIND, () -> new BlockEntityType<>(SealstoneBlockEntity::new,
                     Set.copyOf(BlockKinds.blocks(SEALSTONE_KIND))));
     /**
-     * {@code realmforge:realmforge_sealstone}: every state of every sealstone, as vanilla's {@code nether_portal} is every
+     * {@code realmforge:gatewright_sealstone}: every state of every sealstone, as vanilla's {@code nether_portal} is every
      * portal block. Holds no tickets, as vanilla's.
      */
     private static final DeferredHolder<PoiType, PoiType> SEALSTONE_POI_TYPE =
@@ -58,7 +58,7 @@ public final class RealmPortalBlocks {
     public static void register(IEventBus modBus) {
         // Frame blocks cannot be pushed, so no contraption moves a lit frame apart.
         BlockKinds.provide(BRICKS_KIND,
-                properties -> new RealmforgeBricksBlock(properties.pushReaction(PushReaction.BLOCK)));
+                properties -> new GatewrightBricksBlock(properties.pushReaction(PushReaction.BLOCK)));
         BlockKinds.provide(SEALSTONE_KIND, properties -> new SealstoneBlock(properties.pushReaction(PushReaction.BLOCK)
                 .lightLevel(state -> state.getValue(SealstoneBlock.GLOW))));
         BlockKinds.provide(PORTAL_KIND, properties -> new RealmPortalBlock(properties.noCollision()
@@ -67,7 +67,7 @@ public final class RealmPortalBlocks {
         POI_TYPES.register(modBus);
     }
 
-    /** The Realmforge Bricks block. */
+    /** The Gatewright Bricks block. */
     public static Block bricks() {
         return single(BRICKS_KIND);
     }

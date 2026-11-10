@@ -156,11 +156,14 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   four slow custom stones (`content/blocks/`), sealed until the player's own unlock advancement `realmforge:realm/stone`
   (`content/realms/`, access requirements in the dimension rules), with no mob crossing into or out of it but through a
   realm portal, and every respawn in Overworld. It is entered through the
-  realm portal (W2b): a frame of Realmforge Bricks around a Realmforge Sealstone, which the Signet of the Undervault
-  opens onto Undervault for a player with the unlock, and a frame inside Undervault back onto Overworld; every entity
+  realm portal (W2b): a frame of Gatewright Bricks around a Gatewright Sealstone (RLM-394: eight Overworld bricks
+  round an ender pearl make 8 bricks, no Realmforge Stone), which the Signet of the Undervault
+  opens onto Undervault for a player with the unlock at the realm's entry level, 6 (RLM-306, ADR 0076: a refusal says
+  which they lack), and a frame inside Undervault back onto Overworld; every entity
   travels through it at once, portals link like the Nether's at 1:8, a trip builds one set into the floor where none
   is near, and the sealstone glows while a player holding a signet that works on it stands near (RLM-335, RLM-406,
-  RLM-458). Dungeons are entered through the Dungeon
+  RLM-458); a sentence names a realm with "the" ("The portal opens onto the Undervault", a realm's `in_sentence`,
+  RLM-337). Dungeons are entered through the Dungeon
   Portal (W4d): a dungeon key opens it for its player
   alone, for the dungeon type's open time, with warnings before it closes and sends everyone back; the Dungeon Exit
   and `/instance leave` leave at any time, and a completed run closes 5 minutes later. Players block with two-handed

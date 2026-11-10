@@ -8,22 +8,22 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 
 /**
- * Realmforge Bricks, the realm portal's frame block (realm portal spec, "The frame"). A frame a trip built has
+ * Gatewright Bricks, the realm portal's frame block (realm portal spec, "The frame"). A frame a trip built has
  * {@link #GENERATED} set on its blocks, and its loot table drops the block only without it, so entering a portal and
  * breaking the frame the trip built yields nothing ("Building a portal").
  */
-public final class RealmforgeBricksBlock extends Block {
-    public static final MapCodec<RealmforgeBricksBlock> CODEC = simpleCodec(RealmforgeBricksBlock::new);
+public final class GatewrightBricksBlock extends Block {
+    public static final MapCodec<GatewrightBricksBlock> CODEC = simpleCodec(GatewrightBricksBlock::new);
     /** True on the blocks of a frame a trip built; a player's placement never sets it. */
     public static final BooleanProperty GENERATED = BooleanProperty.create("generated");
 
-    public RealmforgeBricksBlock(BlockBehaviour.Properties properties) {
+    public GatewrightBricksBlock(BlockBehaviour.Properties properties) {
         super(properties);
         registerDefaultState(stateDefinition.any().setValue(GENERATED, false));
     }
 
     @Override
-    protected MapCodec<RealmforgeBricksBlock> codec() {
+    protected MapCodec<GatewrightBricksBlock> codec() {
         return CODEC;
     }
 

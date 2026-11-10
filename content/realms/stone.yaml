@@ -6,6 +6,9 @@ id: stone
 dimension: realmforge:stone
 name:
   en_us: Undervault
+# In a sentence the realm takes "the", as the Nether does (ADR 0045, RLM-337): "The portal opens onto the Undervault".
+in_sentence:
+  en_us: the Undervault
 subtitle:
   en_us: Stone Realm
 description:
