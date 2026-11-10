@@ -1,0 +1,11 @@
+{
+  "wants": {
+    "id": "realmforge:gold_coin"
+  },
+  "gives": {
+    "id": "minecraft:netherite_scrap"
+  },
+  "max_uses": 12,
+  "reputation_discount": 0,
+  "xp": 0
+}

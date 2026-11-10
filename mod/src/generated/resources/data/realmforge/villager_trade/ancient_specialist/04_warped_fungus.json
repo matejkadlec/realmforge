@@ -1,0 +1,12 @@
+{
+  "wants": {
+    "id": "realmforge:copper_coin",
+    "count": 20
+  },
+  "gives": {
+    "id": "minecraft:warped_fungus"
+  },
+  "max_uses": 12,
+  "reputation_discount": 0,
+  "xp": 0
+}

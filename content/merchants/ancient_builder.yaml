@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../../tools/schemas/merchants.schema.json
+# The Ancient Builder (RLM-241; Matěj, 2026-10-16/17; ADR 0034): a villager profession whose workstation is the
+# Ancient Casting. It sells the Nether's stone, which has no other source since the Nether is gone (ADR 0025), for
+# coins at fixed prices: no villager levels, every trade from the start. Matěj named the items, the amounts and the
+# price bands (cheap, medium, expensive, relative to what Overworld's mobs drop: about 6 copper a kill at level 10,
+# 31 at 18). The numbers are the agent's (docs/design/merchants.md, open until RLM-241's deferred playtest): cheap 20 to
+# 40 copper, medium 2 silver, expensive 5 silver.
+id: ancient_builder
+name:
+  en_us: Ancient Builder
+workstation: realmforge:ancient_casting
+work_sound: minecraft:entity.villager.work_mason
+trades:
+  - gives: {item: minecraft:netherrack, count: 64}
+    price: 20
+  - gives: {item: minecraft:nether_bricks, count: 64}
+    price: 40
+  - gives: {item: minecraft:basalt, count: 64}
+    price: 30
+  - gives: {item: minecraft:blackstone, count: 64}
+    price: 30
+  - gives: {item: minecraft:soul_sand, count: 16}
+    price: 30
+  - gives: {item: minecraft:soul_soil, count: 16}
+    price: 30
+  - gives: {item: minecraft:magma_block, count: 16}
+    price: 40
+  - gives: {item: minecraft:glowstone, count: 8}
+    price: 200
+  - gives: {item: minecraft:nether_quartz_ore, count: 8}
+    price: 500
+  - gives: {item: minecraft:crying_obsidian, count: 4}
+    price: 500

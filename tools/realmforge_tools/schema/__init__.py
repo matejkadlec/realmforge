@@ -27,6 +27,7 @@ from realmforge_tools.schema.effect import EffectDef
 from realmforge_tools.schema.enchantment import EnchantmentDef
 from realmforge_tools.schema.item import ItemDef
 from realmforge_tools.schema.kill_xp_multiplier import KillXpMultiplierDef
+from realmforge_tools.schema.merchant import MerchantDef
 from realmforge_tools.schema.mob import MobDef
 from realmforge_tools.schema.netherite_upgrade import NetheriteUpgradeDef
 from realmforge_tools.schema.quest import QuestDef
@@ -75,6 +76,7 @@ CONTENT_TYPES: dict[str, type] = {
     "recipes": RecipeOverrideDef,
     "recipe_removals": RecipeRemovalDef,
     "netherite_upgrades": NetheriteUpgradeDef,
+    "merchants": MerchantDef,
 }
 
 # content/worldgen/ holds vanilla worldgen JSON instead of YAML; it is validated and copied (content.py, validate.py).
@@ -129,6 +131,7 @@ __all__ = [
     "EnchantmentDef",
     "ItemDef",
     "KillXpMultiplierDef",
+    "MerchantDef",
     "MobDef",
     "NetheriteUpgradeDef",
     "QuestDef",

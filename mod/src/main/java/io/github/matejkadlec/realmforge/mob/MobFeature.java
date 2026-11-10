@@ -2,6 +2,7 @@ package io.github.matejkadlec.realmforge.mob;
 
 import io.github.matejkadlec.realmforge.generated.GeneratedMobs;
 import io.github.matejkadlec.realmforge.mob.custom.CasterMob;
+import io.github.matejkadlec.realmforge.mob.merchant.Merchants;
 import io.github.matejkadlec.realmforge.spell.CastEndedEvent;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.IEventBus;
@@ -13,7 +14,7 @@ import net.neoforged.neoforge.event.entity.living.LivingConversionEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.MobSplitEvent;
 
-/** Mob levels and scaling, the AI goal library, custom mobs (architecture 14.1, 14.2). */
+/** Mob levels and scaling, the AI goal library, custom mobs, merchants (architecture 14.1, 14.2, 14.4). */
 public final class MobFeature {
     private MobFeature() {
     }
@@ -25,6 +26,8 @@ public final class MobFeature {
         GeneratedMobs.register(modBus);
         modBus.addListener(EntityAttributeCreationEvent.class, GeneratedMobs::createAttributes);
         NeoForge.EVENT_BUS.addListener(CastEndedEvent.class, CasterMob::onCastEnded);
+        // Merchants generated from content/merchants/: villager professions with fixed trades (architecture 14.4).
+        Merchants.register(modBus);
 
         NeoForge.EVENT_BUS.addListener(FinalizeSpawnEvent.class, MobLevels::onFinalizeSpawn);
         NeoForge.EVENT_BUS.addListener(EntityJoinLevelEvent.class, MobLevels::onJoinLevel);

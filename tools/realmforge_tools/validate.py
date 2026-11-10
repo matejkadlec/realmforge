@@ -45,7 +45,7 @@ from realmforge_tools.schema.apotheosis import (
 from realmforge_tools.schema.block import ITEMLESS_KINDS, REALM_PORTAL_KINDS, SINGLE_BLOCK_KINDS
 from realmforge_tools.schema.chapter import advancement_id as chapter_advancement
 from realmforge_tools.schema.character import STARTING_BREAD, CharacterModifierDef
-from realmforge_tools.schema.coin import COIN_DROP
+from realmforge_tools.schema.coin import COIN_DROP, coin_chain, split
 from realmforge_tools.schema.dimension_rules import WORLDGEN_STRUCTURE_REGISTRY
 from realmforge_tools.schema.dungeon import (
     CORRIDOR_ROLES,
@@ -69,6 +69,7 @@ from realmforge_tools.schema.item import (
 )
 from realmforge_tools.schema.kill_xp_multiplier import SIZED_ENTITY_TYPES
 from realmforge_tools.schema.leveling import LEVELING_CURVES
+from realmforge_tools.schema.merchant import MAX_COST_SLOTS
 from realmforge_tools.schema.mob import BOSS, TRASH_LOOT, mob_description_id, mob_id
 from realmforge_tools.schema.quest import (
     CUSTOM_STATS,
@@ -130,6 +131,8 @@ from realmforge_tools.schema.text import text_constant
 from realmforge_tools.schema.worldgen import WORLDGEN_REGISTRIES, data_path
 
 ITEM_REGISTRY = "minecraft:item"
+# The most a vanilla item stacks to; ours say their own (ItemDef.max_stack_size).
+VANILLA_MAX_STACK = 64
 BLOCK_REGISTRY = "minecraft:block"
 ADVANCEMENT_REGISTRY = "minecraft:advancement"
 ENTITY_TYPE_REGISTRY = "minecraft:entity_type"
@@ -298,6 +301,7 @@ def validate_content(content: Content, universe: IdUniverse) -> list[Problem]:
     problems += _check_gear(content, universe)
     problems += _check_item_drops(content, universe)
     problems += _check_coins(content)
+    problems += _check_merchants(content, universe)
     problems += _check_netherite_upgrades(content, universe)
     problems += _check_chapters(content)
     problems += _check_quests(content, universe)
@@ -2374,6 +2378,106 @@ def _check_coins(content: Content) -> list[Problem]:
                         curve.source, f"points.{n}.value", f"{point.value} is negative: a mob drops no debt"
                     )
                 )
+    return problems
+
+
+def _check_merchants(content: Content, universe: IdUniverse) -> list[Problem]:
+    """A merchant's workstation is a block of ours with an item, the job site of that merchant alone; its work sound
+    exists; each trade gives and wants items that exist, at most a stack of each; a price is paid in at most two coin
+    types and at most a stack of each, since a vanilla trade has two cost slots (ADR 0040); and no two trades of one
+    merchant give the same stack, which is how the game keeps the trades in the written order."""
+    problems: list[Problem] = []
+    blocks = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.blocks}
+    items = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.items}
+    coins = coin_chain(entry.model for entry in content.items)
+    values = [coin.coin.value for coin in coins if coin.coin is not None]
+    workstations: dict[str, str] = {}
+
+    def stack_problems(source: str, path: str, item: str, count: int) -> list[Problem]:
+        if not universe.contains(ITEM_REGISTRY, item):
+            return [Problem(source, f"{path}.item", _unknown(item, ITEM_REGISTRY, universe))]
+        ours = items.get(item)
+        # Vanilla's items stack to 64 at most; ours say how far (a coin to 99).
+        limit = ours.max_stack_size if ours is not None else VANILLA_MAX_STACK
+        if count > limit:
+            return [Problem(source, f"{path}.count", f"{count} is more than a stack of {item} ({limit})")]
+        return []
+
+    for entry in content.merchants:
+        merchant = entry.model
+        block = blocks.get(merchant.workstation)
+        if block is None:
+            problems.append(
+                Problem(
+                    entry.source,
+                    "workstation",
+                    f"{merchant.workstation} is not a block of ours (content/blocks/)",
+                )
+            )
+        elif block.kind in ITEMLESS_KINDS:
+            problems.append(
+                Problem(
+                    entry.source, "workstation", f"{merchant.workstation} has no item: nobody could place it"
+                )
+            )
+        other = workstations.setdefault(merchant.workstation, entry.source)
+        if other != entry.source:
+            problems.append(
+                Problem(
+                    entry.source, "workstation", f"{merchant.workstation} is already the job site of {other}"
+                )
+            )
+        if merchant.work_sound is not None and not universe.contains(
+            SOUND_EVENT_REGISTRY, merchant.work_sound
+        ):
+            problems.append(
+                Problem(
+                    entry.source, "work_sound", _unknown(merchant.work_sound, SOUND_EVENT_REGISTRY, universe)
+                )
+            )
+        given: dict[tuple[str, int], int] = {}
+        for n, trade in enumerate(merchant.trades):
+            path = f"trades.{n}"
+            problems += stack_problems(entry.source, f"{path}.gives", trade.gives.item, trade.gives.count)
+            first = given.setdefault((trade.gives.item, trade.gives.count), n)
+            if first != n:
+                problems.append(
+                    Problem(
+                        entry.source,
+                        f"{path}.gives",
+                        f"trade {first} gives {trade.gives.count} {trade.gives.item} too: one trade per stack",
+                    )
+                )
+            for i, stack in enumerate(trade.wants or []):
+                problems += stack_problems(entry.source, f"{path}.wants.{i}", stack.item, stack.count)
+            if trade.price is None:
+                continue
+            if not coins:
+                problems.append(
+                    Problem(entry.source, f"{path}.price", "a price needs coins: no item has a coin block")
+                )
+                continue
+            counts = split(trade.price, values)
+            paid = [(coins[i], counts[i]) for i in range(len(coins) - 1, -1, -1) if counts[i] > 0]
+            if len(paid) > MAX_COST_SLOTS:
+                names = " + ".join(f"{count} {coin.id}" for coin, count in paid)
+                problems.append(
+                    Problem(
+                        entry.source,
+                        f"{path}.price",
+                        f"{trade.price} is {names}: a trade has {MAX_COST_SLOTS} cost slots, so a price mixes at "
+                        f"most {MAX_COST_SLOTS} coin types",
+                    )
+                )
+            for coin, count in paid:
+                if count > coin.max_stack_size:
+                    problems.append(
+                        Problem(
+                            entry.source,
+                            f"{path}.price",
+                            f"{trade.price} needs {count} {coin.id}, more than a stack ({coin.max_stack_size})",
+                        )
+                    )
     return problems
 
 

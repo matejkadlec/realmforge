@@ -1,0 +1,13 @@
+{
+  "wants": {
+    "id": "realmforge:copper_coin",
+    "count": 40
+  },
+  "gives": {
+    "id": "minecraft:warped_nylium",
+    "count": 8
+  },
+  "max_uses": 12,
+  "reputation_discount": 0,
+  "xp": 0
+}

@@ -20,6 +20,28 @@ public final class GeneratedBlocks {
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(Realmforge.MOD_ID);
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(Realmforge.MOD_ID);
 
+    /** {@code realmforge:ancient_casting} from {@code content/blocks/ancient_casting.yaml}. */
+    public static final DeferredBlock<Block> ANCIENT_CASTING =
+            BLOCKS.registerSimpleBlock("ancient_casting", properties -> properties
+                    .mapColor(MapColor.COLOR_BLACK)
+                    .strength(5.0F, 1200.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops());
+
+    /** The block item of {@link #ANCIENT_CASTING}. */
+    public static final DeferredItem<BlockItem> ANCIENT_CASTING_ITEM = ITEMS.registerSimpleBlockItem(ANCIENT_CASTING);
+
+    /** {@code realmforge:ancient_workbench} from {@code content/blocks/ancient_workbench.yaml}. */
+    public static final DeferredBlock<Block> ANCIENT_WORKBENCH =
+            BLOCKS.registerSimpleBlock("ancient_workbench", properties -> properties
+                    .mapColor(MapColor.COLOR_BLACK)
+                    .strength(5.0F, 1200.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops());
+
+    /** The block item of {@link #ANCIENT_WORKBENCH}. */
+    public static final DeferredItem<BlockItem> ANCIENT_WORKBENCH_ITEM = ITEMS.registerSimpleBlockItem(ANCIENT_WORKBENCH);
+
     /** {@code realmforge:andesite_bricks} from {@code content/blocks/andesite_bricks.yaml}. */
     public static final DeferredBlock<Block> ANDESITE_BRICKS =
             BLOCKS.registerSimpleBlock("andesite_bricks", properties -> properties
@@ -200,6 +222,8 @@ public final class GeneratedBlocks {
                 event.accept(VAULTSTONE_BRICKS_ITEM);
             }
             case "minecraft:functional_blocks" -> {
+                event.accept(ANCIENT_CASTING_ITEM);
+                event.accept(ANCIENT_WORKBENCH_ITEM);
                 event.accept(DUNGEON_PORTAL_ITEM);
                 event.accept(REALMFORGE_BRICKS_ITEM);
                 event.accept(REALMFORGE_SEALSTONE_ITEM);

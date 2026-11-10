@@ -1,0 +1,12 @@
+{
+  "wants": {
+    "id": "realmforge:silver_coin",
+    "count": 75
+  },
+  "gives": {
+    "id": "minecraft:wither_skeleton_skull"
+  },
+  "max_uses": 12,
+  "reputation_discount": 0,
+  "xp": 0
+}

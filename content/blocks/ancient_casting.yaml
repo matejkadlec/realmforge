@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=../../tools/schemas/blocks.schema.json
+# Ancient Casting (RLM-241; Matěj, 2026-10-16): the Ancient Builder's workstation, a cube with obsidian edges and
+# glass in the middle, with lava behind the glass. A jobless villager near one becomes an Ancient Builder
+# (content/merchants/ancient_builder.yaml). Four obsidian in the corners, four glass on the sides and a lava bucket in
+# the middle make one, and the bucket comes back as vanilla's buckets do. It does nothing else. The generated
+# placeholder texture until A1's art; hardness and tool are the agent's numbers (RLM-241's deferred playtest).
+id: ancient_casting
+name:
+  en_us: Ancient Casting
+hardness: 5
+blast_resistance: 1200
+tool: pickaxe
+requires_tool: true
+sound: stone
+map_color: color_black
+creative_tabs:
+  - minecraft:functional_blocks
+recipe:
+  pattern:
+    - OGO
+    - GLG
+    - OGO
+  key:
+    O: minecraft:obsidian
+    G: minecraft:glass
+    L: minecraft:lava_bucket

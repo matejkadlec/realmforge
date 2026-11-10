@@ -101,6 +101,7 @@ public final class QaGameTests {
             InstanceRulesGameTests.class,
             LevelingGameTests.class,
             MagicProtectionGameTests.class,
+            MerchantGameTests.class,
             MobLevelGameTests.class,
             NetheriteUpgradeGameTests.class,
             NpcCastGameTests.class,

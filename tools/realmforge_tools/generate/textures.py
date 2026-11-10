@@ -89,6 +89,31 @@ def placeholder_portal_texture(seed: str) -> bytes:
     return encode_rgba(SIZE, SIZE, pixels)
 
 
+VILLAGER_TEXTURE_SIZE = 64
+# Where vanilla's villager model reads its jacket, the long robe over the body (VillagerModel: texOffs(0, 38), a box
+# of 8 x 20 x 6): a strip of the four sides, 28 wide and 20 tall, under the 6 rows of its top and bottom faces.
+VILLAGER_JACKET = (0, 44, 28, 64)
+
+
+def placeholder_profession_texture(seed: str) -> bytes:
+    """A 64x64 villager profession layer until real art exists: a checkered robe on the jacket's four sides, coloured
+    by a hash of ``seed`` (the profession's id), and nothing else, so the villager under it shows through everywhere
+    else. Checkered like ``placeholder_texture``, so it reads as a placeholder and not as a broken texture."""
+    hue = hashlib.sha256(seed.encode("utf-8")).digest()[0] / 256
+    light, dark, hem = _rgb(hue, 0.45, 0.80), _rgb(hue, 0.55, 0.55), _rgb(hue, 0.70, 0.30)
+    left, top, right, bottom = VILLAGER_JACKET
+    pixels: list[Rgba] = []
+    for y in range(VILLAGER_TEXTURE_SIZE):
+        for x in range(VILLAGER_TEXTURE_SIZE):
+            if not (left <= x < right and top <= y < bottom):
+                pixels.append((0, 0, 0, 0))
+            elif y in (top, bottom - 1):
+                pixels.append(hem)
+            else:
+                pixels.append(light if (x // 2 + y // 2) % 2 == 0 else dark)
+    return encode_rgba(VILLAGER_TEXTURE_SIZE, VILLAGER_TEXTURE_SIZE, pixels)
+
+
 EFFECT_ICON_SIZE = 18
 
 

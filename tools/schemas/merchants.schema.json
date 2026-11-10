@@ -1,0 +1,155 @@
+{
+  "$defs": {
+    "LocalizedText": {
+      "additionalProperties": false,
+      "description": "A player-facing text, keyed by locale. Realmforge ships English only, so en_us is the one locale.",
+      "properties": {
+        "en_us": {
+          "description": "English (US). Required.",
+          "minLength": 1,
+          "title": "En Us",
+          "type": "string"
+        }
+      },
+      "required": [
+        "en_us"
+      ],
+      "title": "LocalizedText",
+      "type": "object"
+    },
+    "MerchantTradeDef": {
+      "additionalProperties": false,
+      "description": "One trade of a merchant: what it gives for a price in coins, or for the items it wants.",
+      "properties": {
+        "gives": {
+          "$ref": "#/$defs/TradeStackDef",
+          "description": "What the player gets."
+        },
+        "max_uses": {
+          "default": 12,
+          "description": "How often it can be bought before the merchant restocks at its workstation (vanilla's max_uses).",
+          "maximum": 9999,
+          "minimum": 1,
+          "title": "Max Uses",
+          "type": "integer"
+        },
+        "price": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "What it costs, in the smallest coin (copper): 250 is 2 Silver Coins and 50 Copper Coins. Paid in the largest coins, which must be at most two coin types and at most 99 of each. Either price or wants.",
+          "title": "Price"
+        },
+        "wants": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/TradeStackDef"
+              },
+              "maxItems": 2,
+              "minItems": 1,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Instead of a price: the one or two items it takes, for a trade that is not paid in coins (a merchant that buys). Either price or wants.",
+          "title": "Wants"
+        }
+      },
+      "required": [
+        "gives"
+      ],
+      "title": "MerchantTradeDef",
+      "type": "object"
+    },
+    "TradeStackDef": {
+      "additionalProperties": false,
+      "description": "An item and how many of it: what a trade gives, or one of the costs it wants.",
+      "properties": {
+        "count": {
+          "default": 1,
+          "description": "How many, at most one stack of the item.",
+          "maximum": 99,
+          "minimum": 1,
+          "title": "Count",
+          "type": "integer"
+        },
+        "item": {
+          "description": "The item, e.g. minecraft:netherrack. Validated against the ID universe.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Item",
+          "type": "string"
+        }
+      },
+      "required": [
+        "item"
+      ],
+      "title": "TradeStackDef",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A villager profession of ours with a workstation and a fixed list of trades at fixed prices.",
+  "properties": {
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "name": {
+      "$ref": "#/$defs/LocalizedText",
+      "description": "The profession's name, shown over the trades: Ancient Builder."
+    },
+    "trades": {
+      "description": "Its trades, in the order the trade screen lists them. All are offered at once: no levels.",
+      "items": {
+        "$ref": "#/$defs/MerchantTradeDef"
+      },
+      "minItems": 1,
+      "title": "Trades",
+      "type": "array"
+    },
+    "work_sound": {
+      "anyOf": [
+        {
+          "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "The sound of the villager working at its workstation, a sound event; none by default.",
+      "title": "Work Sound"
+    },
+    "workstation": {
+      "description": "The block of ours (content/blocks/) that is its job site: a jobless villager near one takes the profession, as with vanilla's workstations.",
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+      "title": "Workstation",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "workstation",
+    "trades"
+  ],
+  "title": "MerchantDef",
+  "type": "object"
+}
