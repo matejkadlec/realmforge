@@ -61,7 +61,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0047](0047-the-cast-slow-halves-the-casters-speed.md) | The cast slow halves the caster's speed | Accepted (amends 0039), amended by [0057](0057-a-cast-that-slows-its-caster-stops-its-sprint.md) (the cast stops the sprint) |
 | [0048](0048-better-key-binds-our-own-client-mod-independent-of-realmforge.md) | Better Key Binds: our own client mod, independent of Realmforge | Accepted (amends 0008, 0011 and 0013) |
 | [0049](0049-player-hits-bypass-the-hurt-cooldown-in-our-pipeline.md) | Player hits bypass the hurt cooldown in our damage pipeline, not through Iron's RPG Tweaks | Accepted (amends 0044), amended by [0051](0051-player-melee-passes-the-hurt-cooldown-only-at-full-strength.md) (melee only at full attack strength) |
-| [0050](0050-set-pieces-hand-built-nbt-placed-at-dungeon-generation.md) | Set pieces: hand-built NBT, placed at dungeon generation | Accepted (amends 0005 and 0014) |
+| [0050](0050-set-pieces-hand-built-nbt-placed-at-dungeon-generation.md) | Set pieces: hand-built NBT, placed at dungeon generation | Accepted (amends 0005 and 0014), decision 1 (variants as a processor list) amended by [0077](0077-a-set-pieces-variants-are-data-drawn-with-the-layout.md) |
 | [0051](0051-player-melee-passes-the-hurt-cooldown-only-at-full-strength.md) | A player's melee hit passes the hurt cooldown only at full attack strength | Accepted (amends 0049) |
 | [0052](0052-spells-aim-with-the-crosshair.md) | Spells aim with the crosshair: bolts fly where it points, ground spells clamp to their range | Accepted, amended by [0055](0055-aim-assistance-for-a-players-enemy-spells.md) (aim assistance) |
 | [0053](0053-target-dummies-in-the-pack-worldedit-for-building-and-no-ftb-teams-parties.md) | Target dummies in the pack, WorldEdit for building only, and no FTB Teams parties | Accepted (amends 0013 and 0044) |
@@ -88,6 +88,7 @@ Background: [vision](../vision.md) (the owner's goals) and [research notes](../r
 | [0074](0074-an-agent-picks-the-art-of-a-batch-whose-review-matej-deferred.md) | An agent picks the art of a batch whose review Matěj deferred (the marathon runs of 2026-11-10); the picks stay provisional until his gallery review, which the batch's deferred ticket owes | Accepted (amends 0023 and 0007) |
 | [0075](0075-spell-models-are-drawn-cube-by-cube-and-fire-waits-for-dynamic-lights.md) | Spell models stay GeckoLib models but are drawn cube by cube by our own renderer, so a forming model grows and fades; fire is drawn at full brightness and lights its surroundings once the pack has dynamic lights (M4) | Accepted (amends 0073) |
 | [0076](0076-a-realm-is-entered-from-its-entry-level-on.md) | A realm is entered from its entry level on, beside its unlock; the refusal says which of the two the player lacks | Accepted (amends 0032) |
+| [0077](0077-a-set-pieces-variants-are-data-drawn-with-the-layout.md) | A set piece's variants (chance blocks, swaps) are data in the dungeon type entry, drawn from the layout's seed when a run is planned, once per spot pattern; no vanilla rule processor, which draws from the block's position alone | Accepted (amends 0050) |
 
 ## Open questions (not decided)
 

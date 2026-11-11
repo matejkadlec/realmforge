@@ -44,6 +44,13 @@ Loading's red wool is the rock around a room). Our dungeons place the templates 
 those processors, so the rules map each marker to what the processor always, or nearly always, makes of it; random
 decay (mossy or cracked variants) is left to our themes.
 
+**Containers.** A source's own loot tables are dropped on import, and neither the imported chests and barrels nor
+the barrels the dressing adds carry a loot table in their templates. The dungeon gives each one its type's container
+loot table for the room's role and makes it a loot container, whose contents every player gets for themselves, when
+it builds the room (RLM-290, [architecture 15.5](../../docs/architecture.md#155-instances),
+[container loot](../../docs/design/container-loot.md)); `rf validate` refuses a dungeon type that would leave one
+empty. A rules file that maps a loot table on purpose (`loot_tables`) keeps it: such a container rolls its own.
+
 Each license was checked at the version imported (2026-10-14); the `NOTICE` says where it is stated (for Dungeon Now
 Loading and Mo' Structures, which keep no `NOTICE` since ADR 0067, the table above is the record), and where
 sources disagreed (Dungeon Now Loading: CC0 in the jar, MIT on Modrinth, repository gone) the import follows the

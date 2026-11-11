@@ -60,9 +60,14 @@ Built by RLM-289 from `content/container_loot/` (`normal.yaml`, `treasure.yaml`)
    Checked when Lootr went in (RLM-288): Lootr also takes over a vanilla container with a loot table by itself, but
    only once the 25 chunks around it are loaded, and a player who opens it earlier gets vanilla's one shared roll,
    so the builder does not rely on it ([architecture 15.5](../architecture.md#155-instances)).
-4. **Where the containers come from:** W6's chest markers; the imported rooms' 100 chests and their barrels, which
-   the import turns into loot spots of the normal table (RLM-290); the import dressing's barrels; set-piece
-   containers ([set-piece design](set-pieces.md#gameplay-rules)).
+4. **Where the containers come from:** W6's chest markers; the imported rooms' chests and barrels and the import
+   dressing's barrels (42 chests and 44 barrels in the test dungeon's pool today, before the chance tables); the
+   generated corridors' lone barrel (RLM-410); set-piece containers
+   ([set-piece design](set-pieces.md#gameplay-rules)). Since RLM-290 a dungeon type names the table of its rooms'
+   containers by role (`container_loot` in `content/dungeons/<id>.yaml`: the treasure table for the treasure
+   rooms, the normal one as the default, set pieces included), and the builder makes every chest, trapped chest and
+   barrel it places a loot container with that table. The templates themselves carry no table, so another dungeon
+   type can give the same rooms other loot, and validation refuses a type that would leave a container empty.
 5. **Progression items** (keys, chain items) never depend on a container roll: they drop at 100 % (LE-1).
 
 ## The tables
@@ -112,8 +117,8 @@ Built by RLM-289 from `content/container_loot/` (`normal.yaml`, `treasure.yaml`)
   above Undervault's band of Common to Uncommon. RLM-567 gives our loot its bands; for containers that needs a
   table per realm (or the band on the dungeon type) and a list of rarities on `realmforge:tier_affix_item`.
 - **Trying it:** `/qa loot chest normal` and `/qa loot barrel treasure` place a loot container in front of the
-  player, as the dungeon builder does; `/apoth set_world_tier @s frontier` sets the world tier. The rooms'
-  containers get the tables with RLM-290 and W6.
+  player, as the dungeon builder does; `/apoth set_world_tier @s frontier` sets the world tier. In a run, every
+  chest and barrel of the rooms carries its table since RLM-290; W6's chest markers follow.
 
 ## How many containers a room keeps
 

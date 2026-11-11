@@ -334,7 +334,7 @@ How features cooperate without breaking the direction:
 | `realmforge:realm` | `content/realms/` | a realm (owned by `world`, W2a): its dimension, name, the name as a sentence refers to it (`in_sentence`: "the Undervault", RLM-337, ADR 0045, which holds the name), subtitle, plain description ("stone realm"), locked hint, level band, flavour line and the icon of its unlock advancement `realmforge:realm/<id>`, and the realm portal's fields (W2b): its signet, colour, particle, sound pitch and arrival (where a trip may build a portal). Overworld has an entry too, which is no realm: no unlock, signet, description, hint or flavour, its colour the return portals', its in-sentence form "the Overworld". Validation allows one entry per dimension and one realm per signet; `world/realm/Realms` indexes them by dimension and by signet, and `Realms#of` never returns Overworld's | yes | M2 |
 | `realmforge:boss` | `content/bosses/` | a boss's fight (`boss/Boss`, W5a): the entity type of its body (a mob of archetype `boss`, whose attributes, loot and model come from `content/mobs/`), fixed level, arena, boss bar colour, phase change, phases (name, trigger, `on_enter` spells, abilities); [14.3](#143-bosses) | no | M2 |
 | `realmforge:netherite_upgrade` | `content/netherite_upgrades/` | a netherite upgrade (owned by `item`, RLM-566, [13](#13-items-gear-and-loot)): the line an upgraded piece's tooltip shows and its colour, and the bonus per archetype of the piece (melee, caster); the pipeline also writes its item and template, which its smithing recipe uses | yes | M1 |
-| `realmforge:dungeon_type` | `content/dungeons/` | rule set: the room pool it is built from, resolved into its rooms (template, size, role, weight, connectors), and its layout rules (W4a); its key and how long a portal to it stays open (W4d); its base level (RLM-459, [14.1](#141-mob-levels)); each room's set-piece spots, the pieces that fill them and the density per role (RLM-280, [15.4](#154-rooms)); theme, encounters and loot join with the tasks that use them | no | M2 |
+| `realmforge:dungeon_type` | `content/dungeons/` | rule set: the room pool it is built from, resolved into its rooms (template, size, role, weight, connectors), and its layout rules (W4a); its key and how long a portal to it stays open (W4d); its base level (RLM-459, [14.1](#141-mob-levels)); each room's container loot table (RLM-290) and set-piece spots, the pieces that fill them and the density per role (RLM-280, RLM-282, [15.4](#154-rooms)); theme and encounters join with the tasks that use them | no | M2 |
 | `realmforge:affix` | `content/affixes/` | rollable modifier: item categories (tags), tiers by rarity and level | yes | M1 |
 | `realmforge:gem` | `content/gems/` | socketable gem and its bonuses | yes | M1 |
 
@@ -400,13 +400,13 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | `races/`, `classes/`, `spells/`, `spell_looks/`, `spell_models/`, `spell_trajectories/`, `spell_schools/`, `talents/`, `stat_rules/`, `curves/`, `chapters/`, `dimensions/`, `realms/`, `bosses/`, `dungeons/`, `netherite_upgrades/` | `data/realmforge/realmforge/<registry>/<id>.json`, lang, `ResourceKey` constants where needed, QA expectations | datapack registries |
 | `spell_looks/` (also), `particles/` (also) | a look's placeholder material `assets/realmforge/textures/spell/material/<look>.png` (16 x 16 noise in the look's colours, until its art exists); a particle's sprite set `assets/realmforge/particles/<id>.json` and its frames `textures/particle/<id>_<n>.png` (`generate/spell_visuals.py`) | textures; the particle atlas |
 | `spell_schools/` (also) | `data/realmforge/damage_type/<school>.json` (death messages `death.attack.realmforge.<school>`), the tag entries in `#minecraft:bypasses_cooldown` and, for magic schools, `#minecraft:bypasses_armor` and `#realmforge:is_magic`, for physical ones `#neoforge:is_physical` ([9.1](#91-damage-pipeline)); the school's power and resistance are stats in `content/stats/` that it names | vanilla damage types, tags |
-| `dungeons/` (also) | the entry carries its pool's rooms resolved (template, size, role, weight, and the connectors read from the templates' jigsaw blocks; `generate/dungeons.py`), so the planner needs no template, and each room's set-piece spots with the pieces that may fill them ([15.4](#154-rooms)); a biome per type, `worldgen/biome/dungeon_<id>.json`, named like it (`generate/instance_biomes.py`, [15.5](#155-instances)) | the planner ([15.3](#153-generation-pure-first-then-minecraft)); the builder's set pieces (RLM-282) |
+| `dungeons/` (also) | the entry carries its pool's rooms resolved (template, size, role, weight, and the connectors read from the templates' jigsaw blocks; `generate/dungeons.py`), so the planner needs no template, each room's container loot table and its set-piece spots, and the type's set pieces ([15.4](#154-rooms)); a biome per type, `worldgen/biome/dungeon_<id>.json`, named like it (`generate/instance_biomes.py`, [15.5](#155-instances)) | the planner ([15.3](#153-generation-pure-first-then-minecraft)); the builder's loot containers and set pieces |
 | `loot/`, tags; the `recipe` of an item or block (exists, W4d); an item's `dropped_by` (RLM-172) | `data/realmforge/loot_table/`, `recipe/<id>.json` (vanilla's `crafting_shaped`, `crafting_shapeless` or `smithing_transform`, with item or tag ingredients, the result the entry itself), `tags/`; per `dropped_by` mob a loot table `loot_table/item_drops/<item>/<ns>/<entity>.json` and a NeoForge `neoforge:add_table` loot modifier `loot_modifiers/item_drops/<item>/<ns>/<entity>.json` that adds it to the mob's own table ([13](#13-items-gear-and-loot)) | reloadable vanilla data; global loot modifiers |
 | `chapters/`, `realms/`, `quests/` | `data/realmforge/advancement/` (a chapter's `chapter/<id>`, a realm's unlock `realm/<id>`, a quest task of ours `quest/<quest>/<key>`); `pack/config/ftbquests/quests/` (FTB Quests' JSON5, stable ids per ADR 0006; exists, Q1-1, [16](#16-progression-and-quests)) | advancements; the FTB Quests book |
 | `worldgen/<registry>/<id>.json` (JSON, [ADR 0012](decisions/0012-procedural-dungeons-and-dimensions.md)) | validated and copied unchanged to `data/realmforge/dimension/`, `dimension_type/`, `worldgen/<registry>/` | vanilla worldgen registries |
 | `rooms/` (NBT plus a YAML sidecar; [15.4](#154-rooms)) | validated and copied, normalized, to `data/realmforge/structure/rooms/` | structure templates |
 | `room_specs/`, `room_themes/` (exist, A4d; [15.4](#154-rooms)) | each kept seed of a spec built by the room generator into `data/realmforge/structure/rooms/generated/<spec>/seed_<n>.nbt`; themes name the blocks it builds with | structure templates |
-| `set_pieces/` (NBT plus a YAML fit rule; exist, RLM-280; [15.4](#154-rooms)) | the template, normalized, at `data/realmforge/structure/set_pieces/<id>.nbt`; its variants as the processor list `data/realmforge/worldgen/processor_list/set_pieces/<id>.json`; its spots in the dungeon type entries; QA expectations | structure templates, processor lists |
+| `set_pieces/` (NBT plus a YAML fit rule; exist, RLM-280; [15.4](#154-rooms)) | the template, normalized, at `data/realmforge/structure/set_pieces/<id>.nbt`; its spots, and the blocks of it that vary, in the dungeon type entries that place it ([ADR 0077](decisions/0077-a-set-pieces-variants-are-data-drawn-with-the-layout.md)); QA expectations | structure templates; the planner's set-piece draw |
 | item YAML with a weapon preset | `data/realmforge/weapon_attributes/<item>.json` (Better Combat format) | read by Better Combat |
 | mob YAML | Xaero's Minimap icon files (*verify* format) | read by Xaero's Minimap |
 | `texts/` (exists) | lang keys `<group>.realmforge.<name>`, `GeneratedTexts` constants | translations |
@@ -3395,7 +3395,8 @@ Specialist (Ancient Workbench), which sell the Nether's and the End's materials.
 A dungeon type (`content/dungeons/<id>.yaml`, the registry `realmforge:dungeon_type`, W4a) names the room pool it is
 built from, the rules of its layout ([15.3](#153-generation-pure-first-then-minecraft)), since W4d its key and how
 long a portal to it stays open ([15.5](#155-instances)), since RLM-459 its base level
-([14.1](#141-mob-levels)), and since RLM-365 the chance tables that decide how many chests and barrels its rooms keep:
+([14.1](#141-mob-levels)), since RLM-365 the chance tables that decide how many chests and barrels its rooms keep,
+since RLM-290 what those hold, and since RLM-282 the set pieces its runs place:
 
 ```yaml
 # content/dungeons/test_dungeon.yaml (exists)
@@ -3422,6 +3423,15 @@ containers:                           # how many chests and barrels a room keeps
   default:
     chests: {1: 60, 2: 30, 3: 10}
     barrels: {0: 20, 1: 40, 2: 30, 3: 10}
+container_loot:                       # what they hold: a container loot table by role (RLM-290)
+  default: realmforge:normal          #   every role without its own, and the containers of set pieces
+  treasure: realmforge:treasure
+set_pieces:                           # the set pieces its runs place (RLM-282); optional, none without it
+  tags: [test]                        #   every piece with one of these tags
+  density:                            #   patterns a room fills, by role: the chance in percent of each count;
+    hallway: {0: 100}                 #   a role left out follows the default (none or one, each as likely;
+    stairs: {0: 100}                  #   a combat room one or two)
+    combat: {0: 80, 1: 20}
 open_minutes: 60                      # how long that portal stays open (W4d)
 level: 10                             # its base level, its boss's in the campaign; runs raise it to their party
 ```
@@ -3443,11 +3453,20 @@ with `walls` gets
 its wall last among the rooms: a template of three by
 three blocks of the wall's block, one deep, `rf gen` writes as `realmforge:dungeon_walls/<id>`, with one connector at
 the middle of its bottom row whose jigsaw turns into the same block, and the role `wall`, which only closes leftover
-doorways ([15.3](#153-generation-pure-first-then-minecraft)). Since RLM-280 a room also carries its set-piece spots ([15.4](#154-rooms)) as `set_piece_spots`, a list
-of patterns, each the pieces that may fill it and its spots (`pos`, the footprint's lowest corner at the height the
-piece stands on; `facing`, the way the piece's front faces; `mirror`), and the entry carries `set_pieces` (each
-piece's template, processor list, weight, tags and whether it may be mirrored) and `set_piece_density` (the
-`[min, max]` patterns a room of each role fills). The game ignores them until the builder places pieces (RLM-282). Validation checks that the pool holds an entrance, rooms to pass through (two connectors, a third when
+doorways ([15.3](#153-generation-pure-first-then-minecraft)). Every room carries its `container_loot` (RLM-290): the
+loot table its chests, trapped chests and barrels get when a run is built, `realmforge:containers/<id>` of the type's
+container loot table for the room's role, else its `default`; the type's own `container_loot` is left out of its
+entry. A type with `set_pieces` (RLM-280, RLM-282) gets its rooms' set-piece spots ([15.4](#154-rooms)) as
+`set_piece_spots`, for each room whose sidecar does not turn them off (`set_pieces: false`): a list of patterns, each
+the pieces of the type's tags that may fill it and its spots (`pos`, the footprint's lowest corner at the height the
+piece stands on; `facing`, the way the piece's front faces; `mirror`). The entry's `set_pieces` then holds `pieces`
+(each piece's template, size, weight, whether it may be mirrored, and `variants`, the blocks of it that vary: where,
+at what chance, and what they become, [ADR 0077](decisions/0077-a-set-pieces-variants-are-data-drawn-with-the-layout.md)),
+`density` (how many patterns a room of each role fills, as weights by count: the type's chance table, else the
+default) and `container_loot` (the type's default, which the pieces' containers get). Validation checks that a type
+whose rooms or set pieces hold a chest or a barrel names a container loot table for them, so none stands empty
+([ADR 0041](decisions/0041-dungeon-containers-hold-loot-through-lootr.md)), that its tables exist and that its tags
+are tags some piece has. It also checks that the pool holds an entrance, rooms to pass through (two connectors, a third when
 the rules always want a branch), a room for the ending and a dead end, that every room in it has exactly one role tag,
 and that every connector of every room meets some connector of the pool, that its key is an item and no other type's
 key. With a `pacing`, the rooms to pass through and the junctions that take branches must be corridors (`hallway`,
@@ -3465,7 +3484,7 @@ placement: instance                  # world_structure later (M2, 15.6)
 theme: realmforge:crypt              # block palette: a processor list (see below)
 ending: {type: realmforge:boss_lair, boss: realmforge:hollow_warden}   # or realmforge:treasury, ... (W5, W6)
 encounters: {budget_per_room: [2, 4], mobs: realmforge:crypt}           # W6
-loot: {chests: [2, 4], table: realmforge:dungeon/sunken_crypt}          # W6
+loot: {chests: [2, 4]}                                                 # W6: chest markers; their table is container_loot
 ```
 
 The ending is a rule of the type, so "not every dungeon ends with a boss" is just another ending type.
@@ -3505,10 +3524,12 @@ half and shape, and a slab loses its type. Two ways keep them:
 
 1. **Plan** (pure Java): seed + rules → room graph (start, main path, branches, what each room is for, ending).
 2. **Layout** (pure Java): graph → room boxes placed so their connectors meet; backtracking, no overlaps.
-3. **Build** (Minecraft): place the NBT templates (`StructureTemplate#placeInWorld`) with the theme's processors;
-   read data markers (structure blocks in data mode, as vanilla does) for spawns, chests and traps; spread the work
-   over ticks within a time budget.
-4. **Populate:** encounters and loot from the budgets.
+3. **Build** (Minecraft): place the NBT templates (`StructureTemplate#placeInWorld`) with the theme's processors,
+   each room with the set pieces the plan drew for it and its chests and barrels as loot containers; read data
+   markers (structure blocks in data mode, as vanilla does) for spawns, chests and traps; spread the work over ticks
+   within a time budget.
+4. **Populate:** encounters from the budgets. Loot needs no step of its own: a container rolls its loot table for
+   each player who opens it ([13](#13-items-gear-and-loot)).
 
 Steps 1 and 2 exist since W4a (`dungeon/plan/`; `DungeonType#plan(seed)` → `DungeonPlan`):
 
@@ -3638,6 +3659,12 @@ keeps each one's kind, room and position relative to its origin. Placing a room 
 (`BlockIgnoreProcessor.STRUCTURE_BLOCK`), so none stands in the world. No content room holds a marker yet (none of the
 imported sources had any); the spike test rooms hold an entrance, a mob and an exit marker.
 
+**What the plan hands the builder** (`DungeonPlan#toInstanceLayout`): besides each room's template, offset and turn,
+everything a run draws, each kind from a stream of its own off the layout's seed, in room order, so a seed always
+gives the same dungeon on any plot: the containers a room drops (RLM-365, [15.5](#155-instances)), the side it opens
+(RLM-412), and its set pieces (RLM-282, [15.4](#154-rooms)). The layout is saved with its plot, so a build that
+resumes after a restart places what it had drawn.
+
 ### 15.4 Rooms
 
 Rooms are generated or imported; nobody has to build one by hand
@@ -3715,7 +3742,8 @@ Rooms are generated or imported; nobody has to build one by hand
   is named `realmforge:door` (sides) or `realmforge:shaft` (up, down) with the pool `minecraft:empty`, marker blocks
   the source's processors replace at generation (red wool for rock, stained glass for legs) become what those
   processors make of them, since our dungeons place templates without
-  them, a source's own loot tables are dropped (the dungeon fills its chests, W4), only decorative entities stay,
+  them, a source's own loot tables are dropped (the dungeon gives every chest and barrel its own table when it
+  builds the room, RLM-290, [15.5](#155-instances)), only decorative entities stay,
   and the sidecar gets draft slot tags from its connectors and its name
   ([content/README](../content/README.md)). Each source has its own folder, `content/rooms/third_party/<source>/`,
   with its `LICENSE` and a `NOTICE`, except Dungeon Now Loading and Mo' Structures, which carry none
@@ -3750,8 +3778,9 @@ Rooms are generated or imported; nobody has to build one by hand
   `variants` (`mirror`, `chance`, `swaps`). The template is built as the mask shows it and holds the piece's cells
   only; validation checks its size, cells, ids and that it holds no connector, marker, spawner, redstone, fluid,
   locked-looking door or container loot table. `rf gen` writes it normalized as `realmforge:set_pieces/<id>` and its
-  variants as a processor list of vanilla `rule` processors (a chance block becomes air, a swap is one rule per state
-  of the block in the template). **The matcher** (`rooms/set_pieces.py`) finds, for every pooled room, the spots of
+  variants as data into the dungeon type entries that place it (each block that varies: a chance block becomes air,
+  a swap its state; [ADR 0077](decisions/0077-a-set-pieces-variants-are-data-drawn-with-the-layout.md)).
+  **The matcher** (`rooms/set_pieces.py`) finds, for every pooled room, the spots of
   the pieces that reach its role: the mask turned four ways and mirrored (`StructureTemplate#transform`), on a floor
   block (no barrier), with air up to the piece's height, wall behind and beside where the mask says (a generated
   room's wall by its theme's roles, an imported room's any full block, never a barrier), clearance a player stands
@@ -3761,9 +3790,9 @@ Rooms are generated or imported; nobody has to build one by hand
   solid up to its height and lights nothing). Spots come in patterns (ADR 0036): four that the room's mirrors map
   onto each other, a pair (one mirror or a half turn) or one centred on a mirror, bigger fits and patterns first,
   never overlapping; a mirrored spot of a mask that mirroring changes takes only pieces that may be mirrored. The
-  dungeon type entry carries them ([15.2](#152-dungeon-types)) with the default density (a hallway at most one
-  pattern, a combat room one or two; treasure, boss and entrance rooms only for pieces that name the role), and the
-  room cache keeps a room's patterns per set of fits. `uv run rf set-pieces report` counts the spots of the
+  entry of a dungeon type that places set pieces carries them ([15.2](#152-dungeon-types)) with its density (by
+  default a hallway at most one pattern, a combat room one or two; treasure, boss and entrance rooms only for pieces
+  that name the role), and the room cache keeps a room's patterns per set of fits. `uv run rf set-pieces report` counts the spots of the
   workshop jig's masks in every room, as the design's mask report did (`--game` adds the light check and the paths);
   the room gallery outlines each pattern and renders the room with a piece in each. **The workshop:**
   `/qa setpiece jig <mask> [<wall block>]` (QA mod, `qa/setpiece/SetPieceJig`) builds the frame for one of the
@@ -3771,7 +3800,29 @@ Rooms are generated or imported; nobody has to build one by hand
   `realmforge_qa:set_piece/<mask>_<token>` (a random token, so no two jigs share a save), and
   `uv run rf set-pieces import <save> --id <id>` (or `--from-world <world>`)
   brings the save into `content/set_pieces/` with a drafted fit rule ([tools/README](../tools/README.md#set-pieces)).
-  `ContentSetPieceGameTests` loads every piece and its processor list; `SetPieceJigGameTests` runs the jig.
+  `ContentSetPieceGameTests` loads every piece; `SetPieceJigGameTests` runs the jig.
+  **Placing them** (RLM-282, `dungeon/plan/SetPieces`, `dungeon/instance/PiecePlacement`): a dungeon type that names
+  `set_pieces` places the pieces of its tags. When a run is planned, each room draws how many of its patterns it
+  fills from the density of its role (a chance table like the containers'; by default a hallway none or one, a combat
+  room one or two), picks those patterns at random, and fills each with one piece on every spot, picked by weight
+  among the pieces that fit it, mirrored where the spot is and the piece allows it, or leaves the pattern empty. A
+  piece's variants are drawn once per pattern, so the pieces of a pattern look alike
+  ([ADR 0077](decisions/0077-a-set-pieces-variants-are-data-drawn-with-the-layout.md): the entry lists each block that
+  varies, and the draw becomes swaps of the placement). The spot's `pos` is the lowest corner of the piece's turned
+  and mirrored box in the room's template; vanilla places a template from its origin corner, mirrored and then turned
+  about it, so `SetPieces#place` moves the origin back by where that corner ends up and adds the room's own turn
+  (`StructureTemplate#transform` for both, the builder's math, checked in JUnit against every turn and mirror). The
+  builder places a room's pieces with the room, in each chunk slice the part of every piece that lies in it
+  (a piece stands inside its room's box, which `InstanceManager#open` checks, so cleanup clears it with the room),
+  with its entities, its swaps and its containers as loot containers of the type's default table; a piece keeps the
+  block shapes it was saved with, like a room. The theme's processors join with the themes (W6). A room whose sidecar
+  says `set_pieces: false` gets none: Stonevaults' `jail` holds exactly its one chest and one barrel (Matěj,
+  2026-10-25). The test dungeon places the test piece, a barrel that is a loot container, at a density far below the
+  default (none in corridors, a pattern in one combat room of five: about five pieces a run), since set-piece
+  containers come on top of the rooms' chance tables. `SetPiecesTest` (JUnit) checks the placement math, the draw
+  and the generated entry; `DungeonSetPieceGameTests` checks over seeds that patterns are filled as a whole and that
+  a seed repeats, and in a built dungeon that each piece stands as drawn with its back to a wall, its container a
+  loot container, and that no doorway loses a doorway it reached.
 - **Validation:** size limits (48 blocks per axis, a structure block's maximum), connectors on the room's boundary
   facing out, known markers, only blocks the themes can swap and only ids inside the ID universe (an imported
   room's own blocks are remapped, and a container's loot table must exist), and `LICENSE` and `NOTICE` next to
@@ -3908,7 +3959,18 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   (`BlockEntityTicker$Entry#getChunkLoadStatus`); until then a player who opens it gets vanilla's one roll for
   everybody, and a dungeon is built before anyone stands in it, so the builder does not wait for that. A container
   without a loot table stays vanilla's, and so does everything without Lootr (the lean dev client). `LootrGameTests`
-  checks all three; the tables themselves are RLM-289's, and the rooms' containers get them with RLM-290 and W6.
+  checks all three; the tables themselves are RLM-289's. **Every chest and barrel of a run is such a container**
+  (RLM-290): a room's entry names the loot table of its containers (its type's `container_loot` for its role,
+  [15.2](#152-dungeon-types)), the plan hands it on in the `RoomPlacement`, and `LootContainerProcessor`, a structure
+  processor that runs after the swaps, turns each chest, trapped chest and barrel being placed into Lootr's twin
+  (`LootContainers#perPlayer`) and writes the table into its data, which `StructureTemplate#placeInWorld` loads into
+  the block entity with a seed (Lootr's block entities read vanilla's `LootTable` key). It covers the imported rooms'
+  chests and barrels, the import dressing's barrels, the generated corridors' barrel and the containers of set
+  pieces, which get the type's default table; a container that names a table of its own keeps it. Validation
+  refuses a type whose rooms or pieces hold a container without a table, so none of a run stands empty.
+  `DungeonLootContainerGameTests` builds an imported room and opens its chest and its barrel as two players, and
+  checks that no container of a whole built layout stays vanilla's or names another table than its room's. W6's
+  chest markers place their chests the same way.
   **A room's openings** (RLM-412, [design](design/instance-block-rules.md#7-hidden-spawners))
   are drawn the same way from their own salt: `DungeonPlan#wayIn` names the connector each room is entered through
   (the one it hangs off the room before it by, the first link that reaches it from an earlier room), and

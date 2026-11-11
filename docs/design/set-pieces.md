@@ -7,7 +7,9 @@
 > ([ADR 0028](../decisions/0028-dungeon-rooms-generated-or-imported.md)); set pieces are their dressing, not rooms.
 > **Matěj approved this design on 2026-10-19** with the [decisions](#decisions) below. Implemented by RLM-280 (the
 > content type, the matcher and the spots, [ADR 0050](../decisions/0050-set-pieces-hand-built-nbt-placed-at-dungeon-generation.md),
-> [architecture 15.4](../architecture.md#154-rooms)) and RLM-281 (the jig and the import); RLM-282 places the pieces.
+> [architecture 15.4](../architecture.md#154-rooms)), RLM-281 (the jig and the import) and RLM-282 (the dungeon
+> places the pieces, 2026-11-11: [as built](#as-built), with
+> [ADR 0077](../decisions/0077-a-set-pieces-variants-are-data-drawn-with-the-layout.md) for the variants).
 
 ## At a glance
 
@@ -282,13 +284,39 @@ The jig is dev-only code in `qa-mod/`; the import is part of `rf`.
 - **Breaking:** pieces sit in the instance like the room, under its rules (Adventure mode and the guards,
   [architecture 15.5](../architecture.md#155-instances)), so nobody carries a piece home.
 
+## As built
+
+RLM-282 places the pieces (2026-11-11, [architecture 15.4](../architecture.md#154-rooms)). What differs from the text
+above, or was left to the ticket:
+
+- **A dungeon type asks for its pieces:** `set_pieces` in `content/dungeons/<id>.yaml` names the `tags` it uses and
+  may set a `density` per room role. A type without it places none.
+- **Density is a chance table** per role, like the containers' tables (RLM-365): the chance in percent of each count
+  of patterns a room fills. The defaults are decision 4's: none or one pattern in a hallway (each as likely), one or
+  two in a combat room.
+- **Variants are drawn from the run's seed,** not by vanilla's `rule` processor, which draws from a block's position
+  and would show the same skull on every run of a plot
+  ([ADR 0077](../decisions/0077-a-set-pieces-variants-are-data-drawn-with-the-layout.md)); and once per pattern, so
+  the two barrels of a mirrored pair both carry the skull or neither does. "Cheap variety" above still holds, only
+  the mechanism of points 3 and 4 changed.
+- **A room can refuse pieces:** `set_pieces: false` in its sidecar (Stonevaults' `jail`, which holds exactly one chest
+  and one barrel, Matěj, 2026-10-25).
+- **Theme swaps** wait for the themes' processor lists (W6); until then a piece is placed with the blocks it was
+  built with.
+- **The test dungeon** (Prisoner's Kingdom) places only the test piece, a barrel that is a loot container, so its
+  density is far below the default: none in corridors, which get their own lone barrel a quarter of the time
+  (RLM-410), and a pattern in one combat room of five, about five pieces a run. Set-piece containers come on top of
+  the rooms' chance tables ([container loot](container-loot.md#how-many-containers-a-room-keeps)); with Matěj's own
+  pieces (RLM-283) the density goes back up, as most pieces hold no container. These numbers are Claude's until his
+  playtest (RLM-282's, deferred on 2026-11-10).
+
 ## Follow-up tickets
 
 - **RLM-280** Set pieces: content type, fit rules and the matcher (`content/set_pieces/`, `rooms/set_pieces.py`,
   spots in the dungeon type entry, pytest, the mask report as an `rf` command, the gallery's spot outlines).
 - **RLM-281** Set pieces: the workshop jig command and `rf set-pieces import`.
-- **RLM-282** Set pieces: the dungeon builder places them (Java placement, variety processors, density per role,
-  GameTests).
+- **RLM-282** Set pieces: the dungeon builder places them (Java placement, variants from the run's seed, density per
+  role, GameTests). Done.
 - **RLM-283** Set pieces: Matěj builds the first pieces (ongoing; his task, a few a week).
 
 ## Decisions

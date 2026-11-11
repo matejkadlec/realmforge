@@ -118,7 +118,7 @@ source file, its format and its data version, leaves `pools` empty and drafts th
 `curved`, `t_junction`, `crossing`, plus `vertical` for one up or down), the role from a word in the room's path
 (`boss`, `treasure`, `entrance`, `stairs`, `hallway`), else `hallway` for a straight or curved piece at most 7 blocks
 wide (measured across the passage) and `combat` for the rest. A re-import keeps the sidecar's pools, tags, weight
-and room rules (`max_per_layout`, `near_start`, `explosion_breaks`, `entry`, `containers`, `openings`;
+and room rules (`max_per_layout`, `near_start`, `explosion_breaks`, `entry`, `containers`, `openings`, `set_pieces`;
 [content/README](../content/README.md)). A room
 is written only when it validates; otherwise the command lists the problems and writes nothing for that
 room, and so does a source file that cannot be read (some jars ship a corrupt template; exclude it). A file that the
@@ -290,7 +290,8 @@ Set pieces (RLM-280, RLM-281; [design](../docs/design/set-pieces.md),
 pieces the dungeon fits into rooms: `content/set_pieces/<id>.nbt` with a fit rule `<id>.yaml`
 ([content/README.md](../content/README.md)). `rooms/set_pieces.py` holds the mask, the matcher and its patterns
 ([architecture 15.4](../docs/architecture.md#154-rooms)); `rf gen` writes each pooled room's patterns into the dungeon
-type entry (`generate/dungeons.py`) and each piece's template and processor list (`generate/set_pieces.py`), and the
+type entry of a type that places set pieces (`generate/dungeons.py`), with each piece and the blocks of it that vary
+(`generate/set_pieces.py`, which also writes the piece's template), and the
 room cache keeps a room's patterns under a digest of the fits, the room's theme and paths.
 
 **`rf set-pieces report [MASK...]`** counts the spots of the workshop jig's masks (`NAMED_MASKS`: `wall_<w>x<d>`,
