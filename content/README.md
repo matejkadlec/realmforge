@@ -741,7 +741,8 @@ Rules:
   three locks are entered from their mechanism: `combination_lock` and `item_combination_lock` from the west,
   `pressure_plate_lock` from the north, the side of its pressure plates (its levers open the door from the south).
   Its `tiny_cap` keeps one to three chests by its own table (75, 20 and 5 %), the pillager `jail` always its one chest
-  and one barrel (Matěj, 2026-10-25), and the throne room all six of its chests, a sight behind bars (RLM-365). Its
+  and one barrel (Matěj, 2026-10-25), and the throne room all six of its chests, a sight behind bars (RLM-365). The
+  generated hallways carry `barrels: {0: 75, 1: 25}` for their one barrel (RLM-410, `room_specs/` below). Its
   `husk_temple` and egg room (`treasure/egg`) open one side of their spawner's casing, away from their way in
   (RLM-412).
   Its fights (`husk_temple`, `skeleton_trap`, `tight_maze`, `library`) are limited to three per layout,
@@ -814,13 +815,19 @@ Rules:
   [tools/README](../tools/README.md#rooms). A generated room must let a player walk between its doorways with three
   blocks of headroom and leave no cell dark where a mob could spawn, which validation checks. The hallway specs
   (`corridor_straight`, `corridor_niches`, `corridor_curve`, `junction_t`, `crossing`, `dead_end`) are in the
-  `realmforge:stone_vault` pool, the test dungeon's corridors between its fights (RLM-364).
+  `realmforge:stone_vault` pool, the test dungeon's corridors between its fights (RLM-364). Every room of a hallway
+  kind is dressed (RLM-410): a few cobwebs where a wall meets the ceiling and a few vines from the top of the walls,
+  clear of the doorways and of the middle line players walk, and one barrel against a wall, on its side half the
+  time, lid towards the room, never a chest. Its sidecar, which `rf gen` makes from the spec, carries
+  `containers: {barrels: {0: 75, 1: 25}}`, so a run keeps the barrel a quarter of the time. A hallway too small for
+  a barrel two blocks from its doorways is refused.
 - `room_themes/` names, for each neutral role the room generator builds with (`floor`, `floor_variant`,
   `floor_border`, `wall_base`, `wall_body`, `wall_body_cracked`, `wall_body_mossy`, `wall_cornice`, `ceiling`,
-  `pillar`, `stairs`, `slab`, `rubble`, `rubble_slab`, `wall_light`, `ceiling_light`), the block it is in this
+  `pillar`, `stairs`, `slab`, `rubble`, `rubble_slab`, `wall_light`, `ceiling_light`, and a hallway's dressing:
+  `ceiling_web`, `wall_growth`, `storage`), the block it is in this
   theme: a full solid block (vanilla's, or one of our own `simple` blocks such as `realmforge:vaultstone`), a stairs
-  block, a slab, a wall torch or a lantern as the role needs, each role its own block, so a theme swap (W4) can tell
-  them apart. `stone_vault` is the one theme so far.
+  block, a slab, a wall torch, a lantern, a cobweb, a vine or a barrel as the role needs, each role its own block, so
+  a theme swap (W4) can tell them apart. `stone_vault` is the one theme so far.
 - `dungeons/` holds the kinds of dungeons ([architecture 15.2](../docs/architecture.md#152-dungeon-types)): a `name` (a
   label), the room `pool` the type is built from, and the `layout` the planner follows, each range written `[min, max]`:
   `main_path` (rooms between the entrance and the ending, 1 to 96), `branches` (side branches off the main path's rooms,

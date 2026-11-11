@@ -1,7 +1,8 @@
 """The room generator (A4d, ADR 0028, architecture 15.4): a room spec, its theme and a seed -> a structure template.
 
 The same spec, theme and seed always give the same room. The seed picks the variations (floor pattern, wall
-patches, moulding, pillar layout, niche rhythm, rubble, lights, markers); the spec fixes everything else. Every
+patches, moulding, pillar layout, niche rhythm, rubble, lights, markers, a hallway's dressing); the spec fixes
+everything else. Every
 block is a role of the theme (``schema/room_spec.py``) apart from air, the connectors' jigsaws and the data markers,
 so a theme swap reaches every block the room is built of. The style rules:
 
@@ -23,11 +24,21 @@ so a theme swap reaches every block the room is built of. The style rules:
   blocks of the floor (ground mobs: never on a step or the balcony), spread evenly clear of the walls and the
   doorways; ``TREASURE_CHESTS`` ``chest`` markers in a treasure room, mirrored across the doorway's line where the
   niches allow, in the niches or against the walls (architecture 15.3).
+- **A hallway's dressing** (RLM-410, Matěj's playtest of 2026-10-24: the corridors were bare): a few webs where a
+  wall meets the ceiling, a few strands of growth hanging from the top of the walls, and one barrel on the floor
+  against a wall, which a run keeps a quarter of the time (``spec_containers``), never more and never a chest.
+  Half the barrels lie on their side, lid towards the room. The dressing keeps off the middle line of every path
+  (``path_middles``), ``DOORWAY_DISTANCE`` blocks from every doorway, and off the lights and markers and the cell
+  a wall light faces. A path's two outer columns run along the walls of a corridor three wide, so they may carry
+  it: a web or one block of growth only in the cell right under the ceiling, above a walking player's head, and the
+  barrel only where the room has no place for it off the paths.
 
-Markers and lights come last and draw the seed's last numbers, so a change to them leaves the rest of a kept room
-as it was.
+Markers and lights draw the seed's last numbers, so a change to them leaves the rest of a kept room as it was. The
+dressing is built after them from random streams of its own (the seed and the part's name), so it changes no
+block the room had before it, and a change to one part leaves the others where they were.
 
-A spec the generator cannot build (no place for a pillar, a balcony's stairs) raises ``RoomGeneratorError``.
+A spec the generator cannot build (no place for a pillar, a balcony's stairs, a hallway's barrel) raises
+``RoomGeneratorError``.
 """
 
 from __future__ import annotations
@@ -38,11 +49,13 @@ from dataclasses import dataclass
 
 from realmforge_tools.project import DATA_VERSION
 from realmforge_tools.rooms.check import STRUCTURE_BLOCK
+from realmforge_tools.rooms.containers import candidates as container_candidates
 from realmforge_tools.rooms.lights import NoLightPattern, plan_lights
 from realmforge_tools.rooms.slots import shape as connector_shape
 from realmforge_tools.rooms.structure import AIR, JIGSAW, BlockState, Pos, Structure, StructureBlock
-from realmforge_tools.rooms.walk import Cells, walkable
-from realmforge_tools.schema.room_spec import RoomSpecDef, RoomThemeDef
+from realmforge_tools.rooms.walk import Cells, walk_problems, walkable
+from realmforge_tools.schema.room import ContainerTables
+from realmforge_tools.schema.room_spec import FULL, THEME_ROLES, RoomSpecDef, RoomThemeDef
 
 # The folder below content/rooms/ (and the jar's structure/rooms/) that generated rooms take; content/rooms/ may not
 # have one of its own.
@@ -53,6 +66,20 @@ EMPTY_POOL = "minecraft:empty"
 MOB_SPACING = 3
 # The chest spots of a treasure room: a fixed number, so every treasure room gives the same.
 TREASURE_CHESTS = 5
+# A hallway's dressing (RLM-410): a web per ``WEB_SLOTS`` places where a wall meets the ceiling and a strand of
+# growth per ``GROWTH_SLOTS``, one of each at the least and ``DRESSING_MOST`` at the most. The import dressing gives
+# its plainest rooms a cobweb per 8 places and a strand per 6 (rooms/dress.py): the corridors get clearly less.
+WEB_SLOTS = 12
+GROWTH_SLOTS = 12
+DRESSING_MOST = 3
+# The blocks a strand of growth hangs down off the paths, at the most; on a path it is one block, under the ceiling.
+GROWTH_LENGTH = 2
+# How far the dressing keeps from each of a doorway's three cells, seen from above: a free block between them.
+DOORWAY_DISTANCE = 2
+# The share of the hallways' barrels that lie on their side, lid towards the room; the rest stand upright.
+BARREL_LYING = 0.5
+# How many of its barrels a run keeps in a hallway, in percent by count: its one barrel a quarter of the time.
+HALLWAY_BARRELS = {0: 75, 1: 25}
 # The roles a mob or a chest may stand on: full blocks of the floor.
 _FLOOR_ROLES = ("floor", "floor_variant", "floor_border")
 _DIRECTIONS = {"north": (0, -1), "south": (0, 1), "east": (1, 0), "west": (-1, 0)}
@@ -80,6 +107,13 @@ def spec_tags(spec: RoomSpecDef) -> list[str]:
     return [spec.role] if piece_shape is None else [spec.role, piece_shape]
 
 
+def spec_containers(spec: RoomSpecDef) -> ContainerTables | None:
+    """The container chance tables of a spec's rooms, their sidecar's ``containers`` (RLM-365): a hallway keeps its
+    one barrel a quarter of the time (``HALLWAY_BARRELS``, RLM-410), and its table wins over its dungeon type's;
+    every other room follows its dungeon type."""
+    return ContainerTables(barrels=dict(HALLWAY_BARRELS)) if spec.role == "hallway" else None
+
+
 def theme_blocks(theme: RoomThemeDef) -> frozenset[str]:
     """Every block a room of ``theme`` may hold: the theme's and the fixed ones."""
     return frozenset({*theme.blocks.model_dump().values(), AIR, JIGSAW, STRUCTURE_BLOCK})
@@ -91,7 +125,8 @@ def generate_room(spec: RoomSpecDef, theme: RoomThemeDef, seed: int) -> Structur
 
 def paths(spec: RoomSpecDef) -> set[tuple[int, int]]:
     """The columns of a spec's rooms that stay clear (x, z): a three-wide strip from each doorway to the middle, and
-    the middle. Pillars, rubble, niches and stairs keep off them, and so do set pieces (``rooms/set_pieces.py``)."""
+    the middle. Pillars, rubble, niches and stairs keep off them, and so do set pieces (``rooms/set_pieces.py``); a
+    hallway's dressing keeps off their middle line (``path_middles``)."""
     width, depth = spec.footprint
     cx, cz = (width - 1) // 2, (depth - 1) // 2
     found = {(x, z) for x in range(cx - 1, cx + 2) for z in range(cz - 1, cz + 2)}
@@ -104,6 +139,23 @@ def paths(spec: RoomSpecDef) -> set[tuple[int, int]]:
     return {(x, z) for x, z in found if 0 < x < width - 1 and 0 < z < depth - 1}
 
 
+def path_middles(spec: RoomSpecDef) -> set[tuple[int, int]]:
+    """The middle line of a spec's paths (x, z): the column from each doorway to the room's middle, where players
+    walk. A hallway's dressing never stands on it; the paths' outer columns, one to each side of it, run along the
+    walls of a corridor three wide."""
+    width, depth = spec.footprint
+    cx, cz = (width - 1) // 2, (depth - 1) // 2
+    found = {(cx, cz)}
+    for side in spec.connectors:
+        if side in ("north", "south"):
+            z = 0 if side == "north" else depth - 1
+            found |= {(cx, lz) for lz in range(min(z, cz), max(z, cz) + 1)}
+        else:
+            x = 0 if side == "west" else width - 1
+            found |= {(lx, cz) for lx in range(min(x, cx), max(x, cx) + 1)}
+    return found
+
+
 @dataclass(frozen=True)
 class _Door:
     side: str
@@ -111,10 +163,20 @@ class _Door:
     inward: tuple[int, int]
 
 
+@dataclass(frozen=True)
+class _Slot:
+    """A cell right under the ceiling beside a wall, where a hallway's web or growth may hang."""
+
+    pos: Pos
+    walls: tuple[str, ...]  # the sides its walls stand on
+    on_path: bool
+
+
 class _Builder:
     def __init__(self, spec: RoomSpecDef, theme: RoomThemeDef, seed: int):
         self.spec = spec
         self.theme = theme
+        self.seed = seed
         self.rng = random.Random(f"{spec.id}:{seed}")
         self.width, self.depth = spec.footprint
         self.height = spec.height
@@ -194,6 +256,8 @@ class _Builder:
         self._markers()
         self._lights()
         self._shape_stairs()
+        if self.spec.role == "hallway":
+            self._dress()
         return self._structure()
 
     def _shell(self) -> None:
@@ -662,6 +726,178 @@ class _Builder:
             if _axis(front_facing) != _axis(facing) and can_take(front_facing):
                 return "inner_left" if front_facing == _COUNTER_CLOCKWISE[facing] else "inner_right"
         return "straight"
+
+    # --- a hallway's dressing (RLM-410) -----------------------------------------------------------------------
+
+    def _dress(self) -> None:
+        """A hallway's webs, growth and barrel (the module's docstring), each from a random stream of its own."""
+        guarded = self._guarded()
+        slots = self._top_slots(guarded)
+        decorated: set[tuple[int, int]] = set()
+        for slot in self._hang(slots, WEB_SLOTS, self._stream("webs"), decorated):
+            self.put(slot.pos, self.state("ceiling_web"))
+        rng = self._stream("growth")
+        full = self._full_blocks()
+        for slot in self._hang(slots, GROWTH_SLOTS, rng, decorated):
+            side = rng.choice(slot.walls)
+            dx, dz = _DIRECTIONS[side]
+            x, top, z = slot.pos
+            for y in range(top, top - (1 if slot.on_path else rng.randint(1, GROWTH_LENGTH)), -1):
+                # A strand hangs on its wall all the way down and ends above the floor's own cell.
+                if (
+                    y <= self.floor
+                    or not self.air((x, y, z))
+                    or self.blocks[(x + dx, y, z + dz)].name not in full
+                ):
+                    break
+                faces = {face: "true" if face == side else "false" for face in _DIRECTIONS}
+                self.put((x, y, z), self.state("wall_growth", up="false", **faces))
+        self._barrel(guarded)
+
+    def _stream(self, part: str) -> random.Random:
+        """The random numbers of one part of the dressing: the seed's, but not the room's own (``self.rng``)."""
+        return random.Random(f"{self.spec.id}:{self.seed}:{part}")
+
+    def _full_blocks(self) -> set[str]:
+        return {self.theme.block(role) for role, need in THEME_ROLES.items() if need == FULL}
+
+    def _guarded(self) -> set[tuple[int, int]]:
+        """The columns the dressing keeps off besides the paths' middle and the doorways: those of the lights and
+        the markers, and the one each wall light faces."""
+        wall_light, ceiling_light = self.theme.block("wall_light"), self.theme.block("ceiling_light")
+        columns = {(x, z) for _, (x, _, z) in self.markers}
+        for (x, _, z), state in self.blocks.items():
+            if state.name in (wall_light, ceiling_light):
+                columns.add((x, z))
+            if state.name == wall_light:
+                dx, dz = _DIRECTIONS[state.get("facing") or "north"]
+                columns.add((x + dx, z + dz))
+        return columns | path_middles(self.spec)
+
+    def _doorway_distance(self, x: int, z: int) -> int:
+        """How far a column is from the nearest of the doorways' cells (three to a doorway), seen from above."""
+        return min(
+            max(
+                abs(x - (door.pos[0] + side * abs(door.inward[1]))),
+                abs(z - (door.pos[2] + side * abs(door.inward[0]))),
+            )
+            for door in self.doors
+            for side in (-1, 0, 1)
+        )
+
+    def _near_doorway(self, x: int, z: int) -> bool:
+        return self._doorway_distance(x, z) < DOORWAY_DISTANCE
+
+    def _walls_beside(self, pos: Pos) -> tuple[str, ...]:
+        """The sides of a cell on which a wall stands: a full block of the shell or of a wall grown into the room,
+        so neither a doorway, a niche nor a pillar."""
+        x, y, z = pos
+        full = self._full_blocks()
+        return tuple(
+            side
+            for side, (dx, dz) in _DIRECTIONS.items()
+            if self._is_wall((x + dx, y, z + dz)) and self.blocks[(x + dx, y, z + dz)].name in full
+        )
+
+    def _top_slots(self, guarded: set[tuple[int, int]]) -> list[_Slot]:
+        """Where a web or a strand of growth may hang: the air right under the ceiling (the ceiling itself, the
+        moulding along the walls or a niche's lintel, with nothing but blocks above) beside a wall, above a walking
+        player's head, off the guarded columns and the doorways."""
+        slots = []
+        for x, z in self.columns():
+            if (x, z) in guarded or self._near_doorway(x, z):
+                continue
+            for y in range(self.floor + 2, self.height - 1):
+                pos = (x, y, z)
+                covered = all(not self.air((x, above, z)) for above in range(y + 1, self.height))
+                if self.air(pos) and covered and (walls := self._walls_beside(pos)):
+                    slots.append(_Slot(pos, walls, (x, z) in self.paths))
+        return slots
+
+    @staticmethod
+    def _hang(
+        slots: list[_Slot], per: int, rng: random.Random, decorated: set[tuple[int, int]]
+    ) -> list[_Slot]:
+        """The slots one kind of decoration takes: one per ``per`` slots, at least one and at most
+        ``DRESSING_MOST``, in the seed's order, each a column or more clear of every column ``decorated`` so far, so
+        webs and growth never clump. A room too small for that gap still gets its one, in a column of its own."""
+        order = list(slots)
+        rng.shuffle(order)
+        count = min(DRESSING_MOST, max(1, round(len(slots) / per)))
+        chosen: list[_Slot] = []
+        for gap in (1, 0):
+            for slot in order:
+                x, _, z = slot.pos
+                if len(chosen) < count and all(max(abs(x - ox), abs(z - oz)) > gap for ox, oz in decorated):
+                    chosen.append(slot)
+                    decorated.add((x, z))
+            if chosen:
+                break
+        return chosen
+
+    def _barrel(self, guarded: set[tuple[int, int]]) -> None:
+        """The hallway's one barrel: on the floor against a wall, off the guarded columns and the doorways. Places
+        off the paths come first and the paths' outer columns last (a corridor three wide has no other wall); among
+        those a corner or a niche before a place with one wall, then a place with two free blocks to every doorway
+        before one with a single free block. The seed orders the equals, and the first place takes it that leaves
+        the room playable (``_keeps_playable``). Half the barrels lie on their side (``_lid_side``)."""
+        rng = self._stream("barrel")
+        lying, turn = rng.random() < BARREL_LYING, rng.random()
+        stands = walkable(self._cells())
+        spots: list[tuple[Pos, tuple[str, ...]]] = []
+        for x, z in self.columns():
+            pos = (x, self.floor, z)
+            if (x, z) in guarded or self._near_doorway(x, z) or pos not in stands or not self._on_floor(pos):
+                continue
+            walls = self._walls_beside(pos)
+            if walls:
+                spots.append((pos, walls))
+        rng.shuffle(spots)
+
+        def rank(spot: tuple[Pos, tuple[str, ...]]) -> tuple[bool, bool, bool]:
+            (x, _, z), walls = spot
+            return (x, z) in self.paths, len(walls) < 2, self._doorway_distance(x, z) <= DOORWAY_DISTANCE
+
+        spots.sort(key=rank)
+        for pos, walls in spots:
+            facing = self._lid_side(pos, walls, stands, turn) if lying else "up"
+            self.put(pos, self.state("storage", facing=facing, open="false"))
+            if self._keeps_playable(pos):
+                return
+            self.put(pos, BlockState(AIR))
+        raise RoomGeneratorError(
+            "no place for a hallway's barrel against a wall, clear of the doorways and the lights, that leaves the "
+            "room walkable and lit"
+        )
+
+    def _lid_side(self, pos: Pos, walls: tuple[str, ...], stands: set[Pos], turn: float) -> str:
+        """The side a lying barrel's lid faces: the room, never a wall. Of the sides with floor a player stands on,
+        those away from a wall the barrel stands against come first, then those with the most free floor in front
+        (a barrel in a niche faces the corridor, not the niche beside it); ``turn``, the seed's draw from 0 to 1,
+        picks among equals. A barrel with no such side stands upright."""
+        x, y, z = pos
+        runs: dict[str, int] = {}
+        for side, (dx, dz) in _DIRECTIONS.items():
+            run = 0
+            while (x + dx * (run + 1), y, z + dz * (run + 1)) in stands:
+                run += 1
+            if run:
+                runs[side] = run
+        if not runs:
+            return "up"
+        sides = [side for side in runs if _opposite(side) in walls] or list(runs)
+        longest = max(runs[side] for side in sides)
+        best = sorted(side for side in sides if runs[side] == longest)
+        return best[int(turn * len(best))]
+
+    def _keeps_playable(self, barrel: Pos) -> bool:
+        """Whether the room with the barrel at ``barrel`` still passes the walk and light checks (``rooms/walk.py``:
+        a mob could stand on the barrel, and it stops light), and a run that drops the barrel leaves air there, so
+        the room is then as the review kept it: a container with four full blocks around it, such as the floor and
+        the three walls of a niche, becomes a block of the wall instead (``rooms/containers.py``)."""
+        structure = self._structure()
+        found = [(spot.pos, spot.kind, spot.instead) for spot in container_candidates(structure)]
+        return found == [(barrel, "barrel", BlockState(AIR))] and not walk_problems(structure)
 
     def _cells(self) -> Cells:
         return Cells((self.width, self.height, self.depth), {pos: s.name for pos, s in self.blocks.items()})

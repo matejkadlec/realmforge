@@ -3692,8 +3692,8 @@ Rooms are generated or imported; nobody has to build one by hand
   `t_junction`, `crossing`, `dead_end`; `combat`; `treasure`; `arena`, role `boss`) and the connectors the shape
   tag. A theme (`content/room_themes/<id>.yaml`) names the block of each neutral role (`floor`, `floor_border`,
   `wall_base`, `wall_body` and its cracked and mossy patches, `wall_cornice`, `ceiling`, `pillar`, `stairs`,
-  `slab`, `rubble`, `wall_light`, `ceiling_light`, ...), and a generated room holds nothing else besides air, its
-  jigsaws and its markers. The style rules: walls one block thick in three layers (base, body with patches,
+  `slab`, `rubble`, `wall_light`, `ceiling_light`, a hallway's `ceiling_web`, `wall_growth` and `storage`, ...),
+  and a generated room holds nothing else besides air, its jigsaws and its markers. The style rules: walls one block thick in three layers (base, body with patches,
   cornice); a floor border along the walls and in the doorways and a seeded pattern in the middle; doorways three
   wide and high in the middle of each connector side, with a jigsaw `realmforge:door` at the foot like the
   imported rooms', so the two kinds join; three-wide paths from every doorway to the middle that pillars, rubble,
@@ -3707,12 +3707,44 @@ Rooms are generated or imported; nobody has to build one by hand
   middle; `mob` in combat rooms and arenas, on full blocks of the floor (ground mobs, never on a step or the
   balcony), spread evenly (the middle of each spot's share of the floor, at least three blocks apart, a block clear
   of the walls and three of the doorways); five `chest` spots in a treasure room, mirrored across the doorway's line
-  where the niches allow, in the niches or against the walls. Markers and lights are built last, so changing them
-  leaves the rest of a kept room as it was. The features are `pillars`, `alcoves` (niches in the walls without
-  a doorway), `pit` (a sunken middle one block deep; the floor is then two blocks thick), `balcony` and `rubble`.
+  where the niches allow, in the niches or against the walls. Markers and lights draw the seed's last numbers, so
+  changing them leaves the rest of a kept room as it was. The features are `pillars`, `alcoves` (niches in the
+  walls without a doorway), `pit` (a sunken middle one block deep; the floor is then two blocks thick), `balcony`
+  and `rubble`.
   The seed picks the variations (floor pattern, patches, moulding, pillar layout, niche rhythm, rubble, lights,
-  markers), and the same spec, theme and seed always give the same room. A change to the generator therefore
-  changes the kept rooms too: `rf gen` shows it, and a change a player would see goes back to the gallery.
+  markers, a hallway's dressing), and the same spec, theme and seed always give the same room. A change to the
+  generator therefore changes the kept rooms too: `rf gen` shows it, and a change a player would see goes back to
+  the gallery.
+- **A hallway's dressing** (RLM-410; Matěj's playtest of 2026-10-24 found the generated corridors bare): every room
+  of a hallway kind gets a few webs where a wall meets the ceiling (the theme's `ceiling_web`, a cobweb), a few
+  strands of growth hanging from the top of the walls (`wall_growth`, a vine, two blocks long at the most) and one
+  barrel on the floor against a wall (`storage`), never a chest. It is sparse: one web and one strand per twelve
+  places under the ceiling beside a wall, at least one of each and three at the most, a column or more apart, where
+  the import dressing gives its plainest rooms a cobweb per eight and a strand of up to three vines per six; each
+  kept corridor holds one cobweb and one strand. It is built after everything else, from random streams of its own
+  (the seed and the part's name), so the kept rooms stayed block for block as they were but for the air it takes,
+  and rooms that are no hallway did not change. It stands nowhere on the middle line of a path (the column from a
+  doorway to the room's middle, `path_middles`), keeps two blocks from every cell of a doorway, and keeps off the
+  columns of the lights and markers and the one a wall light faces. A path is three wide, so its two outer columns
+  run along the walls of a corridor three wide, which has no other place: there a web or one block of growth takes
+  only the cell right under the ceiling (the ceiling, the moulding or a niche's lintel), above a walking player's
+  head, and the barrel stands on such a column only where the room has no place for it off the paths. The barrel's
+  places are tried in this order: off the paths first, a corner or a niche before a place with one wall, two free
+  blocks to every doorway before one, the seed's order among equals; the first one takes it with which the room
+  still passes the walk and light checks (a mob could stand on a barrel, and it stops light) and which a run that
+  drops the barrel leaves as air (`rooms/containers.py` turns a container walled in on four sides into a block of
+  the wall, which would fill a niche). A hallway with no such place is refused, like a room no light pattern lights
+  (a crossing of 7 × 7, whose four corners touch its doorways). Of the 24 kept hallways, 13 have their barrel off
+  the paths (the curves' outer corner, a corner of the crossings and of three T-junctions, the fourth's wall
+  without a doorway, a paired niche of `corridor_niches` seed 4) and 11 on a path's outer column: `corridor_straight` (three wide), `dead_end` (rubble
+  fills its one row off the path; the barrel stands in the row before it) and `corridor_niches` seeds 1 to 3 (all
+  their niches are walled in on three sides). Half the barrels, by seed, lie on their side with the lid towards
+  the room: away from a wall the barrel stands against, towards the side with the most free floor in front of it,
+  so a corner barrel faces either open side and a barrel in a niche the corridor; the rest stand upright. **A run
+  keeps the barrel a quarter of the time:** the room `rf gen` builds for a hallway spec carries its own container
+  table, `containers: {barrels: {0: 75, 1: 25}}` (`spec_containers`), which wins over its dungeon type's table for
+  barrels (RLM-365, [15.2](#152-dungeon-types)), so a run meets a lone barrel in about a quarter of its generated
+  corridors, never two in one.
 - **Imported rooms** (A4b, A4c): MIT, CC0 and LGPL-3.0 rooms from other mods, taken in by `rf rooms import` from
   `.nbt`, `.schem` or `.litematic` files with a rules file that remaps blocks, block entities, jigsaw names and
   pools, container loot tables and entities and picks the files that are rooms
@@ -3726,7 +3758,14 @@ Rooms are generated or imported; nobody has to build one by hand
   against its outer walls (a full block with no air behind it, so never on or beside a throne or pillar inside the
   room), never in a passage one block wide or where they would split the floor, as a corner barrel in a hallway, a
   pair in a corner, mirrored corners or pairs, or a pair or row in a wall's middle; a room no pattern fits gets
-  none. Since Matěj's playtest of 2026-10-24 (RLM-364) the dressing changes nothing within a block of a room's
+  none. Half the added barrels lie on their side (RLM-410, the same playtest: "on their side 50% / upright 50%,
+  with the lid facing the room, not the wall"), the lid towards a cell a player reaches: away from an outer wall the
+  barrel stands against, so a corner barrel faces either of its two open sides and a barrel of a pair never its
+  neighbour; the rest stand upright. Each barrel draws for itself (a hash of the room's path and its position), so
+  the patterns, the places and every other choice of the dressing stayed as they were. ADR 0036 decides where
+  barrels stand and says nothing about how they face, so the facing needs no amending ADR. Both dressed sources
+  were imported again for it ([art/rooms](../art/rooms/README.md#importing-a-source-again)): 17 of their 42 added
+  barrels lie. Since Matěj's playtest of 2026-10-24 (RLM-364) the dressing changes nothing within a block of a room's
   mechanisms (redstone, levers, buttons, pressure plates, pistons, dispensers, tripwires, TNT, doors and the like,
   their own blocks included), where a cobweb had stopped a lock's TNT, and decorates only the air a player reaches from
   the room's doorways, so nothing goes inside a redstone build, and a room seen through bars, like Stonevaults' throne
@@ -3855,8 +3894,9 @@ Rooms are generated or imported; nobody has to build one by hand
   spawn only at block light 0. Light spreads one level less per step through passable cells; a stair or slab
   counts as blocking it, so the check errs on the dark side. A generated room also holds only its theme's blocks,
   air, jigsaws and markers. Validation checks every theme's blocks against the ID universe and against what their
-  role needs (a full solid block, stairs, a slab, a wall torch, a lantern), and keeps `content/rooms/generated/`
-  free for the generated rooms. Imported rooms are not held to the theme blocks yet: W4's themes decide how they
+  role needs (a full solid block, stairs, a slab, a wall torch, a lantern, and for a hallway's dressing a cobweb, a
+  vine and a barrel: the blocks the walk check walks through and a dungeon's container tables count), and keeps
+  `content/rooms/generated/` free for the generated rooms. Imported rooms are not held to the theme blocks yet: W4's themes decide how they
   are swapped. In the game, `ContentRoomGameTests` (QA mod) loads every room through
   the structure manager, which upgrades an imported room from its data version, and compares its size, jigsaws and
   air blocks with `GeneratedRoomExpectations`, and checks that every structure block in it is a data marker the

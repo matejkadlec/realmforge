@@ -1,5 +1,6 @@
-"""The room generator (A4d, RLM-121): room specs and themes, the generator's style rules, the walk and light checks,
-the candidates for the gallery and freezing the review's decisions (architecture 15.4)."""
+"""The room generator (A4d, RLM-121): room specs and themes, the generator's style rules, a hallway's dressing
+(RLM-410), the walk and light checks, the candidates for the gallery and freezing the review's decisions
+(architecture 15.4)."""
 
 from __future__ import annotations
 
@@ -14,7 +15,7 @@ from realmforge_tools.generate import generate_all
 from realmforge_tools.id_universe import load_vanilla
 from realmforge_tools.problems import ValidationFailed
 from realmforge_tools.project import REPO_ROOT, RepoPaths
-from realmforge_tools.rooms import candidates
+from realmforge_tools.rooms import candidates, dress, generator
 from realmforge_tools.rooms.candidates import (
     MARKER,
     CandidatesError,
@@ -24,13 +25,22 @@ from realmforge_tools.rooms.candidates import (
 )
 from realmforge_tools.rooms.check import check_structure, markers
 from realmforge_tools.rooms.connectors import connectors, could_attach
+from realmforge_tools.rooms.containers import candidates as container_candidates
 from realmforge_tools.rooms.generator import (
     DOOR,
+    DOORWAY_DISTANCE,
+    DRESSING_MOST,
+    GROWTH_LENGTH,
+    GROWTH_SLOTS,
     TREASURE_CHESTS,
+    WEB_SLOTS,
     RoomGeneratorError,
     candidate_seeds,
     generate_room,
+    path_middles,
+    paths,
     room_id,
+    spec_containers,
     spec_tags,
     theme_blocks,
     unknown_blocks,
@@ -45,6 +55,7 @@ from realmforge_tools.rooms.structure import (
     write_structure,
 )
 from realmforge_tools.rooms.walk import Cells, dark_cells, reach, walk_problems, walkable
+from realmforge_tools.schema.room import ContainerTables, RoomDef
 from realmforge_tools.schema.room_spec import RoomSpecDef, RoomThemeDef
 from realmforge_tools.validate import load_and_validate
 from realmforge_tools.yamlio import load_yaml
@@ -424,6 +435,201 @@ def test_a_spec_without_room_for_its_pillars_is_refused() -> None:
         generate_room(crossing, THEME, 1)
 
 
+# --- a hallway's dressing (RLM-410) ---------------------------------------------------------------------------
+
+HALLWAYS = [path for path in SPECS if content_spec(path).role == "hallway"]
+WALLS = {
+    THEME.blocks.wall_base,
+    THEME.blocks.wall_body,
+    THEME.blocks.wall_body_cracked,
+    THEME.blocks.wall_body_mossy,
+    THEME.blocks.wall_cornice,
+}
+DRESSING = {THEME.blocks.ceiling_web, THEME.blocks.wall_growth, THEME.blocks.storage}
+SIDES = {"north": (0, -1), "south": (0, 1), "east": (1, 0), "west": (-1, 0)}
+# The kept templates whose barrel stands on an outer column of a path, against the wall, because they have no place
+# for it off their paths: a corridor three wide is all path, rubble fills the dead end's one row off its path, and
+# a barrel a run drops from a niche walled in on three sides would leave a block of the wall there
+# (rooms/containers.py).
+BARREL_ON_A_PATHS_EDGE = {
+    "corridor_straight": {1, 2, 3, 4},
+    "dead_end": {1, 2, 3, 4},
+    "corridor_niches": {1, 2, 3},
+}
+
+
+def doorway_distance(structure: Structure, x: int, z: int) -> int:
+    """How far a column is from the nearest cell of a doorway (three cells each), seen from above."""
+    cells = set()
+    for connector in connectors(structure):
+        cx, _, cz = connector.pos
+        ax, az = (1, 0) if connector.front in ("north", "south") else (0, 1)
+        cells |= {(cx + side * ax, cz + side * az) for side in (-1, 0, 1)}
+    return min(max(abs(x - cx), abs(z - cz)) for cx, cz in cells)
+
+
+def is_wall(
+    blocks: dict[tuple[int, int, int], StructureBlock], pos: tuple[int, int, int], floor: int
+) -> bool:
+    """A block of the walls, the shell's or a pilaster's, not a pillar (whose base is the walls' base block)."""
+    x, _, z = pos
+    return blocks[pos].state.name in WALLS and blocks[(x, floor + 1, z)].state.name != THEME.blocks.pillar
+
+
+def light_columns(structure: Structure) -> set[tuple[int, int]]:
+    """The columns of the lights, and the column each wall light faces."""
+    columns = set()
+    for light in wall_lights(structure):
+        dx, dz = SIDES[light.state.get("facing")]
+        columns |= {(light.pos[0], light.pos[2]), (light.pos[0] + dx, light.pos[2] + dz)}
+    return columns
+
+
+@pytest.mark.parametrize("path", HALLWAYS, ids=[path.stem for path in HALLWAYS])
+def test_hallways_hold_a_few_webs_and_strands_of_growth_clear_of_the_walking_line(path: Path) -> None:
+    room_spec = content_spec(path)
+    middles, on_paths = path_middles(room_spec), paths(room_spec)
+    for seed in range(1, 9):
+        structure = generate_room(room_spec, THEME, seed)
+        blocks, height = at(structure), structure.size[1]
+        webs = [b for b in structure.blocks if b.state.name == THEME.blocks.ceiling_web]
+        growth = [b for b in structure.blocks if b.state.name == THEME.blocks.wall_growth]
+        strands = Counter((b.pos[0], b.pos[2]) for b in growth)
+        # Sparse: a web and a strand at the least, DRESSING_MOST of each at the most, a strand two blocks at most.
+        assert 1 <= len(webs) <= DRESSING_MOST and 1 <= len(strands) <= DRESSING_MOST, seed
+        assert max(strands.values()) <= GROWTH_LENGTH, seed
+        assert not {(b.pos[0], b.pos[2]) for b in webs} & set(strands), seed
+        lit = light_columns(structure)
+        for block in webs + growth:
+            x, y, z = block.pos
+            assert (x, z) not in middles, (seed, block.pos)  # never on the middle line of a path
+            assert doorway_distance(structure, x, z) >= DOORWAY_DISTANCE, (seed, block.pos)
+            assert (x, z) not in lit, (seed, block.pos)  # never on or in front of a light
+            assert y > room_spec.floor, (seed, block.pos)
+            if (x, z) in on_paths:
+                # An outer column of a path: only right under the ceiling, over a walking player's head.
+                assert y >= room_spec.floor + 2 and strands.get((x, z), 1) == 1, (seed, block.pos)
+                assert all(blocks[(x, above, z)].state.name != AIR for above in range(y + 1, height)), seed
+        for web in webs:  # where a wall meets the ceiling
+            x, y, z = web.pos
+            beside = [(x + dx, y, z + dz) for dx, dz in SIDES.values()]
+            assert blocks[(x, y + 1, z)].state.name != AIR, (seed, web.pos)
+            assert any(is_wall(blocks, pos, room_spec.floor) for pos in beside), (seed, web.pos)
+        for vine in growth:  # it clings to the wall beside it, and its strand starts under the ceiling
+            x, y, z = vine.pos
+            faces = [side for side in SIDES if vine.state.get(side) == "true"]
+            assert len(faces) == 1 and vine.state.get("up") == "false", (seed, vine.pos)
+            dx, dz = SIDES[faces[0]]
+            assert is_wall(blocks, (x + dx, y, z + dz), room_spec.floor), (seed, vine.pos)
+            assert blocks[(x, y + 1, z)].state.name != AIR, (seed, vine.pos)
+
+
+def test_the_corridors_get_less_dressing_than_the_imported_rooms() -> None:
+    # The import dressing gives its plainest rooms a cobweb per COBWEB_SLOTS places and a strand of up to three vines
+    # per VINE_SLOTS; the generated corridors get clearly less of each (Matěj: "not to overwhelm them").
+    assert WEB_SLOTS > dress.COBWEB_SLOTS and GROWTH_SLOTS > dress.VINE_SLOTS and GROWTH_LENGTH < 3
+    for path in HALLWAYS:
+        room_spec = content_spec(path)
+        for seed in room_spec.seeds:
+            names = Counter(b.state.name for b in generate_room(room_spec, THEME, seed).blocks)
+            decorations = names[THEME.blocks.ceiling_web] + names[THEME.blocks.wall_growth]
+            assert 2 <= decorations <= 4, (path.stem, seed)  # a corridor reads as mostly clean
+
+
+def test_every_kept_hallway_holds_one_barrel_against_a_wall_and_no_chest() -> None:
+    lying = total = 0
+    on_an_edge: dict[str, set[int]] = {}
+    for path in HALLWAYS:
+        room_spec = content_spec(path)
+        middles, on_paths = path_middles(room_spec), paths(room_spec)
+        for seed in room_spec.seeds:
+            structure = generate_room(room_spec, THEME, seed)
+            where = (path.stem, seed)
+            blocks = at(structure)
+            barrels = [b for b in structure.blocks if b.state.name == THEME.blocks.storage]
+            assert len(barrels) == 1 and barrels[0].nbt is None, where  # exactly one, never two
+            assert not [b for b in structure.blocks if "chest" in b.state.name], where  # and never a chest
+            barrel = barrels[0]
+            x, y, z = barrel.pos
+            floor_blocks = {THEME.blocks.floor, THEME.blocks.floor_variant, THEME.blocks.floor_border}
+            assert y == room_spec.floor and blocks[(x, y - 1, z)].state.name in floor_blocks, where
+            walls = [side for side, (dx, dz) in SIDES.items() if is_wall(blocks, (x + dx, y, z + dz), y)]
+            assert walls, where  # against a wall
+            assert (x, z) not in middles, where  # never on the middle line of a path
+            assert doorway_distance(structure, x, z) >= DOORWAY_DISTANCE, where
+            assert (x, z) not in light_columns(structure), where
+            if (x, z) in on_paths:
+                on_an_edge.setdefault(path.stem, set()).add(seed)
+            # The run that drops it leaves air, and the room stays walkable and lit with it (its top is a cell a mob
+            # could stand on).
+            assert [(c.pos, c.kind, str(c.instead)) for c in container_candidates(structure)] == [
+                (barrel.pos, "barrel", AIR)
+            ], where
+            assert walk_problems(structure) == [], where
+            # Upright, or on its side with its lid towards the room: floor a player stands on, never a wall.
+            facing = barrel.state.get("facing")
+            assert barrel.state.get("open") == "false", where
+            total += 1
+            if facing != "up":
+                lying += 1
+                dx, dz = SIDES[facing]
+                assert (x + dx, y, z + dz) in walkable(Cells.of(structure)), where
+                assert facing not in walls, where
+    assert on_an_edge == BARREL_ON_A_PATHS_EDGE  # every other template has its barrel off the paths
+    assert total == 24 and 8 <= lying <= 16, (lying, total)  # about half lie on their side
+
+
+def test_lying_barrels_are_about_half_over_many_seeds() -> None:
+    room_spec = spec(kind="curve", connectors=["south", "east"], footprint=[7, 7], height=5)
+    facings = Counter()
+    for seed in range(1, 61):
+        barrel = next(
+            b for b in generate_room(room_spec, THEME, seed).blocks if b.state.name == THEME.blocks.storage
+        )
+        assert barrel.pos == (1, 1, 1), seed  # the curve's outer corner: its one corner off the paths
+        facings[barrel.state.get("facing")] += 1
+    assert set(facings) == {"up", "east", "south"}  # never north or west, where its walls are
+    assert 20 <= facings["up"] <= 40, facings
+    assert facings["east"] and facings["south"]  # a corner barrel faces either open side
+
+
+def test_the_dressing_changes_no_block_a_room_had(monkeypatch: pytest.MonkeyPatch) -> None:
+    # It is built after everything else from random streams of its own, so a kept room stays block for block as it
+    # was but for the air its webs, growth and barrel take; a room that is no hallway does not change at all.
+    rooms = {}
+    for path in SPECS:
+        room_spec = content_spec(path)
+        rooms.update({(path.stem, seed): generate_room(room_spec, THEME, seed) for seed in room_spec.seeds})
+    monkeypatch.setattr(generator._Builder, "_dress", lambda self: None)
+    for (name, seed), room in rooms.items():
+        room_spec = content_spec(REPO_ROOT / f"content/room_specs/{name}.yaml")
+        bare = at(generate_room(room_spec, THEME, seed))
+        changed = [b for b in room.blocks if bare[b.pos] != b]
+        if room_spec.role != "hallway":
+            assert not changed, (name, seed)
+            continue
+        assert changed, (name, seed)
+        for block in changed:
+            assert bare[block.pos].state.name == AIR and block.state.name in DRESSING, (name, seed, block.pos)
+
+
+def test_a_hallway_without_a_place_for_its_barrel_is_refused() -> None:
+    # Four doorways in a room 7 x 7: its only cells off the paths are the corners, and each touches a doorway.
+    crossing = spec(kind="crossing", connectors=["north", "east", "south", "west"], footprint=[7, 7])
+    with pytest.raises(RoomGeneratorError, match="no place for a hallway's barrel"):
+        generate_room(crossing, THEME, 1)
+
+
+def test_a_hallways_sidecar_keeps_its_barrel_a_quarter_of_the_time() -> None:
+    for path in SPECS:
+        room_spec = content_spec(path)
+        tables = spec_containers(room_spec)
+        if room_spec.role == "hallway":  # its one barrel; nothing about chests, of which it has none
+            assert tables == ContainerTables(barrels={0: 75, 1: 25}), path.stem
+        else:
+            assert tables is None, path.stem  # the room follows its dungeon type
+
+
 # --- the walk and light checks --------------------------------------------------------------------------------
 
 
@@ -525,6 +731,14 @@ def test_generated_rooms_can_make_up_a_dungeon_pool(repo: RepoPaths) -> None:
     )
     content, _ = load_and_validate(repo)
     assert len(content.rooms) == 5
+    # A hallway's sidecar carries its own table for its one barrel (RLM-410), which wins over the dungeon type's;
+    # the other rooms follow their dungeon type.
+    tables = {room.id.split("/")[1]: room.model.containers for room in content.rooms}
+    assert tables["hall"] == tables["fork"] == tables["end"] == ContainerTables(barrels={0: 75, 1: 25})
+    assert tables["start"] is None and tables["lair"] is None
+    for room in content.rooms:
+        barrels = [c for c in container_candidates(room.structure) if c.kind == "barrel"]
+        assert len(barrels) == (1 if room.model.containers else 0), room.id
 
 
 @pytest.mark.parametrize(
@@ -559,6 +773,24 @@ def test_validation_checks_what_each_theme_role_holds(repo: RepoPaths) -> None:
     messages = {(p.location, p.message) for p in failed.value.problems}
     assert ("blocks.stairs", "minecraft:oak_planks is not a stairs block") in messages
     assert ("blocks.ceiling", "unknown block 'minecraft:no_such_block'") in messages
+
+
+def test_validation_checks_the_blocks_of_a_hallways_dressing(repo: RepoPaths) -> None:
+    # RLM-410: the walk check knows a cobweb and a vine as passable, the generator sets a vine's sides, and a
+    # dungeon's container tables count barrels, so each of the three roles takes that block and no chest.
+    theme = repo.content / "room_themes/stone_vault.yaml"
+    text = theme.read_text(encoding="utf-8")
+    text = text.replace("ceiling_web: minecraft:cobweb", "ceiling_web: minecraft:glass")
+    text = text.replace("wall_growth: minecraft:vine", "wall_growth: minecraft:oak_leaves")
+    text = text.replace("storage: minecraft:barrel", "storage: minecraft:chest")
+    theme.write_text(text, encoding="utf-8")
+    with pytest.raises(ValidationFailed) as failed:
+        load_and_validate(repo)
+    assert {(p.location, p.message) for p in failed.value.problems} == {
+        ("blocks.ceiling_web", "minecraft:glass is not a cobweb"),
+        ("blocks.wall_growth", "minecraft:oak_leaves is not a vine"),
+        ("blocks.storage", "minecraft:chest is not a barrel"),
+    }
 
 
 def test_a_themes_full_role_takes_our_own_simple_blocks(repo: RepoPaths) -> None:
@@ -605,6 +837,8 @@ def test_candidates_are_the_next_undecided_seeds(repo: RepoPaths, tmp_path: Path
         "nook/seed_5.nbt",
     ]
     assert "tags: [hallway, dead_end]" in (out / "nook/seed_2.yaml").read_text(encoding="utf-8")
+    sidecar = RoomDef.model_validate(load_yaml(out / "nook/seed_2.yaml"))
+    assert sidecar.containers == ContainerTables(barrels={0: 75, 1: 25})  # a hallway's one barrel (RLM-410)
     assert (out / MARKER).is_file()
     write_candidates(content, universe, out, 1)  # an earlier candidates folder is replaced
     assert sorted(p.name for p in (out / "nook").glob("*.nbt")) == ["seed_2.nbt"]

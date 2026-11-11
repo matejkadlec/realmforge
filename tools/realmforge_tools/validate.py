@@ -101,7 +101,17 @@ from realmforge_tools.schema.quest import (
 from realmforge_tools.schema.realm import FRAME_HEIGHT, PORTAL_PARTICLES, unlock_advancement
 from realmforge_tools.schema.recipe import is_tag
 from realmforge_tools.schema.requirement import ChapterCompletedDef, HasAdvancementDef, LevelAtLeastDef
-from realmforge_tools.schema.room_spec import FULL, LANTERN, SLAB, STAIRS, THEME_ROLES, WALL_TORCH
+from realmforge_tools.schema.room_spec import (
+    BARREL,
+    COBWEB,
+    FULL,
+    LANTERN,
+    SLAB,
+    STAIRS,
+    THEME_ROLES,
+    VINE,
+    WALL_TORCH,
+)
 from realmforge_tools.schema.sound import sound_id
 from realmforge_tools.schema.spell import (
     ALLY,
@@ -490,13 +500,16 @@ def _full_block(content: Content) -> Callable[[str], bool]:
 
 def _check_room_themes(content: Content, universe: IdUniverse) -> list[Problem]:
     """Every block of a theme exists and is what its role needs: a full block, stairs, a slab, a wall torch, a
-    lantern (``schema/room_spec.py``)."""
+    lantern, a cobweb, a vine, a barrel (``schema/room_spec.py``)."""
     needs = {
         FULL: (_full_block(content), _NOT_FULL),
         STAIRS: (lambda name: name.endswith("_stairs"), "a stairs block"),
         SLAB: (lambda name: name.endswith("_slab"), "a slab"),
         WALL_TORCH: (lambda name: name.endswith("wall_torch"), "a wall torch"),
         LANTERN: (lambda name: name.endswith("lantern"), "a lantern"),
+        COBWEB: (lambda name: name.endswith("cobweb"), "a cobweb"),
+        VINE: (lambda name: name.endswith("vine"), "a vine"),
+        BARREL: (lambda name: name.endswith("barrel"), "a barrel"),
     }
     problems: list[Problem] = []
     for entry in content.room_themes:

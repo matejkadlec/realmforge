@@ -26,6 +26,10 @@ plainer a surface, the more variants it gets, so a corridor gets the most and a 
   a mirror maps onto itself. Barrels never stand in a passage one block wide, nor split the main floor. A room that
   fits no pattern of its size tries the smaller ones down to two, and gets no barrel rather than a single one in a
   wall's middle.
+- **A barrel lies on its side half the time** (Matěj's playtest of 2026-10-24, RLM-410), its lid towards the room:
+  away from a wall it stands against, where a player reaches the cell in front of it, so a corner barrel faces one
+  of its two open sides and a barrel of a pair never its neighbour. The other half stands upright. Each barrel draws
+  for itself, so the patterns, and where the barrels stand, stay as they were.
 - **Mechanisms stay as built** (Matěj's playtest, 2026-10-24): no variant and no decoration goes on a cell next to,
   above, below or diagonally beside a mechanism block (redstone, levers, buttons, pressure plates, pistons, TNT,
   dispensers, tripwires, doors and the like, ``_MECHANISMS``), and decorations go only into the air a player reaches
@@ -68,7 +72,9 @@ VARIANT_SHARE = 0.15
 VINE_SLOTS = 6
 COBWEB_SLOTS = 8
 GRAVEL = "minecraft:gravel"
-BARREL = "minecraft:barrel[facing=up,open=false]"
+BARREL = "minecraft:barrel"
+# The share of the added barrels that lie on their side, lid towards the room; the rest stand upright (RLM-410).
+BARREL_LYING = 0.5
 # Floor area from which a room that is no hallway gets 4, 3 or 2 barrels.
 BARREL_AREAS = ((250, 4), (100, 3), (30, 2))
 # Block names that are no full block to stand on or hang from.
@@ -79,6 +85,7 @@ _NOT_FULL = (
 )  # fmt: skip
 _SHAPES = ("_slab", "_stairs", "_wall", "_planks")
 _SIDES = {"north": (0, 0, -1), "south": (0, 0, 1), "west": (-1, 0, 0), "east": (1, 0, 0)}
+_OPPOSITE = {"north": "south", "south": "north", "west": "east", "east": "west"}
 # Entities that hang on a wall and pop off when a block fills their space; paintings span up to 4 x 4 blocks.
 _HANGING = frozenset({"minecraft:painting", "minecraft:item_frame", "minecraft:glow_item_frame"})
 _HANGING_REACH = 2
@@ -392,11 +399,35 @@ def _decorate(
         else:
             count = next((n for area, n in BARREL_AREAS if floor_area >= area), 0)
         barrels = barrel_pattern(room, count, name)
-        for pos in barrels:
-            room.blocks[pos] = StructureBlock(pos, BlockState.parse(BARREL))
+        facings = {pos: barrel_facing(room, pos, set(barrels), name) for pos in barrels}
+        for pos, facing in facings.items():
+            room.blocks[pos] = StructureBlock(pos, barrel_state(facing))
         if barrels:
             placed.append(f"{len(barrels)} x barrel")
     return placed
+
+
+def barrel_state(facing: str) -> BlockState:
+    """A closed barrel whose lid faces ``facing``: ``up`` stands upright, a side lies on its side."""
+    return BlockState(BARREL, (("facing", facing), ("open", "false")))
+
+
+def barrel_facing(room: _Room, pos: Pos, barrels: set[Pos], name: str) -> str:
+    """Where the lid of the barrel at ``pos`` faces: ``up`` half the time, else a side towards the room. That is a
+    side whose cell a player reaches and no other barrel of the pattern (``barrels``) takes, away from an outer wall
+    the barrel stands against where there is one; ``name`` picks among several (a corner barrel's two). A barrel
+    with no such side stands upright. The draws are the barrel's own, so no other choice of the dressing moves."""
+    if _value(name, "barrel-lying", pos) >= BARREL_LYING:
+        return "up"
+    open_sides = [
+        side for side in _SIDES if (cell := _beside(pos, side)) in room.open and cell not in barrels
+    ]
+    walls = {side for side in _SIDES if _outer_wall(room, pos, side)}
+    away = [side for side in open_sides if _OPPOSITE[side] in walls]
+    sides = away or open_sides
+    if not sides:
+        return "up"
+    return min(sides, key=lambda side: (_value(name, f"barrel-facing:{side}", pos), side))
 
 
 def barrel_pattern(room: _Room, count: int, name: str) -> list[Pos]:

@@ -29,6 +29,7 @@ from realmforge_tools.rooms.generator import (
     candidate_name,
     candidate_seeds,
     generate_room,
+    spec_containers,
     spec_tags,
 )
 from realmforge_tools.rooms.structure import write_structure
@@ -128,6 +129,10 @@ def _sidecar(spec: RoomSpecDef) -> str:
         f"tags: [{', '.join(spec_tags(spec))}]",
         f"weight: {spec.weight}",
     ]
+    containers = spec_containers(spec)
+    if containers is not None and containers.barrels is not None:  # a hallway's one barrel (RLM-410)
+        chances = ", ".join(f"{count}: {chance}" for count, chance in containers.barrels.items())
+        lines += ["containers:", f"  barrels: {{{chances}}}"]
     return "\n".join(lines) + "\n"
 
 

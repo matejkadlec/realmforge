@@ -35,7 +35,8 @@ Not imported:
 The same review accepted Stonevaults' dungeons and Dungeon Now Loading's labyrinth only with more block variety:
 their rules `dress` them (`tools/realmforge_tools/rooms/dress.py`, [tools/README](../../tools/README.md#rooms)),
 giving the plainer surfaces mossy, cracked and gravel variants and adding vines, cobwebs and barrels, most of it to
-the corridors (armor stands were tried in the playtest and dropped: placed by rule, they looked out of place).
+the corridors (armor stands were tried in the playtest and dropped: placed by rule, they looked out of place). Half
+the added barrels lie on their side, lid towards the room (RLM-410).
 Stonevaults' dungeon entrances (`dungeon/entrances/*`), which the review accepted as they were, are left out; its
 pillager dungeon's entrances are dressed like its other rooms.
 
@@ -75,7 +76,17 @@ pattern of two to four by floor area), so **retagging a dressed room needs its s
 commit: the committed template otherwise keeps the dressing of its old tags, and the next import changes it where
 nobody expects it. RLM-178 retagged Stonevaults' `lobby_01` without one, and its re-import in RLM-237 took a barrel out.
 The rooms of Stonevaults' dungeons and pillager dungeon and of Dungeon Now Loading's labyrinth are dressed. Both
-were imported again when the barrels became patterns (RLM-262): only the added barrels moved. Stonevaults' rules
+were imported again when the barrels became patterns (RLM-262): only the added barrels moved. Both were imported
+again for RLM-410, since when half the added barrels lie on their side, lid towards the room (Matěj's playtest of
+2026-10-24): 17 of the 42 barrels the dressing adds changed their `facing` from `up` to a side, 11 of 24 in nine
+Stonevaults rooms and 6 of 18 in four labyrinth rooms, and no barrel moved. In Stonevaults nothing else changed.
+The labyrinth's import also brought RLM-364's dressing rules to it (no change within a block of a mechanism,
+decorations only where a player reaches), since its last import was older than those rules: 49 blocks in 6 rooms
+(`checker` 2, `explosive_barrel` 30, `prison_cell` 5, `skeleton_platform` 3, `stable` 7, `tutorial_spawner_carrier`
+2), all of them dressing: 13 vines gone and 7 new, 5 cobwebs gone and 1 new, and 23 blocks of `explosive_barrel`'s
+surfaces that swapped between plain, cracked and mossy stone bricks. In neither source did a connector, a marker, a
+mechanism, an entity or a block entity change, was a container added, taken or moved, or a sidecar touched. None of
+the labyrinth's rooms is in a pool. Stonevaults' rules
 also `place` the fall cushion into `lobby_01`, where every drop down its entrance shaft lands (RLM-276), and, after
 Matěj's playtest of 2026-10-24 (RLM-363, RLM-364), mend the rooms that locked players in or kept loot out of reach
 (buttons inside `zombie_three_way_temple`'s iron doors, no bars in `husk_temple`'s doorways, nor in what its

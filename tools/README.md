@@ -212,8 +212,11 @@ they stand on the room's main floor against its outer walls (a full block with n
 beside a throne or pillar inside the room), never in a passage one block wide or where they would split the floor. A
 hallway gets at most one, in a corner, stairs none, other rooms by floor area two (a pair in a corner, two mirrored
 corners or a pair in a wall's middle), three (a row in a wall's middle) or four (two mirrored pairs or four mirrored
-corners); a room no pattern fits gets none. No armor stands: placed by rule they looked out of place in Matěj's
-playtest. Choices are hashes of the room's path, so a re-import gives the same room.
+corners); a room no pattern fits gets none. Half the added barrels lie on their side (`BARREL_LYING`, RLM-410), the
+lid towards the room: away from an outer wall the barrel stands against, to a cell a player reaches that no other
+barrel of the pattern takes, so a corner barrel faces either open side; the rest stand upright (`facing=up`). Each
+barrel draws for itself, so nothing else of the dressing moves. No armor stands: placed by rule they looked out of
+place in Matěj's playtest. Choices are hashes of the room's path, so a re-import gives the same room.
 The import report names every remap, every dropped entity, block entity, interior jigsaw and loot table, and the
 jigsaw names and pools no rule mapped; validation refuses a jigsaw pool that is neither a vanilla template pool nor a
 room pool some sidecar lists. The
@@ -258,7 +261,19 @@ a spec with a seed; `rf gen` builds every kept seed (the spec's `seeds`) into
 `data/realmforge/structure/rooms/generated/<spec>/seed_<n>.nbt`, and the room cache keeps each built room under a
 digest of the spec, its theme and the seed, so validation builds a spec again only when one of them, or the
 generator, changed. Validation runs `rooms/walk.py` on each: its doorways reach each other with three blocks of
-headroom, and no cell where a mob could spawn is dark. **`rf rooms candidates [SPEC...]`** (`--count`, 4 by default;
+headroom, and no cell where a mob could spawn is dark. A hallway (corridor, curve, T-junction, crossing, dead end)
+is dressed last, from random streams of its own, so nothing else of a kept room changes (RLM-410,
+[architecture 15.4](../docs/architecture.md#154-rooms)): a web and a strand of growth per twelve places under the
+ceiling beside a wall (`WEB_SLOTS`, `GROWTH_SLOTS`; one of each at the least, `DRESSING_MOST` at the most), and one
+barrel on the floor against a wall, lying on its side half the time, lid towards the room. Nothing stands on the
+middle line of a path (`path_middles`), nearer than two blocks to a doorway's cells (`DOORWAY_DISTANCE`), or on or
+in front of a light; a path's outer
+columns, which run along the walls of a corridor three wide, take a web or one block of growth only right under
+the ceiling, and the barrel only where the room has no place off the paths. The barrel takes the first place, in
+the seed's order, that keeps the room passing the walk and light checks and that a run which drops it leaves as
+air; a hallway without one is refused. Its room carries `containers: {barrels: {0: 75, 1: 25}}`
+(`spec_containers`), so a run keeps the barrel a quarter of the time. **`rf rooms candidates [SPEC...]`**
+(`--count`, 4 by default;
 `--out`) builds the next seeds of each spec that no review decided on (neither kept nor rejected, from 1 up) into
 `.cache/rooms/candidates/<spec>/seed_<n>.nbt` with a sidecar, and leaves out, with the reason, a candidate that
 validation would refuse. It replaces that folder on every run. `--kept` builds the specs' kept seeds too (with

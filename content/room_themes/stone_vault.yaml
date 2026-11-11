@@ -20,3 +20,7 @@ blocks:
   rubble_slab: minecraft:cobblestone_slab
   wall_light: minecraft:wall_torch
   ceiling_light: minecraft:lantern
+  # The hallways' dressing (RLM-410): a few cobwebs and vines, and the lone barrel a run keeps a quarter of the time.
+  ceiling_web: minecraft:cobweb
+  wall_growth: minecraft:vine
+  storage: minecraft:barrel
