@@ -615,7 +615,14 @@ Rules:
   10, 12 at rank 2); a `cost` may add `extra` (`max` more of the resource spent when the player has it,
   `damage_per_point_percent` more damage for each) and `refund_on_kill` (RLM-543: `amount` back for each enemy the
   spell's hits kill, `per_level` more for every rank above 1, from rank `from_level`: Execute's 5/10/15); an `instant` cast may play out over `animation_seconds` (RLM-399: a
-  Warrior's swing, its effects at `hit_at_percent` of it, 50 by default; a player's only); and the
+  Warrior's swing, its effects at `hit_at_percent` of it, 50 by default; a player's only); **a casting player's arms
+  play an animation by the cast's type** (RLM-641): `realmforge:cast` for a cast time, `realmforge:channel` for a
+  channel, and `realmforge:instant` for an instant spell, a push of both hands for half a second during which the
+  player cannot melee, as during a cast (a swing and an aura's toggle play none, ADR 0077). A cast names
+  `player_animation: realmforge:<name>` only to play another one of the core mod's
+  `assets/realmforge/player_animations/` instead: validation refuses a name that is no animation there, an instant
+  spell's that loops or lasts more than 10 ticks, a cast time's or a channel's that plays once, and any on a swing;
+  and the
   `effects`, in order: `realmforge:damage` (a hit of the school on an enemy) and `realmforge:heal`
   (on the caster or an ally; with `on_caster: true`, among the spell's own effects, on the caster whatever the spell
   targets, and `max_health_percent` with `max_health_per_level_percent` adds that share of the healed entity's max

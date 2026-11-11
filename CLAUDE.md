@@ -148,15 +148,18 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   melee during a cast, and synced to clients as cast payloads; at an entity, a ground point or a direction, with damage,
   heals, projectiles, areas, status effects, teleports, dashes and knockback; rage that hits fill and that drops 5 a
   second once out of combat (RLM-594), procs that never trigger procs, and mobs choosing their target (their current
-  target, a random or the farthest player). A spell's look comes from the spell visuals kit (RLM-439, parts 1 and 2:
-  RLM-639, RLM-640, ADR 0073, ADR 0075): looks (frost, fire, arcane, stone), models, trajectories and particles are
+  target, a random or the farthest player). A spell's look comes from the spell visuals kit (RLM-439: RLM-639,
+  RLM-640, RLM-641, ADR 0073, ADR 0075, ADR 0077): looks (frost, fire, arcane, stone), models, trajectories and particles are
   content of their own (`content/spell_looks/`, `spell_models/`, `spell_trajectories/`, `particles/`), which a spell
   names in its `visuals` and on its projectile; a projectile is drawn with its look's material, as the orb or as a
   GeckoLib model of cubes from `art/models/spell/` (the placeholder chunk for Frostbolt and Fireball), flies its
   trajectory (only straight), trails its look's particles and bursts into them where it hits, from one entity
   event; while a cast time runs, the model grows cube by cube in the caster's hands in a swirl of the look's
   particles, for players (at one size in first and third person) and mobs alike, fades when the cast is interrupted
-  and leaves the hands when it ends. Players cast from the spell bar (C3b): eight slots on R, T, F, G, C, Y, Ů
+  and leaves the hands when it ends. A casting player's arms play one of four animations (RLM-641): `cast` for a cast
+  time, `channel` for a channel, the short `release` as a formed projectile leaves, and `instant`, a half-second push
+  of both hands for every instant spell (no cast bar, nothing interrupts it), during which the player cannot melee,
+  as during a cast; a spell may name another animation (`cast.player_animation`). Players cast from the spell bar (C3b): eight slots on R, T, F, G, C, Y, Ů
   and §, the racial slot on X, the
   class resource's bar (mana, rage) under it (RLM-400), the two in one place on the screen, a WoW-style cast bar, a
   cooldown sweep, a spellbook (P) whose tooltips fill a spell's numbers from data, a 0.5 s global cooldown that every
