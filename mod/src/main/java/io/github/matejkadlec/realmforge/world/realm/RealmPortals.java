@@ -48,7 +48,7 @@ public final class RealmPortals {
     /** How far from the sealstone's centre a player holding a signet lights it: 5 blocks (RLM-406). */
     public static final double GLOW_RADIUS = 5.0;
     /** How often a sealstone checks that its frame shows the right look: every half second (RLM-301). */
-    static final int LOOK_INTERVAL = 10;
+    public static final int LOOK_INTERVAL = 10;
 
     /** The incomplete frames being marked; touched only on the server thread. */
     private static final List<Mark> MARKS = new ArrayList<>();
@@ -245,22 +245,26 @@ public final class RealmPortals {
 
     /**
      * Gives the frame's blocks {@code look} (RLM-301): its sealstone, its 13 bricks and the bricks in its corners,
-     * each only where it is a frame block that shows another look. Without neighbour updates, so nothing next to the
-     * frame reacts and the portal blocks do not check their frame.
+     * each only where it is that frame block and shows another look. Without neighbour updates, so nothing next to
+     * the frame reacts and the portal blocks do not check their frame.
+     *
+     * <p>Another sealstone standing where a brick would be (a corner takes any block, and frames may share bricks) is
+     * the heart of a frame of its own and no part of this one: dressed from here, it would wash this frame's blocks
+     * out at its own next check, and the two would trade looks for ever.
      */
     static void dress(ServerLevel level, PortalFrame.Frame frame, FrameLook look) {
-        dress(level, frame.sealstone(), look);
+        dress(level, frame.sealstone(), look, SealstoneBlock.class);
         for (BlockPos pos : frame.bricks()) {
-            dress(level, pos, look);
+            dress(level, pos, look, GatewrightBricksBlock.class);
         }
         for (BlockPos pos : frame.corners()) {
-            dress(level, pos, look);
+            dress(level, pos, look, GatewrightBricksBlock.class);
         }
     }
 
-    private static void dress(ServerLevel level, BlockPos pos, FrameLook look) {
+    private static void dress(ServerLevel level, BlockPos pos, FrameLook look, Class<? extends Block> part) {
         BlockState state = level.getBlockState(pos);
-        if (state.hasProperty(FrameLook.PROPERTY) && state.getValue(FrameLook.PROPERTY) != look) {
+        if (part.isInstance(state.getBlock()) && state.getValue(FrameLook.PROPERTY) != look) {
             level.setBlock(pos, state.setValue(FrameLook.PROPERTY, look),
                     Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
         }

@@ -301,6 +301,40 @@ public final class RealmPortalGameTests {
     }
 
     /**
+     * RLM-301: another sealstone standing in a lit frame's corners is no part of that frame. It keeps its own
+     * washed-out look and the frame keeps its realm's, over several look checks: dressed with the frame, each dark
+     * sealstone would wash the frame's sealstone and bricks out at its own check, and they would trade looks for ever.
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_9X9, timeoutTicks = 100)
+    public static void aSealstoneInALitFramesCornerLeavesBothLooksAlone(GameTestHelper helper) {
+        RealmExpectation stone = RealmGameTests.stone();
+        ServerLevel level = helper.getLevel();
+        PortalFrame.Frame frame = new PortalFrame.Frame(helper.absolutePos(SEALSTONE), Direction.Axis.X);
+        buildFrame(level, frame);
+        for (BlockPos corner : frame.corners()) {
+            level.setBlockAndUpdate(corner, RealmPortalBlocks.sealstone().defaultBlockState());
+        }
+        FrameLook stoneLook = look(helper, stone.frame());
+        RealmPortals.light(level, frame, id(stone));
+        Runnable bothKeepTheirLook = () -> {
+            for (BlockPos corner : frame.corners()) {
+                helper.assertValueEqual(level.getBlockState(corner).getValue(FrameLook.PROPERTY), FrameLook.WASHED,
+                        "a dark sealstone in the lit frame's corner stays washed out: " + corner);
+            }
+            helper.assertValueEqual(level.getBlockState(frame.sealstone()).getValue(FrameLook.PROPERTY), stoneLook,
+                    "the lit frame's sealstone keeps its realm's look");
+            for (BlockPos pos : frame.bricks()) {
+                helper.assertValueEqual(level.getBlockState(pos).getValue(FrameLook.PROPERTY), stoneLook,
+                        "the lit frame's brick keeps its realm's look: " + pos);
+            }
+        };
+        bothKeepTheirLook.run();
+        helper.startSequence()
+                .thenExecuteFor(RealmPortals.LOOK_INTERVAL * 3, bothKeepTheirLook)
+                .thenSucceed();
+    }
+
+    /**
      * RLM-300: only a portal lit onto a realm with a storm blinks, and its blink reaches a player near as the
      * sealstone's block event, which starts the blink on their client.
      */

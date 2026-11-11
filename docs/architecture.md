@@ -3390,7 +3390,9 @@ Specialist (Ancient Workbench), which sell the Nether's and the End's materials.
       `RealmPortals.light` and taken back by `close`; the sealstone's ticker (`RealmPortals.tickLook`, every 10
       ticks) catches what they cannot see, a frame that went dark by a broken brick and a brick placed into a lit
       frame's corner, and breaking the sealstone washes out the bricks it leaves
-      (`SealstoneBlock#affectNeighborsAfterRemoval`). Every look's textures are made from the bricks' one approved
+      (`SealstoneBlock#affectNeighborsAfterRemoval`). A frame dresses only its own sealstone and Gatewright Bricks
+      (`RealmPortals#dress`): another sealstone in a corner or a brick's place keeps its own look, or the two would
+      wash and dress each other at every check. Every look's textures are made from the bricks' one approved
       tile (`art/frame_looks.py`, `generate/portal_frame.py`);
     - **a storm blink** cannot be a texture's loop, which is never random, so it is the tint: the sealstone's ticker
       rolls for it (`PortalStorm`, about every 15 seconds) and sends the block event `SealstoneBlockEntity.EVENT_STORM`

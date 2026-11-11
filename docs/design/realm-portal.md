@@ -505,7 +505,8 @@ without one; never in a realm. This answers the realm design's
   `stone` for Undervault, heavy grey stone. Lighting and closing set it on the sealstone, the 13 bricks and any
   bricks in the corners at once; the sealstone's ticker checks it every half second, so a frame that went dark
   because a brick broke washes out too, and a brick put into a lit frame's corner takes its look; breaking the
-  sealstone washes out the bricks it leaves. Overworld's return portals keep the washed-out frame, a proposal for
+  sealstone washes out the bricks it leaves. Only a frame's own sealstone and Gatewright Bricks take its look: another
+  sealstone standing in a corner or in a brick's place is the heart of a frame of its own and keeps its own look. Overworld's return portals keep the washed-out frame, a proposal for
   Matěj's playtest. Every look is made from one tile, the Gatewright Bricks' art (bricks of two sizes in rows; the
   generator drew no windmill at 16 pixels): the bricks are the tile with its colours mapped onto the look's ramp
   by lightness, and the sealstone has them on its sides and bottom and, on its top, the signet's socket, a round hole
