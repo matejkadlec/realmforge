@@ -1,0 +1,42 @@
+# Labels, prompts and the pick for `uv run rf art gallery art/realm-portal/candidates` (RLM-301). Generated on
+# 2026-11-11 through the Retro Diffusion MCP server: rd_fast__mc_texture at 16x16 with tiling on, four candidates a
+# request, seeds 6101 to 6103 in the order of the prompts below. `pick` names the candidate that
+# art/textures/block/gatewright_bricks.png holds, cleaned. The game never shows that tile as it is: every look of the
+# realm portal's frame is made from it (tools/realmforge_tools/art/frame_looks.py), its colours mapped onto the
+# look's ramp by lightness, so what the pick decides is the bricks' pattern.
+title: Gatewright Bricks, the tile of the realm portal's frame
+intro: >-
+  The one tile every look of the realm portal's frame is made from: the Gatewright Bricks, which the Gatewright
+  Sealstone shows on its sides too. Matěj asked for unique bricks of varying sizes, void-like purple and black
+  (2026-10-20). Each candidate is shown as Retro Diffusion returned it and after rf art clean snapped it to the
+  project palette, and tiled. In the game a dark frame shows the pick in the washed-out look and a frame lit onto
+  the Undervault in the stone look (uv run rf gen writes both); the purple of the pick itself waits for the realm
+  whose look it is (the Unmade Isles). The portal's animated textures and the sealstone's socket are not here: the
+  pipeline draws them (tools/realmforge_tools/generate/portal_textures.py, art/frame_looks.py). The pick was made by
+  Claude while the playtest was deferred (Matěj, 2026-11-10, ADR 0074) and is provisional until Matěj has reviewed
+  this gallery, which RLM-660 owes: to change it, name the candidate.
+candidates:
+  rd-fast-1: {label: "Retro Diffusion Fast, 1", note: "0.03 USD an image, 0.12 USD a request of four; the windmill prompt"}
+  rd-fast-2: {label: "Retro Diffusion Fast, 2"}
+  rd-fast-3: {label: "Retro Diffusion Fast, 3"}
+  rd-fast-4: {label: "Retro Diffusion Fast, 4"}
+  rd-fast-5: {label: "Retro Diffusion Fast, 5", note: "second request: interlocking bricks of different sizes"}
+  rd-fast-6: {label: "Retro Diffusion Fast, 6"}
+  rd-fast-7: {label: "Retro Diffusion Fast, 7"}
+  rd-fast-8: {label: "Retro Diffusion Fast, 8"}
+  rd-fast-9: {label: "Retro Diffusion Fast, 9", note: "third request: the pinwheel again, described as paving"}
+  rd-fast-10: {label: "Retro Diffusion Fast, 10"}
+  rd-fast-11: {label: "Retro Diffusion Fast, 11"}
+  rd-fast-12: {label: "Retro Diffusion Fast, 12"}
+subjects:
+  gatewright_bricks:
+    title: Gatewright Bricks
+    prompt: >-
+      1 to 4: a wall of void-like dark purple and black bricks laid in a windmill pinwheel pattern, bricks of varying
+      sizes around small square center stones, thin dark mortar lines, faint violet highlights on the brick edges.
+      5 to 8: ancient masonry of irregular interlocking bricks, long and short bricks of different sizes fitted
+      together like a puzzle, deep purple and near-black stone, clear lighter purple top edges and dark gaps between
+      the bricks. 9 to 12: pinwheel paving pattern seen straight on, four large rectangular bricks rotating around
+      one small square brick, repeated, dark purple bricks with lighter violet top edges, black mortar gaps, clean
+      and readable.
+    pick: rd-fast-6
