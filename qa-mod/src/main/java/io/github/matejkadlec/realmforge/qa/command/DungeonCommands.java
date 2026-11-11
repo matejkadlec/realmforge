@@ -26,8 +26,10 @@ import io.github.matejkadlec.realmforge.dungeon.plan.Slot;
 import io.github.matejkadlec.realmforge.qa.RealmforgeQa;
 import io.github.matejkadlec.realmforge.qa.dungeon.LayoutMap;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.BiFunction;
@@ -62,6 +64,8 @@ import net.minecraft.world.phys.Vec3;
  *   <li>{@code /qa dungeon room <name> [<n>]} moves you, inside your run, into its {@code n}th room (1 by default)
  *   whose template is named {@code name} ({@code egg}, {@code husk_temple}), onto the floor nearest the room's middle:
  *   the rooms a playtest looks at lie anywhere in a run of fifty (RLM-412, RLM-361, RLM-365).</li>
+ *   <li>{@code /qa dungeon pieces} lists the rooms of your run that hold set pieces, each with a link that moves you
+ *   there (RLM-282): a run places only a handful.</li>
  * </ul>
  */
 final class DungeonCommands {
@@ -106,7 +110,8 @@ final class DungeonCommands {
                 .then(Commands.literal("room").then(Commands.argument("name", StringArgumentType.word())
                         .suggests(ROOM_NAMES).executes(context -> room(context, 1))
                         .then(Commands.argument("n", IntegerArgumentType.integer(1))
-                                .executes(context -> room(context, IntegerArgumentType.getInteger(context, "n"))))));
+                                .executes(context -> room(context, IntegerArgumentType.getInteger(context, "n"))))))
+                .then(Commands.literal("pieces").executes(DungeonCommands::pieces));
     }
 
     private interface Action {
@@ -206,6 +211,31 @@ final class DungeonCommands {
         context.getSource().sendSuccess(() -> Component.literal(String.format(Locale.ROOT, "Moved to %s (%d of %d in"
                 + " your run), room %d of the layout", rooms.get(index).template(), n, named.size(), index)), false);
         return index;
+    }
+
+    private static int pieces(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        Plot plot = manager(context).plotOf(player).filter(run -> run.layout().isPresent())
+                .orElseThrow(NOT_IN_RUN::create);
+        Map<String, Integer> seen = new HashMap<>();
+        int total = 0;
+        for (RoomPlacement room : plot.layout().orElseThrow().rooms()) {
+            String name = name(room);
+            int n = seen.merge(name, 1, Integer::sum);
+            int held = room.pieces().size();
+            if (held == 0) {
+                continue;
+            }
+            total += held;
+            Component link = Component.literal("[go]").withStyle(style -> style.withColor(ChatFormatting.GREEN)
+                    .withClickEvent(new ClickEvent.RunCommand("/qa dungeon room " + name + " " + n)));
+            context.getSource().sendSuccess(() -> Component.literal(String.format(Locale.ROOT,
+                    "%s (%d): %d set piece(s) ", name, n, held)).append(link), false);
+        }
+        int pieces = total;
+        context.getSource().sendSuccess(() -> Component.literal(pieces == 0 ? "Your run holds no set pieces"
+                : "Your run holds " + pieces + " set piece(s)"), false);
+        return total;
     }
 
     /** A room's name in {@code /qa dungeon room}: the last part of its template's id. */
