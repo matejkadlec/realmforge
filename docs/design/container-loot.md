@@ -148,9 +148,9 @@ The test dungeon's tables (`content/dungeons/test_dungeon.yaml`):
 ## Open questions
 
 The two questions of the first version are answered. The tables' own numbers are the agent's (RLM-289, built and
-merged unplayed by Matěj's decision of 2026-11-10 for the `flow1 cloud` marathon, quoted in RLM-DEFERRED4: "Carry a
+merged unplayed by Matěj's decision of 2026-11-10 for the `flow1 cloud` marathon, quoted in RLM-659: "Carry a
 playtest batch through its handoff, with every automated check. Then don't wait for Matěj: continue as if he answered
-`qa1`"); RLM-DEFERRED4 is the playtest he still owes them:
+`qa1`"); RLM-659 is the playtest he still owes them:
 
 - **The measure:** 150 points a kill, counted in the coins a mob of the tier's level drops. At Haven that makes a
   pick of coins 1 to 3 copper, next to 2 to 4 iron ingots for the same points.

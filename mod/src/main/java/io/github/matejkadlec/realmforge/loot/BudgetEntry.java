@@ -34,8 +34,8 @@ import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
  * The pipeline writes the tables from {@code content/container_loot/} and simulates the same rule in pytest.
  */
 public final class BudgetEntry extends LootPoolSingletonContainer {
-    /** The world tiers' names in the data, in order; Apotheosis's own names for them. */
-    public static final List<String> TIERS = List.of("haven", "frontier", "ascent", "summit", "pinnacle");
+    /** The world tiers' names in the data, in order ({@link WorldTiers#NAMES}). */
+    public static final List<String> TIERS = WorldTiers.NAMES;
 
     private static final Codec<String> TIER = Codec.STRING.validate(name -> TIERS.contains(name)
             ? DataResult.success(name) : DataResult.error(() -> "Unknown world tier " + name + ": one of " + TIERS));

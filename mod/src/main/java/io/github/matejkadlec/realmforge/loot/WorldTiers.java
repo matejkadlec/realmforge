@@ -1,5 +1,6 @@
 package io.github.matejkadlec.realmforge.loot;
 
+import java.util.List;
 import java.util.function.Consumer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -13,10 +14,13 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
  * when Apotheosis is loaded; without it every player is at the first tier and the two rolls give nothing.
  */
 public final class WorldTiers {
-    /** The tiers in order: Haven, Frontier, Ascent, Summit, Pinnacle. */
-    public static final int COUNT = 5;
+    /** The tiers' names in the data, in order; Apotheosis's own names for them. */
+    public static final List<String> NAMES = List.of("haven", "frontier", "ascent", "summit", "pinnacle");
+    /** How many tiers there are. */
+    public static final int COUNT = NAMES.size();
 
-    private static Provider provider = new Provider() {
+    // Named once at mod construction and read on the server thread ever after.
+    private static volatile Provider provider = new Provider() {
     };
 
     private WorldTiers() {
@@ -24,7 +28,7 @@ public final class WorldTiers {
 
     /** What the owner of the world tiers provides. */
     public interface Provider {
-        /** The player's world tier, from 0 (Haven) to {@link #COUNT} - 1 (Pinnacle). */
+        /** The player's world tier as an index into {@link #NAMES}, from 0 (Haven) to {@link #COUNT} - 1 (Pinnacle). */
         default int tier(Player player) {
             return 0;
         }

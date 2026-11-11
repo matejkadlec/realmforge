@@ -38,7 +38,8 @@ public final class ApotheosisTiers implements WorldTiers.Provider {
 
     @Override
     public int tier(Player player) {
-        return WorldTier.getTier(player).ordinal();
+        // By name, not by the enum's order: the data names the tiers, and an unknown one counts as the first.
+        return Math.max(0, WorldTiers.NAMES.indexOf(WorldTier.getTier(player).getSerializedName()));
     }
 
     @Override
