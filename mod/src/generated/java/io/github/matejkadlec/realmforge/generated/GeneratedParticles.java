@@ -25,6 +25,11 @@ public final class GeneratedParticles {
             register("ember",
                     new TintedParticles.Motion(8, 16, 0.09F, -0.1F, 0.92F, true));
 
+    /** {@code realmforge:fleck} from {@code content/particles/fleck.yaml}. */
+    public static final TintedParticles.Entry FLECK =
+            register("fleck",
+                    new TintedParticles.Motion(5, 9, 0.035F, 0.0F, 0.92F, true));
+
     /** {@code realmforge:mote} from {@code content/particles/mote.yaml}. */
     public static final TintedParticles.Entry MOTE =
             register("mote",
@@ -36,7 +41,7 @@ public final class GeneratedParticles {
                     new TintedParticles.Motion(8, 14, 0.1F, 0.6F, 0.96F, false));
 
     /** Every particle above, in id order. */
-    public static final List<TintedParticles.Entry> ALL = List.of(EMBER, MOTE, SHARD);
+    public static final List<TintedParticles.Entry> ALL = List.of(EMBER, FLECK, MOTE, SHARD);
 
     private GeneratedParticles() {
     }

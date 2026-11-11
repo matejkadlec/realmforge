@@ -175,7 +175,9 @@ public final class SpellArea extends Entity {
         int count = Mth.ceil(2 * Math.PI * radius);
         for (int i = 0; i < count; i++) {
             double angle = 2 * Math.PI * i / count;
-            level().addParticle(particle, getX() + Math.cos(angle) * radius, getY() + 0.1,
+            // A zone's ring is what a player reads to step out of it: it shows in full whatever the Particles option
+            // says and however far the camera is (forced, ADR 0073 decision 4).
+            level().addParticle(particle, true, true, getX() + Math.cos(angle) * radius, getY() + 0.1,
                     getZ() + Math.sin(angle) * radius, 0, 0, 0);
         }
     }

@@ -223,10 +223,14 @@ there while the game runs. The handoff gives the commands
 - **Spell screenshots without input.** `REALMFORGE_QA_SPELL_SHOTS=<label> ./gradlew runClient -PofflineClient
   -PleanClient` makes the QA mod create a superflat world from the title screen, build a wall 8 blocks ahead and cast
   a few spells along the player's look: the twin test spells at a villager and at the wall, Arcane Missiles at the
-  wall, one bolt in first person, and a Hewn Chanter's Stoneform at a villager. It saves a frame every tick of each
-  flight, without the HUD, most from a still camera beside the flight, to
-  `run/client/screenshots/<label>-<scene>-t<tick>.png`, and quits, in about three minutes. Agents use it to look at a
-  projectile's model and material, its trail, the burst of its impact and a mob's forming projectile (RLM-639).
+  wall, one bolt in first person, Frostbolt and Fireball forming in the player's hands (from a camera on the hands,
+  and through the player's eyes at a field of view of 70 and of 110), a cast cancelled half way, Arcane Missiles'
+  hands, a Frostbolt that kills a villager, and a Hewn Chanter's Stoneform at a villager. It saves frames of each
+  scene, without the HUD, most from a still camera beside the flight, to
+  `run/client/screenshots/<label>-<scene>-t<tick>.png`, and quits, in about five minutes. Agents use it to look at a
+  projectile's model and material, its trail, the burst of its impact, and what forms in a caster's hands: a model
+  growing cube by cube, where it sits in first person, an interrupted cast fading and the bolt leaving the hands
+  (RLM-639, RLM-640). Headless: `xvfb-run -a -s "-screen 0 1280x720x24"` before it, with the variable set.
 - **Key Binds screenshots without input.** `REALMFORGE_QA_KEY_BINDS_SHOTS=<label> ./gradlew runClient -PofflineClient`
   makes the QA mod open Key Binds from the title screen (Controlling's screen, as a player sees it), save it page by
   page from the top of its list to the bottom, each page sharing a row with the one before, to

@@ -17,5 +17,10 @@
     "particle": "realmforge:mote",
     "count": 16
   },
+  "swirl": {
+    "particle": "realmforge:fleck",
+    "per_tick": 6.0
+  },
+  "light": "world",
   "impact_sound": "minecraft:block.amethyst_cluster.break"
 }

@@ -57,7 +57,7 @@
           ]
         }
       ],
-      "model": "realmforge:orb",
+      "model": "realmforge:chunk",
       "trajectory": "realmforge:straight",
       "splash": {
         "radius": 1.0,

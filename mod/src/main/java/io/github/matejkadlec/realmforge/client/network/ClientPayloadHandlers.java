@@ -4,6 +4,7 @@ import io.github.matejkadlec.realmforge.client.hud.CastBarHud;
 import io.github.matejkadlec.realmforge.client.hud.CombatTextHud;
 import io.github.matejkadlec.realmforge.client.hud.HitDirectionHud;
 import io.github.matejkadlec.realmforge.client.hud.RealmRefusalHud;
+import io.github.matejkadlec.realmforge.client.render.SpellForming;
 import io.github.matejkadlec.realmforge.client.spell.ClientCasts;
 import io.github.matejkadlec.realmforge.client.spell.ClientCharges;
 import io.github.matejkadlec.realmforge.client.spell.TargetCircle;
@@ -43,6 +44,8 @@ public final class ClientPayloadHandlers {
         event.register(CastEndedPayload.TYPE, (payload, context) -> {
             // A swing's bar (RLM-399) runs down to 0 and goes: only a swing cut short shows how it ended.
             boolean swing = ClientCasts.isSwing(payload.casterId());
+            // Before the cast is dropped: an interrupted cast's forming model fades from where it was (RLM-640).
+            SpellForming.ended(payload);
             ClientCasts.end(payload);
             if (!swing || payload.end() != CastEnd.COMPLETED) {
                 CastBarHud.ended(payload);

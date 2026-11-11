@@ -21,5 +21,10 @@
     "particle": "realmforge:shard",
     "count": 16
   },
+  "swirl": {
+    "particle": "realmforge:fleck",
+    "per_tick": 6.0
+  },
+  "light": "glow",
   "impact_sound": "minecraft:block.glass.break"
 }

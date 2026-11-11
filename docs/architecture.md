@@ -323,7 +323,7 @@ How features cooperate without breaking the direction:
 | `realmforge:spell_school` | `content/spell_schools/` | school (owned by `combat`): kind (physical or magic), colour, its damage type, and the stats that are its power and resistance (attributes from `content/stats/`, static registrations, so a new school's stats need a game restart) | yes | M1 |
 | `realmforge:spell` | `content/spells/` | spell for players or NPCs: school, what it scales with, targeting, cast, cost, cooldowns, crit rules, typed effects with values per spell level (C3a-1), its name and description with placeholders (C3b) | yes | M1 |
 | `realmforge:spell_look` | `content/spell_looks/` | an element's look of the spell visuals kit (owned by `spell`, RLM-439): its colours, the particles of a projectile's trail and burst, its impact sound; its material is `textures/spell/material/<look>.png` ([11.3](#113-spell-entities)) | yes | M1 |
-| `realmforge:spell_model` | `content/spell_models/` | a projectile's shape: the orb until the GeckoLib models (RLM-640), its scale, how it turns in flight | yes | M1 |
+| `realmforge:spell_model` | `content/spell_models/` | a projectile's shape: the orb or a GeckoLib model of cubes (RLM-640), its scale, how it turns in flight | yes | M1 |
 | `realmforge:spell_trajectory` | `content/spell_trajectories/` | how a projectile flies: its kind, only `straight` ([ADR 0052](decisions/0052-spells-aim-with-the-crosshair.md)) | yes | M1 |
 | `realmforge:talent_tree` | `content/talents/` | WoW-style tree: nodes on a grid, ranks, prerequisites, typed effects per rank | yes | not planned: no talents as of v1.0.0 ([12](#12-talents)) |
 | `realmforge:stat_rule` | `content/stat_rules/` | what a primary stat gives: per-point modifiers, milestone bonuses, each for every player or some class roles | yes | M1 |
@@ -1852,24 +1852,38 @@ type only for genuinely new behaviour.
   weakens, and interrupts its cast. A player moves itself, so a dash or a knockback reaches it as a velocity its
   client applies; the server moves mobs. `SpellEffectGameTests` casts every type.
 
-**The spell visuals kit (RLM-439, part 1: RLM-639; [ADR 0073](decisions/0073-spell-visuals-are-reusable-parts-in-data.md),
+**The spell visuals kit (RLM-439, parts 1 and 2: RLM-639, RLM-640;
+[ADR 0073](decisions/0073-spell-visuals-are-reusable-parts-in-data.md),
+[ADR 0075](decisions/0075-spell-models-are-drawn-cube-by-cube-and-fire-waits-for-dynamic-lights.md),
 [design](design/spell-visuals.md)).** A spell's look is a combination of parts, each defined once in `content/` and
 named by id, so Frostbolt and Fireball share a model and a trajectory and differ in their look. The engine comes in
-three parts: the kit as content and what the server runs (here), the GeckoLib models and the forming in the caster's
-hands (RLM-640), and the instant spells' animation with its no-melee window (RLM-641).
+three parts: the kit as content and what the server runs (RLM-639), the GeckoLib models and the forming in the
+caster's hands (RLM-640, [11.6](#116-client-side)), and the instant spells' animation with its no-melee window
+(RLM-641).
 
 - **A look** (`realmforge:spell_look`, `spell/SpellLook`, `content/spell_looks/`: frost, fire, arcane, stone) is what
   makes an element recognisable: its `colors` (lightest first, at most 16; frost's are Matěj's range of 2026-10-29,
   #B8E2F4 through #8DCFEC to #6ABCE2), the particles of a projectile's `trail` (`per_block`, at most 3) and `burst`
-  (`count`, at most 24), and its `impact_sound`. Its **material** is one tileable 16 x 16 texture,
+  (`count`, at most 24) and of the `swirl` round a forming one (`per_tick`, at most 8, and at most 80 alive: its rate
+  times its particle's longest life), its `light` (`world`, the light where a model is; `glow`, five light levels
+  above it, frost's; `emit`, full brightness, fire's, which lights the blocks round it once the pack has dynamic
+  lights, ADR 0075) and its `impact_sound`. Its **material** is one tileable 16 x 16 texture,
   `textures/spell/material/<look>.png` (`SpellLook#material`), that every model of the look is drawn with, as a
   block's faces take a block texture; `rf gen` writes a placeholder, noise in the look's colours, until its art
   exists (RLM-440 and the per-spell tickets).
 - **A model** (`realmforge:spell_model`, `spell/SpellModel`, `content/spell_models/`) is a projectile's shape: its
   `shape`, its `scale` (its width as a share of the hitbox) and how it turns in flight (`tumble`, or `forward` along
-  the flight with a spin). The only shape is the `orb`, three crossed slabs (`client/render/SpellOrbs`, a model layer
-  of our own whose faces take the material pixel for pixel; it repeats, as a texture does unless its metadata clamps
-  it), the placeholder of every model until RLM-640's GeckoLib models.
+  the flight with a spin). Its shape is the `orb`, three crossed slabs (`client/render/SpellOrbs`, a model layer of
+  our own whose faces take the material pixel for pixel; it repeats, as a texture does unless its metadata clamps
+  it), the placeholder of a model without art, or `cubes`, a GeckoLib model of at most 64 cubes
+  (`SpellModel#geometry`: `assets/realmforge/geckolib/models/spell/<id>.geo.json`), whose width is the larger of its
+  extents across its length. `rf gen` writes that model from its source, `art/models/spell/<id>.geo.json`
+  (`tools/realmforge_tools/art/spell_models.py`): Bedrock geometry from Blockbench or from a script, checked (the
+  cap, a size above 0 on every side, no rotated bones, since the game draws the cubes and not the bones) and with
+  every face of every cube mapped onto the 16 x 16 material pixel for pixel, each cube from another corner of the
+  tile, so a model needs no texture of its own. Validation refuses a `cubes` model without its source and a source
+  no `cubes` model names. The first is the `chunk`, a rough pointed lump of 26 cubes, Frostbolt's and Fireball's
+  until their own models (RLM-440, RLM-441).
 - **A trajectory** (`realmforge:spell_trajectory`, `spell/SpellTrajectory`, `content/spell_trajectories/`) is how a
   projectile flies, and it is gameplay: `SpellTrajectory#velocity(aim, tick, seed)` gives a tick's step and
   `#position` adds the steps up, a pure function of the launch point, the aim, the ticks flown and the seed.
@@ -1879,7 +1893,7 @@ hands (RLM-640), and the instant spells' animation with its no-melee window (RLM
   offset to that line. The only kind is `straight` ([ADR 0052](decisions/0052-spells-aim-with-the-crosshair.md)): its
   step is the aim, whatever the seed. A projectile that names no trajectory gets `realmforge:straight` (the pipeline
   writes it into the data).
-- **A particle** of ours (`content/particles/`: mote, shard, ember) is a shape, one to eight greyscale 8 x 8 frames
+- **A particle** of ours (`content/particles/`: mote, shard, ember, and the fleck of the swirls) is a shape, one to eight greyscale 8 x 8 frames
   written as pixel rows, with how it moves (`lifetime_ticks`, `size`, `gravity`, `friction`, `glows`).
   `GeneratedParticles` registers a particle type per shape whose options are a colour, vanilla's
   `ColorParticleOption` (`spell/TintedParticles`), and the client's provider (`client/particle/TintedParticle`,
@@ -1888,12 +1902,12 @@ hands (RLM-640), and the instant spells' animation with its no-melee window (RLM
   crosses the network.
 - **A spell names its parts:** `visuals: {look, forming, impact_sound}` on the spell (`spell/Visuals`), `model` and
   `trajectory` on each projectile (`ProjectileEffect`). A projectile with a model is drawn with its look's material;
-  one without has no body, only the look's trail; a spell without visuals keeps the old trail of sparks (the test
-  spells). `forming` is what shows in the caster's hands during the cast: `grow` (the model grows there cube by cube,
-  Matěj's choice of 2026-10-29), `storm` (it scales up as a whole, grow's fallback) or `hands` (only particles, for a
-  channel such as Arcane Missiles). Until RLM-640's forming renderer, `grow` and `storm` both show a custom mob's
-  projectile growing as a whole ([11.6](#116-client-side)) and `hands` shows nothing; a projectile that forms flies
-  from the hands (`SpellVisuals#formedProjectile`).
+  one without has no body, only the look's trail, so validation refuses a projectile with neither a model nor a look
+  with a trail (it would fly unseen until its burst); a spell without visuals keeps the old trail of sparks (the test
+  spells). `forming` is what shows in the caster's hands during the cast ([11.6](#116-client-side)): `grow` (the
+  model grows there cube by cube, Matěj's choice of 2026-10-29), `storm` (it scales up as a whole, grow's fallback)
+  or `hands` (only the look's swirl, for a channel such as Arcane Missiles); a projectile that forms flies from the
+  hands (`SpellVisuals#formedProjectile`).
 - **A projectile's spawn data** carries what its clients need: its spell's look and its model (each optional), its
   trajectory, its aim, its seed, the ticks it has flown (for a client that starts to track it mid-flight) and how
   far its impact bursts (its splash's radius with the caster's passive bonus, or a small puff).
@@ -2249,18 +2263,60 @@ the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays t
   rules), `CentreSnapTest`, `CastBarStyleTest`, `KeyLabelsTest` (the key labels), `WandClicksTest`, `SpellTextTest`
   and `SpellBarViewTest` the client's logic.
 
-**In code (W3 revision, RLM-33; the kit, RLM-639): a projectile's model.** A projectile with a model is drawn by
-`client/render/SpellProjectileRenderer` with the material of its spell's look
-(`textures/spell/material/<look>.png`, [11.3](#113-spell-entities)), as wide as its hitbox times the model's scale
-and turned as the model says; every model is the `orb` for now (three crossed slabs, `client/render/SpellOrbs`), and
-a projectile without a model or a look has no body, only its trail. While a caster casts a spell whose visuals form
-its projectile, the custom mob renderer reads the cast from `ClientCasts` and the spell from the synced registry and
-draws that model in the caster's raised
-hands (`SpellVisuals#formOffset`: where a custom mob's spec puts its hands, `SpellVisuals.Hands`, at the end of its
-arms in the cast pose, which `rf gen` works out from the model; for any other caster 0.75 blocks in front of its
-hitbox and 0.4 above its eyes; never above its height), from 15 % of its size at the cast's start to all of it at its
-end, where the server launches it from ([11.2](#112-casting-server-authoritative)). A player's own cast shows nothing
-forming until RLM-640's forming renderer, which draws every caster's.
+**In code (the kit, RLM-639; the models and the forming, RLM-640): a projectile's model.** A projectile with a
+model is drawn by `client/render/SpellProjectileRenderer` with the material of its spell's look
+(`textures/spell/material/<look>.png`, [11.3](#113-spell-entities)), as wide as its hitbox times the model's scale,
+turned as the model says and lit as the look says (`SpellModels#lit`); a projectile without a model or a look has no
+body, only its trail. `client/render/SpellModels` draws a model the same way in flight and while it forms:
+
+- **A model of cubes** is drawn cube by cube by our own code, not by GeckoLib's renderers
+  ([ADR 0075](decisions/0075-spell-models-are-drawn-cube-by-cube-and-fire-waits-for-dynamic-lights.md)).
+  `client/render/SpellMeshes` takes the model GeckoLib baked (`GeckoLibResources.getBakedModels()`), collects its
+  cubes, and keeps them in the order they appear while the model forms: by the distance of their middles from the
+  model's heart, the middle of its bounds, with each middle and the bounds turned as `GeoCube#render` turns the
+  cube about its pivot. It draws each cube with `GeoCube#render` into `SubmitNodeCollector#submitCustomGeometry`
+  (vanilla's `entityCutout` render type with the material, `entityTranslucent` while it fades), scaled about its
+  own middle. A reload bakes new models, and the meshes follow them. A model whose GeckoLib model is missing is
+  drawn as the orb, with a warning in the log.
+- **The orb** (`client/render/SpellOrbs`) is a model layer of our own, baked with the entity renderers at every
+  resource load.
+
+**In code (RLM-640): what forms in a caster's hands.** `client/render/SpellForming` is one renderer for every
+caster, players and mobs alike (the custom mobs' renderer draws none of it). It reads the casts in progress from
+`ClientCasts`, the spells from the synced registry, and draws into the level through NeoForge's custom geometry
+events (`ExtractLevelRenderStateEvent` for what each caster's hands hold in the frame, `SubmitCustomGeometryEvent` to
+submit it), as the target circle does:
+
+- **Styles** (`FormingCurves`, covered by `FormingCurvesTest`): `grow` shows a model of cubes cube by cube, each
+  growing from nothing to its size over a fifth of the cast, the first with the cast's start and the last whole at
+  its end; `storm`, and any forming of the orb, which has no cubes to grow one by one, scales the whole model up
+  from 15 % of its size. Both run in the look's `swirl`, particles that appear round the hands and fly in
+  (`ClientTickEvent`), one of them at the growing edge; `hands` shows the swirl alone. Only a cast time forms a
+  model; a channel shows a swirl.
+- **Where** (`HandPoints`, covered by `HandPointsTest`): a player's hands meet 0.7 blocks along the look. In the
+  caster's own first person the whole arms turn about the eye with the camera (`client/animation/CastArms`), so the
+  point is 0.7 ahead of the eye and 0.3 below the line of sight: fixed on the screen, below its middle and off the
+  crosshair at every field of view (checked at 70 and 110). Seen from outside it is 0.7 from between the shoulders
+  along the look. A mob's hands are its form point (`SpellVisuals#formOffset`: where a custom mob's spec puts its
+  hands, `SpellVisuals.Hands`, at the end of its arms in the cast pose, which `rf gen` works out from the model; for
+  any other caster 0.75 blocks in front of its hitbox and 0.4 above its eyes; never above its height), where the
+  server launches its projectile from ([11.2](#112-casting-server-authoritative)).
+- **One size in first and third person** (Matěj, 2026-10-29): a player's forming model is drawn at three quarters
+  of its size in flight (`SpellForming#PLAYER_SHARE`), the same in both views, and the local player in first person
+  sees a third of the swirl, none of it above the model. A mob's model forms at its full size.
+- **An interrupted cast's model fades away** over 8 ticks at the size it had reached: `ClientPayloadHandlers` tells
+  `SpellForming` of a cast's end before `ClientCasts` drops it, and one that did not complete fades. A completed
+  cast's model is gone at once, as its projectile takes over.
+- **The projectile leaves the hands** (`SpellForming#launch`): the server launches a player's formed bolt, and a
+  channel's missiles, from the caster's form point, above and ahead of the head, which is not where the hands are on
+  the screen. So for its first 4 ticks a player's projectile is drawn blended from the hands to its own path, and
+  from the forming model's size to its own, when the player was casting as it appeared. Only the drawing moves: the
+  entity flies where the server says. A mob's projectile leaves from where it formed already.
+- **Light:** a forming model takes the light of the block its point is in, then its look's light, as a flying one
+  does.
+- **Telegraphs are forced particles** (ADR 0073 decision 4): a spell area's ring (`SpellArea#drawRing`) and a boss's
+  landing ring (`BossMob#markLanding`) spawn with vanilla's limiter override, so the Particles option and the
+  32-block distance never hide a zone a player must step out of. Every other spell particle follows the option.
 
 **In code (aim assistance, RLM-345): the target circle.** During the local player's cast-time or channelled spell,
 `client/spell/TargetCircle` draws a ring on the ground under the mob the server named in `CastTargetPayload`
@@ -2927,8 +2983,9 @@ holds the same text. New feedback on a mob goes into both in the same run.
   `attack.swing` lasts half the mob's attack interval (0.75 s for the Sentinel), a stone golem's heavy swing:
   `MeleeMob#swing` triggers it on the server (`triggerAnim`, synced to clients) and it plays to its end, since
   GeckoLib's own attack controller stops with vanilla's 6-tick arm swing. While a custom mob (a caster, or a boss such
-  as Astone with her boulder) casts a spell that forms its projectile, the renderer draws the projectile's model growing
-  in its hands, which its spec places at the end of its arms in the cast pose (`CustomMobSpec.Hands`, from the model:
+  as Astone with her boulder) casts a spell that forms its projectile, the projectile's model grows in its hands, drawn
+  by the forming renderer of every caster (`client/render/SpellForming`, RLM-640), at the point its spec places at the
+  end of its arms in the cast pose (`CustomMobSpec.Hands`, from the model:
   half an arm's thickness back from its end; Matěj's playtest of Astone, 2026-10-29) ([11.6](#116-client-side)). Until
   A2 (RLM-48) brings the art, `rf gen` writes placeholders from the YAML's `model`: a build that fills the hitbox
   (`humanoid`; `slim`, an enderman's long legs and arms and a tall head; `golem`, a broad body with shells on its front

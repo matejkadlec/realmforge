@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../tools/schemas/particles.schema.json
+# A fleck (RLM-640): a tiny bright speck, a quarter of a mote's size, that lives half a second. The swirl round a
+# forming projectile is made of them: small enough not to hide the model growing in a caster's hands, which is about a
+# fifth of a block across, even through the caster's own eyes.
+id: fleck
+frames:
+  - - "........"
+    - "........"
+    - "...bb..."
+    - "..bffb.."
+    - "..bffb.."
+    - "...bb..."
+    - "........"
+    - "........"
+  - - "........"
+    - "........"
+    - "........"
+    - "...ff..."
+    - "...ff..."
+    - "........"
+    - "........"
+    - "........"
+lifetime_ticks: [5, 9]
+size: 0.035
+friction: 0.92

@@ -190,6 +190,11 @@ public final class SpellProjectile extends Projectile implements IEntityWithComp
         return burstRadius;
     }
 
+    /** The ticks it has flown: its clients draw its first ticks leaving the caster's hands. */
+    public int flownTicks() {
+        return flownTicks;
+    }
+
     @Override
     public void writeSpawnData(RegistryFriendlyByteBuf buffer) {
         LOOK_CODEC.encode(buffer, look);
@@ -344,7 +349,9 @@ public final class SpellProjectile extends Projectile implements IEntityWithComp
             radius = MIN_BURST_RADIUS;
         } else {
             EntityHitResult hit = ProjectileUtil.getEntityHitResult(level(), this, from, to,
-                    new AABB(from, to).inflate(1), entity -> entity instanceof LivingEntity living && living.isAlive()
+                    // A killing hit's creature is dead on the client by now (its death's event comes first) but still
+                    // there for its death animation: it counts, so the burst is drawn round it too (RLM-640).
+                    new AABB(from, to).inflate(1), entity -> entity instanceof LivingEntity living
                             && !living.isSpectator() && living != getOwner());
             if (hit != null) {
                 centre = hit.getEntity().getBoundingBox().getCenter();

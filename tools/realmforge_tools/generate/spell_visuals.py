@@ -2,6 +2,8 @@
 looks, models and trajectories (datapack.py).
 
 - Each look's placeholder material, ``assets/realmforge/textures/spell/material/<look>.png``, until its art exists.
+- Each ``cubes`` model's GeckoLib model, ``assets/realmforge/geckolib/models/spell/<id>.geo.json``, from its source
+  in ``art/models/spell/`` with every face mapped onto the material (``art/spell_models.py``, RLM-640).
 - Each particle of ``content/particles/``: its ``ParticleType`` registration with how it moves
   (``GeneratedParticles``), its sprite set ``assets/realmforge/particles/<id>.json`` and its frames
   ``assets/realmforge/textures/particle/<id>_<n>.png``.
@@ -12,6 +14,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from realmforge_tools.art import spell_models
 from realmforge_tools.content import Content
 from realmforge_tools.formats.jsonfmt import dump_json
 from realmforge_tools.generate.javagen import constant_name, header, java_file_path, string_literal
@@ -42,6 +45,14 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
         files[assets / material_texture(look.id)] = placeholder_material_texture(
             f"{MOD_ID}:{look.id}", [_rgb(color) for color in look.colors]
         )
+    for entry in content.spell_models:
+        model = entry.model
+        if model.shape == spell_models.CUBES:
+            # Validation read the source already (spell_models.problems), so it is there and sound.
+            source = spell_models.read(spell_models.source_path(paths, model.id))
+            files[assets / spell_models.asset_path(model.id)] = dump_json(
+                spell_models.geometry(model.id, source)
+            )
     for entry in content.particles:
         particle = entry.model
         files[assets / "particles" / f"{particle.id}.json"] = dump_json(
@@ -131,6 +142,7 @@ def _look(look: SpellLookDef) -> str:
     colors = ", ".join(string_literal(color) for color in look.colors)
     trail = look.trail
     burst = look.burst
+    swirl = look.swirl
     return (
         "            new LookExpectation(\n"
         f"                    {string_literal(f'{MOD_ID}:{look.id}')},\n"
@@ -139,6 +151,9 @@ def _look(look: SpellLookDef) -> str:
         f"                    {float(trail.per_block) if trail is not None else 0.0!r},\n"
         f"                    {_optional_string(burst.particle if burst is not None else None)},\n"
         f"                    {burst.count if burst is not None else 0},\n"
+        f"                    {_optional_string(swirl.particle if swirl is not None else None)},\n"
+        f"                    {float(swirl.per_tick) if swirl is not None else 0.0!r},\n"
+        f"                    {string_literal(look.light)},\n"
         f"                    {_optional_string(look.impact_sound)})"
     )
 
@@ -178,10 +193,12 @@ def _expectations(content: Content) -> bytes:
         "public final class GeneratedSpellVisualsExpectations {\n"
         "    /**\n"
         '     * A look: its colours as {@code "#RRGGBB"}, lightest first; its trail\'s particle and how many a block\n'
-        "     * flown, its burst's particle and how many at once (0 without one); its impact sound.\n"
+        "     * flown, its burst's particle and how many at once, its swirl's particle and how many a tick (0 without\n"
+        "     * one); how its models are lit; its impact sound.\n"
         "     */\n"
         "    public record LookExpectation(String id, List<String> colors, Optional<String> trailParticle,\n"
-        "            double trailPerBlock, Optional<String> burstParticle, int burstCount, Optional<String> impactSound) {\n"
+        "            double trailPerBlock, Optional<String> burstParticle, int burstCount, Optional<String> swirlParticle,\n"
+        "            double swirlPerTick, String light, Optional<String> impactSound) {\n"
         "    }\n"
         "\n"
         "    /** A model: its shape, its scale, how it turns in flight and its spin in degrees per second. */\n"

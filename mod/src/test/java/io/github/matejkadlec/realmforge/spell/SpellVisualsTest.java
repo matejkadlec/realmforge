@@ -24,7 +24,9 @@ class SpellVisualsTest {
     private static final Identifier BOULDER = Identifier.parse("realmforge:spell.astone_boulder.impact");
     private static final SpellLook FROST = new SpellLook(List.of(0xFFB8E2F4, 0xFF6ABCE2),
             Optional.of(new SpellLook.Trail(Identifier.parse("realmforge:mote"), 2)),
-            Optional.of(new SpellLook.Burst(Identifier.parse("realmforge:shard"), 16)), Optional.of(SHATTER));
+            Optional.of(new SpellLook.Burst(Identifier.parse("realmforge:shard"), 16)),
+            Optional.of(new SpellLook.Swirl(Identifier.parse("realmforge:mote"), 4)), SpellLook.Light.GLOW,
+            Optional.of(SHATTER));
     private static final SpellModel ORB = new SpellModel(SpellModel.Shape.ORB, 1, SpellModel.Orientation.TUMBLE, 0);
 
     private static ProjectileEffect projectile(boolean withModel) {
@@ -45,8 +47,13 @@ class SpellVisualsTest {
         SpellLook look = SpellLook.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString("{\"colors\": "
                 + "[\"#B8E2F4\", \"#6ABCE2\"], \"trail\": {\"particle\": \"realmforge:mote\", \"per_block\": 2.0}, "
                 + "\"burst\": {\"particle\": \"realmforge:shard\", \"count\": 16}, "
+                + "\"swirl\": {\"particle\": \"realmforge:mote\", \"per_tick\": 4.0}, \"light\": \"glow\", "
                 + "\"impact_sound\": \"minecraft:block.glass.break\"}")).getOrThrow();
         assertEquals(FROST, look);
+        SpellLook plain = SpellLook.CODEC.parse(JsonOps.INSTANCE,
+                JsonParser.parseString("{\"colors\": [\"#FFFFFF\"]}")).getOrThrow();
+        assertEquals(Optional.empty(), plain.swirl(), "a look need not swirl");
+        assertEquals(SpellLook.Light.WORLD, plain.light(), "a look is lit by the world unless it says otherwise");
         assertEquals(look, SpellLook.CODEC.parse(JsonOps.INSTANCE,
                 SpellLook.CODEC.encodeStart(JsonOps.INSTANCE, look).getOrThrow()).getOrThrow(), "it round-trips");
         RandomSource random = RandomSource.create(1);
@@ -65,6 +72,11 @@ class SpellVisualsTest {
         assertTrue(SpellLook.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString("{\"colors\": [\"#FFFFFF\"], "
                 + "\"burst\": {\"particle\": \"realmforge:shard\", \"count\": 25}}")).isError(),
                 "a burst of more than 24");
+        assertTrue(SpellLook.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString("{\"colors\": [\"#FFFFFF\"], "
+                + "\"swirl\": {\"particle\": \"realmforge:mote\", \"per_tick\": 8.5}}")).isError(),
+                "a swirl of more than 8 a tick");
+        assertTrue(SpellLook.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString("{\"colors\": [\"#FFFFFF\"], "
+                + "\"light\": \"blinding\"}")).isError(), "an unknown light");
     }
 
     @Test
@@ -80,6 +92,16 @@ class SpellVisualsTest {
                 + "\"scale\": 0.0}")).isError(), "a model of no size");
         assertTrue(SpellModel.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString("{\"shape\": \"cube\"}")).isError(),
                 "an unknown shape");
+    }
+
+    @Test
+    void aModelOfCubesNamesItsGeckoLibModelByItsId() {
+        assertEquals(new SpellModel(SpellModel.Shape.CUBES, 0.6F, SpellModel.Orientation.FORWARD, 0),
+                SpellModel.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString("{\"shape\": \"cubes\", "
+                        + "\"scale\": 0.6, \"orientation\": \"forward\"}")).getOrThrow());
+        // assets/realmforge/geckolib/models/spell/chunk.geo.json, as GeckoLib's cache names it.
+        assertEquals(Identifier.parse("realmforge:spell/chunk"),
+                SpellModel.geometry(Identifier.parse("realmforge:chunk")));
     }
 
     @Test

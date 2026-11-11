@@ -13,10 +13,12 @@ import java.util.Optional;
 public final class GeneratedSpellVisualsExpectations {
     /**
      * A look: its colours as {@code "#RRGGBB"}, lightest first; its trail's particle and how many a block
-     * flown, its burst's particle and how many at once (0 without one); its impact sound.
+     * flown, its burst's particle and how many at once, its swirl's particle and how many a tick (0 without
+     * one); how its models are lit; its impact sound.
      */
     public record LookExpectation(String id, List<String> colors, Optional<String> trailParticle,
-            double trailPerBlock, Optional<String> burstParticle, int burstCount, Optional<String> impactSound) {
+            double trailPerBlock, Optional<String> burstParticle, int burstCount, Optional<String> swirlParticle,
+            double swirlPerTick, String light, Optional<String> impactSound) {
     }
 
     /** A model: its shape, its scale, how it turns in flight and its spin in degrees per second. */
@@ -41,6 +43,9 @@ public final class GeneratedSpellVisualsExpectations {
                     2.0,
                     Optional.of("realmforge:mote"),
                     16,
+                    Optional.of("realmforge:fleck"),
+                    6.0,
+                    "world",
                     Optional.of("minecraft:block.amethyst_cluster.break")),
             new LookExpectation(
                     "realmforge:fire",
@@ -49,6 +54,9 @@ public final class GeneratedSpellVisualsExpectations {
                     3.0,
                     Optional.of("realmforge:ember"),
                     20,
+                    Optional.of("realmforge:fleck"),
+                    6.0,
+                    "emit",
                     Optional.of("minecraft:entity.generic.extinguish_fire")),
             new LookExpectation(
                     "realmforge:frost",
@@ -57,6 +65,9 @@ public final class GeneratedSpellVisualsExpectations {
                     2.0,
                     Optional.of("realmforge:shard"),
                     16,
+                    Optional.of("realmforge:fleck"),
+                    6.0,
+                    "glow",
                     Optional.of("minecraft:block.glass.break")),
             new LookExpectation(
                     "realmforge:stone",
@@ -65,9 +76,13 @@ public final class GeneratedSpellVisualsExpectations {
                     0.0,
                     Optional.of("realmforge:shard"),
                     14,
+                    Optional.of("realmforge:shard"),
+                    3.0,
+                    "world",
                     Optional.of("realmforge:spell.stoneform.impact")));
 
     public static final List<ModelExpectation> MODELS = List.of(
+            new ModelExpectation("realmforge:chunk", "cubes", 0.6, "forward", 0.0),
             new ModelExpectation("realmforge:orb", "orb", 1.0, "tumble", 0.0));
 
     public static final List<TrajectoryExpectation> TRAJECTORIES = List.of(
@@ -75,6 +90,7 @@ public final class GeneratedSpellVisualsExpectations {
 
     public static final List<ParticleExpectation> PARTICLES = List.of(
             new ParticleExpectation("realmforge:ember", 3, 8, 16),
+            new ParticleExpectation("realmforge:fleck", 2, 5, 9),
             new ParticleExpectation("realmforge:mote", 3, 6, 12),
             new ParticleExpectation("realmforge:shard", 2, 8, 14));
 

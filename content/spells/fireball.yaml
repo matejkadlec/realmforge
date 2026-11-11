@@ -20,7 +20,7 @@ effects:
   - type: realmforge:projectile
     speed: 30
     size: 0.5
-    model: realmforge:orb
+    model: realmforge:chunk
     splash: {radius: 1, damage_percent: 50}
     effects:
       - type: realmforge:damage

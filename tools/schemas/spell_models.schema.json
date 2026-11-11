@@ -22,15 +22,18 @@
     },
     "scale": {
       "default": 1.0,
-      "description": "Its width as a share of the projectile's hitbox: 1 fills it. At most 4.",
+      "description": "Its width as a share of the projectile's hitbox: 1 fills it. A cubes model's width is the larger of its extents across its length (x and y); its length follows its proportions. At most 4.",
       "exclusiveMinimum": 0,
       "maximum": 4,
       "title": "Scale",
       "type": "number"
     },
     "shape": {
-      "const": "orb",
-      "description": "orb: three crossed slabs half a block across, the placeholder shape of every model until its GeckoLib model exists (RLM-640).",
+      "description": "orb: three crossed slabs, the placeholder shape of a model without art. cubes: a GeckoLib model of at most 64 cubes from art/models/spell/<id>.geo.json, which forms cube by cube (art/README.md).",
+      "enum": [
+        "orb",
+        "cubes"
+      ],
       "title": "Shape",
       "type": "string"
     },

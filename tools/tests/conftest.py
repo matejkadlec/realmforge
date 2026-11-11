@@ -14,9 +14,11 @@ def repo(tmp_path: Path) -> RepoPaths:
     """A scratch checkout containing a copy of content/ and the vanilla ID universe. It leaves out content/rooms/,
     megabytes of imported templates no test reads, content/room_specs/, whose kept seeds the generator would build
     into rooms, content/dungeons/, whose pools need those rooms, and content/set_pieces/, templates too: a test that
-    needs rooms, room specs, dungeon types or set pieces adds its own (the room themes stay)."""
+    needs rooms, room specs, dungeon types or set pieces adds its own (the room themes stay). The spell models'
+    sources come along (art/models/), which the content's models of cubes are read from."""
     shutil.copytree(REPO_ROOT / "content", tmp_path / "content", ignore=_rooms_and_dungeons)
     shutil.copytree(REPO_ROOT / "tools/id_universe", tmp_path / "tools/id_universe")
+    shutil.copytree(REPO_ROOT / "art/models", tmp_path / "art/models")
     return RepoPaths(tmp_path)
 
 

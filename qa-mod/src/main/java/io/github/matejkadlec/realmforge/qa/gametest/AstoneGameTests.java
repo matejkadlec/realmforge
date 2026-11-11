@@ -32,7 +32,9 @@ import java.util.OptionalInt;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -149,6 +151,45 @@ public final class AstoneGameTests {
                             "her hands reach well beyond her hitbox: " + hands.ahead());
                 })
                 .thenWaitUntil(() -> helper.assertTrue(husk.getHealth() < full, "her boulder hit the husk"))
+                .thenSucceed();
+    }
+
+    /**
+     * The ring that marks where Quake lands is a telegraph, so its particles are forced (ADR 0073 decision 4,
+     * RLM-640): the server sends them with vanilla's limiter override, and a client shows them in full whatever its
+     * Particles option says and however far its camera is.
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_17X17, timeoutTicks = 400)
+    public static void astonesLandingRingIsForcedParticles(GameTestHelper helper) {
+        BossMob astone = standingAstone(helper);
+        ServerPlayer[] watcher = new ServerPlayer[1];
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(astone.home().isPresent(), "Astone took her home"))
+                .thenExecute(() -> astone.enterPhase(1))
+                .thenWaitUntil(() -> helper.assertFalse(astone.changingPhase(), "the phase change is over"))
+                .thenExecute(() -> astone.setTarget(husk(helper, new Vec3(11.5, 1, 8.5))))
+                .thenWaitUntil(() -> helper.assertTrue(casting(astone, GeneratedSpells.ASTONE_QUAKE),
+                        "Astone quakes with her target inside"))
+                .thenExecute(() -> {
+                    // A spectator: there to receive what the server sends, never a target of hers.
+                    watcher[0] = QaPlayers.loginOnPlatform(helper, "qa-astone-ring", new Vec3(1.5, 1, 1.5));
+                    watcher[0].setGameMode(GameType.SPECTATOR);
+                    QaPlayers.sentPackets(watcher[0], ClientboundLevelParticlesPacket.class);
+                })
+                // The ring shows every 4 ticks.
+                .thenExecuteAfter(6, () -> {
+                    BossMob.Landing landing = astone.landing().orElseThrow();
+                    List<ClientboundLevelParticlesPacket> ring = QaPlayers
+                            .sentPackets(watcher[0], ClientboundLevelParticlesPacket.class).stream()
+                            .filter(packet -> packet.getParticle() instanceof DustParticleOptions)
+                            .filter(packet -> Math.abs(Math.hypot(packet.getX() - landing.middle().x,
+                                    packet.getZ() - landing.middle().z) - landing.radius()) < 0.01)
+                            .toList();
+                    helper.assertFalse(ring.isEmpty(), "the watcher got the landing ring's particles");
+                    helper.assertTrue(ring.stream().allMatch(ClientboundLevelParticlesPacket::isOverrideLimiter),
+                            "every particle of the ring overrides the client's particle limiter");
+                    ApotheosisGameTests.logout(watcher[0]);
+                })
                 .thenSucceed();
     }
 

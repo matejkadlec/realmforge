@@ -13,7 +13,7 @@ from pathlib import PurePosixPath
 from pydantic import BaseModel
 
 from realmforge_tools.apotheosis import Snapshot, fit, load_snapshot
-from realmforge_tools.art import approved
+from realmforge_tools.art import approved, spell_models
 from realmforge_tools.content import Content, Entry, RoomEntry, SetPieceEntry, load_content
 from realmforge_tools.id_universe import NEOFORGE_ATTRIBUTES, IdUniverse, load_vanilla
 from realmforge_tools.problems import Problem, ValidationFailed
@@ -130,6 +130,7 @@ from realmforge_tools.schema.spell import (
     SpellDef,
 )
 from realmforge_tools.schema.spell_school import MAGIC_TAG, PHYSICAL_TAG, SpellSchoolDef
+from realmforge_tools.schema.spell_visuals import MAX_SWIRL_ALIVE
 from realmforge_tools.schema.stat import StatDef
 from realmforge_tools.schema.text import text_constant
 from realmforge_tools.schema.worldgen import WORLDGEN_REGISTRIES, data_path
@@ -218,6 +219,7 @@ def load_and_validate(
     problems = (
         validate_content(content, universe)
         + approved.problems(paths, content)
+        + spell_models.problems(paths, content)
         + _check_worldgen_clashes(content, paths)
         + _check_apotheosis(content, universe, paths)
     )
@@ -1089,7 +1091,7 @@ def _check_spells(content: Content, universe: IdUniverse) -> list[Problem]:
                 problems += _check_projectile(entry.source, path, effect, mob_tags, universe)
             if effect.type == CONE:
                 problems += _check_cone(entry.source, path, effect, universe)
-        problems += _check_visuals(entry.source, spell, universe)
+        problems += _check_visuals(entry.source, spell, content, universe)
         cast_sound = getattr(spell.cast, "sound", None)
         if cast_sound is not None and not universe.contains(SOUND_EVENT_REGISTRY, cast_sound):
             problems.append(
@@ -1516,12 +1518,26 @@ def _check_projectile(
     return problems
 
 
-def _check_visuals(source: str, spell: BaseModel, universe: IdUniverse) -> list[Problem]:
-    """A spell's look exists, and so does an impact sound of its own (RLM-639)."""
+def _check_visuals(source: str, spell: BaseModel, content: Content, universe: IdUniverse) -> list[Problem]:
+    """A spell's look exists, and so does an impact sound of its own (RLM-639). Each of its projectiles is drawn by
+    something: a model, or its look's trail (RLM-640). Without either it would fly unseen until its burst."""
     visuals = spell.visuals
     if visuals is None:
         return []
     problems: list[Problem] = []
+    looks = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.spell_looks}
+    look = looks.get(visuals.look)
+    if look is not None and look.trail is None:
+        problems += [
+            Problem(
+                source,
+                path,
+                f"a projectile without a model is drawn by its look's trail, and {visuals.look} has none: give the "
+                "projectile a model or the look a trail",
+            )
+            for path, effect in spell.all_effects()
+            if effect.type == PROJECTILE and effect.model is None
+        ]
     if not universe.contains(SPELL_LOOK_REGISTRY, visuals.look):
         problems.append(
             Problem(source, "visuals.look", _unknown(visuals.look, SPELL_LOOK_REGISTRY, universe))
@@ -1536,13 +1552,26 @@ def _check_visuals(source: str, spell: BaseModel, universe: IdUniverse) -> list[
 
 
 def _check_spell_looks(content: Content, universe: IdUniverse) -> list[Problem]:
-    """A look's trail and burst are particles of ours (content/particles/): only those carry a colour, which a look
-    gives each spawn. Its impact sound exists."""
+    """A look's trail, burst and swirl are particles of ours (content/particles/): only those carry a colour, which a
+    look gives each spawn. Its swirl keeps to the particle budget: its rate times its particle's longest life is at
+    most 80 alive per caster. Its impact sound exists."""
     problems: list[Problem] = []
     ours = {f"{MOD_ID}:{entry.model.id}" for entry in content.particles}
+    longest = {f"{MOD_ID}:{entry.model.id}": entry.model.lifetime_ticks[1] for entry in content.particles}
     for entry in content.spell_looks:
         look = entry.model
-        for name in ("trail", "burst"):
+        swirl = look.swirl
+        if swirl is not None and swirl.per_tick * longest.get(swirl.particle, 0) > MAX_SWIRL_ALIVE:
+            problems.append(
+                Problem(
+                    entry.source,
+                    "swirl.per_tick",
+                    f"{swirl.per_tick:g} a tick of {swirl.particle}, which lives up to "
+                    f"{longest[swirl.particle]} ticks, keeps more than {MAX_SWIRL_ALIVE} alive per caster: lower the "
+                    "rate or use a shorter-lived particle",
+                )
+            )
+        for name in ("trail", "burst", "swirl"):
             emitter = getattr(look, name)
             if emitter is None or emitter.particle in ours:
                 continue

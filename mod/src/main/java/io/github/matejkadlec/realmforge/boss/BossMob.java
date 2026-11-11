@@ -295,7 +295,8 @@ public class BossMob extends MeleeMob implements MobLevels.FixedLevel {
             int count = Mth.ceil(2 * Math.PI * landing.radius() / LANDING_RING_SPACING);
             for (int i = 0; i < count; i++) {
                 double angle = 2 * Math.PI * i / count;
-                level.sendParticles(LANDING_RING, landing.middle().x + Math.cos(angle) * landing.radius(),
+                // A telegraph: forced, so it shows in full whatever the Particles option says (ADR 0073 decision 4).
+                level.sendParticles(LANDING_RING, true, true, landing.middle().x + Math.cos(angle) * landing.radius(),
                         landing.middle().y + 0.1, landing.middle().z + Math.sin(angle) * landing.radius(), 1, 0, 0,
                         0, 0);
             }

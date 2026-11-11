@@ -25,6 +25,31 @@
       "title": "BurstDef",
       "type": "object"
     },
+    "SwirlDef": {
+      "additionalProperties": false,
+      "description": "The particles that swirl in toward a projectile of the look while it forms in a caster's hands, spawned by\nthe clients; a ``hands`` forming shows them alone.",
+      "properties": {
+        "particle": {
+          "description": "One of our particles, e.g. realmforge:mote (content/particles/).",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Particle",
+          "type": "string"
+        },
+        "per_tick": {
+          "description": "How many a tick while the cast runs, at most 8; times its particle's longest life, at most 80.",
+          "exclusiveMinimum": 0,
+          "maximum": 8,
+          "title": "Per Tick",
+          "type": "number"
+        }
+      },
+      "required": [
+        "particle",
+        "per_tick"
+      ],
+      "title": "SwirlDef",
+      "type": "object"
+    },
     "TrailDef": {
       "additionalProperties": false,
       "description": "The particles a projectile of the look leaves behind as it flies, spawned by its clients.",
@@ -100,6 +125,29 @@
       "default": null,
       "description": "The sound event of its projectiles' hit on a block or a creature, e.g. minecraft:block.glass.break. A spell may name its own (visuals.impact_sound).",
       "title": "Impact Sound"
+    },
+    "light": {
+      "default": "world",
+      "description": "How its models are lit. world: by the light where they are, like an arrow. glow: a few light levels above that, lighting nothing (frost). emit: at full brightness (fire); it lights its surroundings once the pack has dynamic lights (ADR 0075).",
+      "enum": [
+        "world",
+        "glow",
+        "emit"
+      ],
+      "title": "Light",
+      "type": "string"
+    },
+    "swirl": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SwirlDef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "What swirls in toward its projectile while it forms in a caster's hands (the storm of a grow or storm forming, and all a hands forming shows)."
     },
     "trail": {
       "anyOf": [

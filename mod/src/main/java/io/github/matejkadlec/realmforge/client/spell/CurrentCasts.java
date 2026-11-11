@@ -46,6 +46,12 @@ public final class CurrentCasts {
         return (float) Math.clamp(elapsed / cast.durationTicks(), 0.0, 1.0);
     }
 
+    /** Every caster with a cast in progress at game time {@code gameTime}, by entity id. */
+    public Map<Integer, Cast> all(long gameTime) {
+        casts.values().removeIf(cast -> gameTime > cast.endGameTime() + GRACE_TICKS);
+        return Map.copyOf(casts);
+    }
+
     public void clear() {
         casts.clear();
     }

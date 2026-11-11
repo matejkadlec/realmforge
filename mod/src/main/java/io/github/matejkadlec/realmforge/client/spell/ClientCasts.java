@@ -5,6 +5,7 @@ import io.github.matejkadlec.realmforge.spell.Casting;
 import io.github.matejkadlec.realmforge.spell.CombatState.Cast;
 import io.github.matejkadlec.realmforge.spell.net.CastEndedPayload;
 import io.github.matejkadlec.realmforge.spell.net.CastStartedPayload;
+import java.util.Map;
 import java.util.Optional;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -23,7 +24,8 @@ import net.neoforged.neoforge.common.NeoForge;
  * every tracked caster's, mobs and bosses included, from {@code CastStartedPayload} and {@code CastEndedPayload}. C3b's
  * cast bar reads it, and it raises a casting player's hands ({@code client/animation/CastAnimation}, RLM-435) when
  * a cast starts and lowers them a tick after it ends, so a cast that replaces another keeps them up (RLM-454,
- * {@link PendingLowerings}). While the local player casts, the attack key does nothing, not even a swing: the server
+ * {@link PendingLowerings}). What forms in a caster's hands is drawn from it too ({@code client/render/SpellForming},
+ * RLM-640). While the local player casts, the attack key does nothing, not even a swing: the server
  * refuses melee during a cast anyway (ADR 0020, architecture 9.2). A cast that slows them also keeps them from
  * sprinting until it ends (RLM-371, ADR 0057), as using an item does. Main thread only.
  */
@@ -112,6 +114,12 @@ public final class ClientCasts {
     /** {@code keys} with the sprint key let go of. */
     private static Input withoutSprint(Input keys) {
         return new Input(keys.forward(), keys.backward(), keys.left(), keys.right(), keys.jump(), keys.shift(), false);
+    }
+
+    /** Every cast in progress this client knows of, by the caster's entity id. */
+    public static Map<Integer, Cast> all() {
+        ClientLevel level = Minecraft.getInstance().level;
+        return level == null ? Map.of() : CASTS.all(level.getGameTime());
     }
 
     /** {@code caster}'s cast in progress, if this client knows of one. */
