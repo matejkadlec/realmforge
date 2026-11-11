@@ -93,6 +93,8 @@ entry `content/spell_models/<id>.yaml` with `shape: cubes`.
   cubes round an axis that taper to a point.
 - **At most 64 cubes,** each side of each above 0. Rotate cubes freely; do not rotate groups (bones): the game draws
   the cubes, not the bones, and validation refuses a rotated bone.
+- **No inflate:** a cube is drawn at its own size, so Blockbench's `inflate` on a cube or a group would be lost and
+  the cube thinner in the game than in the editor. Validation refuses one; give the cube that size instead.
 - **The front is -z,** Blockbench's north: a `forward` model flies with that end first.
 - **No texture and no UVs:** `rf gen` drops the source's UVs and maps every face onto the look's 16 x 16 material
   pixel for pixel, each cube from another corner of the tile, so one model serves every look.
