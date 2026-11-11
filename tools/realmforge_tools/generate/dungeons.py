@@ -56,7 +56,7 @@ from realmforge_tools.rooms.containers import KINDS, Candidate, Kind, candidates
 from realmforge_tools.rooms.dress import reachable_hazards
 from realmforge_tools.rooms.generator import DOOR, EMPTY_POOL, GENERATED_DIR, paths
 from realmforge_tools.rooms.openings import SIDES
-from realmforge_tools.rooms.set_pieces import DENSITY, Fit, Pattern, RoomView, match
+from realmforge_tools.rooms.set_pieces import DENSITY, Fit, Pattern, RoomView, match, pattern_cells
 from realmforge_tools.rooms.structure import (
     JIGSAW,
     BlockState,
@@ -355,12 +355,15 @@ def room_spots(
     room_paths: frozenset[tuple[int, int]] = frozenset(),
 ) -> list[dict[str, Any]]:
     """The room's set-piece patterns as the dungeon type entry carries them: each with the pieces that may fill it
-    and its spots."""
+    and its spots. A pattern with a spot at one of the room's openings is left out: the matcher reads the blocks an
+    opening clears as wall, and a piece there would stand against the hole a run opens, or in front of it, where
+    players reach the spawner the room hides (RLM-412)."""
     fits = room_fits(room_role(room.model.tags), pieces)
+    opened = {tuple(pos) for positions in room.model.openings.values() for pos in positions}
     found = []
     for pattern in room_patterns(room, fits, theme_blocks, room_paths):
         candidates = pattern_pieces(fits, pattern)
-        if not candidates:
+        if not candidates or at_opening(fits[pattern.fit][0], pattern, opened):
             continue
         found.append(
             {
@@ -372,6 +375,20 @@ def room_spots(
             }
         )
     return found
+
+
+def at_opening(fit: Fit, pattern: Pattern, opened: set[tuple[int, int, int]]) -> bool:
+    """Whether a cell of one of the pattern's spots, the piece's or its clearance, is a block an opening clears or
+    touches one (on a side, above or below)."""
+    if not opened:
+        return False
+    near = ((0, 0, 0), (1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1))
+    for spot in pattern.spots:
+        filled, clear = pattern_cells(fit, spot)
+        for x, y, z in filled | clear:
+            if any((x + dx, y + dy, z + dz) in opened for dx, dy, dz in near):
+                return True
+    return False
 
 
 def pattern_pieces(fits: list[tuple[Fit, list[SetPieceEntry]]], pattern: Pattern) -> list[SetPieceEntry]:

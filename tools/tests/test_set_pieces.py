@@ -712,6 +712,38 @@ def test_a_room_can_turn_set_pieces_off(repo: RepoPaths) -> None:
     assert "set_pieces: false\n" in jail.read_text(encoding="utf-8")
 
 
+def test_no_piece_stands_at_a_rooms_opening(repo: RepoPaths) -> None:
+    # RLM-412: a run opens one side of a room that hides a spawner. The matcher reads the blocks an opening clears as
+    # wall, so a pattern with a spot against or in front of one is left out of the entry.
+    walled_hall(repo)
+    path = f"{DATA}/realmforge/dungeon_type/crypt.json"
+    hall = next(r for r in json.loads(generate(repo)[path])["rooms"] if r["template"].endswith("/hall"))
+    patterns = hall["set_piece_spots"]
+    x, y, z = patterns[0]["spots"][0]["pos"]
+    behind = {"south": (0, -1), "north": (0, 1), "east": (-1, 0), "west": (1, 0)}[
+        patterns[0]["spots"][0]["facing"]
+    ]
+    wall = [x + behind[0], y, z + behind[1]]
+    other = next(
+        pos
+        for pattern in patterns[1:]
+        for spot in pattern["spots"]
+        if (pos := spot["pos"]) and abs(pos[0] - x) + abs(pos[2] - z) > 2
+    )
+    sidecar = repo.content / "rooms" / "crypt" / "hall.yaml"
+    far = [other[0], 0, other[2]]
+    sidecar.write_text(
+        sidecar.read_text(encoding="utf-8")
+        + f"openings:\n  north: [{json.dumps(wall)}]\n  south: [{json.dumps(far)}]\n",
+        encoding="utf-8",
+    )
+    kept = next(r for r in json.loads(generate(repo)[path])["rooms"] if r["template"].endswith("/hall"))
+    spots = [tuple(spot["pos"]) for pattern in kept.get("set_piece_spots", []) for spot in pattern["spots"]]
+    assert (x, y, z) not in spots, "a piece against the block an opening clears"
+    assert tuple(other) not in spots, "a piece on the floor block another opening clears"
+    assert len(kept.get("set_piece_spots", [])) < len(patterns)
+
+
 def test_a_set_pieces_containers_need_the_default_loot_table(repo: RepoPaths) -> None:
     # ADR 0041: a piece's chest or barrel is a loot container too, with the type's default table.
     walled_hall(repo)

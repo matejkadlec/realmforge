@@ -3789,7 +3789,9 @@ Rooms are generated or imported; nobody has to build one by hand
   doorway loses a doorway it reached, every clearance cell stays reachable, and no lit cell turns dark (a piece is
   solid up to its height and lights nothing). Spots come in patterns (ADR 0036): four that the room's mirrors map
   onto each other, a pair (one mirror or a half turn) or one centred on a mirror, bigger fits and patterns first,
-  never overlapping; a mirrored spot of a mask that mirroring changes takes only pieces that may be mirrored. The
+  never overlapping; a mirrored spot of a mask that mirroring changes takes only pieces that may be mirrored, and
+  a pattern with a spot at one of the room's `openings` is left out of the entry (the blocks an opening clears read
+  as wall, and a piece there would stand at the hole a run opens to a hidden spawner, RLM-412). The
   entry of a dungeon type that places set pieces carries them ([15.2](#152-dungeon-types)) with its density (by
   default a hallway at most one pattern, a combat room one or two; treasure, boss and entrance rooms only for pieces
   that name the role), and the room cache keeps a room's patterns per set of fits. `uv run rf set-pieces report` counts the spots of the
