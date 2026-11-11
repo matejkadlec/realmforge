@@ -106,6 +106,11 @@ Built by RLM-289 from `content/container_loot/` (`normal.yaml`, `treasure.yaml`)
 - **Not in the tables yet:** curios, loot-only or not, because the pack has none (RLM-657); and materials of
   their own for Ascent, Summit and Pinnacle, and gem ores as blocks, because those realms' content does not exist
   (RLM-658). Until then the three later tiers use Frontier's materials.
+- **No rarity band yet:** the [gear design](gear.md#the-realm-bands) gives our loot a rarity band per realm, the
+  realm the container stands in. The two tables are not a realm's, so an affix item in a container rolls at the
+  opener's tier weights alone, as Apotheosis's own chest loot does: at Frontier about one in nine is Rare or Epic,
+  above Undervault's band of Common to Uncommon. RLM-567 gives our loot its bands; for containers that needs a
+  table per realm (or the band on the dungeon type) and a list of rarities on `realmforge:tier_affix_item`.
 - **Trying it:** `/qa loot chest normal` and `/qa loot barrel treasure` place a loot container in front of the
   player, as the dungeon builder does; `/apoth set_world_tier @s frontier` sets the world tier. The rooms'
   containers get the tables with RLM-290 and W6.
@@ -161,6 +166,7 @@ playtest batch through its handoff, with every automated check. Then don't wait 
 - **Lootr's defaults:** its own chest textures and the particles on a container a player has not opened yet stay
   on, a Lootr container breaks only while sneaking, and Lootr's advancement tab stays
   ([pack README](../../pack/README.md#configuration)).
+- **Affix gear without the realm's band** until RLM-567 ([above](#the-tables)).
 
 1. **Budget ranges for the treasure table.** **Decided 2026-10-21 (left to Claude by Matěj, RLM-289): about 750 to
    3,000 points,** in the same ratio to the normal table as Matěj's kill-equivalents (5 to 20 against 2 to 10), tuned

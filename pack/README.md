@@ -250,7 +250,7 @@ players craft are unchanged. NeoForge reads a server config from `config/`; a wo
 
 **Lootr** (`config/lootr-common.jsonc`, Lootr 1.23.38.123, RLM-288,
 [ADR 0041](../docs/decisions/0041-dungeon-containers-hold-loot-through-lootr.md)). Every player gets their own
-contents of a loot container; one value differs from Lootr's defaults:
+contents of a loot container; one value differs from the file Lootr writes:
 
 - `Conversion.convert_structure_item_frames = false`: by default Lootr turns every item frame that a structure
   template places into a frame of its own, from which each player takes the item. Our dungeon rooms are templates,

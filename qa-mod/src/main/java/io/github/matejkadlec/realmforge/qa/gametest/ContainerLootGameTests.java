@@ -3,6 +3,7 @@ package io.github.matejkadlec.realmforge.qa.gametest;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
+import io.github.matejkadlec.realmforge.dungeon.instance.InstanceDimension;
 import io.github.matejkadlec.realmforge.generated.GeneratedItems;
 import io.github.matejkadlec.realmforge.loot.BudgetEntry;
 import io.github.matejkadlec.realmforge.loot.LootContainers;
@@ -13,6 +14,7 @@ import io.github.matejkadlec.realmforge.qa.generated.GeneratedContainerLootExpec
 import java.io.IOException;
 import java.io.Reader;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
@@ -27,6 +29,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.PermissionSet;
+import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.inventory.ChestMenu;
@@ -47,9 +50,10 @@ import net.minecraft.world.phys.Vec3;
  * RLM-289 (ADR 0041, architecture 13): container loot by loot points in the game. The generated tables' budgets match
  * the pipeline's; a roll's points follow the opener's world tier and luck; a roll never overspends and a limited
  * option comes once; a tier's options are its own; money comes in the largest coins; a gem and an affix item are
- * rolled by Apotheosis for the opener; and the two real tables fill a container at every world tier, through Lootr
- * too. Tables are rolled as Lootr rolls them: the opener as {@code THIS_ENTITY}, with their luck. The world tier is set
- * with Apotheosis's own command, so no class of Apotheosis is named here.
+ * rolled by Apotheosis for the opener; the two real tables fill a container at every world tier, in the instance
+ * dimension too; and real containers, placed as the builder places them and opened through Lootr, roll for their
+ * opener's world tier and luck. The other tables are rolled as Lootr rolls them: the opener as {@code THIS_ENTITY},
+ * with their luck. The world tier is set with Apotheosis's own command, so no class of Apotheosis is named here.
  */
 public final class ContainerLootGameTests {
     private static final List<String> TIERS = BudgetEntry.TIERS;
@@ -85,8 +89,9 @@ public final class ContainerLootGameTests {
     }
 
     /**
-     * The ticket's "Done when": containers opened at two world tiers and with luck. The test table gives 1,000 points
-     * of diamonds at 100 each, half more at Frontier and a tenth more per point of luck; equal stacks join.
+     * A roll's points at two world tiers and with luck, rolled as Lootr rolls a table. The test table gives 1,000
+     * points of diamonds at 100 each, half more at Frontier and a tenth more per point of luck; equal stacks join.
+     * {@link #aPlacedContainersRollFollowsItsOpenersWorldTierAndLuck} opens real containers for the same numbers.
      */
     @QaGameTest
     public static void aRollsPointsFollowTheOpenersWorldTierAndLuck(GameTestHelper helper) {
@@ -208,22 +213,65 @@ public final class ContainerLootGameTests {
         });
     }
 
-    /** The whole way: a chest the builder places with the normal table gives the player who opens it loot. */
+    /**
+     * The ticket's "Done when", the whole way: containers the builder places ({@link LootContainers#place}, Lootr's
+     * chests) opened at two world tiers and with luck. Lootr hands our budget entry the opener and their luck
+     * ({@code THIS_ENTITY} and the luck of its loot parameters), or every container would roll as for a Haven player
+     * without luck: 10 diamonds whoever opens it. Each check opens a chest of its own, since a player's contents of
+     * one chest are rolled once.
+     */
     @QaGameTest
-    public static void aPlacedChestWithTheNormalTableHoldsLoot(GameTestHelper helper) {
-        withPlayer(helper, "qa-loot-chest", new Vec3(1.5, 1, 1.5), player -> {
+    public static void aPlacedContainersRollFollowsItsOpenersWorldTierAndLuck(GameTestHelper helper) {
+        withPlayer(helper, "qa-loot-chest", new Vec3(2.5, 1, 1.5), player -> {
+            ResourceKey<LootTable> diamonds = table("test/budget_diamonds");
+            setTier(player, "haven");
+            helper.assertValueEqual(open(helper, player, new BlockPos(1, 1, 3), diamonds).countItem(Items.DIAMOND),
+                    10, "diamonds in a chest opened at Haven");
             setTier(player, "frontier");
-            BlockPos pos = helper.absolutePos(new BlockPos(2, 1, 3));
+            helper.assertValueEqual(open(helper, player, new BlockPos(2, 1, 3), diamonds).countItem(Items.DIAMOND),
+                    15, "diamonds in a chest opened at Frontier");
+            // Apotheosis's Frontier augment makes 5 points of luck 6: 1,000 x 1.5 x 1.6 points.
+            player.getAttribute(Attributes.LUCK).setBaseValue(5);
+            helper.assertValueEqual(open(helper, player, new BlockPos(3, 1, 3), diamonds).countItem(Items.DIAMOND),
+                    24, "diamonds in a chest opened at Frontier with luck");
+
             ContainerLootExpectation normal = GeneratedContainerLootExpectations.TABLES.stream()
                     .filter(expected -> expected.id().equals("realmforge:normal")).findFirst().orElseThrow();
-            helper.assertTrue(LootContainers.place(helper.getLevel(), pos, Blocks.CHEST.defaultBlockState(),
-                    ResourceKey.create(Registries.LOOT_TABLE, Identifier.parse(normal.lootTable())), 0L),
-                    "the chest takes the table");
-            player.gameMode.useItemOn(player, helper.getLevel(), ItemStack.EMPTY, InteractionHand.MAIN_HAND,
-                    new BlockHitResult(Vec3.atCenterOf(pos), Direction.UP, pos, false));
-            helper.assertTrue(player.containerMenu instanceof ChestMenu, "the chest does not open");
-            helper.assertFalse(((ChestMenu) player.containerMenu).getContainer().isEmpty(), "the chest is empty");
-            player.closeContainer();
+            helper.assertFalse(open(helper, player, new BlockPos(2, 1, 4),
+                    ResourceKey.create(Registries.LOOT_TABLE, Identifier.parse(normal.lootTable()))).isEmpty(),
+                    "a chest with the normal table is empty");
+        });
+    }
+
+    /**
+     * The containers will stand in dungeons: in the instance dimension both real tables still fill a container, and
+     * Apotheosis still answers there with gems and affix items (its gems of the Overworld, the Nether and the End are
+     * bound to their dimensions; its core gems and its affix loot entries are not).
+     */
+    @QaGameTest(timeoutTicks = 400)
+    public static void theTablesHoldLootInTheInstanceDimensionToo(GameTestHelper helper) {
+        withPlayer(helper, "qa-loot-instance", player -> {
+            ServerLevel instances = InstanceDimension.level(helper.getLevel().getServer());
+            player.teleportTo(instances, 0.5, 100, 0.5, Set.of(), 0.0F, 0.0F, true);
+            helper.assertTrue(player.level() == instances, "the player is in the instance dimension");
+            for (String tier : List.of("haven", "frontier")) {
+                setTier(player, tier);
+                for (int seed = 1; seed <= 10; seed++) {
+                    List<String> ids = roll(instances, helper, player, table("test/tier_loot"), seed).stream()
+                            .map(ContainerLootGameTests::id).toList();
+                    helper.assertValueEqual(ids.size(), 2, "a gem and an affix item at " + tier + ": " + ids);
+                    helper.assertValueEqual(ids.stream().filter("apotheosis:gem"::equals).count(), 1L,
+                            "gems at " + tier + ": " + ids);
+                }
+                for (ContainerLootExpectation expected : GeneratedContainerLootExpectations.TABLES) {
+                    ResourceKey<LootTable> table =
+                            ResourceKey.create(Registries.LOOT_TABLE, Identifier.parse(expected.lootTable()));
+                    for (int seed = 1; seed <= ROLLS; seed++) {
+                        helper.assertFalse(roll(instances, helper, player, table, seed).isEmpty(),
+                                "an empty container: " + expected.id() + " at " + tier + ", roll " + seed);
+                    }
+                }
+            }
         });
     }
 
@@ -231,10 +279,31 @@ public final class ContainerLootGameTests {
         return ResourceKey.create(Registries.LOOT_TABLE, RealmforgeQa.id(path));
     }
 
+    /**
+     * Places a chest with {@code table} at {@code relative} as the builder does, right-clicks it as {@code player} and
+     * returns the contents its menu shows them: Lootr's roll for that player.
+     */
+    private static Container open(GameTestHelper helper, ServerPlayer player, BlockPos relative,
+            ResourceKey<LootTable> table) {
+        BlockPos pos = helper.absolutePos(relative);
+        helper.assertTrue(LootContainers.place(helper.getLevel(), pos, Blocks.CHEST.defaultBlockState(), table, 0L),
+                "the chest takes the table");
+        helper.assertTrue(LootContainers.isPerPlayer(helper.getLevel().getBlockState(pos)), "the chest is Lootr's");
+        player.closeContainer();
+        player.gameMode.useItemOn(player, helper.getLevel(), ItemStack.EMPTY, InteractionHand.MAIN_HAND,
+                new BlockHitResult(Vec3.atCenterOf(pos), Direction.UP, pos, false));
+        helper.assertTrue(player.containerMenu instanceof ChestMenu, "the chest does not open");
+        return ((ChestMenu) player.containerMenu).getContainer();
+    }
+
     /** Rolls a loot table for {@code player} as Lootr does: the opener as the roll's entity, with their luck. */
     private static List<ItemStack> roll(GameTestHelper helper, ServerPlayer player, ResourceKey<LootTable> table,
             long seed) {
-        ServerLevel level = helper.getLevel();
+        return roll(helper.getLevel(), helper, player, table, seed);
+    }
+
+    private static List<ItemStack> roll(ServerLevel level, GameTestHelper helper, ServerPlayer player,
+            ResourceKey<LootTable> table, long seed) {
         LootTable loot = level.getServer().reloadableRegistries().getLootTable(table);
         helper.assertTrue(loot != LootTable.EMPTY, "the loot table " + table.identifier() + " is not loaded");
         LootParams params = new LootParams.Builder(level)

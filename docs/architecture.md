@@ -2792,7 +2792,8 @@ for reference, should talents ever come; the proc engine at its end exists since
     context) and `compat/apotheosis/ApotheosisTiers` implements it when Apotheosis is loaded: the tier is
     `WorldTier#getTier` of the loot context's `THIS_ENTITY`, the opener (Lootr sets it), and the gem and the affix
     item come from Apotheosis's own loot entries without a filter, so purities and rarities follow the tier as in
-    its chest loot; a gem of several `rolls` is the purest of them. Our tables never name Apotheosis's entries, so
+    its chest loot (the gear design's rarity band per realm is not applied to containers yet, RLM-567); a gem of
+    several `rolls` is the purest of them. Our tables never name Apotheosis's entries, so
     they load without it (the lean dev client), where every opener is at the first tier and the two entries give
     nothing. Apotheosis itself raises a player's luck with the tier (× 1.2 at Frontier up to × 2 at Pinnacle,
     its tier augments), which the budget's luck percent then counts;
@@ -2805,7 +2806,9 @@ for reference, should talents ever come; the proc engine at its end exists since
   - **checked:** `test_container_loot.py` simulates both tables at every tier against Matěj's kill-equivalents (a
     normal container about 2, 4 and 10 kills, a treasure chest 5, 10 and 20), and `ContainerLootGameTests` checks in
     the game the decoded tables against the pipeline's budgets, a roll at two tiers and with luck, the limit, the
-    tiers' own options, money, Apotheosis's gem and affix item, and both real tables at every tier.
+    tiers' own options, money, Apotheosis's gem and affix item, both real tables at every tier and in the instance
+    dimension, and real containers opened through Lootr at two tiers and with luck (10, 15 and 24 diamonds from a
+    table of 1,000 points), which is the evidence that Lootr hands our entry the opener and their luck.
 - **Loot containers** (RLM-288): `loot/LootContainers#place` puts a chest, a trapped chest or a barrel with a loot
   table as Lootr's own block, so each player gets their own roll ([15.5](#155-instances)).
 - **Rewards:** quest choice rewards are pre-rolled stacks written into the quest files (ADR 0006). RNG item chests
