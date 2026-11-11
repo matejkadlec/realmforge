@@ -60,6 +60,8 @@ MAX_EFFECT_SECONDS = 60.0
 MAX_APPLY_EFFECT_SECONDS = 600.0
 MAX_AMPLIFIER = 9
 MAX_PROJECTILE_SPEED = 100.0
+# How long an instant spell's animation plays and blocks its caster's melee, in ticks (RLM-641): SpellCast.PUSH_TICKS.
+INSTANT_ANIMATION_TICKS = 10
 MAX_PROJECTILE_SIZE = 4.0
 MAX_PROJECTILE_LIFETIME = 10.0
 MAX_AREA_RADIUS = 16.0
@@ -794,10 +796,11 @@ TargetingDef = Annotated[
 
 
 class InstantCastDef(StrictModel):
-    """The spell's effects run when it is cast; with ``animation_seconds``, it starts at once but plays out over its
-    animation (RLM-399: a Warrior's swing), and its effects run at its hit moment. The caster may move but not swing a
-    weapon meanwhile; another spell cuts it, and a stun or death before the hit moment gives half its cost and half its
-    cooldown back."""
+    """The spell's effects run when it is cast, and a player's arms play its animation for half a second, the push of
+    both hands, during which the player cannot melee (RLM-641, ADR 0073 decision 8). With ``animation_seconds``, it
+    starts at once but plays out over its animation (RLM-399: a Warrior's swing), and its effects run at its hit
+    moment. The caster may move but not swing a weapon meanwhile; another spell cuts it, and a stun or death before the
+    hit moment gives half its cost and half its cooldown back."""
 
     type: Literal["instant"]
     animation_seconds: Seconds | None = Field(
@@ -811,6 +814,13 @@ class InstantCastDef(StrictModel):
         allow_inf_nan=False,
         description="When its effects run, in percent of the animation (50 by default: the middle of a swing).",
     )
+    player_animation: ResourceId | None = Field(
+        default=None,
+        description="A player animation of ours (assets/realmforge/player_animations/, by its name: "
+        "realmforge:<name>) that a casting player's arms play instead of realmforge:instant, the push of both hands "
+        "every instant spell plays for half a second (RLM-641). It plays once and is over within 10 ticks, the time "
+        "the spell keeps its caster from melee. Never with animation_seconds: a swing's weapon move is its own.",
+    )
 
     @model_validator(mode="after")
     def _animation(self) -> InstantCastDef:
@@ -818,6 +828,11 @@ class InstantCastDef(StrictModel):
             raise ValueError("animation_seconds is more than 0: leave it out for a spell that lands at once")
         if self.hit_at_percent is not None and self.animation_seconds is None:
             raise ValueError("hit_at_percent is a moment of the animation: name animation_seconds too")
+        if self.player_animation is not None and self.animation_seconds is not None:
+            raise ValueError(
+                "player_animation: a spell that plays out over animation_seconds is a swing, whose weapon move is "
+                "its own"
+            )
         return self
 
 
@@ -857,6 +872,13 @@ class _TimedCastDef(StrictModel):
         description="How a custom mob or boss moves its arms while it casts (its model's animation): raise (the "
         "default) lifts them forward and up, the hands before its forehead; slam beats its fists up and down, one slam "
         "every 0.75 s, the time a channel of the same interval ticks at (a quake). Players' casts ignore it.",
+    )
+    player_animation: ResourceId | None = Field(
+        default=None,
+        description="A player animation of ours (assets/realmforge/player_animations/, by its name: "
+        "realmforge:<name>) that a casting player's arms play instead of the cast type's own (RLM-641): "
+        "realmforge:cast for a cast time, realmforge:channel for a channel. It loops for as long as the cast runs. "
+        "Mobs' casts ignore it (animation is theirs).",
     )
 
     @model_validator(mode="after")
@@ -1373,9 +1395,9 @@ class SpellVisualsDef(StrictModel):
         default=None,
         description="What shows in the caster's hands while it casts. grow: the projectile's model grows there cube "
         "by cube during a cast time (Matěj's choice, 2026-10-29); storm: it scales up there as a whole, grow's "
-        "fallback; hands: only the look's particles at the hands, during a cast time or a channel. A projectile that "
-        "forms flies from the hands. Until the forming renderer (RLM-640), grow and storm both show a mob's "
-        "projectile growing as a whole, and hands shows nothing.",
+        "fallback; hands: only the look's swirl of particles at the hands, during a cast time or a channel. A "
+        "projectile that forms flies from the hands. Only a model of cubes grows cube by cube: the orb, which has "
+        "none, scales up as a whole under grow too.",
     )
     impact_sound: ResourceId | None = Field(
         default=None,

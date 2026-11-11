@@ -102,6 +102,8 @@ public final class ContentSpellGameTests {
                     id + " cast animation");
             helper.assertValueEqual(spell.cast().castTimeReduction().getSerializedName(),
                     expected.castTimeReduction(), id + " what Cast Time Reduction does to it");
+            helper.assertValueEqual(spell.cast().playerAnimation().map(Identifier::toString),
+                    expected.playerAnimation(), id + " player animation of its own");
             helper.assertValueEqual(spell.cost().map(cost -> cost.resource().getRegisteredName()),
                     expected.costResource(), id + " cost resource");
             helper.assertValueEqual(spell.cost().map(cost -> cost.amount()).orElse(0.0), expected.costAmount(),

@@ -1,0 +1,35 @@
+{
+    "name": "release",
+    "author": "Realmforge",
+    "description": "The release at the end of a cast that formed a projectile (RLM-641, ADR 0073 decision 8; Matěj, 2026-10-29): from the cast's pose, hands together, both hands push forward and up and part as the projectile leaves, in a quarter of a second. The push is done by tick 2 and held a tick; from the end tick (3) to the stop tick (5) the arms ease back to rest. Its length is CastAnimation#RELEASE_TICKS, 5 ticks. Animates only the arms' rotations.",
+    "emote": {
+        "isLoop": false,
+        "beginTick": 0,
+        "endTick": 3,
+        "stopTick": 5,
+        "degrees": false,
+        "moves": [
+            {
+                "tick": 0,
+                "easing": "LINEAR",
+                "turn": 0,
+                "rightArm": {"pitch": -1.60, "yaw": -0.22, "roll": 0.10},
+                "leftArm": {"pitch": -1.60, "yaw": 0.22, "roll": -0.10}
+            },
+            {
+                "tick": 2,
+                "easing": "EASEOUTQUAD",
+                "turn": 0,
+                "rightArm": {"pitch": -1.72, "yaw": 0.14, "roll": -0.15},
+                "leftArm": {"pitch": -1.72, "yaw": -0.14, "roll": 0.15}
+            },
+            {
+                "tick": 3,
+                "easing": "LINEAR",
+                "turn": 0,
+                "rightArm": {"pitch": -1.72, "yaw": 0.14, "roll": -0.15},
+                "leftArm": {"pitch": -1.72, "yaw": -0.14, "roll": 0.15}
+            }
+        ]
+    }
+}

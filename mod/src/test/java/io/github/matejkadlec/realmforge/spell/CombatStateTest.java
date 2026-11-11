@@ -193,4 +193,35 @@ class CombatStateTest {
         state.setSetBetterCombatTag(true);
         return state;
     }
+
+    /** RLM-641: an instant spell's animation blocks melee until a game time, synced to the owner and never saved. */
+    @Test
+    void theMeleeBlockRunsUntilItsEndAndIsSyncedButNeverSaved() {
+        CombatState state = sample();
+        assertFalse(state.isMeleeBlocked(12_000L), "no block yet");
+        state.blockMelee(12_010L);
+        assertTrue(state.isMeleeBlocked(12_009L), "on the animation's last tick");
+        assertFalse(state.isMeleeBlocked(12_010L), "over at its end");
+        state.blockMelee(12_005L);
+        assertEquals(12_010L, state.meleeBlockedUntil(), "an earlier end never shortens it");
+        assertEquals(state, RoundTrip.stream(CombatState.STREAM_CODEC, state), "the owner's client gets it");
+        assertEquals(12_010L, RoundTrip.stream(CombatState.STREAM_CODEC, state).meleeBlockedUntil());
+        assertEquals(0L, RoundTrip.nbt(CombatState.CODEC, state).meleeBlockedUntil(), "a save leaves it out");
+        assertNotEquals(state, sample(), "two states differ by it");
+        state.clearMeleeBlock();
+        assertFalse(state.isMeleeBlocked(12_000L));
+        assertThrows(IllegalArgumentException.class, () -> state.blockMelee(-1L));
+    }
+
+    /** A cast is of one kind: a cast time, a channel, a swing or an instant spell's animation. */
+    @Test
+    void aCastIsOfOneKind() {
+        Cast instant = Cast.instant(FIREBOLT, 12_000L, 10);
+        assertTrue(instant.instant() && !instant.channel() && !instant.swing());
+        assertEquals(12_010L, instant.endGameTime());
+        assertFalse(CAST.instant(), "a cast time is no instant spell's animation");
+        assertThrows(IllegalArgumentException.class, () -> new Cast(FIREBOLT, 0L, 10, true, true, false));
+        assertThrows(IllegalArgumentException.class, () -> new Cast(FIREBOLT, 0L, 10, true, false, true));
+        assertThrows(IllegalArgumentException.class, () -> new Cast(FIREBOLT, 0L, 10, false, true, true));
+    }
 }
