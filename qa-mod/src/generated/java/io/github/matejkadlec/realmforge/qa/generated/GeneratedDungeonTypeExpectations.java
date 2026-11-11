@@ -95,7 +95,7 @@ public final class GeneratedDungeonTypeExpectations {
                                     new ConnectorExpectation(12, 1, 6, "east", "up", "realmforge:door", "realmforge:door", "rollable")),
                                     3, false, List.of(), -1, 1, 1, false,
                                     1, List.of(0, 60, 30, 10), List.of(), List.of("north 6 1 5", "east 7 1 6", "south 6 1 7", "west 5 1 6"),
-                                    "realmforge:containers/normal", 6, 16),
+                                    "realmforge:containers/normal", 5, 14),
                             new RoomExpectation("realmforge:rooms/third_party/stonevaults/dungeon/rooms/item_combination_lock", 13, 6, 13, "combat", 1,
                                     List.of(
                                     new ConnectorExpectation(0, 1, 6, "west", "up", "realmforge:door", "realmforge:door", "rollable"),

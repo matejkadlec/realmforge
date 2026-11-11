@@ -732,31 +732,6 @@
               "mirror": false
             }
           ]
-        },
-        {
-          "pieces": [
-            "realmforge:test_barrel"
-          ],
-          "spots": [
-            {
-              "pos": [
-                6,
-                1,
-                3
-              ],
-              "facing": "south",
-              "mirror": false
-            },
-            {
-              "pos": [
-                6,
-                1,
-                9
-              ],
-              "facing": "north",
-              "mirror": true
-            }
-          ]
         }
       ]
     },
