@@ -1,10 +1,10 @@
 {
   "variants": {
-    "generated=false": {
+    "look=washed": {
       "model": "realmforge:block/gatewright_sealstone"
     },
-    "generated=true": {
-      "model": "realmforge:block/gatewright_sealstone"
+    "look=stone": {
+      "model": "realmforge:block/gatewright_sealstone_stone"
     }
   }
 }

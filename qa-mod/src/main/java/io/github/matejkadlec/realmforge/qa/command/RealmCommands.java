@@ -5,10 +5,14 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
+import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import io.github.matejkadlec.realmforge.world.WorldRegistries;
 import io.github.matejkadlec.realmforge.world.realm.Realm;
+import io.github.matejkadlec.realmforge.world.realm.RealmPortalBlocks;
+import io.github.matejkadlec.realmforge.world.realm.RealmPortals;
 import io.github.matejkadlec.realmforge.world.realm.Realms;
+import java.util.Comparator;
 import java.util.Locale;
 import java.util.Set;
 import net.minecraft.advancements.AdvancementHolder;
@@ -23,6 +27,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.ai.village.poi.PoiManager;
 
 /**
  * {@code /qa realm} for realms without the realm portal (W2a; the portal, W2b, needs a frame and a signet):
@@ -31,12 +36,17 @@ import net.minecraft.server.level.ServerPlayer;
  *       the highest standing spot below y {@value #SEARCH_FROM_Y} with two blocks of air above it. It moves the player
  *       as {@code /tp} does, so a player without the realm's unlock is refused as on every way in;
  *   <li>{@code /qa realm unlock <realm>} and {@code /qa realm lock <realm>} grant and revoke the realm's unlock
- *       advancement, as {@code /advancement grant|revoke @s only realmforge:realm/<realm>} does.
+ *       advancement, as {@code /advancement grant|revoke @s only realmforge:realm/<realm>} does;
+ *   <li>{@code /qa realm storm} starts a storm blink now on the nearest lit realm portal within
+ *       {@value #STORM_RADIUS} blocks whose realm has one (RLM-300): in play it comes at random, about every 15
+ *       seconds.
  * </ul>
  */
 public final class RealmCommands {
     /** Where the floor search starts: above Undervault's floor (y 32), below its ceiling (about y 100). */
     static final int SEARCH_FROM_Y = 64;
+    /** How far {@code /qa realm storm} looks for a sealstone. */
+    static final int STORM_RADIUS = 16;
 
     private static final SuggestionProvider<CommandSourceStack> REALMS = (context, builder) ->
             SharedSuggestionProvider.suggestResource(context.getSource().getServer().registryAccess()
@@ -47,6 +57,8 @@ public final class RealmCommands {
             new DynamicCommandExceptionType(id -> Component.literal("The dimension " + id + " is not loaded"));
     private static final DynamicCommandExceptionType NO_FLOOR =
             new DynamicCommandExceptionType(where -> Component.literal("No floor to stand on at " + where));
+    private static final SimpleCommandExceptionType NO_STORM = new SimpleCommandExceptionType(Component.literal(
+            "No lit realm portal with a storm within " + STORM_RADIUS + " blocks (Undervault's has one)"));
 
     private RealmCommands() {
     }
@@ -62,7 +74,23 @@ public final class RealmCommands {
                 .then(Commands.literal("unlock").then(Commands.argument("realm", IdentifierArgument.id())
                         .suggests(REALMS).executes(context -> unlock(context, true))))
                 .then(Commands.literal("lock").then(Commands.argument("realm", IdentifierArgument.id())
-                        .suggests(REALMS).executes(context -> unlock(context, false))));
+                        .suggests(REALMS).executes(context -> unlock(context, false))))
+                .then(Commands.literal("storm").executes(RealmCommands::storm));
+    }
+
+    private static int storm(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        ServerLevel level = player.level();
+        BlockPos sealstone = level.getPoiManager()
+                .findAll(type -> type.is(RealmPortalBlocks.SEALSTONE_POI), pos -> RealmPortals.storms(level, pos),
+                        player.blockPosition(), STORM_RADIUS, PoiManager.Occupancy.ANY)
+                .min(Comparator.comparingDouble(pos -> pos.distSqr(player.blockPosition())))
+                .orElseThrow(NO_STORM::create);
+        RealmPortals.storm(level, sealstone);
+        context.getSource().sendSuccess(() -> Component.literal(String.format(Locale.ROOT,
+                "A storm blinks over the portal at %d %d %d", sealstone.getX(), sealstone.getY(), sealstone.getZ())),
+                false);
+        return 1;
     }
 
     private static int enter(CommandContext<CommandSourceStack> context, int x, int z) throws CommandSyntaxException {

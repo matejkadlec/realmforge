@@ -47,6 +47,8 @@ public final class RealmPortals {
 
     /** How far from the sealstone's centre a player holding a signet lights it: 5 blocks (RLM-406). */
     public static final double GLOW_RADIUS = 5.0;
+    /** How often a sealstone checks that its frame shows the right look: every half second (RLM-301). */
+    static final int LOOK_INTERVAL = 10;
 
     /** The incomplete frames being marked; touched only on the server thread. */
     private static final List<Mark> MARKS = new ArrayList<>();
@@ -224,13 +226,58 @@ public final class RealmPortals {
         if (level.getBlockEntity(frame.sealstone()) instanceof SealstoneBlockEntity entity) {
             entity.setDestination(destination);
         }
-        BlockState portal = RealmPortalBlocks.portal().defaultBlockState().setValue(RealmPortalBlock.AXIS, frame.axis());
+        Realm.Portal look = look(level, destination);
+        BlockState portal = RealmPortalBlocks.portal().defaultBlockState()
+                .setValue(RealmPortalBlock.AXIS, frame.axis())
+                .setValue(RealmPortalBlock.ANIMATION, look.animation());
         for (BlockPos pos : frame.opening()) {
             level.setBlock(pos, portal, Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
         }
+        dress(level, frame, look.frame());
     }
 
-    /** Closes the portal over {@code sealstone}: the opening goes dark and the setting becomes none. */
+    /** How a portal that opens onto {@code destination} looks; the default look for an entry the registry lacks. */
+    private static Realm.Portal look(Level level, Identifier destination) {
+        return level.registryAccess().lookupOrThrow(WorldRegistries.REALM).getOptional(destination)
+                .map(Realm::portal)
+                .orElse(Realm.Portal.DEFAULT);
+    }
+
+    /**
+     * Gives the frame's blocks {@code look} (RLM-301): its sealstone, its 13 bricks and the bricks in its corners,
+     * each only where it is a frame block that shows another look. Without neighbour updates, so nothing next to the
+     * frame reacts and the portal blocks do not check their frame.
+     */
+    static void dress(ServerLevel level, PortalFrame.Frame frame, FrameLook look) {
+        dress(level, frame.sealstone(), look);
+        for (BlockPos pos : frame.bricks()) {
+            dress(level, pos, look);
+        }
+        for (BlockPos pos : frame.corners()) {
+            dress(level, pos, look);
+        }
+    }
+
+    private static void dress(ServerLevel level, BlockPos pos, FrameLook look) {
+        BlockState state = level.getBlockState(pos);
+        if (state.hasProperty(FrameLook.PROPERTY) && state.getValue(FrameLook.PROPERTY) != look) {
+            level.setBlock(pos, state.setValue(FrameLook.PROPERTY, look),
+                    Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
+        }
+    }
+
+    /**
+     * Washes out the frame round {@code sealstone}, which is dark or gone: along either axis, as a dark frame has
+     * none. A brick that a lit frame next to it shares takes that frame's look again at its sealstone's next check
+     * ({@link #tickLook}).
+     */
+    static void wash(ServerLevel level, BlockPos sealstone) {
+        for (Direction.Axis axis : List.of(Direction.Axis.X, Direction.Axis.Z)) {
+            dress(level, new PortalFrame.Frame(sealstone, axis), FrameLook.WASHED);
+        }
+    }
+
+    /** Closes the portal over {@code sealstone}: the opening goes dark, its frame washes out and the setting becomes none. */
     public static void close(ServerLevel level, BlockPos sealstone) {
         BlockState above = level.getBlockState(sealstone.above());
         if (above.getBlock() instanceof RealmPortalBlock) {
@@ -244,10 +291,11 @@ public final class RealmPortals {
         if (level.getBlockEntity(sealstone) instanceof SealstoneBlockEntity entity) {
             entity.setDestination(null);
         }
+        wash(level, sealstone);
     }
 
     /**
-     * Builds a frame a trip needs, lit onto {@code destination}: 13 Gatewright Bricks and a sealstone, and Realmforge
+     * Builds a frame a trip needs, lit onto {@code destination}: 13 Gatewright Bricks and a sealstone, and Gatewright
      * Bricks in the four corners too, which no frame needs but every built one has (Matěj, 2026-10-20: "without it it
      * looks bad"); all {@link GatewrightBricksBlock#GENERATED}, so they drop nothing, then the opening (realm portal
      * spec, "Building a portal").
@@ -264,6 +312,56 @@ public final class RealmPortals {
                 RealmPortalBlocks.sealstone().defaultBlockState().setValue(GatewrightBricksBlock.GENERATED, true),
                 Block.UPDATE_ALL);
         light(level, frame, destination);
+    }
+
+    /** The sealstone's server tick: its glow, its frame's look and its portal's storm. */
+    static void tickSealstone(Level level, BlockPos pos, BlockState state, SealstoneBlockEntity entity) {
+        tickGlow(level, pos, state, entity);
+        if (level instanceof ServerLevel server) {
+            tickLook(server, pos);
+            tickStorm(server, pos, entity);
+        }
+    }
+
+    /**
+     * Keeps the frame's look right, every {@link #LOOK_INTERVAL} ticks (RLM-301): a lit frame shows the look of the
+     * realm its portal opens onto, on a brick placed into its corner later too; a frame whose portal went dark
+     * without {@link #close}, because a brick broke or an explosion took the opening, washes out. Lighting and
+     * closing set the look at once; this only catches what they cannot see. Sealstones take turns by position, so
+     * they do not all check on the same tick.
+     */
+    static void tickLook(ServerLevel level, BlockPos pos) {
+        if (Math.floorMod(level.getGameTime() + pos.asLong(), LOOK_INTERVAL) != 0) {
+            return;
+        }
+        BlockState above = level.getBlockState(pos.above());
+        if (above.getBlock() instanceof RealmPortalBlock) {
+            FrameLook look = destination(level, pos).map(id -> look(level, id).frame()).orElse(FrameLook.WASHED);
+            dress(level, new PortalFrame.Frame(pos, above.getValue(RealmPortalBlock.AXIS)), look);
+        } else if (level.getBlockState(pos).getValue(FrameLook.PROPERTY) != FrameLook.WASHED) {
+            wash(level, pos);
+        }
+    }
+
+    /** Whether the portal over {@code sealstone} blinks like a storm: it is lit onto a realm that has one. */
+    public static boolean storms(Level level, BlockPos sealstone) {
+        return destination(level, sealstone).map(id -> look(level, id).storm()).orElse(false);
+    }
+
+    /**
+     * Starts a storm blink now and then (RLM-300, {@link PortalStorm}): the block event reaches every client near,
+     * which darkens the portal twice. The dice come first, so a sealstone looks its realm up only on the rare tick
+     * a blink would start.
+     */
+    private static void tickStorm(ServerLevel level, BlockPos pos, SealstoneBlockEntity entity) {
+        if (PortalStorm.starts(level.getRandom()) && storms(level, pos)) {
+            storm(level, pos);
+        }
+    }
+
+    /** Sends the storm blink of the portal over {@code sealstone} to the clients near it. */
+    public static void storm(ServerLevel level, BlockPos sealstone) {
+        level.blockEvent(sealstone, level.getBlockState(sealstone).getBlock(), SealstoneBlockEntity.EVENT_STORM, 0);
     }
 
     /**

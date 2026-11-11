@@ -34,11 +34,13 @@ import net.minecraft.world.level.Level;
  * @param colour the portal's colour while it opens onto the realm, RGB with an opaque alpha byte
  * @param particle the vanilla particle without options that the portal shows next to the dust in its colour
  * @param soundPitch the pitch of the vanilla portal sounds for this realm
+ * @param portal how the lit portal and its frame look while the portal opens onto the entry
  * @param arrival where a trip may build a portal in the dimension
  */
 public record Realm(ResourceKey<Level> dimension, String name, String inSentence, String subtitle, String description,
         String lockedHint, Optional<Levels> levels, String flavour, Optional<Identifier> icon,
-        Optional<Identifier> signet, int colour, Optional<Identifier> particle, float soundPitch, Arrival arrival) {
+        Optional<Identifier> signet, int colour, Optional<Identifier> particle, float soundPitch, Portal portal,
+        Arrival arrival) {
     public static final Codec<Realm> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                     Level.RESOURCE_KEY_CODEC.fieldOf("dimension").forGetter(Realm::dimension),
                     Codec.STRING.fieldOf("name").forGetter(Realm::name),
@@ -53,8 +55,27 @@ public record Realm(ResourceKey<Level> dimension, String name, String inSentence
                     ExtraCodecs.STRING_RGB_COLOR.fieldOf("colour").forGetter(Realm::colour),
                     Identifier.CODEC.optionalFieldOf("particle").forGetter(Realm::particle),
                     Codec.floatRange(0.5F, 2.0F).optionalFieldOf("sound_pitch", 1.0F).forGetter(Realm::soundPitch),
+                    Portal.CODEC.optionalFieldOf("portal", Portal.DEFAULT).forGetter(Realm::portal),
                     Arrival.CODEC.fieldOf("arrival").forGetter(Realm::arrival))
             .apply(instance, Realm::new));
+
+    /**
+     * How the realm portal looks while it opens onto an entry (RLM-300, RLM-301).
+     *
+     * @param animation the portal blocks' animated texture
+     * @param storm whether the portal blinks like a storm now and then ({@link PortalStorm})
+     * @param frame the look the frame's bricks and sealstone take while the portal is lit
+     */
+    public record Portal(PortalAnimation animation, boolean storm, FrameLook frame) {
+        /** The shared swirl, no storm and the washed-out frame: Overworld's return portals. */
+        public static final Portal DEFAULT = new Portal(PortalAnimation.SWIRL, false, FrameLook.WASHED);
+        public static final Codec<Portal> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                        PortalAnimation.CODEC.optionalFieldOf("animation", DEFAULT.animation())
+                                .forGetter(Portal::animation),
+                        Codec.BOOL.optionalFieldOf("storm", DEFAULT.storm()).forGetter(Portal::storm),
+                        FrameLook.CODEC.optionalFieldOf("frame", DEFAULT.frame()).forGetter(Portal::frame))
+                .apply(instance, Portal::new));
+    }
 
     /**
      * A realm's level band, from the lowest level to the highest (RLM-188: Undervault's is chapter 2's, 6 to 18).

@@ -182,11 +182,21 @@ def test_an_effect_icon_of_vanillas_size_is_taken_as_it_is(art_repo: RepoPaths) 
         ("spell/frostbolt.png", [(1, 2, 3, 255)] * 256, 16, "it has colours outside the project palette"),
         ("spell/frostbolt.png", [(140, 204, 244, 128)] * 256, 16, "it has half-transparent pixels"),
         (
-            "block/vaultstone.png",
+            "mob/hewn_sentinel.png",
             _icon(),
             16,
-            "approved art is art/textures/<item|spell|effect|gui|armor|armor_trim>/<id>.png",
+            "approved art is art/textures/<item|spell|effect|gui|armor|armor_trim|block>/<id>.png",
         ),
+        # A block's tile (RLM-301): of a block whose kind takes one, without transparent pixels.
+        ("block/vaultstone.png", _icon(), 16, "a block's tile is a tile without transparent pixels"),
+        ("block/no_such_block.png", [ICE] * 256, 16, "no block has the id 'no_such_block'"),
+        (
+            "block/realm_portal.png",
+            [ICE] * 256,
+            16,
+            "the block 'realm_portal' takes no tile: only a block of kind simple or gatewright_bricks does",
+        ),
+        ("block/vaultstone.png", [ICE] * 1024, 32, "is 32 x 32; this texture is 16 x 16"),
     ],
 )
 def test_validation_refuses_art_the_cleanup_did_not_write(

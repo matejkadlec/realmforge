@@ -207,29 +207,77 @@ def test_the_realm_portals_blocks_have_their_own_shapes_loot_and_items(repo: Rep
     assert "REALM_PORTAL_ITEM" not in java
     assert f"{ASSETS}/items/realm_portal.json" not in files
     assert f"{DATA}/realmforge/loot_table/blocks/realm_portal.json" not in files
+    # One model per animation (RLM-300) and axis, as vanilla's nether portal has one per axis.
     assert json.loads(files[f"{ASSETS}/blockstates/realm_portal.json"]) == {
         "variants": {
-            "axis=x": {"model": "realmforge:block/realm_portal_ns"},
-            "axis=z": {"model": "realmforge:block/realm_portal_ew"},
+            "animation=swirl,axis=x": {"model": "realmforge:block/realm_portal_ns"},
+            "animation=swirl,axis=z": {"model": "realmforge:block/realm_portal_ew"},
+            "animation=stream,axis=x": {"model": "realmforge:block/realm_portal_stream_ns"},
+            "animation=stream,axis=z": {"model": "realmforge:block/realm_portal_stream_ew"},
         }
     }
-    pane = json.loads(files[f"{ASSETS}/models/block/realm_portal_ns.json"])["elements"][0]
-    assert (pane["from"], pane["to"]) == ([0, 0, 6], [16, 16, 10])
-    assert {face["tintindex"] for face in pane["faces"].values()} == {0}
-    # See-through, so the game renders it translucent.
-    _, _, pixels = decode_rgba(files[f"{ASSETS}/textures/block/realm_portal.png"])
-    assert all(alpha < 255 for *_, alpha in pixels)
+    for name in ("realm_portal", "realm_portal_stream"):
+        model = json.loads(files[f"{ASSETS}/models/block/{name}_ns.json"])
+        assert model["textures"] == {
+            "particle": f"realmforge:block/{name}",
+            "portal": f"realmforge:block/{name}",
+        }
+        pane = model["elements"][0]
+        assert (pane["from"], pane["to"]) == ([0, 0, 6], [16, 16, 10])
+        assert {face["tintindex"] for face in pane["faces"].values()} == {0}
+        across = json.loads(files[f"{ASSETS}/models/block/{name}_ew.json"])["elements"][0]
+        assert (across["from"], across["to"]) == ([6, 0, 0], [10, 16, 16])
+        # See-through, so the game renders it translucent; animated, its frames under each other.
+        width, height, pixels = decode_rgba(files[f"{ASSETS}/textures/block/{name}.png"])
+        assert width == 16 and height % 16 == 0 and height > 16
+        assert all(alpha < 255 for *_, alpha in pixels)
+        assert "animation" in json.loads(files[f"{ASSETS}/textures/block/{name}.png.mcmeta"])
     assert '"realmforge:realm_portal",\n                    "block.realmforge.realm_portal",' in (
         files[EXPECTATIONS].decode()
     )
-    # The frame's blocks: both states look alike, and only a block without the generated flag drops itself.
-    for block in ("gatewright_bricks", "gatewright_sealstone"):
-        assert json.loads(files[f"{ASSETS}/blockstates/{block}.json"]) == {
-            "variants": {
-                "generated=false": {"model": f"realmforge:block/{block}"},
-                "generated=true": {"model": f"realmforge:block/{block}"},
-            }
+    # The frame's blocks: one model per look (RLM-301), whether generated or not, and only a block without the
+    # generated flag drops itself.
+    assert json.loads(files[f"{ASSETS}/blockstates/gatewright_bricks.json"]) == {
+        "variants": {
+            "look=washed": {"model": "realmforge:block/gatewright_bricks"},
+            "look=stone": {"model": "realmforge:block/gatewright_bricks_stone"},
         }
+    }
+    assert json.loads(files[f"{ASSETS}/models/block/gatewright_bricks_stone.json"]) == {
+        "parent": "minecraft:block/cube_all",
+        "textures": {"all": "realmforge:block/gatewright_bricks_stone"},
+    }
+    assert json.loads(files[f"{ASSETS}/blockstates/gatewright_sealstone.json"]) == {
+        "variants": {
+            "look=washed": {"model": "realmforge:block/gatewright_sealstone"},
+            "look=stone": {"model": "realmforge:block/gatewright_sealstone_stone"},
+        }
+    }
+    # The sealstone shows the look's bricks on its sides and bottom, and the socket on its top.
+    assert json.loads(files[f"{ASSETS}/models/block/gatewright_sealstone.json"]) == {
+        "parent": "minecraft:block/cube_bottom_top",
+        "textures": {
+            "top": "realmforge:block/gatewright_sealstone_top",
+            "side": "realmforge:block/gatewright_bricks",
+            "bottom": "realmforge:block/gatewright_bricks",
+        },
+    }
+    assert json.loads(files[f"{ASSETS}/models/block/gatewright_sealstone_stone.json"])["textures"] == {
+        "top": "realmforge:block/gatewright_sealstone_top_stone",
+        "side": "realmforge:block/gatewright_bricks_stone",
+        "bottom": "realmforge:block/gatewright_bricks_stone",
+    }
+    for texture in (
+        "gatewright_bricks",
+        "gatewright_bricks_stone",
+        "gatewright_sealstone_top",
+        "gatewright_sealstone_top_stone",
+    ):
+        width, height, pixels = decode_rgba(files[f"{ASSETS}/textures/block/{texture}.png"])
+        assert (width, height) == (16, 16) and all(alpha == 255 for *_, alpha in pixels), texture
+    # The sealstone has no texture of its own name: its sides are the bricks'.
+    assert f"{ASSETS}/textures/block/gatewright_sealstone.png" not in files
+    for block in ("gatewright_bricks", "gatewright_sealstone"):
         pool = json.loads(files[f"{DATA}/realmforge/loot_table/blocks/{block}.json"])["pools"][0]
         assert {
             "block": f"realmforge:{block}",
@@ -237,6 +285,9 @@ def test_the_realm_portals_blocks_have_their_own_shapes_loot_and_items(repo: Rep
             "properties": {"generated": "false"},
         } in pool["conditions"]
         assert f"{block.upper()}_ITEM = ITEMS.registerSimpleBlockItem" in java
+        assert json.loads(files[f"{ASSETS}/items/{block}.json"]) == {
+            "model": {"type": "minecraft:model", "model": f"realmforge:block/{block}"}
+        }
 
 
 def test_the_realm_portal_needs_all_three_kinds(repo: RepoPaths) -> None:
