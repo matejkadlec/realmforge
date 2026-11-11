@@ -1,6 +1,7 @@
 package io.github.matejkadlec.realmforge.dungeon.plan;
 
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceLayout;
+import io.github.matejkadlec.realmforge.dungeon.instance.PiecePlacement;
 import io.github.matejkadlec.realmforge.dungeon.instance.RoomPlacement;
 import java.util.List;
 import java.util.ArrayList;
@@ -16,16 +17,29 @@ import net.minecraft.world.level.levelgen.structure.BoundingBox;
  *
  * @param seed the seed it was planned from
  * @param attempt which of the planner's attempts found it, from 1
+ * @param setPieces the set pieces its dungeon type dresses it with ({@link #toInstanceLayout} draws them)
  */
-public record DungeonPlan(long seed, int attempt, List<PlannedRoom> rooms, List<RoomLink> links) {
+public record DungeonPlan(long seed, int attempt, List<PlannedRoom> rooms, List<RoomLink> links, SetPieces setPieces) {
     /** Keeps the containers' draws apart from the planner's, which starts from the same seed. */
     private static final long CONTAINER_SALT = 0x2B7E151628AED2A6L;
     /** Keeps the openings' draws apart from the planner's and the containers'. */
     private static final long OPENING_SALT = 0x3243F6A8885A308DL;
+    /** Keeps the set pieces' draws apart from the others. */
+    private static final long SET_PIECE_SALT = 0x452821E638D01377L;
 
     public DungeonPlan {
         rooms = List.copyOf(rooms);
         links = List.copyOf(links);
+    }
+
+    /** A layout without set pieces, as the planner returns it. */
+    public DungeonPlan(long seed, int attempt, List<PlannedRoom> rooms, List<RoomLink> links) {
+        this(seed, attempt, rooms, links, SetPieces.NONE);
+    }
+
+    /** The same layout dressed with {@code pieces}. */
+    public DungeonPlan withSetPieces(SetPieces pieces) {
+        return new DungeonPlan(seed, attempt, rooms, links, pieces);
     }
 
     public PlannedRoom entrance() {
@@ -54,14 +68,16 @@ public record DungeonPlan(long seed, int attempt, List<PlannedRoom> rooms, List<
 
     /**
      * What the builder places: every room's template, offset and rotation with the blocks an explosion may break
-     * there, the containers its chance tables drop (RLM-365) and the side it opens, which is never its way in
-     * (RLM-412); both drawn in room order from the layout's seed, so the same seed always gives the same rooms. Then
+     * there, the containers its chance tables drop (RLM-365), the side it opens, which is never its way in
+     * (RLM-412), the loot table of its containers (RLM-290) and its set pieces (RLM-282); all drawn in room order
+     * from the layout's seed, each kind from a stream of its own, so the same seed always gives the same rooms. Then
      * the entrance's connector to the next room on the main path, which an arriving player looks at. Where players
      * arrive comes from the entrance room (its entrance marker, or a spot the builder finds there).
      */
     public InstanceLayout toInstanceLayout() {
         RandomSource containers = RandomSource.create(seed ^ CONTAINER_SALT);
         RandomSource openings = RandomSource.create(seed ^ OPENING_SALT);
+        RandomSource dressing = RandomSource.create(seed ^ SET_PIECE_SALT);
         List<RoomPlacement> placements = new ArrayList<>();
         for (int i = 0; i < rooms.size(); i++) {
             DungeonRoom room = rooms.get(i).room();
@@ -69,8 +85,10 @@ public record DungeonPlan(long seed, int attempt, List<PlannedRoom> rooms, List<
                     .filter(front -> front.getAxis().isHorizontal());
             List<RoomPlacement.Swap> swaps = new ArrayList<>(room.containers().draw(containers));
             swaps.addAll(room.openings().draw(wayIn, openings));
+            List<PiecePlacement> pieces = setPieces.draw(room, rooms.get(i).offset(), rooms.get(i).rotation(),
+                    dressing);
             placements.add(new RoomPlacement(room.template(), rooms.get(i).offset(), rooms.get(i).rotation(),
-                    room.explosionBreaks(), swaps));
+                    room.explosionBreaks(), swaps, room.containerLoot(), pieces));
         }
         Optional<BlockPos> wayOn = links.stream()
                 .filter(link -> link.room() == 0 && link.otherRoom() == 1 || link.room() == 1 && link.otherRoom() == 0)

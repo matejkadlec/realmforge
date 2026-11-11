@@ -14,10 +14,14 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Literal
 
+from realmforge_tools.rooms.check import LOOT_TABLE
 from realmforge_tools.rooms.structure import AIR, BlockState, Pos, Structure
 
 CHEST = "minecraft:chest"
 BARREL = "minecraft:barrel"
+# The blocks a dungeon makes loot containers when it builds a room or places a set piece (RLM-290; the game's
+# ``LootContainers``): every chest, a double chest's halves and trapped chests included, and every barrel.
+LOOT_CONTAINERS = (CHEST, "minecraft:trapped_chest", BARREL)
 Kind = Literal["chest", "barrel"]
 KINDS: tuple[Kind, ...] = ("chest", "barrel")
 # A neighbour counts as full unless its name holds one of these (the dressing's own list, rooms/dress.py).
@@ -55,6 +59,16 @@ def candidates(structure: Structure) -> list[Candidate]:
 def count(structure: Structure, kind: Kind) -> int:
     """How many candidates of ``kind`` the room holds: the most a chance table may ask it for."""
     return sum(candidate.kind == kind for candidate in candidates(structure))
+
+
+def loot_containers(structure: Structure) -> int:
+    """The chests, trapped chests and barrels of a room or a set piece that name no loot table of their own: the
+    ones that get their dungeon type's container loot table when a run is built (RLM-290). Without one they would
+    stand empty, which no container in a dungeon may (ADR 0041)."""
+    return sum(
+        block.state.name in LOOT_CONTAINERS and LOOT_TABLE not in (block.nbt or {})
+        for block in structure.blocks
+    )
 
 
 def _kind(state: BlockState) -> Kind | None:

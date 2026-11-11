@@ -25,10 +25,17 @@ resolved into its rooms and left out of its entry.
 A room's ``openings`` go into its entry as written, by side (RLM-412, ``rooms/openings.py``): the game opens one side
 at random that is not the room's way in.
 
-Each room also gets its set-piece spots (``rooms/set_pieces.py``, ADR 0050): the patterns of spots the pieces that
-reach its role fit, each with the pieces that may fill it. The entry lists those pieces (template, processor list,
-weight, tags, whether they may be mirrored) and the patterns a room of each role fills by default
-(``set_piece_density``), so the builder picks pieces without reading their fit rules (RLM-282).
+A room also carries its ``container_loot`` (RLM-290): the loot table its chests, trapped chests and barrels get when
+a run is built, ``realmforge:containers/<id>`` of the container loot table the type names for the room's role, else
+for ``default``. The type's own ``container_loot`` is resolved into its rooms and left out of its entry.
+
+A type with ``set_pieces`` gets its rooms' set-piece spots (``rooms/set_pieces.py``, ADR 0050): for each room whose
+sidecar does not turn them off, the patterns of spots that the pieces of the type's tags fit, each with the pieces
+that may fill it. The entry's ``set_pieces`` lists those pieces (template, size, weight, whether they may be
+mirrored, and the blocks that vary, ``generate/set_pieces.py``), how many patterns a room of each role fills as
+weights by count (``density``: the type's chance table, else the default of ``rooms/set_pieces.py``), and the loot
+table of the pieces' containers (``container_loot``, the type's default), so the game picks and places pieces
+without reading a fit rule (RLM-282, ADR 0077).
 """
 
 from __future__ import annotations
@@ -42,7 +49,7 @@ from realmforge_tools.content import Content, RoomEntry, SetPieceEntry
 from realmforge_tools.formats.jsonfmt import dump_json
 from realmforge_tools.generate.datapack import data_dir, entry_data
 from realmforge_tools.generate.javagen import header, java_file_path, string_literal
-from realmforge_tools.generate.set_pieces import processor_list_id, template_id
+from realmforge_tools.generate.set_pieces import template_id, variants
 from realmforge_tools.project import DATA_VERSION, MOD_ID, QA_JAVA_PACKAGE, RepoPaths
 from realmforge_tools.rooms.connectors import Connector, connectors
 from realmforge_tools.rooms.containers import KINDS, Candidate, Kind, candidates
@@ -60,6 +67,7 @@ from realmforge_tools.rooms.structure import (
     write_structure,
 )
 from realmforge_tools.schema.common import LocalizedText
+from realmforge_tools.schema.container_loot import loot_table_id
 from realmforge_tools.schema.dungeon import (
     DEFAULT_CONTAINERS,
     ROOM_ROLES,
@@ -120,28 +128,69 @@ def pool_rooms(dungeon: DungeonTypeDef, content: Content) -> list[RoomEntry]:
 def dungeon_data(dungeon: DungeonTypeDef, content: Content) -> dict[str, Any]:
     data, _ = entry_data(dungeon, REGISTRY)
     generated = generated_rooms(content)
+    type_pieces = dungeon_pieces(dungeon, content.set_pieces)
     rooms, used = [], set()
     for room in pool_rooms(dungeon, content):
         entry = _room(room)
         containers = container_data(room, dungeon)
         if containers is not None:
             entry["containers"] = containers
-        spots = room_spots(room, content.set_pieces, *generated.get(room.id, (None, frozenset())))
+        loot = container_loot(dungeon, room_role(room.model.tags))
+        if loot is not None:
+            entry["container_loot"] = loot
+        spots = (
+            room_spots(room, type_pieces, *generated.get(room.id, (None, frozenset())))
+            if room.model.set_pieces
+            else []
+        )
         if spots:
             entry["set_piece_spots"] = spots
             used |= {piece for pattern in spots for piece in pattern["pieces"]}
         rooms.append(entry)
-    data.pop("containers", None)
+    for key in ("containers", "container_loot", "set_pieces"):
+        data.pop(key, None)
     walls = dungeon.layout.walls
     if walls is not None:
         del data["layout"]["walls"]
         rooms.append(_wall(dungeon, walls))
     data["rooms"] = rooms
-    data["set_piece_density"] = {role: list(DENSITY[role]) for role in ROOM_ROLES}
-    pieces = {f"{MOD_ID}:{piece.id}": piece for piece in content.set_pieces}
     if used:
-        data["set_pieces"] = {piece: _piece(pieces[piece]) for piece in sorted(used)}
+        pieces = {f"{MOD_ID}:{piece.id}": piece for piece in type_pieces}
+        placed: dict[str, Any] = {"density": {role: density(dungeon, role) for role in ROOM_ROLES}}
+        loot = container_loot(dungeon, None)
+        if loot is not None:
+            placed["container_loot"] = loot
+        placed["pieces"] = {piece: _piece(pieces[piece]) for piece in sorted(used)}
+        data["set_pieces"] = placed
     return data
+
+
+def dungeon_pieces(dungeon: DungeonTypeDef, pieces: tuple[SetPieceEntry, ...]) -> tuple[SetPieceEntry, ...]:
+    """The set pieces the type uses: those with one of its tags; none for a type without ``set_pieces``."""
+    if dungeon.set_pieces is None:
+        return ()
+    wanted = set(dungeon.set_pieces.tags)
+    return tuple(piece for piece in pieces if wanted & set(piece.model.tags))
+
+
+def density(dungeon: DungeonTypeDef, role: str) -> list[int]:
+    """How many spot patterns a room of ``role`` fills, as the game reads it: the chance of each count, by count from
+    0. The type's own table, else the default (``rooms/set_pieces.py`` ``DENSITY``), each count of it as likely."""
+    table = dungeon.set_pieces.density.get(role) if dungeon.set_pieces is not None else None
+    if table is not None:
+        return weights(table)
+    low, high = DENSITY[role]
+    return [0] * low + [1] * (high - low + 1)
+
+
+def container_loot(dungeon: DungeonTypeDef, role: str | None) -> str | None:
+    """The loot table of the containers in a room of ``role``: the type's container loot table for the role, else
+    its default (None: the default alone, which the set pieces' containers get); None when it names neither."""
+    for key in (role, DEFAULT_CONTAINERS):
+        table = dungeon.container_loot.get(key) if key is not None else None
+        if table is not None:
+            return loot_table_id(table.split(":", 1)[1])
+    return None
 
 
 def container_table(room: RoomEntry, dungeon: DungeonTypeDef, kind: Kind) -> dict[int, int] | None:
@@ -334,13 +383,15 @@ def pattern_pieces(fits: list[tuple[Fit, list[SetPieceEntry]]], pattern: Pattern
 
 
 def _piece(piece: SetPieceEntry) -> dict[str, Any]:
-    data: dict[str, Any] = {"template": template_id(piece)}
-    processors = processor_list_id(piece)
-    if processors is not None:
-        data["processors"] = processors
-    data["weight"] = piece.model.weight
-    data["tags"] = list(piece.model.tags)
-    data["mirror"] = piece.model.variants.mirror
+    data: dict[str, Any] = {
+        "template": template_id(piece),
+        "size": list(piece.structure.size),
+        "weight": piece.model.weight,
+        "mirror": piece.model.variants.mirror,
+    }
+    varying = variants(piece.model, piece.structure)
+    if varying:
+        data["variants"] = varying
     return data
 
 
@@ -411,7 +462,14 @@ def _expectations(content: Content) -> bytes:
         dungeon = entry.model
         layout = dungeon.layout
         name_key = entry_data(dungeon, REGISTRY)[0]["name"]
-        expected = [_room_expectation(room, dungeon) for room in pool_rooms(dungeon, content)]
+        data = dungeon_data(dungeon, content)
+        by_template = {room["template"]: room for room in data["rooms"]}
+        expected = [
+            _room_expectation(room, dungeon, by_template[f"{MOD_ID}:{ROOMS_DIR}/{room.id}"])
+            for room in pool_rooms(dungeon, content)
+        ]
+        placed = data.get("set_pieces", {})
+        pieces = ", ".join(string_literal(piece) for piece in placed.get("pieces", {}))
         if layout.walls is not None:
             expected.append(_wall_expectation(dungeon, layout.walls))
         rooms = ",\n".join(expected)
@@ -430,6 +488,7 @@ def _expectations(content: Content) -> bytes:
             f"{layout.branches[1]}, {layout.branch_rooms[0]}, {layout.branch_rooms[1]},\n"
             f"                    {string_literal(layout.ending)}, {rhythm},\n"
             f"                    {string_literal(dungeon.key)}, {dungeon.open_minutes}, {dungeon.level},\n"
+            f"                    List.of({pieces}), {string_literal(placed.get('container_loot', ''))},\n"
             f"                    List.of(\n{rooms}))"
         )
     entries = "List.of(\n" + ",\n".join(rows) + ")" if rows else "List.of()"
@@ -452,23 +511,27 @@ def _expectations(content: Content) -> bytes:
         "     * A room of the pool, or the type's wall: its structure id, size, role, weight, connectors, how often a layout\n"
         "     * may hold it (0: no limit), whether it stays at the start, the blocks an explosion may break in it, and the\n"
         "     * connector it is entered through (-1: any), its spawners and chests, whether it is a hazard, the chests and\n"
-        "     * barrels a chance table decides and the tables, as weights by count (empty: none; RLM-365), and the blocks\n"
-        '     * each side\'s opening clears, as "side x y z" (RLM-412).\n'
+        "     * barrels a chance table decides and the tables, as weights by count (empty: none; RLM-365), the blocks\n"
+        '     * each side\'s opening clears, as "side x y z" (RLM-412), the loot table of its containers (empty: none;\n'
+        "     * RLM-290), and its set-piece patterns and their spots (RLM-282).\n"
         "     */\n"
         "    public record RoomExpectation(String template, int sizeX, int sizeY, int sizeZ, String role, int weight,\n"
         "            List<ConnectorExpectation> connectors, int maxPerLayout, boolean nearStart,\n"
         "            List<String> explosionBreaks, int entry, int spawners, int chests, boolean hazard,\n"
-        "            int containerSpots, List<Integer> chestTable, List<Integer> barrelTable, List<String> openings) {\n"
+        "            int containerSpots, List<Integer> chestTable, List<Integer> barrelTable, List<String> openings,\n"
+        "            String containerLoot, int setPiecePatterns, int setPieceSpots) {\n"
         "    }\n"
         "\n"
         "    /**\n"
         "     * One dungeon type: its id, its name's translation key, its pool, its layout rules (a pacing of zeros: none),\n"
-        "     * its key, how many minutes a portal to it stays open, its base level, and its rooms, its wall last.\n"
+        "     * its key, how many minutes a portal to it stays open, its base level, the set pieces its runs place and the\n"
+        "     * loot table of their containers (empty: none), and its rooms, its wall last.\n"
         "     */\n"
         "    public record DungeonTypeExpectation(String id, String name, String pool, int mainPathMin, int mainPathMax,\n"
         "            int branchesMin, int branchesMax, int branchRoomsMin, int branchRoomsMax, String ending,\n"
         "            int corridorsMin, int corridorsMax, int fightsMin, int fightsMax, int repeat, String key,\n"
-        "            int openMinutes, int level, List<RoomExpectation> rooms) {\n"
+        "            int openMinutes, int level, List<String> setPieces, String setPieceLoot,\n"
+        "            List<RoomExpectation> rooms) {\n"
         "    }\n"
         "\n"
         f"    public static final List<DungeonTypeExpectation> DUNGEON_TYPES = {entries};\n"
@@ -489,7 +552,7 @@ def _connector_expectations(found: list[Connector]) -> str:
     return "List.of(\n" + ",\n".join(f"                                    {c}" for c in rows) + ")"
 
 
-def _room_expectation(room: RoomEntry, dungeon: DungeonTypeDef) -> str:
+def _room_expectation(room: RoomEntry, dungeon: DungeonTypeDef, data: dict[str, Any]) -> str:
     x, y, z = room.size
     connector_list = _connector_expectations(room.derived("connectors", connectors))
     breaks = ", ".join(string_literal(block) for block in room.model.explosion_breaks)
@@ -501,6 +564,7 @@ def _room_expectation(room: RoomEntry, dungeon: DungeonTypeDef) -> str:
         for side, positions in opening_data(room).items()
         for x, y, z in positions
     )
+    patterns = data.get("set_piece_spots", [])
     return (
         f"                            new RoomExpectation({string_literal(f'{MOD_ID}:{ROOMS_DIR}/{room.id}')}, "
         f"{x}, {y}, {z}, {string_literal(room_role(room.model.tags) or '')}, {room.model.weight},\n"
@@ -509,7 +573,9 @@ def _room_expectation(room: RoomEntry, dungeon: DungeonTypeDef) -> str:
         f"{'true' if room.model.near_start else 'false'}, List.of({breaks}), {-1 if entry is None else entry}, "
         f"{spawners(room)}, {chests(room)}, {'true' if hazard(room) else 'false'},\n"
         f"                                    {len(containers.get('spots', []))}, List.of({tables[0]}), "
-        f"List.of({tables[1]}), List.of({openings}))"
+        f"List.of({tables[1]}), List.of({openings}),\n"
+        f"                                    {string_literal(data.get('container_loot', ''))}, {len(patterns)}, "
+        f"{sum(len(pattern['spots']) for pattern in patterns)})"
     )
 
 
@@ -519,5 +585,6 @@ def _wall_expectation(dungeon: DungeonTypeDef, walls: WallsDef) -> str:
         f"                            new RoomExpectation({string_literal(wall_template(dungeon))}, "
         f"{WALL_WIDTH}, {WALL_HEIGHT}, 1, {string_literal(WALL_ROLE)}, {walls.weight},\n"
         f"                                    {connector_list},\n"
-        "                                    0, false, List.of(), -1, 0, 0, false, 0, List.of(), List.of(), List.of())"
+        "                                    0, false, List.of(), -1, 0, 0, false, 0, List.of(), List.of(), List.of(),\n"
+        '                                    "", 0, 0)'
     )

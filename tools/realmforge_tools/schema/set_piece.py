@@ -10,7 +10,7 @@ rooms: the template is the piece, and the fit rule says where it fits. The jar h
 
 from __future__ import annotations
 
-from typing import Annotated, Literal
+from typing import Annotated
 
 from pydantic import AfterValidator, Field, StringConstraints, field_validator, model_validator
 
@@ -24,14 +24,11 @@ from realmforge_tools.rooms.set_pieces import (
     MaskError,
 )
 from realmforge_tools.schema.common import ContentId, ResourceId, StrictModel
-from realmforge_tools.schema.dungeon import ROOM_ROLES
+from realmforge_tools.schema.dungeon import RoomRole
 from realmforge_tools.schema.room import Tag
 from realmforge_tools.schema.room_spec import THEME_ROLES
 
 SET_PIECES_DIR = "set_pieces"
-
-RoomRole = Literal["entrance", "hallway", "combat", "stairs", "treasure", "boss"]
-assert set(RoomRole.__args__) == set(ROOM_ROLES)  # type: ignore[attr-defined]
 
 # A chance strictly between 0 and 1: 1 would keep a block always and 0 leave it out, which needs no rule.
 Chance = Annotated[float, Field(gt=0, lt=1, allow_inf_nan=False)]

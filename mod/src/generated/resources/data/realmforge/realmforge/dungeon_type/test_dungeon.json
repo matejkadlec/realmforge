@@ -53,7 +53,8 @@
           "target": "realmforge:shaft",
           "joint": "rollable"
         }
-      ]
+      ],
+      "container_loot": "realmforge:containers/normal"
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/dungeon/entrances/entrance_1_long",
@@ -77,7 +78,8 @@
           "target": "realmforge:shaft",
           "joint": "rollable"
         }
-      ]
+      ],
+      "container_loot": "realmforge:containers/normal"
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/dungeon/lobby/lobby_01",
@@ -172,6 +174,7 @@
           10
         ]
       },
+      "container_loot": "realmforge:containers/normal",
       "set_piece_spots": [
         {
           "pieces": [
@@ -402,7 +405,8 @@
           30,
           10
         ]
-      }
+      },
+      "container_loot": "realmforge:containers/normal"
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/dungeon/rooms/drowned_junction",
@@ -474,7 +478,8 @@
           30,
           10
         ]
-      }
+      },
+      "container_loot": "realmforge:containers/normal"
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/dungeon/rooms/husk_temple",
@@ -565,6 +570,7 @@
           10
         ]
       },
+      "container_loot": "realmforge:containers/normal",
       "set_piece_spots": [
         {
           "pieces": [
@@ -812,7 +818,8 @@
           30,
           10
         ]
-      }
+      },
+      "container_loot": "realmforge:containers/normal"
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/dungeon/rooms/lava_parkour",
@@ -872,7 +879,8 @@
           30,
           10
         ]
-      }
+      },
+      "container_loot": "realmforge:containers/normal"
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/dungeon/rooms/lava_trap",
@@ -910,7 +918,8 @@
         }
       ],
       "max_per_layout": 1,
-      "hazard": true
+      "hazard": true,
+      "container_loot": "realmforge:containers/normal"
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/dungeon/rooms/library",
@@ -1021,6 +1030,7 @@
           10
         ]
       },
+      "container_loot": "realmforge:containers/normal",
       "set_piece_spots": [
         {
           "pieces": [
@@ -1333,6 +1343,7 @@
         }
       ],
       "max_per_layout": 1,
+      "container_loot": "realmforge:containers/normal",
       "set_piece_spots": [
         {
           "pieces": [
@@ -1459,6 +1470,7 @@
           10
         ]
       },
+      "container_loot": "realmforge:containers/normal",
       "set_piece_spots": [
         {
           "pieces": [
@@ -1691,7 +1703,8 @@
           30,
           10
         ]
-      }
+      },
+      "container_loot": "realmforge:containers/normal"
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/dungeon/rooms/stairs",
@@ -1728,7 +1741,8 @@
           "joint": "rollable"
         }
       ],
-      "max_per_layout": 2
+      "max_per_layout": 2,
+      "container_loot": "realmforge:containers/normal"
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/dungeon/rooms/tight_maze",
@@ -1816,7 +1830,8 @@
           30,
           10
         ]
-      }
+      },
+      "container_loot": "realmforge:containers/normal"
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/dungeon/rooms/tnt_plate_trap",
@@ -1905,6 +1920,7 @@
           10
         ]
       },
+      "container_loot": "realmforge:containers/normal",
       "set_piece_spots": [
         {
           "pieces": [
@@ -2000,7 +2016,8 @@
           30,
           10
         ]
-      }
+      },
+      "container_loot": "realmforge:containers/normal"
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/dungeon/stairway/fall_01",
@@ -2036,7 +2053,8 @@
           "target": "realmforge:shaft",
           "joint": "rollable"
         }
-      ]
+      ],
+      "container_loot": "realmforge:containers/normal"
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/dungeon/stairway/fall_long",
@@ -2072,7 +2090,8 @@
           "target": "realmforge:shaft",
           "joint": "rollable"
         }
-      ]
+      ],
+      "container_loot": "realmforge:containers/normal"
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/dungeon/treasure/egg",
@@ -2203,7 +2222,8 @@
           25,
           10
         ]
-      }
+      },
+      "container_loot": "realmforge:containers/treasure"
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/dungeon/treasure/mooshroom_king",
@@ -2309,7 +2329,8 @@
           0,
           100
         ]
-      }
+      },
+      "container_loot": "realmforge:containers/treasure"
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/dungeon/treasure/parrot",
@@ -2473,7 +2494,8 @@
           40,
           20
         ]
-      }
+      },
+      "container_loot": "realmforge:containers/treasure"
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/dungeon/treasure/tiny_cap",
@@ -2542,7 +2564,8 @@
           20,
           5
         ]
-      }
+      },
+      "container_loot": "realmforge:containers/treasure"
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/pillager_dungeon/rooms/bedroom",
@@ -2624,6 +2647,7 @@
           10
         ]
       },
+      "container_loot": "realmforge:containers/normal",
       "set_piece_spots": [
         {
           "pieces": [
@@ -2918,6 +2942,7 @@
           10
         ]
       },
+      "container_loot": "realmforge:containers/normal",
       "set_piece_spots": [
         {
           "pieces": [
@@ -3131,6 +3156,7 @@
           10
         ]
       },
+      "container_loot": "realmforge:containers/normal",
       "set_piece_spots": [
         {
           "pieces": [
@@ -3339,6 +3365,7 @@
           10
         ]
       },
+      "container_loot": "realmforge:containers/normal",
       "set_piece_spots": [
         {
           "pieces": [
@@ -3461,7 +3488,8 @@
           30,
           10
         ]
-      }
+      },
+      "container_loot": "realmforge:containers/normal"
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/pillager_dungeon/rooms/jail",
@@ -3534,190 +3562,7 @@
           100
         ]
       },
-      "set_piece_spots": [
-        {
-          "pieces": [
-            "realmforge:test_barrel"
-          ],
-          "spots": [
-            {
-              "pos": [
-                2,
-                1,
-                1
-              ],
-              "facing": "south",
-              "mirror": false
-            },
-            {
-              "pos": [
-                10,
-                1,
-                1
-              ],
-              "facing": "south",
-              "mirror": true
-            }
-          ]
-        },
-        {
-          "pieces": [
-            "realmforge:test_barrel"
-          ],
-          "spots": [
-            {
-              "pos": [
-                3,
-                1,
-                1
-              ],
-              "facing": "south",
-              "mirror": false
-            },
-            {
-              "pos": [
-                9,
-                1,
-                1
-              ],
-              "facing": "south",
-              "mirror": true
-            }
-          ]
-        },
-        {
-          "pieces": [
-            "realmforge:test_barrel"
-          ],
-          "spots": [
-            {
-              "pos": [
-                4,
-                1,
-                1
-              ],
-              "facing": "south",
-              "mirror": false
-            },
-            {
-              "pos": [
-                8,
-                1,
-                1
-              ],
-              "facing": "south",
-              "mirror": true
-            }
-          ]
-        },
-        {
-          "pieces": [
-            "realmforge:test_barrel"
-          ],
-          "spots": [
-            {
-              "pos": [
-                5,
-                1,
-                1
-              ],
-              "facing": "south",
-              "mirror": false
-            },
-            {
-              "pos": [
-                7,
-                1,
-                1
-              ],
-              "facing": "south",
-              "mirror": true
-            }
-          ]
-        },
-        {
-          "pieces": [
-            "realmforge:test_barrel"
-          ],
-          "spots": [
-            {
-              "pos": [
-                6,
-                1,
-                1
-              ],
-              "facing": "south",
-              "mirror": false
-            }
-          ]
-        },
-        {
-          "pieces": [
-            "realmforge:test_barrel"
-          ],
-          "spots": [
-            {
-              "pos": [
-                9,
-                1,
-                4
-              ],
-              "facing": "east",
-              "mirror": false
-            },
-            {
-              "pos": [
-                9,
-                1,
-                8
-              ],
-              "facing": "east",
-              "mirror": true
-            }
-          ]
-        },
-        {
-          "pieces": [
-            "realmforge:test_barrel"
-          ],
-          "spots": [
-            {
-              "pos": [
-                9,
-                1,
-                5
-              ],
-              "facing": "east",
-              "mirror": false
-            },
-            {
-              "pos": [
-                9,
-                1,
-                7
-              ],
-              "facing": "east",
-              "mirror": true
-            }
-          ]
-        },
-        {
-          "pieces": [
-            "realmforge:test_barrel"
-          ],
-          "spots": [
-            {
-              "pos": [
-                9,
-                1,
-                6
-              ],
-              "facing": "east",
-              "mirror": false
-            }
-          ]
-        }
-      ]
+      "container_loot": "realmforge:containers/normal"
     },
     {
       "template": "realmforge:rooms/third_party/stonevaults/pillager_dungeon/rooms/jail_2",
@@ -3810,6 +3655,7 @@
           10
         ]
       },
+      "container_loot": "realmforge:containers/normal",
       "set_piece_spots": [
         {
           "pieces": [
@@ -4090,6 +3936,7 @@
           10
         ]
       },
+      "container_loot": "realmforge:containers/normal",
       "set_piece_spots": [
         {
           "pieces": [
@@ -4193,7 +4040,8 @@
         }
       ],
       "max_per_layout": 1,
-      "hazard": true
+      "hazard": true,
+      "container_loot": "realmforge:containers/normal"
     },
     {
       "template": "realmforge:rooms/generated/corridor_curve/seed_1",
@@ -4230,6 +4078,7 @@
           "joint": "rollable"
         }
       ],
+      "container_loot": "realmforge:containers/normal",
       "set_piece_spots": [
         {
           "pieces": [
@@ -4293,6 +4142,7 @@
           "joint": "rollable"
         }
       ],
+      "container_loot": "realmforge:containers/normal",
       "set_piece_spots": [
         {
           "pieces": [
@@ -4356,6 +4206,7 @@
           "joint": "rollable"
         }
       ],
+      "container_loot": "realmforge:containers/normal",
       "set_piece_spots": [
         {
           "pieces": [
@@ -4419,6 +4270,7 @@
           "joint": "rollable"
         }
       ],
+      "container_loot": "realmforge:containers/normal",
       "set_piece_spots": [
         {
           "pieces": [
@@ -4482,6 +4334,7 @@
           "joint": "rollable"
         }
       ],
+      "container_loot": "realmforge:containers/normal",
       "set_piece_spots": [
         {
           "pieces": [
@@ -4606,6 +4459,7 @@
           "joint": "rollable"
         }
       ],
+      "container_loot": "realmforge:containers/normal",
       "set_piece_spots": [
         {
           "pieces": [
@@ -4730,6 +4584,7 @@
           "joint": "rollable"
         }
       ],
+      "container_loot": "realmforge:containers/normal",
       "set_piece_spots": [
         {
           "pieces": [
@@ -4879,6 +4734,7 @@
           "joint": "rollable"
         }
       ],
+      "container_loot": "realmforge:containers/normal",
       "set_piece_spots": [
         {
           "pieces": [
@@ -5002,7 +4858,8 @@
           "target": "realmforge:door",
           "joint": "rollable"
         }
-      ]
+      ],
+      "container_loot": "realmforge:containers/normal"
     },
     {
       "template": "realmforge:rooms/generated/corridor_straight/seed_2",
@@ -5038,7 +4895,8 @@
           "target": "realmforge:door",
           "joint": "rollable"
         }
-      ]
+      ],
+      "container_loot": "realmforge:containers/normal"
     },
     {
       "template": "realmforge:rooms/generated/corridor_straight/seed_3",
@@ -5074,7 +4932,8 @@
           "target": "realmforge:door",
           "joint": "rollable"
         }
-      ]
+      ],
+      "container_loot": "realmforge:containers/normal"
     },
     {
       "template": "realmforge:rooms/generated/corridor_straight/seed_4",
@@ -5110,7 +4969,8 @@
           "target": "realmforge:door",
           "joint": "rollable"
         }
-      ]
+      ],
+      "container_loot": "realmforge:containers/normal"
     },
     {
       "template": "realmforge:rooms/generated/crossing/seed_1",
@@ -5171,6 +5031,7 @@
           "joint": "rollable"
         }
       ],
+      "container_loot": "realmforge:containers/normal",
       "set_piece_spots": [
         {
           "pieces": [
@@ -5276,6 +5137,7 @@
           "joint": "rollable"
         }
       ],
+      "container_loot": "realmforge:containers/normal",
       "set_piece_spots": [
         {
           "pieces": [
@@ -5381,6 +5243,7 @@
           "joint": "rollable"
         }
       ],
+      "container_loot": "realmforge:containers/normal",
       "set_piece_spots": [
         {
           "pieces": [
@@ -5486,6 +5349,7 @@
           "joint": "rollable"
         }
       ],
+      "container_loot": "realmforge:containers/normal",
       "set_piece_spots": [
         {
           "pieces": [
@@ -5554,7 +5418,8 @@
           "target": "realmforge:door",
           "joint": "rollable"
         }
-      ]
+      ],
+      "container_loot": "realmforge:containers/normal"
     },
     {
       "template": "realmforge:rooms/generated/dead_end/seed_2",
@@ -5578,7 +5443,8 @@
           "target": "realmforge:door",
           "joint": "rollable"
         }
-      ]
+      ],
+      "container_loot": "realmforge:containers/normal"
     },
     {
       "template": "realmforge:rooms/generated/dead_end/seed_3",
@@ -5602,7 +5468,8 @@
           "target": "realmforge:door",
           "joint": "rollable"
         }
-      ]
+      ],
+      "container_loot": "realmforge:containers/normal"
     },
     {
       "template": "realmforge:rooms/generated/dead_end/seed_4",
@@ -5626,7 +5493,8 @@
           "target": "realmforge:door",
           "joint": "rollable"
         }
-      ]
+      ],
+      "container_loot": "realmforge:containers/normal"
     },
     {
       "template": "realmforge:rooms/generated/junction_t/seed_1",
@@ -5675,6 +5543,7 @@
           "joint": "rollable"
         }
       ],
+      "container_loot": "realmforge:containers/normal",
       "set_piece_spots": [
         {
           "pieces": [
@@ -5791,6 +5660,7 @@
           "joint": "rollable"
         }
       ],
+      "container_loot": "realmforge:containers/normal",
       "set_piece_spots": [
         {
           "pieces": [
@@ -5866,6 +5736,7 @@
           "joint": "rollable"
         }
       ],
+      "container_loot": "realmforge:containers/normal",
       "set_piece_spots": [
         {
           "pieces": [
@@ -5941,6 +5812,7 @@
           "joint": "rollable"
         }
       ],
+      "container_loot": "realmforge:containers/normal",
       "set_piece_spots": [
         {
           "pieces": [
@@ -6010,42 +5882,71 @@
       ]
     }
   ],
-  "set_piece_density": {
-    "entrance": [
-      0,
-      1
-    ],
-    "hallway": [
-      0,
-      1
-    ],
-    "combat": [
-      1,
-      2
-    ],
-    "stairs": [
-      0,
-      1
-    ],
-    "treasure": [
-      0,
-      1
-    ],
-    "boss": [
-      0,
-      2
-    ]
-  },
   "set_pieces": {
-    "realmforge:test_barrel": {
-      "template": "realmforge:set_pieces/test_barrel",
-      "processors": "realmforge:set_pieces/test_barrel",
-      "weight": 1,
-      "tags": [
-        "test",
-        "storage"
+    "density": {
+      "entrance": [
+        1,
+        1
       ],
-      "mirror": true
+      "hallway": [
+        100
+      ],
+      "combat": [
+        80,
+        20
+      ],
+      "stairs": [
+        100
+      ],
+      "treasure": [
+        1,
+        1
+      ],
+      "boss": [
+        1,
+        1,
+        1
+      ]
+    },
+    "container_loot": "realmforge:containers/normal",
+    "pieces": {
+      "realmforge:test_barrel": {
+        "template": "realmforge:set_pieces/test_barrel",
+        "size": [
+          1,
+          2,
+          1
+        ],
+        "weight": 1,
+        "mirror": true,
+        "variants": [
+          {
+            "pos": [
+              0,
+              0,
+              0
+            ],
+            "chance": 0.25,
+            "state": {
+              "Name": "minecraft:chest",
+              "Properties": {
+                "facing": "south"
+              }
+            }
+          },
+          {
+            "pos": [
+              0,
+              1,
+              0
+            ],
+            "chance": 0.5,
+            "state": {
+              "Name": "minecraft:air"
+            }
+          }
+        ]
+      }
     }
   }
 }

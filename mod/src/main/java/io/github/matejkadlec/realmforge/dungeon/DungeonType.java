@@ -7,6 +7,7 @@ import io.github.matejkadlec.realmforge.dungeon.plan.DungeonPlan;
 import io.github.matejkadlec.realmforge.dungeon.plan.DungeonPlanner;
 import io.github.matejkadlec.realmforge.dungeon.plan.DungeonRoom;
 import io.github.matejkadlec.realmforge.dungeon.plan.LayoutRules;
+import io.github.matejkadlec.realmforge.dungeon.plan.SetPieces;
 import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.progression.LevelCaps;
 import io.github.matejkadlec.realmforge.stats.EntityLevel;
@@ -21,8 +22,9 @@ import net.minecraft.world.item.Item;
  * A kind of dungeon, an entry of the datapack registry {@code realmforge:dungeon_type} from {@code content/dungeons/}
  * (architecture 5.2, 15.2): the room pool it is built from, the rules of its layout, the key that opens a dungeon
  * portal to it, how long that portal stays open (W4d, 15.5) and its base level (RLM-459). {@code rf gen} resolves the
- * pool into its rooms, so the entry holds everything the planner needs. Encounters, loot and the theme join with the
- * tasks that use them.
+ * pool into its rooms, so the entry holds everything the planner needs: each room with the loot table of its chests
+ * and barrels (RLM-290) and its set-piece spots, and the set pieces that fill them (RLM-282). Encounters and the theme
+ * join with the tasks that use them.
  *
  * @param name translation key of its name
  * @param pool the room pool it is built from, as the content names it
@@ -32,9 +34,10 @@ import net.minecraft.world.item.Item;
  * @param level its base level: its boss's level, as the campaign places it; a run of it is at least this level, raised
  *              to its party's highest (RLM-240)
  * @param rooms the pool's rooms, in room id order
+ * @param setPieces the set pieces its runs place in its rooms' spots
  */
 public record DungeonType(String name, Identifier pool, LayoutRules layout, Identifier key, int openMinutes, int level,
-        List<DungeonRoom> rooms) {
+        List<DungeonRoom> rooms, SetPieces setPieces) {
     public static final Codec<DungeonType> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                     Codec.STRING.fieldOf("name").forGetter(DungeonType::name),
                     Identifier.CODEC.fieldOf("pool").forGetter(DungeonType::pool),
@@ -42,7 +45,8 @@ public record DungeonType(String name, Identifier pool, LayoutRules layout, Iden
                     Identifier.CODEC.fieldOf("key").forGetter(DungeonType::key),
                     ExtraCodecs.POSITIVE_INT.fieldOf("open_minutes").forGetter(DungeonType::openMinutes),
                     Codec.intRange(EntityLevel.MIN, LevelCaps.MAX_LEVEL).fieldOf("level").forGetter(DungeonType::level),
-                    DungeonRoom.CODEC.listOf().fieldOf("rooms").forGetter(DungeonType::rooms))
+                    DungeonRoom.CODEC.listOf().fieldOf("rooms").forGetter(DungeonType::rooms),
+                    SetPieces.CODEC.optionalFieldOf("set_pieces", SetPieces.NONE).forGetter(DungeonType::setPieces))
             .apply(instance, DungeonType::new));
     /**
      * Every dungeon type's key ({@code generate/dungeons.py}): the client reads it to know which items a portal takes,
@@ -61,11 +65,11 @@ public record DungeonType(String name, Identifier pool, LayoutRules layout, Iden
     }
 
     /**
-     * A layout for a plot, the same for the same seed.
+     * A layout for a plot, the same for the same seed, dressed with the type's set pieces.
      *
      * @throws io.github.matejkadlec.realmforge.dungeon.plan.PlanningException when no layout fits
      */
     public DungeonPlan plan(long seed) {
-        return DungeonPlanner.plan(rooms, layout, seed, PlotGrid.limits());
+        return DungeonPlanner.plan(rooms, layout, seed, PlotGrid.limits()).withSetPieces(setPieces);
     }
 }

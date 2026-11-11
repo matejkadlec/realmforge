@@ -5,6 +5,7 @@ import io.github.matejkadlec.realmforge.dungeon.instance.InstanceDimension;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceManager;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceMobLevels;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceRules;
+import io.github.matejkadlec.realmforge.dungeon.instance.LootContainerProcessor;
 import io.github.matejkadlec.realmforge.dungeon.portal.DungeonBlocks;
 import io.github.matejkadlec.realmforge.mob.MobLevels;
 import java.util.function.BiConsumer;
@@ -31,6 +32,7 @@ public final class DungeonFeature {
         modBus.addListener(DataPackRegistryEvent.NewRegistry.class, DungeonRegistries::registerDataPackRegistries);
         InstanceManager.register(modBus);
         BlockSwapProcessor.register(modBus);
+        LootContainerProcessor.register(modBus);
         InstanceRules.register();
         DungeonBlocks.register(modBus);
         // A mob in a run's plot takes the run's level, which the instance dimension's missing rule would not give it.

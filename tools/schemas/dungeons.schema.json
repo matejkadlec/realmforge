@@ -192,6 +192,52 @@
       "title": "PacingDef",
       "type": "object"
     },
+    "SetPiecesDef": {
+      "additionalProperties": false,
+      "description": "The set pieces a dungeon of this type places (RLM-282, ADR 0050): which pieces, and how many of a room's spot\npatterns a run fills. A run fills a pattern with one piece, picked by weight among those that fit it, or leaves\nit empty.",
+      "properties": {
+        "density": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "description": "The chance in percent of each count (0 to 64), adding up to 100, e.g. {1: 75, 2: 20, 3: 5}.",
+            "minProperties": 1,
+            "type": "object"
+          },
+          "description": "How many of a room's spot patterns a run fills, by the room's role: the chance in percent of each count, e.g. {0: 75, 1: 25}; a room with fewer patterns fills them all at most. A role left out follows the default: none or one in a hallway, on stairs, in a treasure room and in the entrance, one or two in a combat room, up to two in a boss's room, each as likely.",
+          "propertyNames": {
+            "enum": [
+              "entrance",
+              "hallway",
+              "combat",
+              "stairs",
+              "treasure",
+              "boss"
+            ]
+          },
+          "title": "Density",
+          "type": "object"
+        },
+        "tags": {
+          "description": "The pieces it uses: every set piece with one of these tags (storage, prison, crypt, ...).",
+          "items": {
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Tags",
+          "type": "array"
+        }
+      },
+      "required": [
+        "tags"
+      ],
+      "title": "SetPiecesDef",
+      "type": "object"
+    },
     "WallsDef": {
       "additionalProperties": false,
       "description": "A plain wall that closes a doorway nothing else takes, one block behind it: rf gen builds it as a template of\n3 x 3 blocks with one connector and adds it to the dungeon type's rooms with the role ``wall``.",
@@ -222,6 +268,27 @@
   "additionalProperties": false,
   "description": "A kind of dungeon: the room pool it is built from, the rules of its layout, the key that opens a portal to it,\nhow long that portal stays open (W4d) and its base level (RLM-459). Encounters, loot and its theme come with the\ntasks that use them.",
   "properties": {
+    "container_loot": {
+      "additionalProperties": {
+        "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+        "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+        "type": "string"
+      },
+      "description": "What its rooms' chests and barrels hold: a container loot table (content/container_loot/, e.g. realmforge:normal) by the room's role, and under default for every role without its own and for the containers of set pieces. When a run is built, each chest, trapped chest and barrel becomes a loot container with that table, whose contents every player gets for themselves (Lootr; RLM-290, ADR 0041). A type whose rooms or set pieces hold a container names the default.",
+      "propertyNames": {
+        "enum": [
+          "entrance",
+          "hallway",
+          "combat",
+          "stairs",
+          "treasure",
+          "boss",
+          "default"
+        ]
+      },
+      "title": "Container Loot",
+      "type": "object"
+    },
     "containers": {
       "additionalProperties": {
         "$ref": "#/$defs/ContainerTables"
@@ -280,6 +347,18 @@
       "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
       "title": "Pool",
       "type": "string"
+    },
+    "set_pieces": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SetPiecesDef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "If set, its runs place set pieces of these tags in its rooms' spots (RLM-282). Unset: none."
     }
   },
   "required": [

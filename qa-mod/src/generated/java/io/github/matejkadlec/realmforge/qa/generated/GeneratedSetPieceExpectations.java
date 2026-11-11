@@ -8,14 +8,14 @@ import java.util.List;
 /** What {@code content/set_pieces/} holds, so a GameTest can check that the game loads every piece. */
 public final class GeneratedSetPieceExpectations {
     /**
-     * One piece: its structure id ({@code realmforge:set_pieces/<id>}), its size and its processor list (empty
-     * when it has none).
+     * One piece: its structure id ({@code realmforge:set_pieces/<id>}), its size and how many of its blocks vary
+     * (chance blocks and swaps).
      */
-    public record SetPieceExpectation(String id, int sizeX, int sizeY, int sizeZ, String processorList) {
+    public record SetPieceExpectation(String id, int sizeX, int sizeY, int sizeZ, int variants) {
     }
 
     public static final List<SetPieceExpectation> SET_PIECES = List.of(
-            new SetPieceExpectation("realmforge:set_pieces/test_barrel", 1, 2, 1, "realmforge:set_pieces/test_barrel"));
+            new SetPieceExpectation("realmforge:set_pieces/test_barrel", 1, 2, 1, 2));
 
     private GeneratedSetPieceExpectations() {
     }

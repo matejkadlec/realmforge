@@ -11,6 +11,7 @@ import io.github.matejkadlec.realmforge.dungeon.DungeonType;
 import io.github.matejkadlec.realmforge.dungeon.plan.DungeonPlan;
 import io.github.matejkadlec.realmforge.dungeon.plan.DungeonRoom;
 import io.github.matejkadlec.realmforge.dungeon.plan.PlanningException;
+import io.github.matejkadlec.realmforge.dungeon.plan.SetPieces;
 import io.github.matejkadlec.realmforge.dungeon.portal.DungeonBlocks;
 import io.github.matejkadlec.realmforge.generated.GeneratedTexts;
 import io.github.matejkadlec.realmforge.progression.ProgressionStats;
@@ -169,15 +170,21 @@ public final class InstanceManager extends SavedData {
         for (DungeonType type : server.registryAccess().lookupOrThrow(DungeonRegistries.DUNGEON_TYPE)) {
             types++;
             type.rooms().stream().map(DungeonRoom::template).forEach(templates::add);
+            type.setPieces().pieces().values().stream().map(SetPieces.Piece::template).forEach(templates::add);
         }
         StructureTemplateManager structures = server.getStructureManager();
         for (Identifier template : templates) {
             if (structures.get(template).isEmpty()) {
-                LOGGER.warn("Room template {} of a dungeon type does not load", template);
+                LOGGER.warn("Template {} of a dungeon type's rooms and set pieces does not load", template);
             }
         }
         LOGGER.info("Loaded the {} room templates of {} dungeon types in {} ms", templates.size(), types,
                 (System.nanoTime() - start) / 1_000_000);
+    }
+
+    private static boolean contains(BoundingBox box, BoundingBox inner) {
+        return box.isInside(inner.minX(), inner.minY(), inner.minZ())
+                && box.isInside(inner.maxX(), inner.maxY(), inner.maxZ());
     }
 
     /**
@@ -279,6 +286,14 @@ public final class InstanceManager extends SavedData {
             }
             relativeRooms.add(box);
             markers.addAll(InstanceBuilder.markers(template, index, room));
+            for (PiecePlacement piece : room.pieces()) {
+                BoundingBox pieceBox = InstanceBuilder.template(level, piece)
+                        .getBoundingBox(InstanceBuilder.settings(piece), piece.offset());
+                if (!contains(box, pieceBox)) {
+                    throw new IllegalArgumentException("set piece " + piece.template() + " at " + pieceBox
+                            + " reaches outside its room " + room.template() + ": " + box);
+                }
+            }
         }
         Plot plot;
         if (free.isEmpty()) {

@@ -194,6 +194,12 @@
       "type": "array",
       "uniqueItems": true
     },
+    "set_pieces": {
+      "default": true,
+      "description": "False: no dungeon places a set piece in this room, which keeps exactly what its template holds (RLM-282). Unset or true: the room's spots take the pieces its dungeon type uses.",
+      "title": "Set Pieces",
+      "type": "boolean"
+    },
     "source": {
       "anyOf": [
         {

@@ -14,7 +14,7 @@ from pydantic import AfterValidator, Field
 
 from realmforge_tools.schema.chapter import MAX_LEVEL
 from realmforge_tools.schema.common import ContentId, LocalizedText, ResourceId, StrictModel
-from realmforge_tools.schema.room import ContainerTables
+from realmforge_tools.schema.room import ChanceTable, ContainerTables, Tag
 
 # The role a room plays in a layout: exactly one of these is among a pooled room's tags (content/README.md).
 ROOM_ROLES = ("entrance", "hallway", "combat", "stairs", "treasure", "boss")
@@ -30,6 +30,8 @@ CORRIDOR_ROLES = ("hallway", "stairs")
 # The key of a dungeon type's container tables for every role without its own (RLM-365).
 DEFAULT_CONTAINERS = "default"
 ContainerRole = Literal["entrance", "hallway", "combat", "stairs", "treasure", "boss", "default"]
+RoomRole = Literal["entrance", "hallway", "combat", "stairs", "treasure", "boss"]
+assert RoomRole.__args__ == ROOM_ROLES  # type: ignore[attr-defined]
 # The role of the plug rf gen makes from a dungeon type's walls: it closes a doorway, and is no room (RLM-364).
 WALL_ROLE = "wall"
 # The doorway a wall closes: three blocks wide and high, its connector at the middle of the bottom row, like every
@@ -155,6 +157,33 @@ class LayoutDef(StrictModel):
     )
 
 
+def _unique_tags(tags: list[str]) -> list[str]:
+    duplicates = sorted({tag for tag in tags if tags.count(tag) > 1})
+    if duplicates:
+        raise ValueError(f"duplicate tags: {', '.join(duplicates)}")
+    return tags
+
+
+class SetPiecesDef(StrictModel):
+    """The set pieces a dungeon of this type places (RLM-282, ADR 0050): which pieces, and how many of a room's spot
+    patterns a run fills. A run fills a pattern with one piece, picked by weight among those that fit it, or leaves
+    it empty."""
+
+    tags: Annotated[list[Tag], AfterValidator(_unique_tags)] = Field(
+        min_length=1,
+        description="The pieces it uses: every set piece with one of these tags (storage, prison, crypt, ...).",
+    )
+    density: dict[RoomRole, ChanceTable] = Field(
+        default_factory=dict,
+        description=(
+            "How many of a room's spot patterns a run fills, by the room's role: the chance in percent of each "
+            "count, e.g. {0: 75, 1: 25}; a room with fewer patterns fills them all at most. A role left out "
+            "follows the default: none or one in a hallway, on stairs, in a treasure room and in the entrance, "
+            "one or two in a combat room, up to two in a boss's room, each as likely."
+        ),
+    )
+
+
 class DungeonTypeDef(StrictModel):
     """A kind of dungeon: the room pool it is built from, the rules of its layout, the key that opens a portal to it,
     how long that portal stays open (W4d) and its base level (RLM-459). Encounters, loot and its theme come with the
@@ -193,4 +222,18 @@ class DungeonTypeDef(StrictModel):
             "every role without its own (a kind a role leaves out follows default; RLM-365). A room's sidecar may "
             "set its own. Without a table, a room keeps all of its containers."
         ),
+    )
+    container_loot: dict[ContainerRole, ResourceId] = Field(
+        default_factory=dict,
+        description=(
+            "What its rooms' chests and barrels hold: a container loot table (content/container_loot/, e.g. "
+            "realmforge:normal) by the room's role, and under default for every role without its own and for the "
+            "containers of set pieces. When a run is built, each chest, trapped chest and barrel becomes a loot "
+            "container with that table, whose contents every player gets for themselves (Lootr; RLM-290, ADR "
+            "0041). A type whose rooms or set pieces hold a container names the default."
+        ),
+    )
+    set_pieces: SetPiecesDef | None = Field(
+        default=None,
+        description="If set, its runs place set pieces of these tags in its rooms' spots (RLM-282). Unset: none.",
     )

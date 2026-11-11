@@ -11,6 +11,7 @@ import io.github.matejkadlec.realmforge.dungeon.instance.RoomPlacement;
 import io.github.matejkadlec.realmforge.dungeon.plan.DungeonPlan;
 import io.github.matejkadlec.realmforge.dungeon.plan.PlannedRoom;
 import io.github.matejkadlec.realmforge.dungeon.plan.RoomContainers;
+import io.github.matejkadlec.realmforge.loot.LootContainers;
 import io.github.matejkadlec.realmforge.qa.RealmforgeQa;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -131,9 +132,12 @@ public final class DungeonContainerGameTests {
                         for (RoomContainers.Spot spot : plan.rooms().get(i).room().containers().spots()) {
                             if (!swapped.contains(spot.pos())) {
                                 BlockState placed = instances.getBlockState(world(plot, room, spot.pos()));
-                                helper.assertTrue(placed.is(spot.kind() == RoomContainers.Kind.CHEST ? Blocks.CHEST
-                                        : Blocks.BARREL), room.template() + " lost a kept " + spot.kind()
-                                        .getSerializedName() + " at " + spot.pos().toShortString() + ": " + placed);
+                                // A kept container stands as a loot container: Lootr's twin of its block (RLM-290).
+                                BlockState kept = LootContainers.perPlayer((spot.kind() == RoomContainers.Kind.CHEST
+                                        ? Blocks.CHEST : Blocks.BARREL).defaultBlockState());
+                                helper.assertTrue(placed.is(kept.getBlock()), room.template() + " lost a kept "
+                                        + spot.kind().getSerializedName() + " at " + spot.pos().toShortString() + ": "
+                                        + placed);
                             }
                         }
                     }

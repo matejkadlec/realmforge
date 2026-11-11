@@ -1,5 +1,5 @@
 """Set pieces (RLM-280, RLM-281; docs/design/set-pieces.md, ADR 0050): the mask, the matcher's rules and patterns,
-the content type and its validation, the spots in the dungeon type entries, the processor lists, the mask report,
+the content type and its validation, the spots, pieces and variants in the dungeon type entries, the mask report,
 the gallery's spots and the import of the workshop jig's saves."""
 
 from __future__ import annotations
@@ -47,7 +47,7 @@ from realmforge_tools.rooms.structure import (
 from realmforge_tools.validate import load_and_validate
 
 from .conftest import write
-from .test_dungeons import crypt, generate, problems_for
+from .test_dungeons import LOOT, crypt, dungeon, generate, problems_for
 
 Pos = tuple[int, int, int]
 DATA = "mod/src/generated/resources/data/realmforge"
@@ -546,11 +546,17 @@ def test_a_pieces_id_is_its_file_name(repo: RepoPaths) -> None:
 # --- spots in the dungeon types ---------------------------------------------------------------------------------
 
 
-def walled_hall(repo: RepoPaths) -> None:
-    """The crypt pool with a hall that has walls, floor and ceiling (the others are empty boxes: no spots)."""
+# A dungeon type that places the pieces tagged storage, with the loot table their containers get (RLM-282, RLM-290).
+PIECES = "set_pieces:\n  tags: [storage]\n"
+
+
+def walled_hall(repo: RepoPaths, pieces: str = PIECES) -> None:
+    """The crypt pool with a hall that has walls, floor and ceiling (the others are empty boxes: no spots), and a
+    dungeon type that places the storage pieces."""
     crypt(repo)
     (repo.content / "rooms" / "crypt" / "hall.nbt").write_bytes(write_structure(box_room(7, 7, 5)))
     copy_test_piece(repo)
+    (repo.content / "dungeons" / "crypt.yaml").write_text(dungeon() + LOOT + pieces, encoding="utf-8")
 
 
 def test_rf_gen_writes_each_rooms_spots_into_its_dungeon_type(repo: RepoPaths) -> None:
@@ -566,25 +572,46 @@ def test_rf_gen_writes_each_rooms_spots_into_its_dungeon_type(repo: RepoPaths) -
         "the empty boxes have no walls, and the test piece reaches hallways and combat rooms only"
     )
     assert data["set_pieces"] == {
-        "realmforge:test_barrel": {
-            "template": "realmforge:set_pieces/test_barrel",
-            "processors": "realmforge:set_pieces/test_barrel",
-            "weight": 1,
-            "tags": ["test", "storage"],
-            "mirror": True,
-        }
-    }
-    assert data["set_piece_density"]["hallway"] == [0, 1] and data["set_piece_density"]["combat"] == [1, 2]
+        "density": {
+            "entrance": [1, 1],
+            "hallway": [1, 1],
+            "combat": [0, 1, 1],
+            "stairs": [1, 1],
+            "treasure": [1, 1],
+            "boss": [1, 1, 1],
+        },
+        "container_loot": "realmforge:containers/normal",
+        "pieces": {
+            "realmforge:test_barrel": {
+                "template": "realmforge:set_pieces/test_barrel",
+                "size": [1, 2, 1],
+                "weight": 1,
+                "mirror": True,
+                "variants": [
+                    {
+                        "pos": [0, 0, 0],
+                        "chance": 0.25,
+                        "state": {"Name": "minecraft:chest", "Properties": {"facing": "south"}},
+                    },
+                    {"pos": [0, 1, 0], "chance": 0.5, "state": {"Name": "minecraft:air"}},
+                ],
+            }
+        },
+    }, "the default density as weights by count, the pieces' loot table, and the piece with what varies in it"
+    assert "set_piece_density" not in data
     assert f"{DATA}/structure/set_pieces/test_barrel.nbt" in files
     assert read_structure(files[f"{DATA}/structure/set_pieces/test_barrel.nbt"]).size == (1, 2, 1)
     assert "tools/schemas/set_pieces.schema.json" in files
     java = files[
         "qa-mod/src/generated/java/io/github/matejkadlec/realmforge/qa/generated/GeneratedSetPieceExpectations.java"
     ]
-    assert (
-        b'new SetPieceExpectation("realmforge:set_pieces/test_barrel", 1, 2, 1, "realmforge:set_pieces/test_barrel")'
-        in java
-    )
+    assert b'new SetPieceExpectation("realmforge:set_pieces/test_barrel", 1, 2, 1, 2)' in java
+    assert not any("processor_list/set_pieces" in path for path in files), "variants are data now (ADR 0077)"
+    types = files[
+        "qa-mod/src/generated/java/io/github/matejkadlec/realmforge/qa/generated/GeneratedDungeonTypeExpectations.java"
+    ].decode()
+    assert 'List.of("realmforge:test_barrel"), "realmforge:containers/normal",\n' in types
+    assert f'"realmforge:containers/normal", {len(patterns)}, ' in types, "the hall's patterns and spots"
     masks = files[
         "qa-mod/src/generated/java/io/github/matejkadlec/realmforge/qa/generated/GeneratedSetPieceMasks.java"
     ]
@@ -618,7 +645,10 @@ def test_only_mirrorable_pieces_take_a_mirrored_spot_of_an_asymmetric_mask(repo:
         assert ("realmforge:corner_plain" in pattern["pieces"]) == (not mirrored)
 
 
-def test_the_processor_list_carries_chance_blocks_and_swaps(repo: RepoPaths) -> None:
+def test_a_pieces_variants_reach_the_dungeon_type_as_data(repo: RepoPaths) -> None:
+    # ADR 0077: a block that is there only by chance becomes air at one minus its chance, and a swap its state with
+    # the properties it keeps; each is listed with its place in the template, and the game draws them with the layout.
+    walled_hall(repo)
     rule = BARREL_RULE + (
         "variants:\n  chance:\n    minecraft:skeleton_skull: 0.25\n  swaps:\n"
         "    minecraft:barrel:\n      to: minecraft:barrel[open=true]\n      chance: 0.5\n      keep: [facing]\n"
@@ -626,23 +656,71 @@ def test_the_processor_list_carries_chance_blocks_and_swaps(repo: RepoPaths) -> 
     add_piece(repo, "swapping", rule)
     add_piece(repo, "plain", BARREL_RULE)
     files = generate(repo)
-    folder = f"{DATA}/worldgen/processor_list/set_pieces"
-    assert f"{folder}/plain.json" not in files, "a piece without variants needs no processor list"
-    rules = json.loads(files[f"{folder}/swapping.json"])["processors"][0]["rules"]
-    assert rules[0]["input_predicate"] == {
-        "block": "minecraft:skeleton_skull",
-        "predicate_type": "minecraft:random_block_match",
-        "probability": 0.75,
-    }, "the skull is there a quarter of the time: it goes three times in four"
-    assert rules[0]["output_state"] == {"Name": "minecraft:air"}
-    assert rules[1]["input_predicate"]["block_state"] == {
-        "Name": "minecraft:barrel",
-        "Properties": {"facing": "up", "open": "false"},
-    }
-    assert rules[1]["output_state"] == {
-        "Name": "minecraft:barrel",
-        "Properties": {"facing": "up", "open": "true"},
-    }
+    pieces = json.loads(files[f"{DATA}/realmforge/dungeon_type/crypt.json"])["set_pieces"]["pieces"]
+    assert "variants" not in pieces["realmforge:plain"], "a piece without variants lists none"
+    assert pieces["realmforge:swapping"]["variants"] == [
+        {
+            "pos": [0, 0, 0],
+            "chance": 0.5,
+            "state": {"Name": "minecraft:barrel", "Properties": {"facing": "up", "open": "true"}},
+        },
+        {"pos": [0, 1, 0], "chance": 0.75, "state": {"Name": "minecraft:air"}},
+    ], "the skull is there a quarter of the time: it goes three times in four"
+
+
+def test_a_type_places_the_pieces_of_its_tags(repo: RepoPaths) -> None:
+    # RLM-282: a type without set_pieces places none; with it, the pieces that have one of its tags.
+    walled_hall(repo, pieces="")
+    data = json.loads(generate(repo)[f"{DATA}/realmforge/dungeon_type/crypt.json"])
+    assert "set_pieces" not in data and all("set_piece_spots" not in room for room in data["rooms"])
+    add_piece(repo, "shelf", BARREL_RULE.replace("tags: [storage]", "tags: [library]"))
+    path = repo.content / "dungeons" / "crypt.yaml"
+    path.write_text(dungeon() + LOOT + "set_pieces:\n  tags: [library]\n", encoding="utf-8")
+    data = json.loads(generate(repo)[f"{DATA}/realmforge/dungeon_type/crypt.json"])
+    assert list(data["set_pieces"]["pieces"]) == ["realmforge:shelf"]
+    hall = next(room for room in data["rooms"] if room["template"] == "realmforge:rooms/crypt/hall")
+    assert all(pattern["pieces"] == ["realmforge:shelf"] for pattern in hall["set_piece_spots"])
+    path.write_text(dungeon() + LOOT + "set_pieces:\n  tags: [kitchen]\n", encoding="utf-8")
+    assert any(
+        "set_pieces.tags" in p and "no set piece has the tag 'kitchen'" in p for p in problems_for(repo)
+    )
+    path.write_text(dungeon() + LOOT + "set_pieces:\n  tags: []\n", encoding="utf-8")
+    assert any("set_pieces.tags" in p for p in problems_for(repo)), "a type that places pieces names a tag"
+
+
+def test_a_types_density_is_a_chance_table_by_role(repo: RepoPaths) -> None:
+    walled_hall(repo, pieces=PIECES + "  density:\n    hallway: {0: 100}\n    combat: {0: 80, 1: 20}\n")
+    density = json.loads(generate(repo)[f"{DATA}/realmforge/dungeon_type/crypt.json"])["set_pieces"][
+        "density"
+    ]
+    assert (density["hallway"], density["combat"], density["boss"]) == ([100], [80, 20], [1, 1, 1])
+    path = repo.content / "dungeons" / "crypt.yaml"
+    path.write_text(dungeon() + LOOT + PIECES + "  density:\n    combat: {0: 80, 1: 10}\n", encoding="utf-8")
+    assert any("set_pieces.density.combat" in p and "add up to 90 %" in p for p in problems_for(repo))
+    path.write_text(dungeon() + LOOT + PIECES + "  density:\n    wall: {0: 100}\n", encoding="utf-8")
+    assert any("set_pieces.density.wall" in p for p in problems_for(repo)), "a wall is no room"
+
+
+def test_a_room_can_turn_set_pieces_off(repo: RepoPaths) -> None:
+    # Matěj, 2026-10-25: the jail holds its one chest and one barrel and nothing else; its sidecar says so.
+    walled_hall(repo)
+    sidecar = repo.content / "rooms" / "crypt" / "hall.yaml"
+    sidecar.write_text(sidecar.read_text(encoding="utf-8") + "set_pieces: false\n", encoding="utf-8")
+    data = json.loads(generate(repo)[f"{DATA}/realmforge/dungeon_type/crypt.json"])
+    assert all("set_piece_spots" not in room for room in data["rooms"]) and "set_pieces" not in data
+    jail = REPO_ROOT / "content/rooms/third_party/stonevaults/pillager_dungeon/rooms/jail.yaml"
+    assert "set_pieces: false\n" in jail.read_text(encoding="utf-8")
+
+
+def test_a_set_pieces_containers_need_the_default_loot_table(repo: RepoPaths) -> None:
+    # ADR 0041: a piece's chest or barrel is a loot container too, with the type's default table.
+    walled_hall(repo)
+    path = repo.content / "dungeons" / "crypt.yaml"
+    path.write_text(dungeon() + "container_loot:\n  hallway: realmforge:normal\n" + PIECES, encoding="utf-8")
+    assert any(
+        "container_loot" in p and "its set pieces hold chests or barrels" in p and "test_barrel" in p
+        for p in problems_for(repo)
+    )
 
 
 # --- the mask report --------------------------------------------------------------------------------------------

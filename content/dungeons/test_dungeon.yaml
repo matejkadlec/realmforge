@@ -38,5 +38,21 @@ containers:
   default:
     chests: {1: 60, 2: 30, 3: 10}
     barrels: {0: 20, 1: 40, 2: 30, 3: 10}
+# What they hold (RLM-290, docs/design/container-loot.md): every chest and barrel a run builds becomes a loot
+# container whose contents each player gets for themselves (Lootr), with the treasure table in the treasure rooms and
+# the normal one everywhere else, set pieces included.
+container_loot:
+  default: realmforge:normal
+  treasure: realmforge:treasure
+# The set pieces its runs place (RLM-282): only the test piece exists so far, a barrel that is a loot container, so
+# the density is far below the default (docs/design/set-pieces.md) to keep a run near its container count: none in
+# the corridors, which get their own lone barrel a quarter of the time (RLM-410, Matěj: "never more"), and a pattern
+# in one combat room of five. Claude's numbers until Matěj's own pieces (RLM-283) and his playtest.
+set_pieces:
+  tags: [test]
+  density:
+    hallway: {0: 100}
+    stairs: {0: 100}
+    combat: {0: 80, 1: 20}
 open_minutes: 60
 level: 10
