@@ -22,18 +22,26 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.common.NeoForge;
 
 /**
- * Screenshots of spell projectiles and of what forms in a caster's hands for an agent (RLM-639, RLM-640): with the
+ * Screenshots of spell projectiles, of what forms in a caster's hands and of the arms' cast animations for an agent
+ * (RLM-639, RLM-640, RLM-641): with the
  * environment variable {@code REALMFORGE_QA_SPELL_SHOTS} set, the dev client creates a fresh superflat creative world
  * from the title screen and a Human Mage in it, builds a wall 8 blocks ahead, and casts each of {@link #SCENES} along
  * the player's look: at a villager 5 blocks ahead, at the wall, Frostbolt and Fireball forming in the player's hands
  * (seen from beside the player, and through their eyes at a field of view of 70 and of 110), an interrupted cast
- * fading, a bolt that kills, and a Hewn Chanter's Stoneform, which forms in its hands. It saves frames of each scene
- * to {@code run/client/screenshots/<label>-<scene>-t<tick>.png} and quits. Without the HUD, so the models, their
- * materials, the trails and the bursts are in the frame. It needs no input, so it also runs in WSL, where mouse look
- * does not work ({@code docs/dev-setup.md}, 3.3).
+ * fading, a bolt that kills, a Hewn Chanter's Stoneform, which forms in its hands, and the arms' animations: an
+ * instant spell's push (Ice Barrier), the release at the end of a Frostbolt and Arcane Missiles' channel, each from
+ * beside the player and through their eyes. It saves frames of each scene to {@code
+ * run/client/screenshots/<label>-<scene>-t<tick>.png} and quits. Without the HUD, so the models, their materials,
+ * the trails and the bursts are in the frame, but for the animations seen through the eyes, where the HUD shows that
+ * an instant spell has no cast bar. With {@code REALMFORGE_QA_SPELL_SHOTS_SCENES} set, only the scenes whose names
+ * start with it run ({@code animation} for the arms' animations, which play at a quarter of the game's speed, so a
+ * slow headless client still draws every tick of them). It needs no input, so it also runs in WSL, where
+ * mouse look does not work ({@code docs/dev-setup.md}, 3.3).
  */
 public final class QaSpellShots {
     static final String ENVIRONMENT_VARIABLE = "REALMFORGE_QA_SPELL_SHOTS";
+    /** Names the scenes to run by the start of their names; all of them without it. */
+    static final String SCENES_VARIABLE = "REALMFORGE_QA_SPELL_SHOTS_SCENES";
 
     /** Ticks in the new world before the first scene: chunks, the time of day and the weather settle. */
     private static final int SETTLE_TICKS = 60;
@@ -63,11 +71,26 @@ public final class QaSpellShots {
      * @param view where it is seen from
      * @param fov the field of view, in degrees
      * @param cancelAt the tick after the cast at which the cast is cancelled, or 0 for a cast that runs out
+     * @param hud whether the HUD shows: the spell bar and, during a cast, the cast bar
      */
     private record Scene(String name, List<String> setup, String cast, int frames, int every, View view, int fov,
-            int cancelAt) {
+            int cancelAt, boolean hud) {
         Scene(String name, List<String> setup, String cast, int frames, boolean firstPerson) {
             this(name, setup, cast, frames, 1, firstPerson ? View.EYES : View.FLIGHT, 70, 0);
+        }
+
+        Scene(String name, List<String> setup, String cast, int frames, int every, View view, int fov, int cancelAt) {
+            this(name, setup, cast, frames, every, view, fov, cancelAt, false);
+        }
+
+        /**
+         * A scene of the arms' animation (RLM-641): from the camera on the hands, or through the eyes with the HUD.
+         * The game runs at a quarter of its speed for it ({@link #SLOW}): a headless client draws only a few frames a
+         * second, fewer than the ticks of a half-second animation, so at full speed most of its frames would repeat.
+         */
+        static Scene animation(String name, String cast, int frames, int every, boolean eyes) {
+            return new Scene("animation-" + name + (eyes ? "-eyes" : "-hands"), List.of(NO_MOBS, SLOW), cast, frames,
+                    every, eyes ? View.EYES : View.HANDS, 70, 0, eyes);
         }
     }
 
@@ -76,6 +99,9 @@ public final class QaSpellShots {
     private static final String NO_MOBS =
             "tp @e[type=!minecraft:player,type=!minecraft:armor_stand,distance=..24] ~ ~ ~-200";
     private static final String FROSTBOLT = "qa spell cast realmforge:frostbolt";
+    private static final String ICE_BARRIER = "qa spell cast realmforge:ice_barrier";
+    /** A quarter of the game's speed, for the scenes of the arms' animations; they come last, so nothing resets it. */
+    private static final String SLOW = "tick rate 5";
     private static final String CHANTER =
             "summon realmforge:hewn_chanter ~2 ~ ~3 {NoAI:1b,Silent:1b,Rotation:[0.0f,0.0f]}";
 
@@ -102,19 +128,30 @@ public final class QaSpellShots {
                     44, 1, View.FLIGHT, 70, 0),
             new Scene("stone-forming", List.of(NO_MOBS, CHANTER, VILLAGER.replace("~ ~ ~5", "~2 ~ ~7")),
                     "execute as @e[type=realmforge:hewn_chanter,limit=1] run qa spell cast realmforge:stoneform "
-                            + "@e[type=minecraft:villager,limit=1,sort=nearest]", 44, false));
+                            + "@e[type=minecraft:villager,limit=1,sort=nearest]", 44, false),
+            // The arms' animations (RLM-641). An instant spell's push: 10 ticks, with no cast bar.
+            Scene.animation("instant", ICE_BARRIER, 16, 1, false),
+            Scene.animation("instant", ICE_BARRIER, 16, 1, true),
+            // The release: Frostbolt's 30-tick cast completes, and the hands push as the bolt leaves.
+            Scene.animation("release", FROSTBOLT, 42, 1, false),
+            Scene.animation("release", FROSTBOLT, 42, 1, true),
+            // A channel's held pose: Arcane Missiles' 1.5 s.
+            Scene.animation("channel", "qa spell cast realmforge:arcane_missiles", 40, 2, false),
+            Scene.animation("channel", "qa spell cast realmforge:arcane_missiles", 40, 2, true));
 
     private enum Stage { TITLE, WORLD, SCENES, DONE }
 
     private final String prefix;
+    private final List<Scene> scenes;
     private Stage stage = Stage.TITLE;
     private int ticksInWorld;
     private boolean characterCreated;
     private int scene;
     private int sceneTicks;
 
-    private QaSpellShots(String prefix) {
+    private QaSpellShots(String prefix, String only) {
         this.prefix = prefix;
+        this.scenes = SCENES.stream().filter(scene -> scene.name().startsWith(only)).toList();
     }
 
     /** Starts the run when the environment variable is set; a normal dev client is unaffected. */
@@ -123,9 +160,15 @@ public final class QaSpellShots {
         if (prefix == null || prefix.isBlank()) {
             return;
         }
-        QaSpellShots run = new QaSpellShots(prefix.strip());
+        String only = System.getenv(SCENES_VARIABLE);
+        QaSpellShots run = new QaSpellShots(prefix.strip(), only == null ? "" : only.strip());
+        if (run.scenes.isEmpty()) {
+            RealmforgeQa.LOGGER.warn("Spell screenshots: no scene's name starts with {}", only);
+            return;
+        }
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, event -> run.tick(Minecraft.getInstance()));
-        RealmforgeQa.LOGGER.info("Spell screenshots requested ({}): the client will create a world and quit", prefix);
+        RealmforgeQa.LOGGER.info("Spell screenshots requested ({}, {} scenes): the client will create a world and quit",
+                prefix, run.scenes.size());
     }
 
     private void tick(Minecraft minecraft) {
@@ -165,6 +208,7 @@ public final class QaSpellShots {
                             "qa level 18", "qa spell learn realmforge:test_twin_frost",
                             "qa spell learn realmforge:test_twin_fire", "qa spell learn realmforge:arcane_missiles",
                             "qa spell learn realmforge:frostbolt", "qa spell learn realmforge:fireball",
+                            "qa spell learn realmforge:ice_barrier",
                             "qa spell resource mana 1000")) {
                         player.connection.sendCommand(command);
                     }
@@ -178,9 +222,13 @@ public final class QaSpellShots {
                     return;
                 }
                 keepStill(minecraft, player);
-                // Without the HUD: the spell bar would cover the flight.
-                minecraft.options.hideGui = true;
-                Scene current = SCENES.get(scene);
+                Scene current = scenes.get(scene);
+                // Without the HUD, but where a scene asks for it: the spell bar would cover the flight. With it, the
+                // commands' own chat lines go, or they would cover the hands.
+                minecraft.options.hideGui = !current.hud();
+                if (current.hud()) {
+                    minecraft.gui.getChat().clearMessages(false);
+                }
                 sceneTicks++;
                 if (sceneTicks == 1) {
                     current.setup().forEach(player.connection::sendCommand);
@@ -205,7 +253,7 @@ public final class QaSpellShots {
                 } else if (sceneTicks > SETUP_TICKS + current.frames() + 10) {
                     sceneTicks = 0;
                     scene++;
-                    if (scene == SCENES.size()) {
+                    if (scene == scenes.size()) {
                         stage = Stage.DONE;
                         ticksInWorld = 0;
                     }
