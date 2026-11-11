@@ -258,8 +258,13 @@ there while the game runs. The handoff gives the commands
   with each block's name over the hotbar (`held-bricks`, `held-sealstone`), a trip into Undervault refused without its
   unlock and then below its entry level (`refusal-unlock`, `refusal-level`: "Requires level 6."), and the signet on
   the sealstone at level 1 and at level 6 (`sealstone-level`, `opens-onto`: the lit portal and "The portal opens onto
-  the Undervault"), then quit (RLM-306, RLM-337, RLM-394). Headless: `xvfb-run -a -s "-screen 0 1280x960x24"` before
-  it, with the variable set.
+  the Undervault") (RLM-306, RLM-337, RLM-394). Then the portal's look without the HUD (RLM-300, RLM-301): the portal
+  lit onto Undervault in its frame's stone look at two moments of its stream (`lit-front-a`, `lit-front-b`), a storm
+  blink started with `/qa realm storm` at a slowed tick rate (`lit-storm-1` to `lit-storm-3`: one of them is dark) and
+  the portal from its left (`lit-angle`); then it steps through, and shows the frame the trip built in Undervault,
+  lit back onto Overworld with the shared swirl in a washed-out frame, under night vision (`return-front-a`,
+  `return-front-b`, `return-angle`), and quits. Headless: `xvfb-run -a -s "-screen 0 1280x960x24"` before it, with
+  the variable set.
 - **A trace of real charges without input.** `REALMFORGE_QA_CHARGE_TRACE=<label> ./gradlew runClient -PofflineClient`
   makes the QA mod create a superflat world from the title screen, make a level-18 Warrior and cast Charge at a husk from
   several setups (from either side, diagonally, with forward held, at a mod's target dummy when the pack has one),
