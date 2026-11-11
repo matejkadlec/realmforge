@@ -362,15 +362,16 @@ public final class QaCommandGameTests {
             helper.getLevel().setBlockAndUpdate(pos, RealmPortalBlocks.bricks().defaultBlockState());
         }
         QaPlayers.sentPackets(player, ClientboundBlockEventPacket.class);
-        // A dark frame has no storm: the command finds nothing to blink.
+        // A dark frame has no storm: the command finds nothing to blink. The frame is lit only after that is checked:
+        // a lit portal starts a blink of its own now and then, which would be taken for the command's.
         run(server, player, "qa realm storm");
-        RealmPortals.light(helper.getLevel(), frame, Identifier.parse("realmforge:stone"));
         helper.startSequence()
                 .thenIdle(2)
                 .thenExecute(() -> {
                     helper.assertTrue(QaPlayers.sentPackets(player, ClientboundBlockEventPacket.class).stream()
                                     .noneMatch(event -> event.getPos().equals(frame.sealstone())),
                             "/qa realm storm blinks nothing over a dark frame");
+                    RealmPortals.light(helper.getLevel(), frame, Identifier.parse("realmforge:stone"));
                     run(server, player, "qa realm storm");
                 })
                 .thenWaitUntil(() -> helper.assertTrue(
