@@ -1,6 +1,8 @@
 package io.github.matejkadlec.realmforge.client.spell;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.spell.CombatState.Cast;
@@ -65,5 +67,14 @@ class CurrentCastsTest {
                 "a cast whose end never arrived is gone after the grace");
         assertEquals(1, casts.size());
         assertEquals(Map.of(), new CurrentCasts().all(0));
+    }
+
+    @Test
+    void onlyACompletedCastTimeThatFormedAProjectileEndsInTheRelease() {
+        assertTrue(CurrentCasts.releases(new Cast(BOLT, 100, 30, false), true), "a cast time that formed one");
+        assertFalse(CurrentCasts.releases(new Cast(BOLT, 100, 30, false), false), "nothing formed");
+        assertFalse(CurrentCasts.releases(new Cast(BOLT, 100, 30, true), true), "a channel");
+        assertFalse(CurrentCasts.releases(new Cast(BOLT, 100, 10, false, true), true), "a swing");
+        assertFalse(CurrentCasts.releases(Cast.instant(BOLT, 100, 10), true), "an instant spell's animation");
     }
 }

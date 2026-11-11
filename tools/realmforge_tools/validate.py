@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import copy
 import difflib
+import json
 import math
 import re
 from collections.abc import Callable, Sequence
 from itertools import pairwise
 from pathlib import PurePosixPath
+from typing import NamedTuple
 
 from pydantic import BaseModel
 
@@ -120,6 +122,7 @@ from realmforge_tools.schema.spell import (
     GAIN_RESOURCE,
     GROUND_POINT,
     HEAL,
+    INSTANT_ANIMATION_TICKS,
     KNOCKBACK,
     MELEE,
     PERIODIC_PLACEHOLDERS,
@@ -161,6 +164,18 @@ SPELL_MODEL_REGISTRY = f"{MOD_ID}:spell_model"
 SPELL_TRAJECTORY_REGISTRY = f"{MOD_ID}:spell_trajectory"
 MOB_EFFECT_REGISTRY = "minecraft:mob_effect"
 SOUND_EVENT_REGISTRY = "minecraft:sound_event"
+# The core mod's player animations, under assets/realmforge/ (Player Animation Library's folder).
+PLAYER_ANIMATIONS_DIR = "player_animations"
+
+
+class PlayerAnimation(NamedTuple):
+    """What validation reads of a player animation file: whether it loops, and how many ticks it lasts (one pass of a
+    loop)."""
+
+    loops: bool
+    ticks: float
+
+
 SPELL_REGISTRY = f"{MOD_ID}:spell"
 CUSTOM_STAT_REGISTRY = "minecraft:custom_stat"
 LOOT_TABLE_REGISTRY = "minecraft:loot_table"
@@ -223,6 +238,7 @@ def load_and_validate(
         + approved.problems(paths, content)
         + spell_models.problems(paths, content)
         + frame_looks.problems(paths)
+        + _check_player_animations(content, paths)
         + _check_worldgen_clashes(content, paths)
         + _check_apotheosis(content, universe, paths)
     )
@@ -1553,6 +1569,88 @@ def _check_visuals(source: str, spell: BaseModel, content: Content, universe: Id
             )
         )
     return problems
+
+
+def player_animations(paths: RepoPaths) -> dict[str, PlayerAnimation]:
+    """Our player animations by id (``realmforge:<name>``): the files of the core mod's
+    ``assets/realmforge/player_animations/``, each named by its ``name`` field, as Player Animation Library names
+    them. A file that cannot be read is left out, so a spell that names it is refused as naming none."""
+    found: dict[str, PlayerAnimation] = {}
+    folder = paths.mod_resources / "assets" / MOD_ID / PLAYER_ANIMATIONS_DIR
+    for file in sorted(folder.glob("*.json")) if folder.is_dir() else []:
+        try:
+            data = json.loads(file.read_text("utf-8"))
+        except (OSError, ValueError):
+            continue
+        emote = data.get("emote") if isinstance(data, dict) else None
+        name = data.get("name") if isinstance(data, dict) else None
+        if not isinstance(name, str) or not isinstance(emote, dict):
+            continue
+        begin = _number(emote.get("beginTick"), 0.0)
+        end = max(_number(emote.get("endTick"), 0.0), begin + 1)
+        stop = _number(emote.get("stopTick"), 0.0)
+        loops = emote.get("isLoop") is True and "returnTick" in emote
+        # PlayerAnimatorLoader: an animation that plays once lasts to its stopTick, or 3 ticks past its endTick.
+        length = end if loops else (stop if stop > end else end + 3)
+        found[f"{MOD_ID}:{name}"] = PlayerAnimation(loops, length)
+    return found
+
+
+def _check_player_animations(content: Content, paths: RepoPaths) -> list[Problem]:
+    """Every spell's cast names a player animation of ours that fits it, if it names one (RLM-641)."""
+    animations = player_animations(paths)
+    return [
+        problem
+        for entry in content.spells
+        for problem in _check_player_animation(entry.source, entry.model, animations)
+    ]
+
+
+def _number(value: object, default: float) -> float:
+    return float(value) if isinstance(value, int | float) and not isinstance(value, bool) else default
+
+
+def _check_player_animation(
+    source: str, spell: BaseModel, animations: dict[str, PlayerAnimation]
+) -> list[Problem]:
+    """The player animation a spell's cast names (RLM-641) is one of ours and fits the cast: an instant spell's plays
+    once and is over within the half second its caster's melee is blocked, so the arms are down when the block ends;
+    a cast time's or a channel's loops, or the arms would drop while the cast still runs."""
+    named = getattr(spell.cast, "player_animation", None)
+    if named is None:
+        return []
+    animation = animations.get(named)
+    path = "cast.player_animation"
+    if animation is None:
+        ours = ", ".join(sorted(animations)) or "none"
+        return [
+            Problem(
+                source,
+                path,
+                f"no player animation {named}: assets/{MOD_ID}/{PLAYER_ANIMATIONS_DIR}/ of the core mod has {ours}",
+            )
+        ]
+    if spell.cast.type == "instant":
+        if animation.loops or animation.ticks > INSTANT_ANIMATION_TICKS:
+            length = "loops" if animation.loops else f"lasts {animation.ticks:g} ticks"
+            return [
+                Problem(
+                    source,
+                    path,
+                    f"an instant spell's animation plays once and is over within {INSTANT_ANIMATION_TICKS} ticks, "
+                    f"the time its caster's melee is blocked; {named} {length}",
+                )
+            ]
+    elif not animation.loops:
+        return [
+            Problem(
+                source,
+                path,
+                f"a {spell.cast.type} animation loops for as long as the cast runs; {named} plays once (isLoop "
+                "with a returnTick makes it loop)",
+            )
+        ]
+    return []
 
 
 def _check_spell_looks(content: Content, universe: IdUniverse) -> list[Problem]:

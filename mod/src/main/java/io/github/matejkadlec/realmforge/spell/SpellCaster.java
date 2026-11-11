@@ -224,7 +224,8 @@ public final class SpellCaster {
             Casting.beginSwing(caster, spell, level, hit, now, damageScale, startCost(caster, value, level) + extra);
             return CastResult.begun(hit);
         }
-        caster.syncData(SpellAttachments.COMBAT);
+        // RLM-641: the spell fires at once, and a player's arms play its animation, which blocks their melee.
+        Casting.push(caster, spell, now);
         runEffects(serverLevel, caster, spell, level, hit, Optional.empty(), damageScale);
         wentOff(caster, spell);
         return CastResult.cast(hit);

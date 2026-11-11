@@ -1059,6 +1059,16 @@ Casting and Better Combat ([ADR 0020](decisions/0020-cast-animations-and-melee-w
   `spell/Casting` cancels the event and sets, records (`CombatState#setBetterCombatTag`, saved) and removes the tag;
   `client/spell/ClientCasts` cancels the attack key, swing included, while the local player casts. A mob attacks
   only when its AI says so, so W3's goal library keeps a casting mob from attacking (C3a-4 left it there).
+- **No melee during an instant spell's animation either** (RLM-641,
+  [ADR 0073](decisions/0073-spell-visuals-are-reusable-parts-in-data.md) decision 8, which amends ADR 0020's
+  "instant spells have no such window"; Matěj, 2026-10-29): for the half second a player's instant spell plays its
+  push ([11.2](#112-casting-server-authoritative)), the same three parts hold. The `combat` attachment keeps the
+  window (`CombatState#meleeBlockedUntil`, a game time; transient, synced to the owner), `Casting#onAttack` cancels
+  `AttackEntityEvent` while it is open, the spell sets `bettercombat_disabled` and the server tick after the
+  window's end removes it (unless a cast runs by then, whose end removes it; a logout or a death ends the window at
+  once), and `ClientCasts` cancels the attack key while `Casting#meleeBlocked` says so, read from the synced
+  attachment, since the push is no cast in the client's store. So a held attack key neither swings nor breaks a
+  block during the push.
 
 ### 9.3 Blocking with two-handed weapons
 
@@ -1536,7 +1546,8 @@ component lists spells granted while equipped or on use): the vision's "some fro
    spell's target is in range and line of sight, a player holds what the spell `requires` (11.1), and the caster is
    not silenced, stunned (but for a spell `castable_while_stunned`, C4) or already casting. A
    direction or a ground point never refuses a cast for its target (spell aiming, below).
-3. Instant spells run now. A spell the spell bar asks for while a cast has less than a quarter of a second left waits
+3. Instant spells run now, and a player's arms play the spell's animation for half a second, during which they
+   cannot melee (RLM-641, below). A spell the spell bar asks for while a cast has less than a quarter of a second left waits
    for it and is cast right after it (RLM-517, [11.6](#116-client-side)). A cast-time or channelled spell stores the
    current cast in the `combat` attachment and sends `CastStartedPayload` to the caster and tracking players (cast
    bar, animation). A player who starts
@@ -1580,6 +1591,27 @@ damage over time is no hit, so a bleed on another mob leaves it) is below
 the share, and closes it once it is not; a cast leaves that entry alone and still checks the health of the target it
 aims at. `WindowsAndProcsGameTests` covers both openers, a gray kill, and Execute's condition and extra rage;
 `ArmsTreeGameTests` Execute's lit slot.
+
+**In code (RLM-641, [ADR 0077](decisions/0077-an-instant-spells-animation-is-a-players-cast-never-an-auras-toggle.md)):
+an instant spell's animation.** Every instant spell a player casts, but a swing (below) and an
+aura's toggle ([11.7](#117-class-spells-and-stances): toggled, not cast, and off the global cooldown), runs its
+effects at once and then plays its animation: `SpellCaster` calls `Casting#push`, which sends `CastStartedPayload` to
+the caster and every tracking player with a `CombatState.Cast` marked `instant` whose duration is the animation's
+length, `SpellCast#PUSH_TICKS` (10 ticks, half a second, the global cooldown's default length; Matěj, 2026-10-29).
+
+- **It is no cast.** Nothing goes into the `combat` attachment's current cast or `Casting`'s running casts, so no
+  cast bar shows, a second spell is not refused as "already casting", and neither a stun, a new spell nor a cancel
+  ends it. No `CastEndedPayload` follows: the client lowers the arms when the length has passed
+  ([11.6](#116-client-side)). A player who starts tracking the caster mid-animation is not told of it.
+- **No melee for its length** ([9.2](#92-better-combat)): the window in the `combat` attachment, the cancelled
+  `AttackEntityEvent`, Better Combat's tag. `Casting` keeps the players whose window is open and closes each on the
+  server tick its time is over.
+- **Players only:** a mob has no arm layer for it and no `Player#attack`, and a proc's spell
+  (`SpellCaster#castProc`) is not cast by anyone's hands, so neither sends it.
+
+`InstantAnimationGameTests` covers the payload, the window, the attack inside and after it, the tag set and cleared,
+a cast that begins as the window ends, an operator's own tag, a logout mid-animation, and that an aura and a mob play
+none.
 
 **In code (RLM-399): swings.** An instant spell may play out over an animation (`SpellCast#animationTicks`, Slam's
 0.5 s swing): it starts at once, paying its cost and starting the global and its own cooldown, but `Casting` keeps it as
@@ -1862,8 +1894,9 @@ type only for genuinely new behaviour.
 [design](design/spell-visuals.md)).** A spell's look is a combination of parts, each defined once in `content/` and
 named by id, so Frostbolt and Fireball share a model and a trajectory and differ in their look. The engine comes in
 three parts: the kit as content and what the server runs (RLM-639), the GeckoLib models and the forming in the
-caster's hands (RLM-640, [11.6](#116-client-side)), and the instant spells' animation with its no-melee window
-(RLM-641).
+caster's hands (RLM-640, [11.6](#116-client-side)), and the instant spells' animation with its no-melee window and
+the `release` and `channel` animations (RLM-641, [11.2](#112-casting-server-authoritative),
+[11.6](#116-client-side)).
 
 - **A look** (`realmforge:spell_look`, `spell/SpellLook`, `content/spell_looks/`: frost, fire, arcane, stone) is what
   makes an element recognisable: its `colors` (lightest first, at most 16; frost's are Matěj's range of 2026-10-29,
@@ -2091,12 +2124,31 @@ the model's arms hang on a body that never pitches and trails the head by up to 
 turn rigidly with the camera about the eye (rotation and shoulder pivots), so the hands keep their place on screen;
 seen from outside only their rotation follows the head, like vanilla's bow pose.
 
-**In code (C6-1, RLM-435): the cast animation.** Every cast-time and channelled spell raises the hands with one
-animation, `realmforge:cast` (`player_animations/cast.json`, the QA mod's former test cast), until C6's spell visuals
-(epic RLM-434) give spells their own. `client/animation/CastAnimation` registers one PAL layer per player at priority
-3000 at client setup and shows or lowers it with a 4-tick fade; `ClientCasts` raises it on `CastStartedPayload` and
-lowers it at the client tick after `CastEndedPayload`, unless the caster cast again by then, so it shows for the caster
-and every tracking player, one who starts tracking mid-cast included (the server sends them the cast in progress). The
+**In code (C6-1, RLM-435; RLM-641): the cast animations.** `client/animation/CastAnimation` registers one PAL layer
+per player at priority 3000 at client setup and plays one of four animations of `player_animations/` on it
+([ADR 0073](decisions/0073-spell-visuals-are-reusable-parts-in-data.md) decision 8,
+[ADR 0077](decisions/0077-an-instant-spells-animation-is-a-players-cast-never-an-auras-toggle.md)):
+
+| Animation | File | Plays | When |
+| --- | --- | --- | --- |
+| `realmforge:cast` | `cast.json` (the QA mod's former test cast) | looped | a cast time: both hands rise and meet below the crosshair |
+| `realmforge:channel` | `channel.json` | looped | a channel: both hands pushed forward and held side by side |
+| `realmforge:instant` | `instant.json` | once, 10 ticks | an instant spell: both hands push forward and back (the server's `SpellCast#PUSH_TICKS`) |
+| `realmforge:release` | `release.json` | once, 5 ticks | a cast time that completed and formed a projectile in the hands (`SpellVisuals#formedProjectile`): a short push as it leaves (`CastAnimation#RELEASE_TICKS`) |
+
+A spell's cast may name another animation of ours for the first three (`cast.player_animation`,
+`SpellCast#playerAnimation`); validation refuses one that is missing or does not fit (an instant spell's plays once
+within 10 ticks, a cast time's or a channel's loops), and a swing names none, as its weapon move comes with RLM-444.
+A looped animation fades in over 4 ticks and stays as it is when the next cast shows the same one; one that plays
+once fades in over 2 ticks and always starts again; every animation fades out over 4 ticks. `ClientCasts` decides
+which plays: a cast's on `CastStartedPayload`, lowered at the client tick after `CastEndedPayload` unless the caster
+cast again by then, so it shows for the caster
+and every tracking player, one who starts tracking mid-cast included (the server sends them the cast in progress).
+An instant spell's `CastStartedPayload` (marked `instant`) is played and timed but kept out of the casts in progress,
+so it has no cast bar and nothing forms; the release is timed the same way from the cast's end.
+`client/spell/TimedPoses` keeps the casters whose arms play such an animation with the game time it ends, and the
+client tick lowers the arms then, unless a cast took them meanwhile (game time stands still while the game is paused,
+so nothing is due then); `TimedPosesTest` covers it, and `CurrentCastsTest` which casts end in the release. The
 server ends a cast that another replaces before it starts the new one, in the same tick, so the end arrives first;
 lowering at once dipped the hands and raised them again from the animation's first frame (RLM-454).
 `client/spell/PendingLowerings` keeps the casters whose casts ended until that tick, and `PendingLoweringsTest` covers
@@ -2104,8 +2156,9 @@ it.
 `AimedCastAnimation` wraps the animation with the aim above, and `CastArms` holds its math (decomposing the turned
 rotation into the part's angles, the short way round, and the pivot turned about the eye), which `CastArmsTest`
 covers. Player Animation Library is a required dependency on the client only (`side = "CLIENT"`); every PAL call of
-the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays the same animation through
-`CastAnimation#show`.
+the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays `realmforge:cast` through
+`CastAnimation#show`, and its cast screenshots (`REALMFORGE_QA_CAST_SHOTS`, [dev setup](dev-setup.md#33-in-wsl-quick-checks))
+show each of the four on a real cast.
 
 **In code (C3b, RLM-25): the spell bar.**
 
@@ -4270,7 +4323,8 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   Target going on or off, sent by `client/spell/TargetCircle`), `CancelCast`, `LearnTalent`, `ToggleNightVision` (exists:
   `world/net/ToggleNightVisionPayload`, sent by `client/input/NightVisionKey`).
 - Server → client: `CastStarted` and `CastEnded` (exist: `spell/net/CastStartedPayload` and `CastEndedPayload`, kept by
-  `client/spell/ClientCasts`, the local player's end also shown by `client/hud/CastBarHud`), `CastRefused` (exists:
+  `client/spell/ClientCasts`, the local player's end also shown by `client/hud/CastBarHud`; a `CastStarted` marked
+  `instant` is an instant spell's animation, RLM-641: played and never kept as a cast, with no `CastEnded`), `CastRefused` (exists:
   `spell/net/CastRefusedPayload`, the reason shown by `client/hud/CastBarHud`), `CastTarget` (exists:
   `spell/net/CastTargetPayload`, the mob under the target circle of the player's own cast, drawn by
   `client/spell/TargetCircle`), `HighlightedTarget` (exists: `spell/net/HighlightedTargetPayload`, the mob under the

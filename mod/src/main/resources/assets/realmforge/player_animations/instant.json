@@ -1,0 +1,35 @@
+{
+    "name": "instant",
+    "author": "Realmforge",
+    "description": "The animation of every instant spell (RLM-641, ADR 0073 decision 8; Matěj, 2026-10-29): both hands push forward and back in half a second, the global cooldown. The arms draw in by tick 2, thrust forward by tick 5 and hold a tick; from the end tick (6) to the stop tick (10) they ease back to rest. Its length is the server's SpellCast#PUSH_TICKS, 10 ticks. Animates only the arms' rotations.",
+    "emote": {
+        "isLoop": false,
+        "beginTick": 0,
+        "endTick": 6,
+        "stopTick": 10,
+        "degrees": false,
+        "moves": [
+            {
+                "tick": 2,
+                "easing": "EASEOUTQUAD",
+                "turn": 0,
+                "rightArm": {"pitch": -0.95, "yaw": -0.30, "roll": 0.15},
+                "leftArm": {"pitch": -0.95, "yaw": 0.30, "roll": -0.15}
+            },
+            {
+                "tick": 5,
+                "easing": "EASEOUTQUAD",
+                "turn": 0,
+                "rightArm": {"pitch": -1.62, "yaw": -0.10, "roll": 0.05},
+                "leftArm": {"pitch": -1.62, "yaw": 0.10, "roll": -0.05}
+            },
+            {
+                "tick": 6,
+                "easing": "LINEAR",
+                "turn": 0,
+                "rightArm": {"pitch": -1.62, "yaw": -0.10, "roll": 0.05},
+                "leftArm": {"pitch": -1.62, "yaw": 0.10, "roll": -0.05}
+            }
+        ]
+    }
+}

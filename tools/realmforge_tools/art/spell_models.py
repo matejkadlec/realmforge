@@ -11,6 +11,8 @@ a script wrote it: a jagged chunk is geometry, not painting). ``rf gen`` checks 
   the tile, so a model needs no texture of its own (``geometry``).
 - **Bones are not rotated:** the game draws the cubes themselves (``client/render/SpellMeshes``), not the bones, so a
   rotated group in Blockbench would be lost. Rotate the cubes.
+- **Nothing is inflated:** a cube is written and drawn at its own size, so Blockbench's ``inflate`` on a cube or a
+  bone would be lost and the cube thinner in the game than its source shows. Give the cube that size instead.
 
 The model points along -z, Blockbench's north, the way an entity model faces: a ``forward`` model's tip is there.
 """
@@ -91,6 +93,19 @@ def _triple(value: Any, what: str) -> Triple:
     return (float(value[0]), float(value[1]), float(value[2]))
 
 
+def _no_inflate(part: dict[str, Any], where: str) -> None:
+    """Refuses a bone or cube that Blockbench inflates: the cubes are written and drawn at their own size, so an
+    inflated one would be thinner in the game than its source shows."""
+    inflate = part.get("inflate", 0)
+    if isinstance(inflate, bool) or not isinstance(inflate, int | float):
+        raise SpellModelError(f"{where}: inflate is a number, not {inflate!r}")
+    if inflate != 0:
+        raise SpellModelError(
+            f"{where} is inflated by {inflate}: the game draws a spell model's cubes at their own size, so give the "
+            "cube that size instead"
+        )
+
+
 def parse(data: Any) -> Source:
     """The cubes of Bedrock geometry ``data``. Raises ``SpellModelError`` for anything the game would not draw as the
     source shows it."""
@@ -109,10 +124,12 @@ def parse(data: Any) -> Source:
             raise SpellModelError(
                 f"bone {name} is rotated: the game draws a spell model's cubes, not its bones, so rotate the cubes"
             )
+        _no_inflate(bone, f"bone {name}")
         for index, cube in enumerate(bone.get("cubes", [])):
             where = f"bone {name}, cube {index}"
             if not isinstance(cube, dict):
                 raise SpellModelError(f"{where} is an object")
+            _no_inflate(cube, where)
             origin = _triple(cube.get("origin"), f"{where}: origin")
             size = _triple(cube.get("size"), f"{where}: size")
             if min(size) <= 0:

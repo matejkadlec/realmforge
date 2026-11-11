@@ -94,6 +94,7 @@ public final class QaGameTests {
             GearGameTests.class,
             FtbTeamsGameTests.class,
             HurtCooldownGameTests.class,
+            InstantAnimationGameTests.class,
             InventorySortingGameTests.class,
             InCombatGameTests.class,
             DungeonPortalGameTests.class,

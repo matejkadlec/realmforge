@@ -230,7 +230,13 @@ there while the game runs. The handoff gives the commands
   `run/client/screenshots/<label>-<scene>-t<tick>.png`, and quits, in about five minutes. Agents use it to look at a
   projectile's model and material, its trail, the burst of its impact, and what forms in a caster's hands: a model
   growing cube by cube, where it sits in first person, an interrupted cast fading and the bolt leaving the hands
-  (RLM-639, RLM-640). Headless: `xvfb-run -a -s "-screen 0 1280x720x24"` before it, with the variable set.
+  (RLM-639, RLM-640). Its last six scenes are the arms' cast animations (RLM-641), each from the camera on the hands
+  and through the player's eyes, the latter with the HUD: Ice Barrier's push of an instant spell (no cast bar), the
+  release as a Frostbolt leaves, and Arcane Missiles' channel. They run at a quarter of the game's speed
+  (`/tick rate 5`): a headless client draws only a few frames a second, fewer than the ticks of a half-second
+  animation. `REALMFORGE_QA_SPELL_SHOTS_SCENES=<start>` runs only the scenes whose names start with it (`animation`
+  for those six, about three minutes), so one part can be looked at again without the rest. Headless: `xvfb-run -a -s "-screen 0 1280x720x24"` before it, with the variable
+  set.
 - **Key Binds screenshots without input.** `REALMFORGE_QA_KEY_BINDS_SHOTS=<label> ./gradlew runClient -PofflineClient`
   makes the QA mod open Key Binds from the title screen (Controlling's screen, as a player sees it), save it page by
   page from the top of its list to the bottom, each page sharing a row with the one before, to

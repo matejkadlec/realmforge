@@ -260,6 +260,22 @@ Warrior spell's damage at its hit moments, so the spell's data holds the animati
 shares of it (RLM-399: Slam 0.5 s, its hit at 50 %); validation reads the animation file and refuses a length that disagrees, so the
 server's timing and what the player sees never drift apart.
 
+**As built (RLM-641, architecture 11.2 and 11.6,
+[ADR 0077](../decisions/0077-an-instant-spells-animation-is-a-players-cast-never-an-auras-toggle.md)).** `cast`,
+`channel`, `instant` and `release` exist; the weapon moves come with RLM-444. Choices the engine made on the way, each
+open until Matěj has played it:
+
+- **The push is a player's:** a mob has no arm layer and no melee of this kind, and a proc's spell is not cast by
+  anyone's hands, so neither sends it. An aura's toggle (Battle Stance) plays none either: it is toggled, not cast,
+  and is off the global cooldown whose length the push has, so a stance change never costs half a second of melee.
+- **Its length is one number,** 10 ticks, for every instant spell: the server's window and the default animation
+  share it, and validation refuses an instant spell's own animation that loops or lasts longer.
+- **The release is the client's alone:** it plays for 5 ticks when a cast time that formed a projectile completes,
+  and blocks no melee (the cast is over).
+- **A spell names its own animation** as `cast.player_animation`, an animation of the core mod's
+  `player_animations/` by its name; a cast time's or a channel's must loop.
+- **A swing still raises no arms** until RLM-444 gives it its weapon move, and names no player animation.
+
 ### Impacts
 
 - **One entity event per hit:** before a projectile is removed, the server sends vanilla's entity event, as a snowball
