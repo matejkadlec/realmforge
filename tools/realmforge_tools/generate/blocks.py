@@ -1,23 +1,35 @@
-"""Blocks: Java registrations (the block and its block item), blockstates, block and item models, placeholder
-textures, loot tables (the block drops itself), the vanilla mining tags, and the QA mod's expectations
-(architecture 6.2). A block's kind decides its Java class (a kind other than simple comes from ``world/BlockKinds``,
-which the feature owning the kind fills), its blockstate and its models, and whether it has an item and a loot
-table."""
+"""Blocks: Java registrations (the block and its block item), blockstates, block and item models, textures, loot
+tables (the block drops itself), the vanilla mining tags, and the QA mod's expectations (architecture 6.2). A block's
+kind decides its Java class (a kind other than simple comes from ``world/BlockKinds``, which the feature owning the
+kind fills), its blockstate and its models, and whether it has an item and a loot table.
+
+A block's texture is its tile from the approved art (``art/textures/block/<id>.png``, ``art/approved.py``) where its
+kind takes one, a placeholder until then. The realm portal's are made here: the frame's looks from the bricks' tile
+(``portal_frame.py``) and the portal block's animations (``portal_textures.py``)."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
+from realmforge_tools.art import approved
 from realmforge_tools.content import Content
 from realmforge_tools.formats.jsonfmt import dump_json
+from realmforge_tools.generate import portal_frame, portal_textures
 from realmforge_tools.generate.datapack import data_dir
 from realmforge_tools.generate.javagen import constant_name, header, java_file_path, string_literal
-from realmforge_tools.generate.textures import placeholder_block_texture, placeholder_portal_texture
+from realmforge_tools.generate.textures import placeholder_block_texture
 from realmforge_tools.project import JAVA_PACKAGE, MOD_ID, QA_JAVA_PACKAGE, RepoPaths
 from realmforge_tools.schema.block import GENERATED_FLAG_KINDS, ITEMLESS_KINDS, BlockDef
+from realmforge_tools.schema.realm import FRAME_LOOKS, PORTAL_ANIMATIONS
 
 # The blockstate property of GENERATED_FLAG_KINDS: true on the blocks of a frame a trip built.
 GENERATED = "generated"
+# The blockstate property of the realm portal frame's blocks: the look they show (schema/realm.py FRAME_LOOKS).
+LOOK = "look"
+# The blockstate property of the realm portal's portal block: its animated texture (PORTAL_ANIMATIONS).
+ANIMATION = "animation"
+BRICKS_KIND = "gatewright_bricks"
+SEALSTONE_KIND = "gatewright_sealstone"
 
 GENERATED_PACKAGE = f"{JAVA_PACKAGE}.generated"
 QA_GENERATED_PACKAGE = f"{QA_JAVA_PACKAGE}.generated"
@@ -52,10 +64,16 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
 
     assets = paths.mod_generated / "resources" / "assets" / MOD_ID
     tags: dict[str, list[str]] = {}
+    # The frame's bricks, whose textures the sealstone's sides show too (validation: one block of each kind).
+    bricks = next((entry.model.id for entry in content.blocks if entry.model.kind == BRICKS_KIND), None)
+    sealstone = next((entry.model.id for entry in content.blocks if entry.model.kind == SEALSTONE_KIND), None)
+    if bricks is not None:
+        for name, data in portal_frame.textures(paths, bricks, sealstone).items():
+            files[assets / "textures" / "block" / f"{name}.png"] = data
     for entry in content.blocks:
         block_id = entry.model.id
         model = f"{MOD_ID}:block/{block_id}"
-        for path, data in _models(entry.model).items():
+        for path, data in _models(entry.model, paths, bricks).items():
             files[assets / path] = data
         if entry.model.kind in ITEMLESS_KINDS:
             continue
@@ -77,37 +95,57 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
     return files
 
 
-def _models(block: BlockDef) -> dict[str, bytes]:
-    """The blockstate, block models and placeholder textures of a block, by path under ``assets/realmforge/``.
+def _models(block: BlockDef, paths: RepoPaths, bricks: str | None) -> dict[str, bytes]:
+    """The blockstate, block models and textures of a block, by path under ``assets/realmforge/``.
 
-    - simple: one full cube.
+    - simple: one full cube, with the block's approved tile or a placeholder.
     - dungeon_portal: a full cube that looks different while open (``open=true``: the model and texture
       ``<id>_open``).
     - dungeon_exit: a plate one pixel high, vanilla's carpet shape.
-    - gatewright_bricks, gatewright_sealstone: one full cube, whether ``generated`` or not.
-    - realm_portal: a pane four pixels thick across the opening, along either axis (``axis=x``: the model
-      ``<id>_ns``, ``axis=z``: ``<id>_ew``, as vanilla's nether portal), tinted on the client (tint index 0) with the
-      colour of the realm it opens onto, from a greyscale, see-through texture.
+    - gatewright_bricks: one full cube per look (``look=<look>``: the model and texture ``<id>`` for the first look,
+      ``<id>_<look>`` for the others), whether ``generated`` or not. Its textures are the frame's
+      (``portal_frame.textures``, written once for both frame kinds).
+    - gatewright_sealstone: per look a cube with the look's bricks (``bricks``, the frame's bricks block) on its
+      sides and bottom and the socket on its top (``<id>_top``, ``<id>_top_<look>``).
+    - realm_portal: a pane four pixels thick across the opening, along either axis and per animation
+      (``animation=<animation>,axis=x``: the model ``<texture>_ns``, ``axis=z``: ``<texture>_ew``, as vanilla's nether
+      portal), tinted on the client (tint index 0) with the colour of the realm it opens onto, from a greyscale,
+      see-through animated texture (``portal_textures``: the frames under each other and a ``.png.mcmeta``).
     """
     block_id = block.id
     model = f"{MOD_ID}:block/{block_id}"
     files: dict[str, bytes] = {}
     if block.kind == "realm_portal":
-        variants = {"axis=x": {"model": f"{model}_ns"}, "axis=z": {"model": f"{model}_ew"}}
+        variants: dict[str, dict[str, str]] = {}
+        for animation in PORTAL_ANIMATIONS:
+            name = portal_textures.texture_name(block_id, animation)
+            texture = f"{MOD_ID}:block/{name}"
+            for axis, suffix in (("x", "ns"), ("z", "ew")):
+                variants[f"{ANIMATION}={animation},axis={axis}"] = {"model": f"{texture}_{suffix}"}
+                files[f"models/block/{name}_{suffix}.json"] = dump_json(
+                    {"textures": {"particle": texture, "portal": texture}, "elements": [_portal_pane(axis)]}
+                )
+            files[f"textures/block/{name}.png"] = portal_textures.strip(animation)
+            files[f"textures/block/{name}.png.mcmeta"] = portal_textures.mcmeta(animation)
         files[f"blockstates/{block_id}.json"] = dump_json({"variants": variants})
-        for suffix, element in (("ns", _portal_pane("x")), ("ew", _portal_pane("z"))):
-            files[f"models/block/{block_id}_{suffix}.json"] = dump_json(
-                {"textures": {"particle": model, "portal": model}, "elements": [element]}
-            )
-        files[f"textures/block/{block_id}.png"] = placeholder_portal_texture(f"{MOD_ID}:{block_id}")
         return files
     if block.kind in GENERATED_FLAG_KINDS:
-        variants = {f"{GENERATED}=false": {"model": model}, f"{GENERATED}=true": {"model": model}}
+        variants = {}
+        for look in FRAME_LOOKS:
+            name = portal_frame.texture_name(block_id, look)
+            variants[f"{LOOK}={look}"] = {"model": f"{MOD_ID}:block/{name}"}
+            if block.kind == SEALSTONE_KIND and bricks is not None:
+                side = f"{MOD_ID}:block/{portal_frame.texture_name(bricks, look)}"
+                top = f"{MOD_ID}:block/{portal_frame.top_name(block_id, look)}"
+                textures = {"top": top, "side": side, "bottom": side}
+                files[f"models/block/{name}.json"] = dump_json(
+                    {"parent": "minecraft:block/cube_bottom_top", "textures": textures}
+                )
+            else:
+                files[f"models/block/{name}.json"] = dump_json(
+                    {"parent": "minecraft:block/cube_all", "textures": {"all": f"{MOD_ID}:block/{name}"}}
+                )
         files[f"blockstates/{block_id}.json"] = dump_json({"variants": variants})
-        files[f"models/block/{block_id}.json"] = dump_json(
-            {"parent": "minecraft:block/cube_all", "textures": {"all": model}}
-        )
-        files[f"textures/block/{block_id}.png"] = placeholder_block_texture(f"{MOD_ID}:{block_id}")
         return files
     if block.kind == "dungeon_portal":
         open_model = f"{model}_open"
@@ -129,7 +167,12 @@ def _models(block: BlockDef) -> dict[str, bytes]:
         files[f"models/block/{block_id}.json"] = dump_json(
             {"parent": "minecraft:block/cube_all", "textures": {"all": model}}
         )
-    files[f"textures/block/{block_id}.png"] = placeholder_block_texture(f"{MOD_ID}:{block_id}")
+    placeholder = placeholder_block_texture(f"{MOD_ID}:{block_id}")
+    files[f"textures/block/{block_id}.png"] = (
+        approved.placeholder_or_approved(paths, approved.BLOCK, block_id, placeholder)
+        if block.kind in approved.BLOCK_TILE_KINDS
+        else placeholder
+    )
     return files
 
 

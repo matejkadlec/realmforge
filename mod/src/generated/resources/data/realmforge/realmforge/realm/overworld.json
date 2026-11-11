@@ -4,6 +4,11 @@
   "in_sentence": "realm.realmforge.overworld.in_sentence",
   "colour": "#5DBB63",
   "sound_pitch": 1.0,
+  "portal": {
+    "animation": "swirl",
+    "storm": false,
+    "frame": "washed"
+  },
   "arrival": {
     "y": [
       63,

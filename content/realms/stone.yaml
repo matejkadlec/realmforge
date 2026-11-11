@@ -29,6 +29,13 @@ signet: realmforge:undervault_signet
 colour: "#7A8FB0"
 particle: minecraft:ash
 sound_pitch: 0.8
+# The lit portal's look (RLM-300, RLM-301; Matěj, 2026-10-20): a stream of pixels flowing at 45 degrees from the bottom
+# left to the top right, which now and then blinks darker twice like a storm, in a frame that turns to heavy grey
+# stone with a slate blue stone in the sealstone's socket.
+portal:
+  animation: stream
+  storm: true
+  frame: stone
 arrival:
   y: [20, 90]
   floor: realmforge:vaultstone

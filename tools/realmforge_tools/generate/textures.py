@@ -68,27 +68,6 @@ def placeholder_block_texture(seed: str) -> bytes:
     return encode_rgba(SIZE, SIZE, pixels)
 
 
-def placeholder_portal_texture(seed: str) -> bytes:
-    """A 16x16 see-through greyscale swirl for a portal block, which the client tints with a realm's colour.
-
-    Its pixels are partly transparent, so the game renders the block translucent, as vanilla's nether portal; the
-    swirl's phase comes from a hash of ``seed``, so the tile is the same on every machine.
-    """
-    phase = hashlib.sha256(seed.encode("utf-8")).digest()[0] / 256 * 2 * math.pi
-    centre = (SIZE - 1) / 2
-    pixels: list[Rgba] = []
-    for y in range(SIZE):
-        for x in range(SIZE):
-            dx, dy = x - centre, y - centre
-            radius = math.hypot(dx, dy)
-            # Bands that wind outwards: bright where the angle and the distance from the middle line up.
-            band = (math.cos(math.atan2(dy, dx) * 2 + radius * 0.9 + phase) + 1) / 2
-            grey = round(150 + 105 * band)
-            alpha = round(150 + 70 * band)
-            pixels.append((grey, grey, grey, alpha))
-    return encode_rgba(SIZE, SIZE, pixels)
-
-
 VILLAGER_TEXTURE_SIZE = 64
 # Where vanilla's villager model reads its jacket, the long robe over the body (VillagerModel: texOffs(0, 38), a box
 # of 8 x 20 x 6): a strip of the four sides, 28 wide and 20 tall, under the 6 rows of its top and bottom faces.

@@ -148,7 +148,8 @@ hoppers have nothing to take.
   dimension without an entry (the instances, the Nether, other mods'), where no signet opens a portal, it stays dark
   (RLM-458). The glow is the block's own light (a block state, `glow`), so every player sees it, also on a dedicated
   server; spectators light nothing. The radius, the signet rule and the full light level are proposals for Matěj's
-  playtest. Its look, an emissive texture, comes with the frame's retexture (RLM-301).
+  playtest. The frame's retexture (RLM-301) gave the sealstone its looks and its socket
+  ([Look and sound](#look-and-sound)); the glow stays the block's light, without an emissive texture.
 - **The sneak gesture with something in the off hand** (RLM-133). Vanilla skips a block's use while the player
   sneaks with anything in either hand that does not bypass the sneak (`ServerPlayerGameMode#useItemOn` on the server,
   `MultiPlayerGameMode#performUseItemOn` on the client; `IItemStackExtension#doesSneakBypassUse` is true only for an
@@ -475,13 +476,44 @@ without one; never in a realm. This answers the realm design's
 ## Look and sound
 
 - **One portal block** for every realm, tinted with the colour of the realm its sealstone shows (return portals use
-  Overworld's green). Its texture is one greyscale swirl, tinted on the client by a block tint source
+  Overworld's green). Its textures are greyscale and see-through, tinted on the client by a block tint source
   (`RegisterColorHandlersEvent.BlockTintSources`, a `BlockTintSource` whose `colorInWorld` reads the frame's
   sealstone). The sealstone's block entity sends its setting to clients, and the colours come from the synced realm
-  registry ([Data](#data-contentrealms)); *verify* that the region the chunk mesher reads holds the sealstone's block
-  entity. Block colours are baked into the chunk mesh, so when the setting arrives on the client, the sealstone marks
-  the opening for re-rendering (`Level#sendBlockUpdated` on the client level, which reaches
-  `LevelRenderer#blockChanged`); otherwise a switched portal would keep the old realm's colour.
+  registry ([Data](#data-contentrealms)); the region the chunk mesher reads holds the sealstone's block entity. Block
+  colours are baked into the chunk mesh, so when the setting arrives on the client, the sealstone marks the opening
+  for re-rendering (`Level#sendBlockUpdated` on the client level, which reaches `LevelRenderer#blockChanged`);
+  otherwise a switched portal would keep the old realm's colour.
+- **An animation per realm** (Matěj, 2026-10-20, RLM-300: "I want the portal texture to move ... a different kind of
+  animation per-dimension portal"). The portal block has a state, `animation`, set when the frame lights from the
+  realm its portal opens onto (a realm's `portal.animation`), and one animated texture per value, as vanilla's nether
+  portal has one (a strip of frames and a `.png.mcmeta`). The frames join their neighbours on every side and the last
+  leads into the first, so the pipeline draws them (`generate/portal_textures.py`), in the palette's greys:
+  - **`stream`, Undervault's:** pixels flowing at 45 degrees from the bottom left to the top right, 16 frames of 2
+    ticks, across the whole opening without a seam;
+  - **`swirl`, the shared one** (Overworld's return portals, and every realm until Matěj names its own): spirals
+    turning round the corners of the block, so a whole swirl forms wherever four portal blocks meet, as the nether
+    portal's circles do, 16 frames of 3 ticks.
+- **Storm blinks** (Undervault, a realm's `portal.storm`; Matěj: "occasionally randomly blink the portal color, to a
+  darker gray and back and again to darker and back, kind of like storm effect"): about every 15 seconds, at random,
+  the whole opening darkens twice in a row, 3 ticks dark, 3 back, 3 dark. A texture's loop cannot be random, so the
+  blink is the tint: the server picks the moment (the sealstone's ticker) and sends the sealstone's block event, so
+  every player sees the same blink and every block of one portal blinks together; each client then pulls the
+  portal's colour towards a dark grey for those ticks and redraws the opening when the darkness changes.
+- **The frame's look** (Matěj, 2026-10-20, RLM-301: "the color of bricks and the selector would change based on the
+  signet", "default color (no portal) can be like washed out bricks"). The frame's blocks have a state, `look`:
+  `washed` on a dark frame, and on a lit one the look of the realm its portal opens onto (a realm's `portal.frame`):
+  `stone` for Undervault, heavy grey stone. Lighting and closing set it on the sealstone, the 13 bricks and any
+  bricks in the corners at once; the sealstone's ticker checks it every half second, so a frame that went dark
+  because a brick broke washes out too, and a brick put into a lit frame's corner takes its look; breaking the
+  sealstone washes out the bricks it leaves. Only a frame's own sealstone and Gatewright Bricks take its look: another
+  sealstone standing in a corner or in a brick's place is the heart of a frame of its own and keeps its own look. Overworld's return portals keep the washed-out frame, a proposal for
+  Matěj's playtest. Every look is made from one tile, the Gatewright Bricks' art (bricks of two sizes in rows; the
+  generator drew no windmill at 16 pixels): the bricks are the tile with its colours mapped onto the look's ramp
+  by lightness, and the sealstone has them on its sides and bottom and, on its top, the signet's socket, a round hole
+  that is empty in a dark frame and holds a stone in the open realm's colour in a lit one, not a signet model. The
+  purple and black of the tile itself is the look Matěj described for the Unmade Isles; the other realms' looks
+  (sand, frost, water, moss, ember) come with their realms. The art, its candidates and the pick:
+  `art/realm-portal/`, to be reviewed by Matěj (RLM-660).
 - **Particles:** a swirl of vanilla dust in the realm's colour (`DustParticleOptions`), plus one vanilla particle
   that suits the realm: ash for the stone realm (`minecraft:ash`), pale ash like blown sand for the desert
   (`minecraft:white_ash`), snowflakes for the tundra (`minecraft:snowflake`), small flames for the fire realm
@@ -600,6 +632,7 @@ signet: realmforge:undervault_signet        # an item from content/items/, stack
 colour: "#7A8FB0"
 particle: minecraft:ash              # the extra particle next to the tinted dust
 sound_pitch: 0.8                     # until A3 brings our own sounds
+portal: {animation: stream, storm: true, frame: stone}   # the lit portal's look (RLM-300, RLM-301)
 arrival: {y: [20, 90], floor: realmforge:slate_bricks, pocket_radius: 3}   # where a built portal may stand
 ```
 
@@ -624,6 +657,11 @@ arrival: {y: [63, 310], floor: minecraft:stone_bricks, pocket_radius: 3}   # por
   about Overworld alone ("This portal leads only back to the Overworld", "Beds only work in the Overworld"). The
   refusal at the sealstone names the realm by its plain `description` instead: "You are not eligible to open a
   portal to the stone realm." (Matěj, 2026-10-20).
+- **The lit portal's look** (`portal`, RLM-300, RLM-301): its `animation` (`swirl` or `stream`), whether it blinks like
+  a `storm`, and the `frame`'s look (`washed` or `stone`); without it, the shared swirl, no storm and the washed-out
+  frame, as Overworld's entry has. Each is one of a fixed set, because a block's states and textures are fixed when
+  the game starts: a new animation or look is a texture in the pipeline, a value of the block state and a name in the
+  schema ([Look and sound](#look-and-sound)).
 - **The coordinate scale is not here:** it is the `coordinate_scale` of the realm's dimension type
   (`content/worldgen/dimension_type/stone.json`, `8.0`), next to its `bed_rule` and `respawn_anchor_works`
   attributes, because vanilla reads it from there.
@@ -686,10 +724,12 @@ dimension rules and access:
     `getLocalTransition`) and `LiquidBlockContainer`, and overriding `canBeReplaced(BlockState, Fluid)` (it refuses
     every fluid, flowing or from a bucket);
   - `SealstoneBlock` with its block entity, and its point-of-interest type;
+  - `PortalAnimation` and `FrameLook`, the portal block's and the frame blocks' looks as block state values, and
+    `PortalStorm`, a storm blink's ticks and its darker colour (RLM-300, RLM-301);
   - `RealmPortalLinker`: the scaled position, the search for a linked portal and the building of a new one, with the
     spot search as plain Java over a column of blocks;
   - the `PlayerInteractEvent.RightClickBlock` listener for the sneak gesture (common code: it runs on both sides);
-- `client/`: the portal block's tint source;
+- `client/`: the portal block's tint source, which also darkens the colour during a storm blink;
 - Gatewright Bricks, the sealstone and the signets as YAML content: blocks once the block content type exists, signets
   as items. The two blocks' `generated` flag and the loot tables that check it come from that content type ([Building a
   portal](#building-a-portal)).
@@ -707,10 +747,15 @@ dimension rules and access:
     back from a realm portal at y 30 to Overworld columns of deep ocean, which builds on a platform at y 63, not
     under the seabed, and Overworld ground at y 63, which takes a frame set into it (RLM-341);
   - the arrival in front of a frame a player stood on top of the floor, on that floor one step below the opening
-    (RLM-341).
+    (RLM-341);
+  - a storm blink's ticks (dark, back, dark), its darker colour and how often it comes, and an entry without a
+    `portal` having the shared look (RLM-300, RLM-301).
 - **pytest:** the schema, the references, the generated advancement (criterion `minecraft:impossible`), the access
   requirement checks (the unlock, and the entry level equal to the mobs' floor, RLM-306), the in-sentence name and
-  the messages it fills (RLM-337), the dimension type checks (scale, bed rule).
+  the messages it fills (RLM-337), the dimension type checks (scale, bed rule); the portal's animations (strips of
+  see-through palette greys, the stream moving one pixel up and to the right a frame, the swirl whole across four
+  blocks, both looping), the frame's looks made from the bricks' tile by lightness, the sealstone's socket, a block's
+  tile as approved art, and a realm's `portal` fields (RLM-300, RLM-301).
 - **GameTests** (W2a's and W2b's "Done when"):
   - access is refused before the unlock advancement and allowed after it: through a teleport into the realm (as a
     waystone makes one), and through the portal, where the player stays put and gets the centre-screen message;
@@ -737,6 +782,12 @@ dimension rules and access:
   - a water bucket emptied into a lit portal's opening, by a player and by a dispenser, and water flowing into it,
     leave its portal blocks in place;
   - the sealstone refuses in the instance dimension;
+  - a lit frame's sealstone, bricks and corner bricks take the look of the realm the portal opens onto and its
+    portal blocks that realm's animation; switched onto Overworld's entry they take the shared look, closed they wash
+    out at once, and within half a second when a brick broke; a brick put into a lit frame's corner takes the look,
+    and breaking the sealstone washes out the bricks it leaves (RLM-300, RLM-301);
+  - only a portal lit onto a realm with a storm blinks, and its blink reaches a player near as the sealstone's block
+    event (RLM-300);
   - an item and a mob step into a portal and travel, and a pig carrying a player without the unlock does not;
   - a player in survival travels on the first tick in the portal, and standing in the exit portal right after does
     not take them back, until they stepped out for half a second and in again (RLM-335);
@@ -868,6 +919,16 @@ His later decisions, built together on 2026-11-11 (RLM-394, RLM-306, RLM-337), a
     [ADR 0076](../decisions/0076-a-realm-is-entered-from-its-entry-level-on.md)).
 27. **A sentence that names a realm takes "the", Overworld too** (2026-10-31, on RLM-337, after ADR 0045): "The
     portal opens onto the Undervault", "onto the Overworld" ([Data](#data-contentrealms), "The name in messages").
+
+His wishes from the W2b playtest of 2026-10-20, built on 2026-11-11 (RLM-300, RLM-301). How they were built is the
+agent's choice, open until his deferred playtest (RLM-660):
+
+28. **The portal's texture moves, with an animation per realm:** Undervault's a diagonal stream from the bottom left
+    to the top right "with the angle being 45°", every block joining its neighbours, with storm blinks over it; the
+    other portals a swirl whose circles form where four blocks meet ([Look and sound](#look-and-sound)).
+29. **The frame's bricks are unique bricks of varying sizes, washed out while dark, and take the open realm's colour
+    and texture:** Undervault's grey to dark grey, "just stone, if we can make texture feel heavy"; the sealstone has
+    the same texture and a round socket on its top ([Look and sound](#look-and-sound)).
 
 ## Open questions
 

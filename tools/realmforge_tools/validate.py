@@ -13,7 +13,7 @@ from pathlib import PurePosixPath
 from pydantic import BaseModel
 
 from realmforge_tools.apotheosis import Snapshot, fit, load_snapshot
-from realmforge_tools.art import approved, spell_models
+from realmforge_tools.art import approved, frame_looks, spell_models
 from realmforge_tools.content import Content, Entry, RoomEntry, SetPieceEntry, load_content
 from realmforge_tools.id_universe import NEOFORGE_ATTRIBUTES, IdUniverse, load_vanilla
 from realmforge_tools.problems import Problem, ValidationFailed
@@ -222,6 +222,7 @@ def load_and_validate(
         validate_content(content, universe)
         + approved.problems(paths, content)
         + spell_models.problems(paths, content)
+        + frame_looks.problems(paths)
         + _check_worldgen_clashes(content, paths)
         + _check_apotheosis(content, universe, paths)
     )

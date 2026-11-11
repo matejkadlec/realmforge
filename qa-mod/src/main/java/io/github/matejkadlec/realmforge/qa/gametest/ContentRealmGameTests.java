@@ -57,6 +57,12 @@ public final class ContentRealmGameTests {
                             .contains(Language.getInstance().getOrDefault(realm.name())),
                     expected.id() + ": its in-sentence form does not hold its name");
             helper.assertValueEqual(realm.colour() & 0xFFFFFF, expected.colour(), expected.id() + " portal colour");
+            // The lit portal's look (RLM-300, RLM-301): each name is a value of the block state that shows it.
+            helper.assertValueEqual(realm.portal().animation().getSerializedName(), expected.animation(),
+                    expected.id() + " portal animation");
+            helper.assertValueEqual(realm.portal().storm(), expected.storm(), expected.id() + " portal storm");
+            helper.assertValueEqual(realm.portal().frame().getSerializedName(), expected.frame(),
+                    expected.id() + " frame look");
             helper.assertValueEqual(realm.signet().map(Identifier::toString).orElse(""), expected.signet(),
                     expected.id() + " signet");
             if (dimension.equals(Level.OVERWORLD)) {

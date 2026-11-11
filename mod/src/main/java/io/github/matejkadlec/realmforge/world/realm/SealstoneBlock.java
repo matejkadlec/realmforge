@@ -30,7 +30,9 @@ import net.minecraft.world.phys.BlockHitResult;
  * happens lives in {@link RealmPortals}; the setting lives in its block entity. A frame a trip built has {@link GatewrightBricksBlock#GENERATED} set, and drops nothing.
  *
  * <p>It glows while a player holding a signet that lights it stands near ({@link RealmPortals#tickGlow}, RLM-406): its
- * {@link #GLOW} is its block light, so every player sees it.
+ * {@link #GLOW} is its block light, so every player sees it. Like the bricks it has a
+ * {@link FrameLook#PROPERTY look}, the open realm's while the portal is lit (RLM-301): its top shows the signet's
+ * socket, empty or holding the realm's stone. Breaking it washes the rest of its frame out again.
  */
 public final class SealstoneBlock extends BaseEntityBlock {
     public static final MapCodec<SealstoneBlock> CODEC = simpleCodec(SealstoneBlock::new);
@@ -41,7 +43,8 @@ public final class SealstoneBlock extends BaseEntityBlock {
 
     public SealstoneBlock(BlockBehaviour.Properties properties) {
         super(properties);
-        registerDefaultState(stateDefinition.any().setValue(GatewrightBricksBlock.GENERATED, false).setValue(GLOW, 0));
+        registerDefaultState(stateDefinition.any().setValue(GatewrightBricksBlock.GENERATED, false).setValue(GLOW, 0)
+                .setValue(FrameLook.PROPERTY, FrameLook.WASHED));
     }
 
     @Override
@@ -51,7 +54,7 @@ public final class SealstoneBlock extends BaseEntityBlock {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(GatewrightBricksBlock.GENERATED, GLOW);
+        builder.add(GatewrightBricksBlock.GENERATED, GLOW, FrameLook.PROPERTY);
     }
 
     @Override
@@ -59,12 +62,24 @@ public final class SealstoneBlock extends BaseEntityBlock {
         return new SealstoneBlockEntity(pos, state);
     }
 
-    /** The glow is the server's: the block state it sets reaches every client. */
+    /**
+     * The glow, the frame's look and the storm's moment are the server's: the block states it sets and the block
+     * event it sends reach every client. A client only counts a storm blink down ({@link SealstoneBlockEntity}).
+     */
     @Override
     public <T extends BlockEntity> @Nullable BlockEntityTicker<T> getTicker(Level level, BlockState state,
             BlockEntityType<T> type) {
-        return level.isClientSide() ? null
-                : createTickerHelper(type, RealmPortalBlocks.SEALSTONE_ENTITY.get(), RealmPortals::tickGlow);
+        return level.isClientSide()
+                ? createTickerHelper(type, RealmPortalBlocks.SEALSTONE_ENTITY.get(), SealstoneBlockEntity::clientTick)
+                : createTickerHelper(type, RealmPortalBlocks.SEALSTONE_ENTITY.get(), RealmPortals::tickSealstone);
+    }
+
+    /** A sealstone that is gone leaves no lit frame: the bricks round it wash out again (RLM-301). */
+    @Override
+    protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel level, BlockPos pos,
+            boolean movedByPiston) {
+        super.affectNeighborsAfterRemoval(state, level, pos, movedByPiston);
+        RealmPortals.wash(level, pos);
     }
 
     @Override

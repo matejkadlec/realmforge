@@ -410,7 +410,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | item YAML with a weapon preset | `data/realmforge/weapon_attributes/<item>.json` (Better Combat format) | read by Better Combat |
 | mob YAML | Xaero's Minimap icon files (*verify* format) | read by Xaero's Minimap |
 | `texts/` (exists) | lang keys `<group>.realmforge.<name>`, `GeneratedTexts` constants | translations |
-| `art/textures/<kind>/<id>.png` (not content: the approved art, the cleaned texture of the candidate picked in the gallery; A1, RLM-642, [ADR 0007](decisions/0007-asset-pipeline.md), [art/README.md](../art/README.md)) | in place of the generated placeholder: an item's texture (`item`; or, named in `art/textures/variants.yaml`, another item's texture recoloured ramp by ramp, ADR 0007's variants scripted from one base, `art/variants.py`, RLM-505: three of the four caster sets' icons), a status effect's icon (`effect`, a 16 x 16 one centred on vanilla's 18 x 18), a spell's icon as the GUI sprite `textures/gui/sprites/spell/<id>.png` with `GeneratedSpellIcons`, the list of the spells that have one (`spell`), the tiles a generator composes a GUI texture of (`gui`: the spellbook's book, `generate/spellbook.py`), and the cloth and trim tiles of an armor look (`armor`, `armor_trim`), from which `generate/worn_armor.py` composes the look's two worn textures on vanilla's 64 x 32 humanoid armor layout (RLM-505: a cap, robes, pants and sandals, shaded down the palette's ramps); re-encoded by our own encoder, so the bytes are the same on every machine (`art/approved.py`). Validation refuses a file that names no content or that `rf art clean` did not write (its size, half-transparent pixels, colours outside the palette) | assets |
+| `art/textures/<kind>/<id>.png` (not content: the approved art, the cleaned texture of the candidate picked in the gallery; A1, RLM-642, [ADR 0007](decisions/0007-asset-pipeline.md), [art/README.md](../art/README.md)) | in place of the generated placeholder: an item's texture (`item`; or, named in `art/textures/variants.yaml`, another item's texture recoloured ramp by ramp, ADR 0007's variants scripted from one base, `art/variants.py`, RLM-505: three of the four caster sets' icons), a status effect's icon (`effect`, a 16 x 16 one centred on vanilla's 18 x 18), a spell's icon as the GUI sprite `textures/gui/sprites/spell/<id>.png` with `GeneratedSpellIcons`, the list of the spells that have one (`spell`), the tiles a generator composes a GUI texture of (`gui`: the spellbook's book, `generate/spellbook.py`), the cloth and trim tiles of an armor look (`armor`, `armor_trim`), from which `generate/worn_armor.py` composes the look's two worn textures on vanilla's 64 x 32 humanoid armor layout (RLM-505: a cap, robes, pants and sandals, shaded down the palette's ramps), and a block's tile (`block`, RLM-301: a `simple` block's texture, and for the Gatewright Bricks the one tile every look of the realm portal's frame is made from, `art/frame_looks.py`, `generate/portal_frame.py`); re-encoded by our own encoder, so the bytes are the same on every machine (`art/approved.py`). Validation refuses a file that names no content or that `rf art clean` did not write (its size, half-transparent pixels, colours outside the palette) | assets |
 | `apotheosis_new_affixes/` (exists, RLM-557) | an affix of our own at `data/realmforge/apotheosis/affixes/<id>.json`, its name and suffix in lang (`affix.realmforge:<id>`, `.suffix`) ([19.4](#194-optional-integrations)) | Apotheosis's affix registry, which reads every namespace |
 | `apotheosis_affixes/` (exists, RLM-271), `apotheosis_gems/`, `apotheosis_tier_augments/`, `apotheosis_rarities/`, `apotheosis_stat_remaps/` (exist, RLM-272), `apotheosis_rarity_overrides/` (exists, RLM-232) | each Apotheosis entry they change, from its snapshot, at Apotheosis's own path `data/apotheosis/apotheosis/<kind>/<path>.json`, and Apotheosis's MIT `LICENSE` with our `NOTICE` in `META-INF/third_party/apotheosis/` ([19.4](#194-optional-integrations)) | Apotheosis's affix, gem, tier augment, rarity and rarity override registries |
 | `enchantments/` (exists, RLM-537) | `data/realmforge/enchantment/<id>.json`, the vanilla enchantment tags it joins, its highest level with Apothic Enchanting (`data/apothic_enchanting/data_maps/enchantment/enchantment_info.json`), `#realmforge:protections` and `#minecraft:exclusive_set/armor` without Fire, Blast and Projectile Protection, `GeneratedEnchantments` keys, lang ([13](#13-items-gear-and-loot)) | vanilla's enchantment registry (datapack) |
@@ -427,9 +427,12 @@ when the mod is constructed (`dungeon/portal/DungeonBlocks`, `world/realm/RealmP
 blockstate and models (`generate/blocks.py`), and `BlockKinds#blocks(kind)` hands the owner its blocks, for a block
 entity type, a point-of-interest type or for placing one. Kinds the game uses one block of (`dungeon_exit` and the realm
 portal's three) allow one block each. `gatewright_bricks` and `gatewright_sealstone` have the blockstate property
-`generated`, which a trip sets on the frames it builds, and their loot tables drop the block only without it. The
-sealstone also has `glow` (0 to 15), its block light, which its block entity's ticker sets (RLM-406); its blockstate
-names `generated` alone, which matches every `glow`.
+`generated`, which a trip sets on the frames it builds, and their loot tables drop the block only without it, and
+`look` (RLM-301), the frame's look, which picks their model: one per look, the sealstone's with the look's bricks on
+its sides and bottom and the signet's socket on its top. The sealstone also has `glow` (0 to 15), its block light,
+which its block entity's ticker sets (RLM-406); their blockstates name `look` alone, which matches every `generated`
+and every `glow`. `realm_portal` has `animation` beside its `axis` (RLM-300), one animated texture for each
+([15.1](#151-dimensions)).
 `realm_portal` has no item: no block item, no loot table (`noLootTable`), no recipe and no creative tab. `hardness: -1`
 makes a block unbreakable, as vanilla's bedrock and portals.
 
@@ -3344,7 +3347,8 @@ Specialist (Ancient Workbench), which sell the Nether's and the End's materials.
     signet of the realm its lit portal opens onto, or any signet while the portal is dark, in Overworld; inside a
     realm, that realm's own signet, dark or lit (`RealmPortals.lightsSealstone`); in a dimension without an entry,
     none (RLM-458). A server-side block entity
-    ticker (`RealmPortals.tickGlow`) moves its `glow` one level a tick towards 15 or 0, so it rises or fades over 15
+    ticker (`RealmPortals.tickSealstone`, which also keeps the frame's look and starts storm blinks, below) moves its
+    `glow` one level a tick towards 15 or 0 (`tickGlow`), so it rises or fades over 15
     ticks; the block state is its light (`lightLevel`), so every player sees it, and it is set without shape updates;
   - **the portal block:** like vanilla's nether portal it has an axis and no collision, and checks its frame on every
     neighbour update, so a broken frame block takes the whole opening with it. It implements `Portal`: every entity
@@ -3370,10 +3374,32 @@ Specialist (Ancient Workbench), which sell the Nether's and the End's materials.
     the exit's chunks for a short time;
   - **arrival** (`RealmArrivals`): on every arrival in a realm, a 2-second title with its name, element and level
     band (the realm entry's `levels`); the first arrival also shows its flavour line in chat (`realmforge:visited_realms`);
-  - **look:** the portal's texture is one greyscale, see-through swirl (so the chunk mesher puts it in the translucent
+  - **look:** the portal's textures are greyscale and see-through (so the chunk mesher puts them in the translucent
     layer), tinted on the client with the destination's colour (`client/render/RealmPortalColors`, a
     `BlockTintSource`); the sealstone's block entity is synced, and a change re-renders the opening. `animateTick`
     shows dust in that colour, the realm's particle and the vanilla portal hum at its pitch.
+  - **a look per realm in block states** (RLM-300, RLM-301): a realm entry's `portal` names the lit portal's
+    `animation`, whether it has a `storm`, and its `frame`'s look. A block's states and textures are fixed when the
+    game starts, so each is one of a fixed set (`PortalAnimation`, `FrameLook`; the pipeline's `PORTAL_ANIMATIONS`
+    and `FRAME_LOOKS` in `schema/realm.py` name the same values, and a GameTest compares them). The server sets them
+    as block states, which is all a client needs, and what a GameTest can read:
+    - the portal block's `animation`, set by `RealmPortals.light`, picks one of its animated textures (a strip of
+      frames with a `.png.mcmeta`, as vanilla's nether portal; `generate/portal_textures.py` draws them, because a
+      frame has to join its neighbours and the last has to lead into the first);
+    - the frame blocks' `look` (the Gatewright Bricks and the sealstone; `washed` while dark) is set on the frame by
+      `RealmPortals.light` and taken back by `close`; the sealstone's ticker (`RealmPortals.tickLook`, every 10
+      ticks) catches what they cannot see, a frame that went dark by a broken brick and a brick placed into a lit
+      frame's corner, and breaking the sealstone washes out the bricks it leaves
+      (`SealstoneBlock#affectNeighborsAfterRemoval`). A frame dresses only its own sealstone and Gatewright Bricks
+      (`RealmPortals#dress`): another sealstone in a corner or a brick's place keeps its own look, or the two would
+      wash and dress each other at every check. Every look's textures are made from the bricks' one approved
+      tile (`art/frame_looks.py`, `generate/portal_frame.py`);
+    - **a storm blink** cannot be a texture's loop, which is never random, so it is the tint: the sealstone's ticker
+      rolls for it (`PortalStorm`, about every 15 seconds) and sends the block event `SealstoneBlockEntity.EVENT_STORM`
+      (`Level#blockEvent`, which reaches the clients within 64 blocks); each client counts the blink down in the block
+      entity's client ticker, which does not run while the game is paused or its ticks are frozen, redraws the
+      opening when the darkness changes, and the tint source reads `SealstoneBlockEntity#stormDark`. Common code
+      holds all of it but the tint, so nothing outside `client/` touches a client class.
 - A technical dimension `realmforge:instances` (void, no natural spawning, fixed time) hosts dungeon instances. The
   code depends on it, so it lives in the core mod's resources (`data/realmforge/dimension/instances.json` and
   `dimension_type/instances.json`), not in `content/worldgen/`
@@ -4267,6 +4293,12 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   `client/particle` (the provider of our particle types, RLM-639),
   `client/tooltip`, `client/network`, `client/spell` (the casts in progress, C3a-2), `client/animation` (the PAL cast
   layer), and `client/compat/<mod>` for the client parts of integrations (JEI plugins, Jade tooltips).
+- **A block's look from data** needs no client code when it is a block state: the realm portal's animation and its
+  frame's look are states the server sets, and the blockstate files pick the models and the animated textures
+  ([15.1](#151-dimensions), RLM-300, RLM-301). Only what a state cannot say is client code: the portal's colour, a
+  tint from the synced realm registry, and its storm blink, which darkens that tint
+  (`client/render/RealmPortalColors`). A tint is baked into the chunk mesh, so whatever changes it re-renders the
+  blocks (`Level#sendBlockUpdated` on the client level).
 - **The rule:** no class outside `client/` imports `net.minecraft.client.*`, `com.mojang.blaze3d.*`,
   `net.neoforged.neoforge.client.*` or a library's rendering classes. An automated import check enforces it
   (`tools/tests/test_client_isolation.py`, run by `uv run pytest`): it scans the main and generated sources of the
@@ -4962,7 +4994,8 @@ that agents can read. So far:
   x, z (0, 0 by default) the way `/tp` does, so a player without the realm's unlock or below its entry level
   (`/qa level 6`) is refused, and grant or revoke the unlock advancement as
   `/advancement grant|revoke @s only realmforge:realm/<realm>` does
-  ([15.1](#151-dimensions));
+  ([15.1](#151-dimensions)); `/qa realm storm` starts a storm blink now on the nearest lit realm portal within 16
+  blocks whose realm has one, which in play comes at random (RLM-300);
 - the combat log, `logs/realmforge-combat.log` in the game directory (`run/client/`, `run/gametest/`, ...): one line
   per hit or dodge that involves a player or a dummy, with the damage type, school, crit, attacker level, the
   original damage, what armor blocked, and the damage dealt and taken from health. A new server starts a new file.

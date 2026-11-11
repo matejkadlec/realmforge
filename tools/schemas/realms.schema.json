@@ -52,6 +52,40 @@
       ],
       "title": "LocalizedText",
       "type": "object"
+    },
+    "PortalLookDef": {
+      "additionalProperties": false,
+      "description": "How the realm portal looks while it opens onto the entry (RLM-300, RLM-301): the portal blocks' animation and\nthe frame's look. Each is one of a fixed set, because a block's states and textures are fixed when the game\nstarts: a new one is a texture in the pipeline and a value in the block's state.",
+      "properties": {
+        "animation": {
+          "default": "swirl",
+          "description": "The portal blocks' animated texture: swirl, the shared one, spirals that turn where four blocks meet; stream, pixels flowing at 45 degrees from the bottom left to the top right (Undervault's).",
+          "enum": [
+            "swirl",
+            "stream"
+          ],
+          "title": "Animation",
+          "type": "string"
+        },
+        "frame": {
+          "default": "washed",
+          "description": "The look the frame's Gatewright Bricks and its sealstone take while the portal is lit: washed, a dark frame's own washed-out bricks; stone, heavy grey stone with a grey stone in the sealstone's socket (Undervault's).",
+          "enum": [
+            "washed",
+            "stone"
+          ],
+          "title": "Frame",
+          "type": "string"
+        },
+        "storm": {
+          "default": false,
+          "description": "Whether the portal blinks like a storm: now and then, at random, the whole opening darkens twice in a row (Undervault's).",
+          "title": "Storm",
+          "type": "boolean"
+        }
+      },
+      "title": "PortalLookDef",
+      "type": "object"
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -172,6 +206,10 @@
       "default": null,
       "description": "The vanilla particle the portal shows next to the dust in its colour, one without options: minecraft:ash. Every realm has one; Overworld none.",
       "title": "Particle"
+    },
+    "portal": {
+      "$ref": "#/$defs/PortalLookDef",
+      "description": "How the lit portal and its frame look: the animation, the storm blinks and the frame's look. Without it: the shared swirl, no storm and the washed-out frame, as Overworld's return portals have."
     },
     "signet": {
       "anyOf": [
