@@ -1,0 +1,454 @@
+{
+  "$defs": {
+    "AffixItemOptionDef": {
+      "additionalProperties": false,
+      "description": "A weapon, a tool or a piece of armor with Apotheosis's affixes, its rarity rolled for the opener's world tier.",
+      "properties": {
+        "cost": {
+          "description": "Its loot points.",
+          "maximum": 1000000,
+          "minimum": 1,
+          "title": "Cost",
+          "type": "integer"
+        },
+        "limit": {
+          "default": 0,
+          "description": "How often one container may hold it: 1 for something unique, 0 (the default) for any number.",
+          "maximum": 64,
+          "minimum": 0,
+          "title": "Limit",
+          "type": "integer"
+        },
+        "tiers": {
+          "description": "The world tiers it is for; every tier without it.",
+          "items": {
+            "enum": [
+              "haven",
+              "frontier",
+              "ascent",
+              "summit",
+              "pinnacle"
+            ],
+            "type": "string"
+          },
+          "title": "Tiers",
+          "type": "array"
+        },
+        "type": {
+          "const": "affix_item",
+          "title": "Type",
+          "type": "string"
+        },
+        "weight": {
+          "default": 1,
+          "description": "How likely it is against the other options a roll can afford.",
+          "maximum": 10000,
+          "minimum": 1,
+          "title": "Weight",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "cost",
+        "type"
+      ],
+      "title": "AffixItemOptionDef",
+      "type": "object"
+    },
+    "BudgetDef": {
+      "additionalProperties": false,
+      "description": "The points a container may draw: half of all rolls lie between ``min`` and ``medium``, the other half between\n``medium`` and ``max``, each half evenly, so a high roll is rare.",
+      "properties": {
+        "max": {
+          "description": "The most, a high roll.",
+          "maximum": 1000000,
+          "minimum": 1,
+          "title": "Max",
+          "type": "integer"
+        },
+        "medium": {
+          "description": "The roll in the middle: half of all containers hold less.",
+          "maximum": 1000000,
+          "minimum": 1,
+          "title": "Medium",
+          "type": "integer"
+        },
+        "min": {
+          "description": "The least a container holds, at the first world tier.",
+          "maximum": 1000000,
+          "minimum": 1,
+          "title": "Min",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "min",
+        "medium",
+        "max"
+      ],
+      "title": "BudgetDef",
+      "type": "object"
+    },
+    "CoinsOptionDef": {
+      "additionalProperties": false,
+      "description": "Coins worth a number of mob kills of the opener's tier, 50 to 150 % of it as a mob's drop is. Its cost is not\nwritten: ``kills`` times the table's ``kill_points``, which is what ties points to kills.",
+      "properties": {
+        "kills": {
+          "description": "How many kills' coins it gives, on average.",
+          "exclusiveMinimum": 0,
+          "maximum": 100,
+          "title": "Kills",
+          "type": "number"
+        },
+        "limit": {
+          "default": 0,
+          "description": "How often one container may hold it: 1 for something unique, 0 (the default) for any number.",
+          "maximum": 64,
+          "minimum": 0,
+          "title": "Limit",
+          "type": "integer"
+        },
+        "tiers": {
+          "description": "The world tiers it is for; every tier without it.",
+          "items": {
+            "enum": [
+              "haven",
+              "frontier",
+              "ascent",
+              "summit",
+              "pinnacle"
+            ],
+            "type": "string"
+          },
+          "title": "Tiers",
+          "type": "array"
+        },
+        "type": {
+          "const": "coins",
+          "title": "Type",
+          "type": "string"
+        },
+        "weight": {
+          "default": 1,
+          "description": "How likely it is against the other options a roll can afford.",
+          "maximum": 10000,
+          "minimum": 1,
+          "title": "Weight",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "type",
+        "kills"
+      ],
+      "title": "CoinsOptionDef",
+      "type": "object"
+    },
+    "CountDef": {
+      "additionalProperties": false,
+      "description": "How many of an item one pick gives: a whole number from ``min`` to ``max``, each as likely.",
+      "properties": {
+        "max": {
+          "maximum": 99,
+          "minimum": 1,
+          "title": "Max",
+          "type": "integer"
+        },
+        "min": {
+          "maximum": 99,
+          "minimum": 1,
+          "title": "Min",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "min",
+        "max"
+      ],
+      "title": "CountDef",
+      "type": "object"
+    },
+    "EnchantLevelsDef": {
+      "additionalProperties": false,
+      "description": "The enchanting levels an item or a book is enchanted with, as at an enchanting table: from ``min`` to ``max``.",
+      "properties": {
+        "max": {
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Max",
+          "type": "integer"
+        },
+        "min": {
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Min",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "min",
+        "max"
+      ],
+      "title": "EnchantLevelsDef",
+      "type": "object"
+    },
+    "GemOptionDef": {
+      "additionalProperties": false,
+      "description": "A gem of Apotheosis's, its kind and purity rolled for the opener's world tier.",
+      "properties": {
+        "cost": {
+          "description": "Its loot points.",
+          "maximum": 1000000,
+          "minimum": 1,
+          "title": "Cost",
+          "type": "integer"
+        },
+        "limit": {
+          "default": 0,
+          "description": "How often one container may hold it: 1 for something unique, 0 (the default) for any number.",
+          "maximum": 64,
+          "minimum": 0,
+          "title": "Limit",
+          "type": "integer"
+        },
+        "rolls": {
+          "default": 1,
+          "description": "The gem is the purest of this many rolls: 1 by default, more for a better gem at the same tier.",
+          "maximum": 10,
+          "minimum": 1,
+          "title": "Rolls",
+          "type": "integer"
+        },
+        "tiers": {
+          "description": "The world tiers it is for; every tier without it.",
+          "items": {
+            "enum": [
+              "haven",
+              "frontier",
+              "ascent",
+              "summit",
+              "pinnacle"
+            ],
+            "type": "string"
+          },
+          "title": "Tiers",
+          "type": "array"
+        },
+        "type": {
+          "const": "gem",
+          "title": "Type",
+          "type": "string"
+        },
+        "weight": {
+          "default": 1,
+          "description": "How likely it is against the other options a roll can afford.",
+          "maximum": 10000,
+          "minimum": 1,
+          "title": "Weight",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "cost",
+        "type"
+      ],
+      "title": "GemOptionDef",
+      "type": "object"
+    },
+    "ItemOptionDef": {
+      "additionalProperties": false,
+      "description": "Items: food, ingots, gems, ores, gear; enchanted with ``enchant``, which turns a book into an enchanted book.",
+      "properties": {
+        "cost": {
+          "description": "Its loot points.",
+          "maximum": 1000000,
+          "minimum": 1,
+          "title": "Cost",
+          "type": "integer"
+        },
+        "count": {
+          "$ref": "#/$defs/CountDef",
+          "default": {
+            "max": 1,
+            "min": 1
+          },
+          "description": "How many one pick gives: 1 by default."
+        },
+        "enchant": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EnchantLevelsDef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Enchants it with these levels, with the enchantments random loot may carry (books included)."
+        },
+        "item": {
+          "description": "The item, e.g. minecraft:bread. Validated against the ID universe.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Item",
+          "type": "string"
+        },
+        "limit": {
+          "default": 0,
+          "description": "How often one container may hold it: 1 for something unique, 0 (the default) for any number.",
+          "maximum": 64,
+          "minimum": 0,
+          "title": "Limit",
+          "type": "integer"
+        },
+        "tiers": {
+          "description": "The world tiers it is for; every tier without it.",
+          "items": {
+            "enum": [
+              "haven",
+              "frontier",
+              "ascent",
+              "summit",
+              "pinnacle"
+            ],
+            "type": "string"
+          },
+          "title": "Tiers",
+          "type": "array"
+        },
+        "type": {
+          "const": "item",
+          "title": "Type",
+          "type": "string"
+        },
+        "weight": {
+          "default": 1,
+          "description": "How likely it is against the other options a roll can afford.",
+          "maximum": 10000,
+          "minimum": 1,
+          "title": "Weight",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "cost",
+        "type",
+        "item"
+      ],
+      "title": "ItemOptionDef",
+      "type": "object"
+    },
+    "TierDef": {
+      "additionalProperties": false,
+      "description": "What a world tier means for the table: the mob level its kills are counted at, and how much it raises the\nbudget.",
+      "properties": {
+        "budget_percent": {
+          "default": 100,
+          "description": "The budget at this tier, in percent of the table's own: 100 at the first tier, more at a later one.",
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Budget Percent",
+          "type": "number"
+        },
+        "level": {
+          "description": "The mob level a kill is counted at for this tier: the coins of a kill are the curve coin_drop there.",
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Level",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "level"
+      ],
+      "title": "TierDef",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "What a kind of container holds, drawn by loot points for the player who opens it.",
+  "properties": {
+    "budget": {
+      "$ref": "#/$defs/BudgetDef"
+    },
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "kill_points": {
+      "default": 150,
+      "description": "The points one mob kill is worth: the coins of a kill cost this much.",
+      "maximum": 1000000,
+      "minimum": 1,
+      "title": "Kill Points",
+      "type": "integer"
+    },
+    "luck_percent": {
+      "default": 5,
+      "description": "How much each point of the opener's luck (minecraft:luck) adds to the budget, in percent.",
+      "maximum": 1000,
+      "minimum": 0,
+      "title": "Luck Percent",
+      "type": "number"
+    },
+    "options": {
+      "description": "What the budget may buy.",
+      "items": {
+        "discriminator": {
+          "mapping": {
+            "affix_item": "#/$defs/AffixItemOptionDef",
+            "coins": "#/$defs/CoinsOptionDef",
+            "gem": "#/$defs/GemOptionDef",
+            "item": "#/$defs/ItemOptionDef"
+          },
+          "propertyName": "type"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/CoinsOptionDef"
+          },
+          {
+            "$ref": "#/$defs/ItemOptionDef"
+          },
+          {
+            "$ref": "#/$defs/GemOptionDef"
+          },
+          {
+            "$ref": "#/$defs/AffixItemOptionDef"
+          }
+        ]
+      },
+      "minItems": 1,
+      "title": "Options",
+      "type": "array"
+    },
+    "tiers": {
+      "additionalProperties": {
+        "$ref": "#/$defs/TierDef"
+      },
+      "description": "Every world tier: haven, frontier, ascent, summit, pinnacle.",
+      "propertyNames": {
+        "enum": [
+          "haven",
+          "frontier",
+          "ascent",
+          "summit",
+          "pinnacle"
+        ]
+      },
+      "title": "Tiers",
+      "type": "object"
+    }
+  },
+  "required": [
+    "id",
+    "budget",
+    "tiers",
+    "options"
+  ],
+  "title": "ContainerLootDef",
+  "type": "object"
+}

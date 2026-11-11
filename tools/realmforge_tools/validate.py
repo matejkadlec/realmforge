@@ -47,6 +47,8 @@ from realmforge_tools.schema.block import ITEMLESS_KINDS, REALM_PORTAL_KINDS, SI
 from realmforge_tools.schema.chapter import advancement_id as chapter_advancement
 from realmforge_tools.schema.character import STARTING_BREAD, CharacterModifierDef
 from realmforge_tools.schema.coin import COIN_DROP, coin_chain, split
+from realmforge_tools.schema.container_loot import TIERS as CONTAINER_LOOT_TIERS
+from realmforge_tools.schema.container_loot import CoinsOptionDef, ItemOptionDef
 from realmforge_tools.schema.dimension_rules import WORLDGEN_STRUCTURE_REGISTRY
 from realmforge_tools.schema.dungeon import (
     CORRIDOR_ROLES,
@@ -319,6 +321,7 @@ def validate_content(content: Content, universe: IdUniverse) -> list[Problem]:
     problems += _check_item_drops(content, universe)
     problems += _check_coins(content)
     problems += _check_merchants(content, universe)
+    problems += _check_container_loot(content, universe)
     problems += _check_netherite_upgrades(content, universe)
     problems += _check_chapters(content)
     problems += _check_quests(content, universe)
@@ -2471,6 +2474,92 @@ def _check_coins(content: Content) -> list[Problem]:
                         curve.source, f"points.{n}.value", f"{point.value} is negative: a mob drops no debt"
                     )
                 )
+    return problems
+
+
+def _check_container_loot(content: Content, universe: IdUniverse) -> list[Problem]:
+    """A container loot table's items exist; coins need our coins and the curve ``coin_drop``; no progression item
+    comes from a roll (a realm's signet or a dungeon's key: research LE-1, they are never left to chance); and at every
+    world tier the table has an option, its cheapest fits the least budget, so no container is ever empty (ADR 0041),
+    and none costs more than the most a roll there may have without luck, so every option can come."""
+    problems: list[Problem] = []
+    has_coins = bool(coin_chain(entry.model for entry in content.items))
+    has_curve = any(entry.model.id == COIN_DROP for entry in content.curves)
+    progression = {
+        entry.model.signet: f"the signet of the realm {entry.model.id!r}" for entry in content.realms
+    }
+    progression |= {
+        entry.model.key: f"the key of the dungeon {entry.model.id!r}" for entry in content.dungeons
+    }
+    progression.pop(None, None)
+    for entry in content.container_loot:
+        table = entry.model
+        for n, option in enumerate(table.options):
+            if isinstance(option, CoinsOptionDef):
+                if not has_coins:
+                    problems.append(
+                        Problem(
+                            entry.source,
+                            f"options.{n}",
+                            "coins need the coins of content/items/ (an item's coin)",
+                        )
+                    )
+                if not has_curve:
+                    problems.append(
+                        Problem(
+                            entry.source,
+                            f"options.{n}",
+                            f"coins are counted in kills, which needs the curve content/curves/{COIN_DROP}.yaml",
+                        )
+                    )
+            elif isinstance(option, ItemOptionDef):
+                if not universe.contains(ITEM_REGISTRY, option.item):
+                    problems.append(
+                        Problem(
+                            entry.source, f"options.{n}.item", _unknown(option.item, ITEM_REGISTRY, universe)
+                        )
+                    )
+                elif option.item in progression:
+                    problems.append(
+                        Problem(
+                            entry.source,
+                            f"options.{n}.item",
+                            f"{option.item} is {progression[option.item]}: a progression item never comes from a "
+                            "container's roll",
+                        )
+                    )
+        for tier in CONTAINER_LOOT_TIERS:
+            options = table.options_at(tier)
+            if not options:
+                problems.append(
+                    Problem(
+                        entry.source,
+                        "options",
+                        f"no option is for the world tier {tier}: a container there is empty",
+                    )
+                )
+                continue
+            least, most = table.points(0.0, tier), table.points(1.0, tier)
+            cheapest = min(table.cost(option) for option in options)
+            if cheapest > least:
+                problems.append(
+                    Problem(
+                        entry.source,
+                        "options",
+                        f"at the world tier {tier} the cheapest option costs {cheapest} points and the least budget "
+                        f"is {least}: such a container would be empty",
+                    )
+                )
+            for n, option in enumerate(table.options):
+                if option.is_for(tier) and table.cost(option) > most:
+                    problems.append(
+                        Problem(
+                            entry.source,
+                            f"options.{n}",
+                            f"costs {table.cost(option)} points, more than the {most} a roll at the world tier {tier} "
+                            "may have: it would never come there",
+                        )
+                    )
     return problems
 
 

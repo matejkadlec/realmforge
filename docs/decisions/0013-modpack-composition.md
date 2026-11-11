@@ -11,7 +11,8 @@ by [0038](0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md) (A
 Binds, our own client mod, ships next to the core mod), 2026-10-22; composition updated 2026-10-23 for the M1 pack
 tasks PK1 to PK3 and two-handed blocking (RLM-308, RLM-309, RLM-310, RLM-297); amended by
 [0053](0053-target-dummies-in-the-pack-worldedit-for-building-and-no-ftb-teams-parties.md) (MmmMmmMmmMmm with
-Moonlight Lib, a beta exception; FTB Teams parties off), 2026-10-25
+Moonlight Lib, a beta exception; FTB Teams parties off), 2026-10-25; composition updated 2026-11-10 for Lootr
+(RLM-288, [0041](0041-dungeon-containers-hold-loot-through-lootr.md))
 
 ## Context
 
@@ -39,6 +40,8 @@ The modpack wraps our core mod with third-party QoL, UI, performance and library
   - World for M1 (RLM-310): Structurify (needs YetAnotherConfigLib), which switches vanilla strongholds off.
   - Combat (RLM-297): Sword Blocking Mechanics, which raises a two-handed weapon to block; the core mod's rules decide
     what a block does. Iron's RPG Tweaks stays out ([0049](0049-player-hits-bypass-the-hurt-cooldown-in-our-pipeline.md)).
+  - Loot (RLM-288, [0041](0041-dungeon-containers-hold-loot-through-lootr.md)): Lootr (added 2026-11-10), which
+    gives every player their own contents of a loot container; its item frame conversion is off (pack README).
   - Our own, next to the core mod: Better Key Binds (added 2026-10-22 by RLM-372,
     [0048](0048-better-key-binds-our-own-client-mod-independent-of-realmforge.md)), secondary key binds. Like the core
     mod it is no packwiz entry: Prism gets its jar through `installToPrism`, the client pack boot copies it in.

@@ -17,6 +17,10 @@ file = "config/dummmmmmy-client.toml"
 hash = "d4053daa6079c98f47beeda2ab6d953d0a2737fed9ba2c49a0559d793d3cec26"
 
 [[files]]
+file = "config/lootr-common.jsonc"
+hash = "c6e685e3137db278733d4cbc42c188edc0b6c8e96536de8c8e5f2d9d9f5dbd45"
+
+[[files]]
 file = "config/pickupnotifier-client.toml"
 hash = "b0982dc8819dd569c574f23f3f3fc971b1f2ecaf378c217f4183a7b7f1796c9b"
 
@@ -242,6 +246,11 @@ metafile = true
 [[files]]
 file = "mods/lithostitched.pw.toml"
 hash = "d84f72d8d2cf0ca164f9f79be374083421e406b4c83f6e513d722a69d183915d"
+metafile = true
+
+[[files]]
+file = "mods/lootr.pw.toml"
+hash = "ab8ecf9e10ba7f3897f8331d90754ac44d34ecbc7e9a78ef65f089e742d8efac"
 metafile = true
 
 [[files]]

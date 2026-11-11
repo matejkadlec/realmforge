@@ -191,7 +191,7 @@ io.github.matejkadlec.realmforge
 ├─ spell/             spells, effect types, casting, cooldowns, resources, procs, spell entities
 ├─ talent/            F3's talents attachment only: no talents as of v1.0.0 (12)
 ├─ item/              item behaviours, gear components, coins and their converter; affixes and gems later
-├─ loot/              loot functions and conditions, reward rolls, mob coin drops
+├─ loot/              loot entries of our own, container loot by loot points, loot containers, mob coin drops
 ├─ character/         races, classes, character data, leveling, level caps, the character sheet's view
 ├─ world/             dimension rules and access, realms, world blocks, world defaults, Night Vision, griefing
 │                     protection
@@ -416,6 +416,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | `enchantments/` (exists, RLM-537) | `data/realmforge/enchantment/<id>.json`, the vanilla enchantment tags it joins, its highest level with Apothic Enchanting (`data/apothic_enchanting/data_maps/enchantment/enchantment_info.json`), `#realmforge:protections` and `#minecraft:exclusive_set/armor` without Fire, Blast and Projectile Protection, `GeneratedEnchantments` keys, lang ([13](#13-items-gear-and-loot)) | vanilla's enchantment registry (datapack) |
 | `recipe_removals/` (exists, RLM-272) | `data/<namespace>/recipe/<path>.json` per recipe, a file NeoForge skips (`neoforge:never`) | reloadable vanilla data |
 | `recipes/` (exists, RLM-447) | `data/minecraft/recipe/<path>.json`, replacing the vanilla recipe at that path, since the core mod's data pack sits above vanilla's (`generate/recipes.py`) | reloadable vanilla data |
+| `container_loot/` (exists, RLM-289; [13](#13-items-gear-and-loot)) | `data/realmforge/loot_table/containers/<id>.json`: a chest loot table whose one entry is our `realmforge:budget`, with a coins option written once per world tier; QA expectations | a loot table Lootr rolls once per player |
 | every type | `tools/schemas/<type>.schema.json` | editor completion |
 
 **Block kinds.** A block in `content/blocks/` is `simple` (a full block) unless its `kind` names behavior that is game
@@ -2761,6 +2762,55 @@ for reference, should talents ever come; the proc engine at its end exists since
   modifier, without the old `global_loot_modifiers.json` list). Arcane Dust from witches, evokers and illusioners is
   the first (RLM-197). "No trash loot"
   is a validation rule: a denylist plus a minimum value per tier.
+- **Container loot by loot points** (RLM-289, [ADR 0041](decisions/0041-dungeon-containers-hold-loot-through-lootr.md),
+  [container loot design](design/container-loot.md)): what a dungeon's chest or barrel holds comes from
+  `content/container_loot/` (`normal`, `treasure`), which the pipeline writes as the loot tables
+  `realmforge:containers/<id>`. Vanilla's pools roll each on their own and cannot share a budget, so a table is one
+  pool with one entry of our own type, `realmforge:budget` (`loot/BudgetEntry`, a `LootPoolSingletonContainer`; in
+  26.1 the registry `minecraft:loot_pool_entry_type` holds the entries' `MapCodec`s themselves):
+  - **the budget** (`loot/LootBudget`): a roll's points lie between `min` and `medium` for half of all rolls and
+    between `medium` and `max` for the other half, each half evenly, so the medium is the roll in the middle and a
+    high roll is rare. They are multiplied by the percent of the opener's world tier and by 1 + luck ×
+    `luck_percent` of a hundred, never below 0;
+  - **the roll** (`loot/BudgetRoll`, pure): one of the options the remaining points can afford, by weight; its cost
+    is paid; and so on until nothing is affordable (64 picks at most). A valuable option leaves little for the
+    rest, and an option with a `limit` comes at most that often. JUnit covers it (`BudgetRollTest`), and
+    `schema/container_loot.py` rolls the same way to simulate the tables;
+  - **an option** has a weight, a cost, a limit, the world tiers it is for, and the loot entry a pick rolls, any
+    entry a pool may hold. The pipeline writes vanilla's `minecraft:item` (with `set_count` and
+    `enchant_with_levels` on the tag `#minecraft:on_random_loot`, which turns a book into an enchanted book) and
+    three entries of ours: `realmforge:money` (`loot/MoneyEntry`: an amount of the smallest coin, given in the
+    largest coins), `realmforge:tier_gem` and `realmforge:tier_affix_item` (`loot/TierLootEntry`). Equal stacks of a
+    roll join before they reach the container;
+  - **points are counted in kills:** a table's `kill_points` (150) are one mob kill, and a coins option costs its
+    kills times that and gives 50 to 150 % of the curve `coin_drop` at the tier's level, as a mob drops. A kill's
+    coins differ by tier, so the pipeline writes a coins option once per world tier. Every other option is priced
+    against that by hand;
+  - **the world tier is Apotheosis's** (Haven, Frontier, Ascent, Summit, Pinnacle;
+    [Apotheosis design](design/apotheosis.md#world-tiers)). `loot` sits below `compat` ([4.4](#44-dependencies-between-features)),
+    so it defines the provider `loot/WorldTiers` (the tier of a player, a gem and an affix item rolled for a loot
+    context) and `compat/apotheosis/ApotheosisTiers` implements it when Apotheosis is loaded: the tier is
+    `WorldTier#getTier` of the loot context's `THIS_ENTITY`, the opener (Lootr sets it), and the gem and the affix
+    item come from Apotheosis's own loot entries without a filter, so purities and rarities follow the tier as in
+    its chest loot (the gear design's rarity band per realm is not applied to containers yet, RLM-567); a gem of
+    several `rolls` is the purest of them. Our tables never name Apotheosis's entries, so
+    they load without it (the lean dev client), where every opener is at the first tier and the two entries give
+    nothing. Apotheosis itself raises a player's luck with the tier (× 1.2 at Frontier up to × 2 at Pinnacle,
+    its tier augments), which the budget's luck percent then counts;
+  - **outside `chests/`:** Apotheosis injects affix items and gems into loot tables under `chests/`; ours lie under
+    `containers/`, so its items come only from the budget and the simulation sees everything a container holds
+    (Matěj left the choice to Claude, 2026-10-21);
+  - **validation:** every item exists; no progression item (a realm's signet, a dungeon's key) comes from a roll
+    (research LE-1); at every tier the table has an option, its cheapest fits the least budget, so no container is
+    empty, and none costs more than the most a roll there may have;
+  - **checked:** `test_container_loot.py` simulates both tables at every tier against Matěj's kill-equivalents (a
+    normal container about 2, 4 and 10 kills, a treasure chest 5, 10 and 20), and `ContainerLootGameTests` checks in
+    the game the decoded tables against the pipeline's budgets, a roll at two tiers and with luck, the limit, the
+    tiers' own options, money, Apotheosis's gem and affix item, both real tables at every tier and in the instance
+    dimension, and real containers opened through Lootr at two tiers and with luck (10, 15 and 24 diamonds from a
+    table of 1,000 points), which is the evidence that Lootr hands our entry the opener and their luck.
+- **Loot containers** (RLM-288): `loot/LootContainers#place` puts a chest, a trapped chest or a barrel with a loot
+  table as Lootr's own block, so each player gets their own roll ([15.5](#155-instances)).
 - **Rewards:** quest choice rewards are pre-rolled stacks written into the quest files (ADR 0006). RNG item chests
   (M2) are items that roll a loot table when opened.
 - **Curios (M1)** supplies curio slots ([ADR 0004](decisions/0004-build-rpg-systems-in-house.md)); *verify* its
@@ -3847,7 +3897,19 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   room from the layout's seed (salted apart from the planner's draws), a count per kind from the room's table, at most
   as many as it holds, keeps that many candidates at random (`plan/RoomContainers#draw`) and gives the plot's
   `RoomPlacement` a swap for each other one: the block it leaves behind, which `BlockSwapProcessor` places instead
-  of the container and its data. **A room's openings** (RLM-412, [design](design/instance-block-rules.md#7-hidden-spawners))
+  of the container and its data. **A container with loot is Lootr's** (RLM-288,
+  [ADR 0041](decisions/0041-dungeon-containers-hold-loot-through-lootr.md)): `loot/LootContainers#place` sets
+  Lootr's own chest, trapped chest or barrel (`lootr:chest`, `lootr:trapped_chest`, `lootr:barrel`, looked up by id,
+  so the core mod names no class of Lootr's) in the vanilla block's place, with the properties the two share and as
+  a single chest, and gives it the loot table; Lootr then rolls the table once for every player who opens it, with
+  that player as the loot context's `THIS_ENTITY` and their luck (`DefaultLootFiller`, read in Lootr 1.23.38.123's
+  jar). Lootr also takes over a vanilla container that has a loot table by itself, a world structure's or one saved
+  in a template, but only once the container's chunk and the 24 around it are fully loaded
+  (`BlockEntityTicker$Entry#getChunkLoadStatus`); until then a player who opens it gets vanilla's one roll for
+  everybody, and a dungeon is built before anyone stands in it, so the builder does not wait for that. A container
+  without a loot table stays vanilla's, and so does everything without Lootr (the lean dev client). `LootrGameTests`
+  checks all three; the tables themselves are RLM-289's, and the rooms' containers get them with RLM-290 and W6.
+  **A room's openings** (RLM-412, [design](design/instance-block-rules.md#7-hidden-spawners))
   are drawn the same way from their own salt: `DungeonPlan#wayIn` names the connector each room is entered through
   (the one it hangs off the room before it by, the first link that reaches it from an earlier room), and
   `plan/RoomOpenings#draw` picks one listed side at random that is not that connector's side (any side for a room
@@ -3859,7 +3921,10 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   entity hook of a structure processor: a template keeps it as it was where it was saved, and vanilla logs an invalid
   position before moving the entity into place) and made invulnerable (Adventure mode protects blocks, not these
   entities: a hit or an arrow popped a frame's flower out and broke it, so the lock could no longer be solved; a frame
-  still turns its item, and a creative player still breaks it), and the plot's chunks are held non-ticking, so none
+  still turns its item, and a creative player still breaks it). They stay vanilla's frames: Lootr turns every item
+  frame a structure template places into its own, which hands each player the item, and the pack's config switches
+  that off (`convert_structure_item_frames`, [pack README](../pack/README.md#configuration), RLM-288). The plot's
+  chunks are held non-ticking, so none
   falls or wanders before players arrive (RLM-362: `item_combination_lock` had come without the item frames its lock
   reads). The
   builder runs in `LevelTickEvent.Post` of
@@ -4880,6 +4945,9 @@ that agents can read. So far:
   every tick, so rage needs no hits on the dummy; saved with the player (`realmforge_qa:resource_autofill`);
 - `/qa inventory clear` (the same): empties the 27 main inventory slots and keeps the hotbar, the armor and the
   offhand;
+- `/qa loot chest|barrel <table>` (RLM-289): places a loot container two blocks in front of the player with a table
+  of `content/container_loot/` (`normal`, `treasure`), as the dungeon builder does; a player's world tier is
+  Apotheosis's `/apoth set_world_tier <player> <tier>`;
 - `/qa run <command>; <command>; ...`: runs the commands in order as its source, so a playtest's setup takes one line;
   chat cuts a line at 256 characters, so the line goes into an impulse command block as `execute as @p at @p run qa
   run ...` ([flow: Reaching the state](ai-development-flow.md#reaching-the-state));

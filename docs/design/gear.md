@@ -57,7 +57,7 @@ Apotheosis's rarity files (`data/apotheosis/apotheosis/rarities/`) give each rar
 | Source | Rarity | Mechanism |
 | --- | --- | --- |
 | Apotheosis's own drops: 12 % of natural hostile spawns wear an affix item, the affix items injected into chests | rolled at the looting player's world tier ([weights](apotheosis.md#what-the-tier-changes)) | Apotheosis, unchanged |
-| Our loot: dungeon containers, bosses, mobs' extra drops, quest rewards | a band per realm (below), weighted inside the band by the player's tier | `apotheosis:reforge_item` with `rarities` on the stack in our loot table (RLM-289 for containers) |
+| Our loot: dungeon containers, bosses, mobs' extra drops, quest rewards | a band per realm (below), weighted inside the band by the player's tier | `apotheosis:reforge_item` with `rarities` on the stack in our loot table (RLM-567). Containers do not name a band yet: RLM-289's two tables are not a realm's, so their affix items follow the opener's tier weights alone ([container loot](container-loot.md#the-tables)) |
 | Crafted gear | none until reforged; reforging rolls at the player's highest world tier | the reforging tables (RLM-199, [apotheosis.md](apotheosis.md#reforging)) |
 | Quest choice rewards | fixed when the quest file is written (pre-rolled, ADR 0006) | the quest pipeline writes the stack with its rarity |
 

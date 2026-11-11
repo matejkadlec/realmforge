@@ -248,7 +248,26 @@ own mob levels and loot (RLM-485 found it through the spawn GameTest's second he
 players craft are unchanged. NeoForge reads a server config from `config/`; a world's `serverconfig/` may override it.
 `tools/tests/test_pack_config.py` checks the value.
 
+**Lootr** (`config/lootr-common.jsonc`, Lootr 1.23.38.123, RLM-288,
+[ADR 0041](../docs/decisions/0041-dungeon-containers-hold-loot-through-lootr.md)). Every player gets their own
+contents of a loot container; one value differs from the file Lootr writes:
+
+- `Conversion.convert_structure_item_frames = false`: by default Lootr turns every item frame that a structure
+  template places into a frame of its own, from which each player takes the item. Our dungeon rooms are templates,
+  and their framed items are decoration and puzzle parts (the item lock reads its frames), not loot.
+
+Everything else keeps the defaults: a container with a loot table is converted in every dimension, each player's
+roll has its own seed, a Lootr container breaks only while sneaking, nothing decays or refreshes, comparators read
+it, and loot is per player, not per team. Its client file (`lootr-client.jsonc`) is not overridden: Lootr's own
+textures and the particles on a container a player has not opened yet stay on.
+
 ## Notes on single mods
+
+- **Lootr takes over loot containers by itself, with a delay** (RLM-288): a vanilla chest, trapped chest, barrel,
+  shulker box, decorated pot or chest minecart with a loot table becomes Lootr's once its chunk and the 24 chunks
+  around it are loaded, in world structures too. The dungeon builder does not wait for that and places Lootr's
+  block directly ([architecture 15.5](../docs/architecture.md#155-instances)). A container without a loot table is
+  left alone. Lootr brings Resourceful Config inside its jar and adds its own advancement tab.
 
 - **MmmMmmMmmMmm's target dummies are for everyone** (RLM-393): a dummy with a hay-bale head that shows the damage it
   takes through our combat text (its own numbers are off, [Configuration](#configuration)), which Maren's Trial

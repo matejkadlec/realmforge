@@ -1,0 +1,37 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "realmforge:budget",
+          "budget": {
+            "min": 1000,
+            "medium": 1000,
+            "max": 1000
+          },
+          "options": [
+            {
+              "weight": 1000,
+              "cost": 400,
+              "limit": 1,
+              "entry": {
+                "type": "minecraft:item",
+                "name": "minecraft:emerald"
+              }
+            },
+            {
+              "weight": 1,
+              "cost": 100,
+              "entry": {
+                "type": "minecraft:item",
+                "name": "minecraft:stick"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

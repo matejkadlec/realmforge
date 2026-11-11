@@ -38,6 +38,7 @@ from realmforge_tools.schema import (
     BossDef,
     ChapterDef,
     ClassDef,
+    ContainerLootDef,
     CurveDef,
     DimensionRulesDef,
     DungeonTypeDef,
@@ -236,6 +237,7 @@ class Content:
     recipe_removals: tuple[Entry[RecipeRemovalDef], ...]
     netherite_upgrades: tuple[Entry[NetheriteUpgradeDef], ...]
     merchants: tuple[Entry[MerchantDef], ...]
+    container_loot: tuple[Entry[ContainerLootDef], ...]
     worldgen: tuple[WorldgenFile, ...]
     rooms: tuple[RoomEntry, ...] = ()
     room_reviews: tuple[RoomReview, ...] = ()
@@ -357,6 +359,7 @@ def load_content(
         recipe_removals=by_id(loaded["recipe_removals"]),
         netherite_upgrades=by_id(loaded["netherite_upgrades"]),
         merchants=by_id(loaded["merchants"]),
+        container_loot=by_id(loaded["container_loot"]),
         worldgen=tuple(sorted(worldgen, key=lambda f: (f.directory, f.id))),
         rooms=rooms,
         room_reviews=reviews,

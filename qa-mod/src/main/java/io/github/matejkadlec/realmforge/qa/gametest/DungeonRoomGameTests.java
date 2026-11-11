@@ -249,6 +249,11 @@ public final class DungeonRoomGameTests {
                     room[0] = AABB.of(plot.rooms().getFirst());
                     List<ItemFrame> frames = instances.getEntitiesOfClass(ItemFrame.class, room[0]);
                     helper.assertValueEqual(frames.size(), 2, "item frames in the item lock");
+                    // Lootr would turn a template's item frames into its own, an item for every player
+                    // (convert_structure_item_frames, off in pack/config/lootr-common.jsonc, RLM-288).
+                    helper.assertTrue(frames.stream().allMatch(frame -> frame.getType() == EntityType.ITEM_FRAME),
+                            "the item frames are vanilla's: " + frames.stream().map(frame -> frame.getType()
+                                    .getDescriptionId()).toList());
                     helper.assertValueEqual(frames.stream().map(frame -> frame.getItem().getItem()).collect(
                             Collectors.toSet()), Set.of(Items.POPPY, Items.CORNFLOWER), "the framed flowers");
                     player.setGameMode(GameType.ADVENTURE);
