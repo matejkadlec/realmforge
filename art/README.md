@@ -9,6 +9,7 @@ images before they are processed into game textures. Nothing here is loaded by t
 | `branding/` | the mods' logos at full size (1254 × 1254, transparent), not game textures: no palette, no grid. Each mod ships a 256 × 256 Lanczos copy at its resources' root, which `logoFile` names (RLM-414) |
 | `models/spell/` | the spell models of shape `cubes` (`content/spell_models/`): `<id>.geo.json`, Bedrock geometry from Blockbench or a script, which `rf gen` turns into the game's GeckoLib model (spell models, below) |
 | `palette/realmforge.gpl` | the project palette (GIMP palette; Aseprite and LibreSprite read it too). Every texture is snapped to it |
+| `realm-portal/` | the realm portal's batch (RLM-300, RLM-301): the candidates of the Gatewright Bricks' tile, with their prompts and the pick in `candidates/gallery.yaml`. Every look of the frame is made from that one tile (below); the portal's animated textures and the sealstone's socket are drawn by the pipeline |
 | `robes/` | the caster robes' batch (RLM-505): the candidates of the four sets' item icons and of each set's cloth and trim tile, with their prompts and picks in `candidates/gallery.yaml`. Only the Arcane Silk icons are picks: the other three sets' icons are scripted from them (`textures/variants.yaml`), and their own candidates are kept as the alternative |
 | `rooms/` | the import rules of the third-party dungeon rooms in `content/rooms/third_party/`, one folder per source, and where each source comes from ([README](rooms/README.md)) |
 | `spell-icons/` | A1's first batch (RLM-588, RLM-591, RLM-609, RLM-642): the candidates of every M1 player spell's icon, the Frozen and Bleeding effect icons and the spellbook's two tiles, with their prompts and picks in `candidates/gallery.yaml` |
@@ -38,6 +39,7 @@ Texture pipeline ([ADR 0007](../docs/decisions/0007-asset-pipeline.md),
    | `gui` | `art/textures/gui/<part>.png` | a tile of a GUI texture a generator composes: `spellbook_page` (64 x 64) and `spellbook_cover` (16 x 16) for the spellbook's book (`generate/spellbook.py`) |
    | `armor` | `art/textures/armor/<look>.png`, 16 x 16, tileable | the cloth of an armor look (an item's `gear.look`): the pipeline composes the look's two worn textures from it (`generate/worn_armor.py`, below); a look without one keeps its woven placeholder |
    | `armor_trim` | `art/textures/armor_trim/<look>.png`, 16 x 16, tileable | the look's trim, for the bands of its worn textures; it needs the cloth, and a look without one has its bands in darker cloth |
+   | `block` | `art/textures/block/<block id>.png`, 16 x 16, tileable | the tile of a block whose kind takes one: a `simple` block's texture on every side, and for the Gatewright Bricks the tile every look of the realm portal's frame is made from (below); a block without one keeps its speckled placeholder |
 
    `uv run rf validate` refuses a file there that names no content, has another size, or that the cleanup step did
    not write (half-transparent pixels, colours outside the palette). A texture touched up by hand must still be in
@@ -51,6 +53,21 @@ Texture pipeline ([ADR 0007](../docs/decisions/0007-asset-pipeline.md),
    `rf gen` computes the variant from the base's file, so it follows the base and the palette. A variant has no file
    of its own, and validation refuses one whose item, base, ramp or colour does not exist. The caster robes'
    Apprentice's, Spellweave and Netherite icons are the Arcane Silk icons recoloured.
+
+   **The realm portal's frame is one tile in several looks** (RLM-301): the frame's blocks show a look, washed out
+   while dark and the open realm's while lit, and Matěj wants the bricks themselves to stay the same. So only the
+   Gatewright Bricks have art, and `tools/realmforge_tools/art/frame_looks.py` makes each look from it: the bricks are
+   the tile with its colours mapped onto the look's ramp of the palette by lightness (the tile's darkest colour takes
+   the ramp's first, its lightest the last), and the sealstone's top is those bricks with the signet's socket drawn
+   in, empty or holding a stone in the realm's colour. A look's colours are palette names in that file (`washed`:
+   the `faded` ramp; `stone`, Undervault's: the dark half of `stone`), which validation checks. A new look is an
+   entry there and a name in `FRAME_LOOKS` (`schema/realm.py`), with its block state value in the mod. To check the
+   looks, light a frame: `REALMFORGE_QA_PORTAL_SHOTS` ([dev setup](../docs/dev-setup.md#33-in-wsl-quick-checks)).
+
+   **The realm portal's animations are drawn, not generated** (RLM-300): a portal block's texture is a strip of
+   frames that has to join its neighbours on every side and loop in time, and the client tints it with the realm's
+   colour, so `generate/portal_textures.py` computes the frames in the palette's light greys, see-through: the shared
+   `swirl` and Undervault's `stream`. They have no file here.
 
    **Worn armor is composed, not painted** (RLM-505): vanilla's armor model reads two 64 x 32 textures in its own
    layout (`humanoid` for the helmet, the chestplate and the boots, `humanoid_leggings` for the leggings), which no

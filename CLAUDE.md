@@ -173,7 +173,10 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   travels through it at once, portals link like the Nether's at 1:8, a trip builds one set into the floor where none
   is near, and the sealstone glows while a player holding a signet that works on it stands near (RLM-335, RLM-406,
   RLM-458); a sentence names a realm with "the" ("The portal opens onto the Undervault", a realm's `in_sentence`,
-  RLM-337). Dungeons are entered through the Dungeon
+  RLM-337). A lit portal looks like its realm (a realm's `portal`, RLM-300, RLM-301): an animated texture the pipeline
+  draws (Undervault's a diagonal stream that now and then blinks darker like a storm, the others a shared swirl) in a
+  frame whose bricks and sealstone take the realm's look (Undervault's heavy grey stone, washed out while dark), all
+  made from the Gatewright Bricks' one tile (`art/textures/block/`). Dungeons are entered through the Dungeon
   Portal (W4d): a dungeon key opens it for its player
   alone, for the dungeon type's open time, with warnings before it closes and sends everyone back; the Dungeon Exit
   and `/instance leave` leave at any time, and a completed run closes 5 minutes later. Players block with two-handed
