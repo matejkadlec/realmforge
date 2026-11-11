@@ -319,7 +319,7 @@ public final class RealmPortals {
         tickGlow(level, pos, state, entity);
         if (level instanceof ServerLevel server) {
             tickLook(server, pos);
-            tickStorm(server, pos, entity);
+            tickStorm(server, pos);
         }
     }
 
@@ -353,7 +353,7 @@ public final class RealmPortals {
      * which darkens the portal twice. The dice come first, so a sealstone looks its realm up only on the rare tick
      * a blink would start.
      */
-    private static void tickStorm(ServerLevel level, BlockPos pos, SealstoneBlockEntity entity) {
+    private static void tickStorm(ServerLevel level, BlockPos pos) {
         if (PortalStorm.starts(level.getRandom()) && storms(level, pos)) {
             storm(level, pos);
         }

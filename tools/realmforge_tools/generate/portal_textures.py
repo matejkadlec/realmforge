@@ -25,9 +25,12 @@ from realmforge_tools.formats.png import Rgba, encode_rgba
 from realmforge_tools.schema.realm import PORTAL_ANIMATIONS
 
 SIZE = 16
-# The palette's greys the frames are drawn in, from dim to bright (stone 5 to 7, iron 1 to 3, white): the tint
-# multiplies them, so white shows the realm's colour itself and the darker ones its shadows.
+# The palette's greys the frames are drawn in, from dim to bright (stone 3 to 7, iron 1 to 3, white): the tint
+# multiplies them, so white shows the realm's colour itself and the darker ones its shadows, down to a deep shade of
+# it that the bright streaks and arms stand out from.
 GREYS: tuple[tuple[int, int, int], ...] = (
+    (63, 63, 70),
+    (85, 85, 92),
     (109, 109, 115),
     (135, 135, 140),
     (163, 163, 166),
@@ -38,7 +41,7 @@ GREYS: tuple[tuple[int, int, int], ...] = (
 )
 # How opaque the dimmest and the brightest grey are: the whole opening reads as a surface (RLM-300: the old swirl was
 # "mostly see-through"), and what lies behind still shows faintly, as through a nether portal.
-ALPHA_DIM, ALPHA_BRIGHT = 176, 236
+ALPHA_DIM, ALPHA_BRIGHT = 204, 244
 # Frames of a loop, and the ticks each one shows.
 STREAM_FRAMES, STREAM_FRAME_TIME = 16, 2
 SWIRL_FRAMES, SWIRL_FRAME_TIME = 16, 3
@@ -91,7 +94,7 @@ def stream_frame(frame: int) -> list[Rgba]:
         up = SIZE - 1 - y
         for x in range(SIZE):
             level = base[(x - frame) % SIZE][(up - frame) % SIZE]
-            pixels.append(_pixel(0.12 + 0.88 * level))
+            pixels.append(_pixel(0.15 + 0.85 * level))
     return pixels
 
 
@@ -108,7 +111,7 @@ def swirl_frame(frame: int) -> list[Rgba]:
             radius = math.hypot(dx, dy)
             reach = max(0.0, 1 - radius / SWIRL_REACH)
             arm = (math.cos(math.atan2(dy, dx) * SWIRL_ARMS + radius * SWIRL_WIND - turn) + 1) / 2
-            pixels.append(_pixel(0.3 + 0.7 * arm * reach**0.6))
+            pixels.append(_pixel(0.2 + 0.8 * arm * reach**0.6))
     return pixels
 
 
