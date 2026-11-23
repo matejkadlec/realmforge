@@ -308,7 +308,7 @@ above, or was left to the ticket:
   (RLM-410), and a pattern in one combat room of five, about five pieces a run. Set-piece containers come on top of
   the rooms' chance tables ([container loot](container-loot.md#how-many-containers-a-room-keeps)); with Matěj's own
   pieces (RLM-283) the density goes back up, as most pieces hold no container. These numbers are Claude's until his
-  playtest (RLM-282's, deferred on 2026-11-10).
+  playtest, which RLM-663 owes (deferred on 2026-11-10).
 
 ## Follow-up tickets
 

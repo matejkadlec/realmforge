@@ -156,7 +156,7 @@ The test dungeon's tables (`content/dungeons/test_dungeon.yaml`):
   per spawner. The default, Claude's table, gave way (it was 1 chest at 60 %, 2 at 30 %, 3 at 10 %; none, 1, 2 or 3
   barrels at 20, 40, 30 and 10 %), not Matěj's treasure table or his quarter for a corridor's barrel: over 300 seeds
   (2026-11-23) a run holds about 35.8 containers in its rooms and 5.2 in its set pieces to 13.7 spawners, 3.00 per
-  spawner. Open until his playtest (RLM-282's, deferred).
+  spawner. Open until his playtest, which RLM-663 owes.
 - **Tuning:** the numbers can vary (Matěj). A playtest that finds too much or too little loot changes the tables in
   YAML; the GameTest keeps a run within 0.5 of 3 per spawner.
 
