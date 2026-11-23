@@ -25,7 +25,9 @@ import net.minecraft.resources.ResourceKey;
  *   <li><b>A held key</b> casts its spell again and again, as its cooldown and cast time allow, at most every
  *   {@value #REPEAT_TICKS} ticks (half a second), and never cancels a cast.</li>
  *   <li><b>An aura</b> (RLM-595) is toggled by a press only, never by a held key; it is off the global cooldown, and
- *   with spell queueing its press does not wait for a cast in progress, which its toggle leaves running.</li>
+ *   with spell queueing its press does not wait for a cast in progress, which its toggle leaves running. Nor does it
+ *   wait behind another press that does (RLM-637): with Spells Queue Size 2 or 3 it goes past the waiting presses ahead
+ *   of it, which keep their places.</li>
  *   <li><b>After each send</b> the client waits {@value #AWAIT_TICKS} ticks for the server's answer (the cast, the
  *   cooldowns, a refusal) before it sends again, so it does not ask twice for the same cast.</li>
  * </ul>
@@ -113,12 +115,12 @@ public final class CastQueue {
                 queue.removeFirst();
                 return Optional.empty();
             }
-            if (options.queue() && casting.isPresent() && !state.toggles(head.spell())
-                    || state.onGlobalCooldown(head.spell()) && !state.onCooldown(head.spell())) {
+            Press next = waits(head, casting, state, options) ? passingAura(casting, state, options) : head;
+            if (next == null) {
                 return Optional.empty();
             }
-            queue.removeFirst();
-            return Optional.of(sent(now, head.slot(), new Send(head.spell(), !options.queue())));
+            queue.remove(next);
+            return Optional.of(sent(now, next.slot(), new Send(next.spell(), !options.queue())));
         }
         if (casting.isPresent()) {
             return Optional.empty();
@@ -133,6 +135,25 @@ public final class CastQueue {
             return Optional.of(sent(now, entry.getKey(), new Send(spell, false)));
         }
         return Optional.empty();
+    }
+
+    /**
+     * Whether {@code press} has to wait: with spell queueing for the cast in progress (an aura's never does, as its
+     * toggle leaves the cast running), and always for the global cooldown when its own cooldown does not run (an aura
+     * is off it, which {@code State#onGlobalCooldown} answers).
+     */
+    private static boolean waits(Press press, Optional<ResourceKey<Spell>> casting, State state, Options options) {
+        return options.queue() && casting.isPresent() && !state.toggles(press.spell())
+                || state.onGlobalCooldown(press.spell()) && !state.onCooldown(press.spell());
+    }
+
+    /**
+     * The first waiting aura press that may go while the head waits, if any (RLM-637): it goes past the presses ahead
+     * of it, which keep their places, as a stance swap never touches the cast they wait for.
+     */
+    private Press passingAura(Optional<ResourceKey<Spell>> casting, State state, Options options) {
+        return queue.stream().skip(1).filter(press -> state.toggles(press.spell()))
+                .filter(press -> !waits(press, casting, state, options)).findFirst().orElse(null);
     }
 
     /** How many presses wait. */

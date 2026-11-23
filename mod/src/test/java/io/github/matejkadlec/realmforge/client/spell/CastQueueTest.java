@@ -20,6 +20,8 @@ class CastQueueTest {
     private static final ResourceKey<Spell> BOLT = key("bolt");
     private static final ResourceKey<Spell> NOVA = key("nova");
     private static final ResourceKey<Spell> BLINK = key("blink");
+    /** An aura (RLM-595): its press toggles it, as the Warrior's Battle Stance. */
+    private static final ResourceKey<Spell> STANCE = key("stance");
     private static final SortedMap<Integer, ResourceKey<Spell>> NOTHING_HELD = new TreeMap<>();
     private static final Options QUEUE_1 = new Options(true, 1);
     private static final Options QUEUE_3 = new Options(true, 3);
@@ -29,6 +31,7 @@ class CastQueueTest {
         Optional<ResourceKey<Spell>> casting = Optional.empty();
         boolean globalCooldown;
         final Set<ResourceKey<Spell>> cooldowns = new HashSet<>();
+        final Set<ResourceKey<Spell>> auras = new HashSet<>();
 
         @Override
         public Optional<ResourceKey<Spell>> casting() {
@@ -40,9 +43,15 @@ class CastQueueTest {
             return cooldowns.contains(spell);
         }
 
+        /** As {@code ClientSpellState}: an aura's toggle is off the global cooldown. */
         @Override
         public boolean onGlobalCooldown(ResourceKey<Spell> spell) {
-            return globalCooldown;
+            return globalCooldown && !auras.contains(spell);
+        }
+
+        @Override
+        public boolean toggles(ResourceKey<Spell> spell) {
+            return auras.contains(spell);
         }
     }
 
@@ -162,6 +171,79 @@ class CastQueueTest {
         held.put(0, BOLT);
         queue.press(1, NOVA, state, Options.DEFAULT);
         assertEquals(Optional.of(new Send(NOVA, true)), queue.tick(0, held, state, Options.DEFAULT));
+    }
+
+    /** RLM-637: holding a stance's key never flips the stance back, not even once its shared cooldown ends. */
+    @Test
+    void aHeldAuraKeyNeverSendsItsAuraAgain() {
+        state.auras.add(STANCE);
+        SortedMap<Integer, ResourceKey<Spell>> held = new TreeMap<>();
+        held.put(0, STANCE);
+        queue.press(0, STANCE, state, Options.DEFAULT);
+        assertEquals(Optional.of(new Send(STANCE, true)), queue.tick(0, held, state, Options.DEFAULT),
+                "the press toggles it");
+        state.cooldowns.add(STANCE);
+        assertEquals(Optional.empty(), queue.tick(CastQueue.REPEAT_TICKS, held, state, Options.DEFAULT),
+                "held during its cooldown");
+        state.cooldowns.clear();
+        assertEquals(Optional.empty(), queue.tick(3600, held, state, Options.DEFAULT),
+                "held after its cooldown ended");
+        held.put(1, BOLT);
+        assertEquals(Optional.of(new Send(BOLT, false)), queue.tick(3610, held, state, Options.DEFAULT),
+                "another held key still repeats");
+    }
+
+    /** RLM-637: with queueing, an aura's press goes during a cast and leaves it running. */
+    @Test
+    void withQueueingAnAuraPressDoesNotWaitForTheCast() {
+        state.auras.add(STANCE);
+        state.casting = Optional.of(BOLT);
+        queue.press(1, STANCE, state, QUEUE_1);
+        assertEquals(Optional.of(new Send(STANCE, false)), queue.tick(0, NOTHING_HELD, state, QUEUE_1),
+                "at once, and it cancels nothing");
+        assertEquals(0, queue.waiting());
+    }
+
+    /**
+     * RLM-637: with Spells Queue Size 2 or 3, a spell pressed during a cast waits at the queue's head; a stance swap
+     * pressed after it goes past it, and the spell keeps its place for the cast's end.
+     */
+    @Test
+    void anAuraPressGoesPastASpellThatWaitsForTheCast() {
+        state.auras.add(STANCE);
+        state.casting = Optional.of(BOLT);
+        queue.press(1, NOVA, state, QUEUE_3);
+        queue.press(2, STANCE, state, QUEUE_3);
+        assertEquals(Optional.of(new Send(STANCE, false)), queue.tick(0, NOTHING_HELD, state, QUEUE_3),
+                "the stance goes while bolt still casts");
+        assertEquals(1, queue.waiting(), "nova still waits");
+        assertEquals(Optional.empty(), queue.tick(CastQueue.AWAIT_TICKS, NOTHING_HELD, state, QUEUE_3),
+                "for the cast");
+        state.casting = Optional.empty();
+        assertEquals(Optional.of(new Send(NOVA, false)), queue.tick(CastQueue.AWAIT_TICKS + 1, NOTHING_HELD, state,
+                QUEUE_3), "then nova");
+    }
+
+    /** RLM-637: an aura is off the global cooldown, so it passes a press that waits for it, too. */
+    @Test
+    void anAuraPressGoesPastASpellThatWaitsForTheGlobalCooldown() {
+        state.auras.add(STANCE);
+        state.globalCooldown = true;
+        queue.press(1, NOVA, state, QUEUE_3);
+        queue.press(2, STANCE, state, QUEUE_3);
+        assertEquals(Optional.of(new Send(STANCE, false)), queue.tick(0, NOTHING_HELD, state, QUEUE_3));
+        state.globalCooldown = false;
+        assertEquals(Optional.of(new Send(NOVA, false)), queue.tick(CastQueue.AWAIT_TICKS, NOTHING_HELD, state,
+                QUEUE_3));
+    }
+
+    @Test
+    void onlyAnAuraGoesPastAWaitingPress() {
+        state.casting = Optional.of(BOLT);
+        queue.press(1, NOVA, state, QUEUE_3);
+        queue.press(2, BLINK, state, QUEUE_3);
+        assertEquals(Optional.empty(), queue.tick(0, NOTHING_HELD, state, QUEUE_3), "blink waits behind nova");
+        assertEquals(2, queue.waiting());
     }
 
     @Test
