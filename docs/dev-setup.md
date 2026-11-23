@@ -410,6 +410,30 @@ into the repository, a ticket or a chat. `claude mcp list` (or `/mcp` in a sessi
 connected. Generations spend prepaid credit, so agents ask Matěj before buying credit, and auto-refill stays off.
 Cloud sessions do not have this server, so texture batches run in a local session.
 
+**ElevenLabs (sounds).** `uv run rf sound gen` calls the ElevenLabs API directly, not through an MCP server
+([ADR 0079](decisions/0079-our-sounds-come-from-elevenlabs-through-its-api-and-ship-as-committed-mono-ogg.md),
+[art/README.md](../art/README.md#sound-pipeline)). Its key comes from the environment variable
+`ELEVENLABS_API_KEY`, set once per machine in the `env` block of the user-level Claude Code settings of the system
+Claude Code runs on. For the WSL sessions that is Ubuntu's `~/.claude/settings.json`
+(`\\wsl.localhost\Ubuntu\home\<user>\.claude\settings.json` from Windows), not the Windows user's:
+
+```json
+{
+  "env": {
+    "ELEVENLABS_API_KEY": "<your key>"
+  }
+}
+```
+
+Add the key next to the other top-level settings, never into the repository, a ticket or a chat; `rf sound credits`
+checks that it works and prints the credits left and the reset date. Candidates go into the sound store,
+`~/realmforge-sounds/` (or the folder `REALMFORGE_SOUND_STORE` names), outside every checkout, so they survive the
+worktrees; the gallery opens from Windows at `\\wsl.localhost\Ubuntu\home\<user>\realmforge-sounds\gallery\index.html`.
+The OGG conversion uses the ffmpeg build that `uv sync` installs with the `imageio-ffmpeg` package: no system ffmpeg
+is needed. Generations spend the subscription's credits, and every request is refused when it would leave fewer than
+`--reserve` (default 1,000); agents never buy credit, upgrade the plan or turn on usage-based billing. Cloud
+sessions have no key, so sound generation runs in a local session.
+
 **Gradle queue.** Agents running in several worktrees start their Gradle builds and GameTests through
 `.claude/scripts/gradle-queue.sh <task>`, which waits while the machine is short of memory
 ([AI development flow](ai-development-flow.md#gradle-queue)).

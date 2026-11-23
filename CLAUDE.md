@@ -255,6 +255,9 @@ uv run rf rooms review DIR                # merge decisions copied from the gall
 uv run rf rooms candidates [SPEC...]      # seed candidates of content/room_specs/ -> .cache/rooms/candidates/
 uv run rf set-pieces report [MASK...] [--game]  # spots of the workshop jig's masks in every room (mask report)
 uv run rf set-pieces import FILE --id ID  # a jig save -> content/set_pieces/ID; --from-world WORLD: every new save
+uv run rf sound credits                   # ElevenLabs credits left, the reset date (ELEVENLABS_API_KEY, dev setup)
+uv run rf sound gen SUBJECT EVENT ...     # candidates into the sound store ~/realmforge-sounds (or --plan FILE)
+uv run rf sound gallery                   # review page in the store; rf sound list / measure / pick ID / reject ID
 
 ./gradlew build                           # compile the core, QA and Better Key Binds mods + JUnit
 ./gradlew runGameTestServer               # headless GameTests; exit code != 0 on failure

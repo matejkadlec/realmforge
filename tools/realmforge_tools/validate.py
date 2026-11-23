@@ -150,6 +150,7 @@ from realmforge_tools.schema.spell_visuals import MAX_SWIRL_ALIVE
 from realmforge_tools.schema.stat import StatDef
 from realmforge_tools.schema.text import text_constant
 from realmforge_tools.schema.worldgen import WORLDGEN_REGISTRIES, data_path
+from realmforge_tools.sound import art as sound_art
 
 ITEM_REGISTRY = "minecraft:item"
 # The text group whose entries name our worldgen biomes: biome.realmforge.<path>, the key the game and the quest book
@@ -247,6 +248,7 @@ def load_and_validate(
     problems = (
         validate_content(content, universe)
         + approved.problems(paths, content)
+        + sound_art.problems(paths, content)
         + spell_models.problems(paths, content)
         + frame_looks.problems(paths)
         + _check_player_animations(content, paths)
@@ -1980,12 +1982,15 @@ def _check_bosses(content: Content, universe: IdUniverse) -> list[Problem]:
 
 
 def _check_sounds(content: Content, universe: IdUniverse) -> list[Problem]:
-    """An event plays vanilla sound events that exist, never one of ours: a reference to one of ours could loop."""
+    """An event plays vanilla sound events that exist, never one of ours: a reference to one of ours could loop. Our
+    own files are checked against art/sounds/ (``sound/art.py``)."""
     problems: list[Problem] = []
     for entry in content.sounds:
         for name, event in entry.model.events.items():
             for n, ref in enumerate(event.sounds):
                 path = f"events.{name}.sounds.{n}.event"
+                if ref.event is None:
+                    continue
                 if not ref.event.startswith("minecraft:"):
                     problems.append(
                         Problem(

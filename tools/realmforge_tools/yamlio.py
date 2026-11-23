@@ -5,6 +5,7 @@ Uses ruamel.yaml in pure safe mode: YAML 1.2 semantics (``no``/``on`` stay strin
 
 from __future__ import annotations
 
+import io
 from pathlib import Path
 from typing import Any, TextIO
 
@@ -18,6 +19,19 @@ class YamlLoadError(Exception):
     def __init__(self, message: str, line: int | None = None) -> None:
         self.line = line
         super().__init__(message)
+
+
+def dump_yaml(data: Any) -> str:
+    """``data`` as block-style YAML in pure safe mode, keys in their given order: for files the tools write, such as
+    the sound store's sidecars, never content."""
+    yaml = YAML(typ="safe", pure=True)
+    yaml.default_flow_style = False
+    yaml.sort_base_mapping_type_on_output = False
+    yaml.width = 4096
+    yaml.allow_unicode = True
+    out = io.StringIO()
+    yaml.dump(data, out)
+    return out.getvalue()
 
 
 def load_yaml(path: Path) -> Any:

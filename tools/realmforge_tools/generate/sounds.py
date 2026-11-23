@@ -1,9 +1,10 @@
-"""Sounds: ``assets/realmforge/sounds.json``, the ``GeneratedSounds`` registrations and the subtitles (the lang files,
-lang.py). Architecture 6.2, ADR 0007.
+"""Sounds: ``assets/realmforge/sounds.json``, the ``GeneratedSounds`` registrations, the subtitles (the lang files,
+lang.py) and our sound files. Architecture 6.2, ADR 0007, ADR 0079.
 
 Each event of ``content/sounds/`` becomes a ``SoundEvent`` registered under its id and a ``sounds.json`` entry that
 plays its vanilla sounds by reference (``"type": "event"``), with their own volume and pitch, which the game multiplies
-with the vanilla event's own.
+with the vanilla event's own, or our own files: ``art/sounds/<subject>/<name>.ogg``, which this copies byte for byte to
+``assets/realmforge/sounds/`` (``sound/art.py``; the OGG is committed, never encoded here).
 """
 
 from __future__ import annotations
@@ -15,7 +16,8 @@ from realmforge_tools.formats.jsonfmt import dump_json
 from realmforge_tools.generate.javagen import constant_name, header, java_file_path, string_literal
 from realmforge_tools.project import JAVA_PACKAGE, MOD_ID, RepoPaths
 from realmforge_tools.schema.common import LocalizedText
-from realmforge_tools.schema.sound import SoundRefDef, sound_path, subtitle_key
+from realmforge_tools.schema.sound import DEFAULT_ATTENUATION, SoundRefDef, sound_path, subtitle_key
+from realmforge_tools.sound import art as sound_art
 
 GENERATED_PACKAGE = f"{JAVA_PACKAGE}.generated"
 SOURCES = "content/sounds/"
@@ -23,12 +25,15 @@ SOURCES = "content/sounds/"
 
 def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
     assets = paths.mod_generated / "resources" / "assets" / MOD_ID
-    return {
+    files = {
         assets / "sounds.json": dump_json(sounds_json(content), sort_keys=True),
         java_file_path(paths.mod_generated / "java", GENERATED_PACKAGE, "GeneratedSounds"): _registrations(
             content
         ),
     }
+    for name, source in sound_art.files(paths).items():
+        files[assets / "sounds" / f"{name}.ogg"] = source.read_bytes()
+    return files
 
 
 def translations(content: Content) -> dict[str, LocalizedText]:
@@ -41,11 +46,21 @@ def translations(content: Content) -> dict[str, LocalizedText]:
 
 
 def _sound(ref: SoundRefDef) -> dict[str, object]:
-    sound: dict[str, object] = {"name": ref.event, "type": "event"}
+    if ref.file is not None:
+        # A file is the default type: assets/realmforge/sounds/<subject>/<name>.ogg.
+        sound: dict[str, object] = {"name": f"{MOD_ID}:{ref.file}"}
+    else:
+        sound = {"name": ref.event, "type": "event"}
     if ref.volume != 1:
         sound["volume"] = ref.volume
     if ref.pitch != 1:
         sound["pitch"] = ref.pitch
+    if ref.weight != 1:
+        sound["weight"] = ref.weight
+    if ref.stream:
+        sound["stream"] = True
+    if ref.attenuation_distance != DEFAULT_ATTENUATION:
+        sound["attenuation_distance"] = ref.attenuation_distance
     return sound
 
 

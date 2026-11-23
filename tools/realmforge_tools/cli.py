@@ -14,6 +14,13 @@ uv run rf rooms review DIR             merge decisions copied from the gallery i
 uv run rf rooms candidates [SPEC...]   build seed candidates of the room specs into .cache/rooms/candidates
 uv run rf set-pieces report            count the spots of the jig's masks in every room (the design's mask report)
 uv run rf set-pieces import FILE --id ID   import a workshop jig save as content/set_pieces/ID (--from-world WORLD)
+uv run rf sound credits                credits left this ElevenLabs period, the reset date and the store's ledger
+uv run rf sound gen SUBJECT EVENT ...  ElevenLabs candidates into the sound store (or --plan FILE), credits guarded
+uv run rf sound list [FILTER]          the store's candidates with their measurements and scores, best first
+uv run rf sound gallery                the store's review gallery (<store>/gallery/index.html)
+uv run rf sound measure [FILTER]       measure the store's candidates again after the checks changed
+uv run rf sound pick ID                convert a candidate into art/sounds/<subject>/<name>.ogg and record its source
+uv run rf sound reject ID              mark a candidate rejected in its sidecar
 """
 
 from __future__ import annotations
@@ -54,6 +61,13 @@ from realmforge_tools.rooms.structure import Structure
 from realmforge_tools.schema.dungeon import room_role
 from realmforge_tools.schema.room import REVIEW_FILE, ROOMS_DIR
 from realmforge_tools.schema.set_piece import SET_PIECES_DIR
+from realmforge_tools.sound import art as sound_art
+from realmforge_tools.sound import convert as sound_convert
+from realmforge_tools.sound import elevenlabs
+from realmforge_tools.sound import gallery as sound_gallery
+from realmforge_tools.sound import rank as sound_rank
+from realmforge_tools.sound import runner as sound_runner
+from realmforge_tools.sound import store as sound_store
 from realmforge_tools.validate import load_and_validate, universe_with_content
 
 
@@ -228,6 +242,67 @@ def main(argv: list[str] | None = None) -> int:
         "--to", type=Path, dest="target", help=f"folder for the pieces (default: content/{SET_PIECES_DIR})"
     )
 
+    sound = commands.add_parser(
+        "sound",
+        help="our sounds: ElevenLabs candidates in the sound store, the gallery, picks into art/sounds/",
+    )
+    sound_commands = sound.add_subparsers(dest="sound_command", required=True)
+    sound_commands.add_parser(
+        "credits", help="credits left this period, the reset date and the ledger's total"
+    )
+    sound_gen = sound_commands.add_parser(
+        "gen", help="generate candidates with ElevenLabs into the sound store (each request credit-guarded)"
+    )
+    sound_gen.add_argument("subject", nargs="?", help="content id the sound belongs to, e.g. frostbolt")
+    sound_gen.add_argument("event", nargs="?", help="the event's name, e.g. impact")
+    sound_gen.add_argument(
+        "--plan", type=Path, help="a YAML plan of several events (resumable); see art/README.md"
+    )
+    sound_gen.add_argument(
+        "--dry-run", action="store_true", help="with --plan: say what it would make and cost"
+    )
+    sound_gen.add_argument("--prompt", help="what to generate")
+    sound_gen.add_argument("--ticket", help="the RLM ticket it is for, e.g. RLM-445")
+    sound_gen.add_argument("--sound-event", help="the sound event id it is meant for")
+    sound_gen.add_argument("--note", default="", help="the moment it is for, in a few words")
+    sound_gen.add_argument("--music", action="store_true", help="Eleven Music instead of a sound effect")
+    sound_gen.add_argument(
+        "--duration", type=float, help="seconds (effect 0.5-30, music 3-600; effect default: auto)"
+    )
+    sound_gen.add_argument("--loop", action="store_true", help="a seamless loop (effects)")
+    sound_gen.add_argument("--influence", type=float, help="prompt influence 0-1 (ElevenLabs default 0.3)")
+    sound_gen.add_argument("--variants", type=int, default=4, help="how many candidates (default 4)")
+    sound_gen.add_argument("--model", help="model id (default eleven_text_to_sound_v2, music_v1 for music)")
+    sound_gen.add_argument(
+        "--format", dest="output_format", help="output format (default wav_48000, music mp3)"
+    )
+    sound_gen.add_argument(
+        "--reserve",
+        type=int,
+        default=1000,
+        help="refuse a request that would leave fewer credits (default 1000)",
+    )
+    sound_list = sound_commands.add_parser("list", help="the store's candidates, best score first per event")
+    sound_list.add_argument("filter", nargs="?", default="", help="part of an id or a ticket, e.g. RLM-445")
+    sound_commands.add_parser("gallery", help="write the review gallery into the store")
+    sound_measure = sound_commands.add_parser(
+        "measure", help="measure the store's candidates again (after the checks changed)"
+    )
+    sound_measure.add_argument("filter", nargs="?", default="", help="part of an id or a ticket")
+    sound_pick = sound_commands.add_parser(
+        "pick", help="convert a candidate into art/sounds/ and record its source"
+    )
+    sound_pick.add_argument("id", help="the candidate, <subject>/<event>/<nn>")
+    sound_pick.add_argument("--name", help="the file's name (default <event>_<n>, the next free)")
+    sound_pick.add_argument("--replace", action="store_true", help="overwrite the file (a swapped pick)")
+    sound_pick.add_argument("--loudness", type=float, help="loudness target in LUFS (default -18, loops -26)")
+    sound_pick.add_argument(
+        "--by", default="Matěj", help="who picked it; an agent writes its provisional note"
+    )
+    sound_reject = sound_commands.add_parser("reject", help="mark a candidate rejected")
+    sound_reject.add_argument("id", help="the candidate, <subject>/<event>/<nn>")
+    sound_reject.add_argument("--note", default="", help="why")
+
     gametest_log = commands.add_parser(
         "gametest-log",
         help="check the log of the last ./gradlew runGameTestServer; exit 1 on data loading errors",
@@ -245,6 +320,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "set-pieces":
         return _set_pieces(args, paths)
+
+    if args.command == "sound":
+        return _sound(args, paths)
 
     if args.command == "ids":
         if args.ids_command == "apotheosis":
@@ -701,6 +779,128 @@ def _pack_boot(args: argparse.Namespace, paths: RepoPaths) -> int:
                 print(f"OK   {report.label}: clean boot in {report.seconds:.0f} s", flush=True)
     print(f"Logs: {paths.rel(paths.cache / 'pack-boot' / 'reports')}/")
     return 1 if failed else 0
+
+
+def _credits_line(client: elevenlabs.Client, root: Path) -> str:
+    subscription = client.subscription()
+    spent = sound_store.spent(root, subscription.reset_unix)
+    left = elevenlabs.credits_left(
+        subscription, sound_store.used(root, subscription.reset_unix, subscription.count)
+    )
+    return (
+        f"{left} of {subscription.limit} credits left ({subscription.tier}, {subscription.status}; the "
+        f"subscription shows {subscription.count} used); resets {subscription.reset_date()}; the store's ledger "
+        f"records {spent} charged this period"
+    )
+
+
+def _sound(args: argparse.Namespace, paths: RepoPaths) -> int:
+    root = sound_store.store_root()
+    try:
+        if args.sound_command == "credits":
+            print(_credits_line(elevenlabs.Client(elevenlabs.api_key()), root))
+            return 0
+        if args.sound_command == "gen":
+            client = elevenlabs.Client(elevenlabs.api_key())
+            if args.plan:
+                specs = sound_runner.load_plan(args.plan)
+                sound_runner.run_plan(specs, root, client, reserve=args.reserve, dry_run=args.dry_run)
+            else:
+                if not (args.subject and args.event and args.prompt and args.ticket):
+                    print(
+                        "rf sound gen: give SUBJECT EVENT --prompt --ticket, or --plan FILE", file=sys.stderr
+                    )
+                    return 2
+                spec = sound_runner.Spec(
+                    subject=args.subject,
+                    event=args.event,
+                    prompt=args.prompt,
+                    ticket=args.ticket,
+                    sound_event=args.sound_event,
+                    note=args.note,
+                    kind="music" if args.music else "sfx",
+                    duration=args.duration,
+                    loop=args.loop,
+                    influence=args.influence,
+                    variants=args.variants,
+                    model=args.model,
+                    output_format=args.output_format,
+                )
+                sound_runner.run(spec, root, client, reserve=args.reserve)
+            print(f"Store: {root}")
+            return 0
+        if args.sound_command == "list":
+            found = [
+                c
+                for c in sound_store.candidates(root)
+                if args.filter in c.id or args.filter == c.ticket or args.filter in (c.sound_event or "")
+            ]
+            groups: dict[tuple[str, str], list[sound_store.Candidate]] = {}
+            for c in found:
+                groups.setdefault((c.subject, c.event), []).append(c)
+            for (subject, event), group in sorted(groups.items()):
+                print(f"{subject}/{event} ({group[0].ticket}):")
+                for c, score in sound_rank.ranked(group):
+                    m = c.measured
+                    stats = (
+                        f"{m.sound_seconds:5.2f} s {m.peak_dbfs:6.1f} dBFS {m.loudness_lufs:6.1f} LUFS"
+                        if m
+                        else ""
+                    )
+                    why = f"  ({', '.join(score.reasons)})" if score.reasons else ""
+                    print(f"  {c.id:<40} {score.value:5.1f}  {stats}{why}")
+            print(f"{len(found)} candidate(s) in {root}")
+            return 0
+        if args.sound_command == "gallery":
+            try:
+                credits = _credits_line(elevenlabs.Client(elevenlabs.api_key()), root)
+            except elevenlabs.ElevenLabsError as e:
+                credits = f"credits unknown ({e})"
+            page = sound_gallery.write(root, sound_art.read_sources(paths), credits)
+            print(f"Wrote {page}")
+            windows = sound_gallery.windows_path(page)
+            if windows:
+                print(f"From Windows: {windows}")
+            return 0
+        if args.sound_command == "measure":
+            count = 0
+            for c in sound_store.candidates(root):
+                if args.filter in c.id or args.filter == c.ticket:
+                    measured, _ = sound_runner.measure(sound_store.audio_path(root, c).read_bytes())
+                    sound_store.save(root, c.model_copy(update={"measured": measured}))
+                    count += 1
+            print(f"Measured {count} candidate(s) in {root}")
+            return 0
+        if args.sound_command == "pick":
+            candidate = sound_store.load(root, args.id)
+            name, report = sound_art.pick(
+                paths,
+                root,
+                candidate,
+                name=args.name,
+                loudness=args.loudness,
+                picked_by=args.by,
+                replace=args.replace,
+            )
+            print(
+                f"Wrote art/sounds/{name}.ogg from {candidate.id}: cut {report.cut_before:.2f} s before and "
+                f"{report.cut_after:.2f} s after, {report.gain_db:+.1f} dB to {report.loudness_lufs:.1f} LUFS "
+                f"(peak {report.peak_dbfs:.1f} dBFS{', limited by the peak' if report.limited_by_peak else ''})."
+            )
+            print(f"Play it from an event in content/sounds/ (file: {name}), then run uv run rf gen.")
+            return 0
+        candidate = sound_store.load(root, args.id)
+        sound_store.save(root, candidate.model_copy(update={"review": "rejected", "review_note": args.note}))
+        print(f"Rejected {candidate.id}")
+        return 0
+    except (
+        OSError,
+        ValueError,
+        elevenlabs.ElevenLabsError,
+        sound_convert.ConvertError,
+    ) as e:
+        print(f"rf sound {args.sound_command}: {e}", file=sys.stderr)
+        return 1
 
 
 def _art(args: argparse.Namespace, paths: RepoPaths) -> int:
