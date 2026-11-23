@@ -14,10 +14,10 @@ description: {en_us: "Hurls a bolt of frost for {damage} damage that slows the t
 school: realmforge:frost
 scales_with: spell_power
 targeting: {type: realmforge:direction, range: 40}
-cast: {type: cast_time, duration_seconds: 1.5}
+cast: {type: cast_time, duration_seconds: 1.5, sound: realmforge:spell.frostbolt.form}
 cost: {resource: realmforge:mana, amount: 10, per_level: 5}
 max_level: 5
-visuals: {look: realmforge:frost, forming: grow}
+visuals: {look: realmforge:frost, forming: grow, impact_sound: realmforge:spell.frostbolt.impact}
 effects:
   - type: realmforge:projectile
     speed: 30

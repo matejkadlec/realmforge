@@ -379,6 +379,21 @@
           "description": "Now and then while it lives.",
           "title": "Ambient"
         },
+        "attack": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Each melee attack, as it swings (a melee mob's or a boss's); none when left out (RLM-621).",
+          "title": "Attack"
+        },
         "death": {
           "anyOf": [
             {
@@ -570,6 +585,7 @@
       "$ref": "#/$defs/MobSoundsDef",
       "default": {
         "ambient": null,
+        "attack": null,
         "death": null,
         "hurt": null,
         "step": null

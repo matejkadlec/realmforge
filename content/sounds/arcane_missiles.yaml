@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../tools/schemas/sounds.schema.json
+# Arcane Missiles' sounds (RLM-445, RLM-463): one launch for each of its three crystals, and their bursts.
+# Our own sounds from ElevenLabs (ADR 0079), an agent's provisional picks until Matěj listens (RLM-669).
+id: arcane_missiles
+category: spell
+events:
+  launch:
+    subtitle: {en_us: Arcane missile flies}
+    sounds:
+      - {file: arcane_missiles/launch_1}
+  impact:
+    subtitle: {en_us: Arcane missile bursts}
+    sounds:
+      - {file: arcane_missiles/impact_1}

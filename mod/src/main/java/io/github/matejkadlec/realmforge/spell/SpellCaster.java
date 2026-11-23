@@ -226,6 +226,7 @@ public final class SpellCaster {
         }
         // RLM-641: the spell fires at once, and a player's arms play its animation, which blocks their melee.
         Casting.push(caster, spell, now);
+        Casting.playSound(caster, value.cast().sound());
         runEffects(serverLevel, caster, spell, level, hit, Optional.empty(), damageScale);
         wentOff(caster, spell);
         return CastResult.cast(hit);

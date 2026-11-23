@@ -5,6 +5,7 @@ import com.geckolib.animation.AnimationController;
 import com.geckolib.animation.object.PlayState;
 import com.geckolib.constant.DefaultAnimations;
 import io.github.matejkadlec.realmforge.mob.ai.KnockUp;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
@@ -51,12 +52,17 @@ public class MeleeMob extends CustomMob {
         return hit;
     }
 
-    /** Every attack swings its arms (MeleeAttackGoal swings before it hits): clients play the whole animation. */
+    /**
+     * Every attack swings its arms (MeleeAttackGoal swings before it hits): clients play the whole animation, and
+     * everyone near hears its attack sound, if it has one (RLM-621).
+     */
     @Override
     public void swing(InteractionHand hand, boolean sendToSwingingEntity) {
         super.swing(hand, sendToSwingingEntity);
         if (level() instanceof ServerLevel) {
             triggerAnim(ATTACK_CONTROLLER, SWING);
+            spec().sounds().attack().map(BuiltInRegistries.SOUND_EVENT::getValue)
+                    .ifPresent(sound -> playSound(sound, 1.0F, getVoicePitch()));
         }
     }
 

@@ -9,7 +9,8 @@
   "cast": {
     "type": "instant",
     "animation_ticks": 10,
-    "hit_at": 0.5
+    "hit_at": 0.5,
+    "sound": "realmforge:spell.shield_bash.swing"
   },
   "cost": {
     "amount": 15.0,
@@ -48,7 +49,8 @@
           "amplifier": 0,
           "stronger_at_levels": []
         }
-      ]
+      ],
+      "sound": "realmforge:spell.shield_bash.hit"
     }
   ]
 }

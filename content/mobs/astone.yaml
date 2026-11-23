@@ -35,6 +35,7 @@ sounds:
   hurt: realmforge:entity.astone.hurt
   death: realmforge:entity.astone.death
   step: realmforge:entity.astone.step
+  attack: realmforge:entity.astone.attack
 death_particles: realmforge:vaultstone
 tags: [realmforge:stone_creatures]
 loot:

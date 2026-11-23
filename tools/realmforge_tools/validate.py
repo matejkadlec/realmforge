@@ -1195,7 +1195,22 @@ def _check_spells(content: Content, universe: IdUniverse) -> list[Problem]:
                 problems += _check_projectile(entry.source, path, effect, mob_tags, universe)
             if effect.type == CONE:
                 problems += _check_cone(entry.source, path, effect, universe)
+            if (
+                effect.type == MELEE
+                and effect.sound is not None
+                and not universe.contains(SOUND_EVENT_REGISTRY, effect.sound)
+            ):
+                problems.append(
+                    Problem(
+                        entry.source, f"{path}.sound", _unknown(effect.sound, SOUND_EVENT_REGISTRY, universe)
+                    )
+                )
         problems += _check_visuals(entry.source, spell, content, universe)
+        tick_sound = getattr(spell.cast, "tick_sound", None)
+        if tick_sound is not None and not universe.contains(SOUND_EVENT_REGISTRY, tick_sound):
+            problems.append(
+                Problem(entry.source, "cast.tick_sound", _unknown(tick_sound, SOUND_EVENT_REGISTRY, universe))
+            )
         cast_sound = getattr(spell.cast, "sound", None)
         if cast_sound is not None and not universe.contains(SOUND_EVENT_REGISTRY, cast_sound):
             problems.append(

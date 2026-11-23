@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../tools/schemas/sounds.schema.json
+# Reckless Strike's sounds (RLM-445): its fast slash, and its cut on whatever it strikes.
+# Our own sounds from ElevenLabs (ADR 0079), an agent's provisional picks until Matěj listens (RLM-669).
+id: reckless_strike
+category: spell
+events:
+  swing:
+    subtitle: {en_us: Blade slashes}
+    sounds:
+      - {file: reckless_strike/swing_1}
+  hit:
+    subtitle: {en_us: Reckless Strike cuts}
+    sounds:
+      - {file: reckless_strike/hit_1}

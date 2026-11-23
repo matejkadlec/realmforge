@@ -1784,7 +1784,11 @@ tick and ends the cast at once when blocks come between them (`CastEnd.NO_LINE_O
 `keep_range_percent`, the target must stay within the spell's range for that share of the cast, or the cast ends at
 once (`CastEnd.OUT_OF_RANGE`), and past it the range no longer matters, not even before the effects
 (`SpellCaster#recheck` then needs the target only alive, in the dimension and in sight). A spell that locks on keeps
-neither. A cast's `sound` plays from the caster when the cast begins, and a cast time whose `visuals.forming` forms
+neither. A cast's `sound` plays from the caster when the cast begins (an instant spell's as its hands push, a
+swing's as it begins), a channel's `tick_sound` at each of its ticks, a melee shape's `sound` once where the first
+enemy it strikes stands, and a cast-time or channelled cast that a stun, a knockback or another cast cuts plays
+`realmforge:spell.cast.interrupt` (`Casting#fizzles`: a fade, as what gathered fades; never a swing, a death or a
+logout; RLM-445). A cast time whose `visuals.forming` forms
 its projectile (`grow` or `storm`, `SpellVisuals#formedProjectile`) launches its first effect's projectile from the
 caster's raised hands (`SpellVisuals#formPoint`, the caster's body
 facing) toward the target's middle, where its clients drew it forming ([11.6](#116-client-side)). A cast-time or
@@ -3074,7 +3078,9 @@ holds the same text. New feedback on a mob goes into both in the same run.
   `farthest_player`) and reach farther than one step of its kiting.
 - **Sounds:** a mob's YAML names its sound events, our own from `content/sounds/` (`realmforge:entity.<mob>.<name>`,
   vanilla's sounds remapped, [ADR 0007](decisions/0007-asset-pipeline.md)) or vanilla's; steps play at full volume, as
-  the event carries its own, and `step: silent` walks without a sound. Vanilla plays hurt and death sounds only for a
+  the event carries its own, and `step: silent` walks without a sound. A melee mob's `attack` plays as it swings
+  for a hit (`MeleeMob#swing`, RLM-621). Since RLM-445 and RLM-621 our spells, mobs and boss play our own files
+  (`file:` in `content/sounds/`, [ADR 0079](decisions/0079-our-sounds-come-from-elevenlabs-through-its-api-and-ship-as-committed-mono-ogg.md)). Vanilla plays hurt and death sounds only for a
   hit that counts in full past the hurt cooldown, as for every mob.
 - **Breaking apart:** a mob with `death_particles` bursts into that block's break particles from its whole hitbox
   when it dies, as a mined block does, and its body is gone the next tick instead of falling over (`tickDeath`).

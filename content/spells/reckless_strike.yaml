@@ -12,7 +12,7 @@ description: {en_us: "Strikes recklessly at every enemy just in front of you for
 school: realmforge:physical
 scales_with: attack_damage
 targeting: {type: realmforge:self}
-cast: {type: instant, animation_seconds: 0.5, hit_at_percent: 25}
+cast: {type: instant, animation_seconds: 0.5, hit_at_percent: 25, sound: realmforge:spell.reckless_strike.swing}
 cost: {resource: realmforge:rage, amount: 20}
 cooldown_seconds: 4
 max_level: 5
@@ -21,6 +21,7 @@ crit: {bonus_chance_percent: 10, bonus_chance_per_level_percent: 5}
 effects:
   - type: realmforge:melee
     shape: swing
+    sound: realmforge:spell.reckless_strike.hit
     effects:
       - type: realmforge:damage
         amount: 3

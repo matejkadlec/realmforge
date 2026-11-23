@@ -238,7 +238,8 @@ Rules:
   Astone's 10); `idle` is `stroll` (the default: wanders as vanilla's mobs do, at the
   Zombified Piglin's speed, so its `movement_speed` is how fast it fights) or `guard` (stands at the spot where it first
   stood and walks back to it); `sounds` name sound events, ours from `sounds/` (`realmforge:entity.<mob>.<name>`) or
-  vanilla's, and `step: silent` walks without a sound; `death_particles` names the block it breaks apart into when it
+  vanilla's, and `step: silent` walks without a sound; a melee mob's or boss's `attack` plays as it swings for a hit
+  (RLM-621); `death_particles` names the block it breaks apart into when it
   dies (its body gone at once); `tags` puts it in our entity type tags (`realmforge:stone_creatures`, which a projectile
   may spare). Each entry of `loot` drops on its own: an `item`, its `count` (`min` to `max`, 1 by default; a `min` of 0
   sometimes gives none, as vanilla's witch drops 0 to 2 glowstone dust), its `chance_percent` (100 by default), and what
@@ -605,7 +606,9 @@ Rules:
   `keep_range_percent` (for that share of the cast the target must stay in range or the cast ends at once; past it,
   range no longer matters; a player's cast-time or channelled `enemy` or `ally` spell keeps its target anyway until
   it is more than twice the range away, the sticky target of ADR 0055, unless it locks on), and `sound` (a sound
-  event the caster makes when the cast begins), and `animation`, how a custom mob or boss moves its arms while it
+  event the caster makes when the cast begins; an instant spell may name one too, which plays as its hands push or
+  its swing begins, RLM-445), a channel's `tick_sound` (played at each tick as its effects run: each of Arcane
+  Missiles' launches), and `animation`, how a custom mob or boss moves its arms while it
   casts (`raise`, the default, or `slam`: its fists beat up and down, one slam every 0.75 s, a quake); its `visuals`
   (below: its look and what forms in the caster's hands during the cast); an optional `cost` (`resource` `realmforge:mana` or `realmforge:rage`, `amount` at level
   1, `per_level`; a channel's is per second, and a channel may add `up_front`, `{amount, per_level}` paid with its
@@ -677,7 +680,8 @@ Rules:
   front of the player, one of Better Combat's sword hitboxes at the caster's melee reach, its entity interaction range,
   so it grows with the reach: `shape: swing`, the default melee hit shape, 2 × reach wide, reach / 3 tall, reach deep
   and 120°, or `shape: stab`, reach / 2 wide and tall and as deep; its own `effects` on every enemy whose hitbox it
-  strikes, none behind a wall or more than half hidden by a corner); `realmforge:cone` (RLM-542, on a `realmforge:self`
+  strikes, none behind a wall or more than half hidden by a corner, and an optional `sound`, its hit's, played once
+  where the first enemy it strikes stands and never when it strikes none, RLM-445); `realmforge:cone` (RLM-542, on a `realmforge:self`
   spell: a cone along the caster's look, `range` blocks long, at most 16, and `angle_degrees` wide, from a melee shape's
   origin; its own `effects` on every enemy whose hitbox it holds, none behind a wall; an optional `sound` and a block's
   break `particles` through it: Cone of Cold); `realmforge:area` (`radius`, `duration_seconds`, `interval_seconds`, `affects: enemies` or

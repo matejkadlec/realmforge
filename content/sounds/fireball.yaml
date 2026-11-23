@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../tools/schemas/sounds.schema.json
+# Fireball's sounds (RLM-445): fire gathering in the hands during the cast, and its burst where it hits.
+# Our own sounds from ElevenLabs (ADR 0079), an agent's provisional picks until Matěj listens (RLM-669).
+id: fireball
+category: spell
+events:
+  form:
+    subtitle: {en_us: Fire gathers}
+    sounds:
+      - {file: fireball/form_1}
+  impact:
+    subtitle: {en_us: Fireball bursts}
+    sounds:
+      - {file: fireball/impact_1}

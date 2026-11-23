@@ -15,7 +15,7 @@ description:
 school: realmforge:physical
 scales_with: attack_damage
 targeting: {type: realmforge:self}
-cast: {type: instant}
+cast: {type: instant, sound: realmforge:spell.cast.instant}
 cooldown_seconds: 60
 max_level: 2
 effects:

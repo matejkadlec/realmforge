@@ -1,20 +1,21 @@
 # yaml-language-server: $schema=../../tools/schemas/sounds.schema.json
-# The Hewn Chanter's sounds (W3, RLM-33; Matěj's playtest, 2026-10-23): the chime it hums, its tell; a stone hit when
-# it is hurt and a crush when it breaks apart, lighter than the Sentinel's. It walks without a sound (its YAML). Vanilla
-# sounds until A3's own (RLM-126).
+# The Hewn Chanter's sounds (W3, RLM-33; RLM-621): its chant of humming stone, a lighter crack when it is hurt, and
+# its crumbling as the chant fades. It walks without a sound and casts Stoneform (stoneform.yaml).
+# Our own sounds from ElevenLabs (ADR 0079), an agent's provisional picks until Matěj listens (RLM-669).
 id: hewn_chanter
 category: entity
 events:
   ambient:
     subtitle: {en_us: Hewn Chanter hums}
     sounds:
-      - {event: minecraft:block.amethyst_block.chime, pitch: 0.8}
+      - {file: hewn_chanter/ambient_1, volume: 0.7}
+      - {file: hewn_chanter/ambient_2, volume: 0.7}
   hurt:
     subtitle: {en_us: Hewn Chanter cracks}
     sounds:
-      - {event: minecraft:block.stone.break, pitch: 0.9}
-      - {event: minecraft:block.deepslate.break, pitch: 1.1}
+      - {file: hewn_chanter/hurt_1}
+      - {file: hewn_chanter/hurt_2}
   death:
     subtitle: {en_us: Hewn Chanter crumbles}
     sounds:
-      - {event: minecraft:entity.iron_golem.death, pitch: 1.2}
+      - {file: hewn_chanter/death_1}

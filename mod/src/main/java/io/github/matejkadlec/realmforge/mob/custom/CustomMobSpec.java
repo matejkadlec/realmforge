@@ -40,9 +40,10 @@ public record CustomMobSpec(Idle idle, Sounds sounds, Optional<Identifier> death
      * @param death when it dies; vanilla's for hostile mobs when empty
      * @param step each step; the block's own when empty, unless {@code silentSteps}
      * @param silentSteps whether it walks without a sound
+     * @param attack each melee attack, as it swings (RLM-621); none when empty
      */
     public record Sounds(Optional<Identifier> ambient, Optional<Identifier> hurt, Optional<Identifier> death,
-            Optional<Identifier> step, boolean silentSteps) {
+            Optional<Identifier> step, boolean silentSteps, Optional<Identifier> attack) {
     }
 
     /**

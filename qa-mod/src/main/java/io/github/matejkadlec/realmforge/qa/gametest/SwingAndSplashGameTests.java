@@ -45,8 +45,8 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class SwingAndSplashGameTests {
     private static final double HEALTH = SpellGameTests.HEALTH;
-    private static final Vec3 CENTRE = new Vec3(4.5, 1, 2.5);
-    private static final Vec3 EDGE = new Vec3(4.5, 1, 0.5);
+    static final Vec3 CENTRE = new Vec3(4.5, 1, 2.5);
+    static final Vec3 EDGE = new Vec3(4.5, 1, 0.5);
 
     private SwingAndSplashGameTests() {
     }
@@ -259,7 +259,7 @@ public final class SwingAndSplashGameTests {
     }
 
     /** A player with a stone sword and 100 rage, facing south from {@code where}, who never crits or dodges. */
-    private static ServerPlayer warrior(GameTestHelper helper, String name, Vec3 where) {
+    static ServerPlayer warrior(GameTestHelper helper, String name, Vec3 where) {
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, name, where);
         player.setGameMode(GameType.SURVIVAL);
         player.connection.markClientLoaded();
@@ -270,7 +270,7 @@ public final class SwingAndSplashGameTests {
     }
 
     /** A player with 100 mana and no Spell Power, facing south from the platform's north edge, who never crits. */
-    private static ServerPlayer mage(GameTestHelper helper, String name) {
+    static ServerPlayer mage(GameTestHelper helper, String name) {
         ServerPlayer player = QaPlayers.loginOnPlatform(helper, name, EDGE);
         player.setGameMode(GameType.SURVIVAL);
         StatsCommands.setBase(player, GeneratedStats.CRIT_CHANCE, 0);
@@ -281,7 +281,7 @@ public final class SwingAndSplashGameTests {
     }
 
     /** A husk that stands still at {@code where}, with 1000 health and no armor, at level 1. */
-    private static Husk husk(GameTestHelper helper, Vec3 where) {
+    static Husk husk(GameTestHelper helper, Vec3 where) {
         Husk husk = helper.spawn(EntityType.HUSK, where);
         husk.setNoAi(true);
         MobLevels.setLevel(husk, EntityLevel.MIN);
@@ -292,19 +292,19 @@ public final class SwingAndSplashGameTests {
         return husk;
     }
 
-    private static void learn(GameTestHelper helper, ServerPlayer player, ResourceKey<Spell> spell) {
+    static void learn(GameTestHelper helper, ServerPlayer player, ResourceKey<Spell> spell) {
         Holder.Reference<Spell> holder = Spells.get(helper.getLevel().registryAccess(), spell)
                 .orElseThrow(() -> new IllegalStateException("no spell " + spell.identifier()));
         Spells.learn(player, holder, 1);
     }
 
-    private static void assertCast(GameTestHelper helper, LivingEntity caster, ResourceKey<Spell> spell,
+    static void assertCast(GameTestHelper helper, LivingEntity caster, ResourceKey<Spell> spell,
             @Nullable LivingEntity target) {
         CastResult result = SpellCaster.cast(caster, spell, target);
         helper.assertTrue(result.success(), spell.identifier() + " was refused: " + result.failure());
     }
 
-    private static void logout(ServerPlayer player) {
+    static void logout(ServerPlayer player) {
         player.level().getServer().getPlayerList().remove(player);
     }
 }

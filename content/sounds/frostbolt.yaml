@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../tools/schemas/sounds.schema.json
+# Frostbolt's sounds (RLM-445): ice forming in the hands during the cast, and its shatter where it hits.
+# Our own sounds from ElevenLabs (ADR 0079), an agent's provisional picks until Matěj listens (RLM-669).
+id: frostbolt
+category: spell
+events:
+  form:
+    subtitle: {en_us: Ice forms}
+    sounds:
+      - {file: frostbolt/form_1}
+  impact:
+    subtitle: {en_us: Ice shatters}
+    sounds:
+      - {file: frostbolt/impact_1}

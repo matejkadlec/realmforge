@@ -12,7 +12,7 @@ description: {en_us: "Bashes every enemy just in front of you with your shield f
 school: realmforge:physical
 scales_with: attack_damage
 targeting: {type: realmforge:self}
-cast: {type: instant, animation_seconds: 0.5, hit_at_percent: 50}
+cast: {type: instant, animation_seconds: 0.5, hit_at_percent: 50, sound: realmforge:spell.shield_bash.swing}
 cost: {resource: realmforge:rage, amount: 15}
 cooldown_seconds: 6
 max_level: 5
@@ -20,6 +20,7 @@ requires: [shield]
 effects:
   - type: realmforge:melee
     shape: stab
+    sound: realmforge:spell.shield_bash.hit
     effects:
       - type: realmforge:damage
         amount: 1

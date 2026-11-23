@@ -91,6 +91,7 @@ public final class ContentMobGameTests {
             assertSound(helper, sounds.death(), expected.deathSound(), id + " death sound");
             assertSound(helper, sounds.step(), expected.stepSound(), id + " step sound");
             helper.assertValueEqual(sounds.silentSteps(), expected.silentSteps(), id + " silent steps");
+            assertSound(helper, sounds.attack(), expected.attackSound(), id + " attack sound");
             helper.assertValueEqual(spec.deathParticles().map(Identifier::toString).orElse(""),
                     expected.deathParticles(), id + " death particles");
             helper.assertValueEqual(spec.hands(), new CustomMobSpec.Hands(expected.handsAhead(), expected.handsUp()),

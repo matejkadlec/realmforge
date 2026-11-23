@@ -11,7 +11,7 @@ description: {en_us: "Wraps you in ice that raises your Magic Shield by {bonus} 
 school: realmforge:frost
 scales_with: spell_power
 targeting: {type: realmforge:self}
-cast: {type: instant}
+cast: {type: instant, sound: realmforge:spell.cast.instant}
 cost: {resource: realmforge:mana, amount: 25, per_level: 10}
 cooldown_seconds: 60
 cooldown_per_level_seconds: -15
