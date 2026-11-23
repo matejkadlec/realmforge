@@ -5,12 +5,14 @@ import io.github.matejkadlec.realmforge.dungeon.DungeonType;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceDimension;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceLayout;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceManager;
+import io.github.matejkadlec.realmforge.dungeon.instance.PiecePlacement;
 import io.github.matejkadlec.realmforge.dungeon.instance.Plot;
 import io.github.matejkadlec.realmforge.dungeon.instance.PlotState;
 import io.github.matejkadlec.realmforge.dungeon.instance.RoomPlacement;
 import io.github.matejkadlec.realmforge.dungeon.plan.DungeonPlan;
 import io.github.matejkadlec.realmforge.dungeon.plan.PlannedRoom;
 import io.github.matejkadlec.realmforge.dungeon.plan.RoomContainers;
+import io.github.matejkadlec.realmforge.loot.LootContainers;
 import io.github.matejkadlec.realmforge.qa.RealmforgeQa;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,12 +27,14 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 
 /**
  * RLM-365: chance tables decide how many chests and barrels each room of a dungeon places. Over many seeds every
  * room of the test dungeon keeps each count about as often as its table says, and a run holds about 3 containers per
- * spawner (Matěj's "~6x loot container per 2 spawners"); a built layout places exactly what its plan drew.
+ * spawner (Matěj's "~6x loot container per 2 spawners"), the containers of its set pieces included (RLM-282); a built
+ * layout places exactly what its plan drew.
  */
 public final class DungeonContainerGameTests {
     private static final int TIMEOUT = 1200;
@@ -55,7 +59,9 @@ public final class DungeonContainerGameTests {
         Map<String, List<Integer>> tables = new HashMap<>();
         Map<String, Integer> held = new HashMap<>();
         long containers = 0;
+        long inPieces = 0;
         long spawners = 0;
+        Map<Identifier, Integer> pieceContainers = new HashMap<>();
         for (long seed = 0; seed < SEEDS; seed++) {
             DungeonPlan plan = type.plan(seed);
             InstanceLayout layout = plan.toInstanceLayout();
@@ -63,6 +69,10 @@ public final class DungeonContainerGameTests {
                 PlannedRoom room = plan.rooms().get(i);
                 RoomContainers roomContainers = room.room().containers();
                 spawners += room.room().spawners();
+                for (PiecePlacement piece : layout.rooms().get(i).pieces()) {
+                    inPieces += pieceContainers.computeIfAbsent(piece.template(),
+                            template -> containersIn(helper, template));
+                }
                 Set<BlockPos> swapped = new HashSet<>();
                 layout.rooms().get(i).swaps().forEach(swap -> swapped.add(swap.pos()));
                 for (RoomContainers.Kind kind : RoomContainers.Kind.values()) {
@@ -96,9 +106,10 @@ public final class DungeonContainerGameTests {
                         + String.format(java.util.Locale.ROOT, "%.3f", p) + ": " + entry.getValue());
             }
         }
-        double ratio = containers / (double) spawners;
-        RealmforgeQa.LOGGER.info("Test dungeon over {} seeds: {} containers to {} spawners a run, {} per spawner",
-                SEEDS, containers / (double) SEEDS, spawners / (double) SEEDS, ratio);
+        double ratio = (containers + inPieces) / (double) spawners;
+        RealmforgeQa.LOGGER.info("Test dungeon over {} seeds: {} containers in rooms and {} in set pieces to {} "
+                + "spawners a run, {} per spawner", SEEDS, containers / (double) SEEDS, inPieces / (double) SEEDS,
+                spawners / (double) SEEDS, ratio);
         helper.assertTrue(Math.abs(ratio - CONTAINERS_PER_SPAWNER) <= RATIO_TOLERANCE,
                 "a run holds " + ratio + " containers per spawner, not about " + CONTAINERS_PER_SPAWNER);
         helper.succeed();
@@ -131,9 +142,12 @@ public final class DungeonContainerGameTests {
                         for (RoomContainers.Spot spot : plan.rooms().get(i).room().containers().spots()) {
                             if (!swapped.contains(spot.pos())) {
                                 BlockState placed = instances.getBlockState(world(plot, room, spot.pos()));
-                                helper.assertTrue(placed.is(spot.kind() == RoomContainers.Kind.CHEST ? Blocks.CHEST
-                                        : Blocks.BARREL), room.template() + " lost a kept " + spot.kind()
-                                        .getSerializedName() + " at " + spot.pos().toShortString() + ": " + placed);
+                                // A kept container stands as a loot container: Lootr's twin of its block (RLM-290).
+                                BlockState kept = LootContainers.perPlayer((spot.kind() == RoomContainers.Kind.CHEST
+                                        ? Blocks.CHEST : Blocks.BARREL).defaultBlockState());
+                                helper.assertTrue(placed.is(kept.getBlock()), room.template() + " lost a kept "
+                                        + spot.kind().getSerializedName() + " at " + spot.pos().toShortString() + ": "
+                                        + placed);
                             }
                         }
                     }
@@ -141,6 +155,15 @@ public final class DungeonContainerGameTests {
                 })
                 .thenWaitUntil(() -> helper.assertTrue(plot.state() == PlotState.FREE, "plot is " + plot.state()))
                 .thenSucceed();
+    }
+
+    /** The chests and barrels in a set piece's template: a variant may turn one into the other, never take it away. */
+    private static int containersIn(GameTestHelper helper, Identifier template) {
+        StructureTemplate piece = helper.getLevel().getStructureManager().get(template).orElseThrow();
+        StructurePlaceSettings settings = new StructurePlaceSettings();
+        return piece.filterBlocks(BlockPos.ZERO, settings, Blocks.CHEST).size()
+                + piece.filterBlocks(BlockPos.ZERO, settings, Blocks.TRAPPED_CHEST).size()
+                + piece.filterBlocks(BlockPos.ZERO, settings, Blocks.BARREL).size();
     }
 
     /** A template position of {@code room} where the builder put it in the world. */

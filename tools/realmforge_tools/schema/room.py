@@ -147,6 +147,11 @@ class RoomDef(StrictModel):
         "opens one side at random among those that are not the side it enters the room from (RLM-412), so list "
         "two sides or more. Positions hold plain blocks: no connector, spawner, chest or barrel.",
     )
+    set_pieces: bool = Field(
+        default=True,
+        description="False: no dungeon places a set piece in this room, which keeps exactly what its template holds "
+        "(RLM-282). Unset or true: the room's spots take the pieces its dungeon type uses.",
+    )
     source: RoomSource | None = Field(default=None, description="Set for an imported room.")
 
 

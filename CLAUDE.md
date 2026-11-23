@@ -137,8 +137,15 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   holds is drawn by loot points (RLM-289): the tables `normal` and `treasure` of `content/container_loot/`, a budget
   per roll that the opener's world tier (Apotheosis's) and luck raise, spent on weighted options until none is
   affordable (our loot entry `realmforge:budget`), worth about 2, 4 and 10 mob kills for a normal container and 5, 10
-  and 20 for a treasure chest. No room's container carries a table yet (RLM-290, W6); `/qa loot chest normal` places
-  one.
+  and 20 for a treasure chest. A dungeon type names its rooms' table by room role (`container_loot`: the test dungeon's
+  treasure rooms the treasure table, every other room and its set pieces the normal one), and every chest, trapped
+  chest and barrel a run builds becomes Lootr's container with it (RLM-290); `/qa loot chest normal` places one. A run
+  places set pieces (RLM-282, ADR 0078): a dungeon type's `set_pieces` (tags, a density per room role) and the layout's
+  seed pick which spot patterns of a room a piece fills, the piece and its variants, never at a room's opening; a
+  sidecar's `set_pieces: false` turns them off (Stonevaults' `jail`), and `/qa dungeon pieces` lists a run's. The
+  generated corridors carry a few cobwebs and vines off the walking line and one barrel against a wall, which a run
+  keeps a quarter of the time, and half the barrels of the corridors and of the import dressing lie on their side, lid
+  towards the room (RLM-410).
   Characters level up (C2): character XP from kills (by the victim's level and rank) and `/realmforge xp`, an XP
   bar, and a level cap from chapter advancements (10, then 18 after chapter 1 and 30 after chapter 2). The spell
   engine is done (C3a): spells as data in `content/spells/`, cast by players and mobs through one `SpellCaster` (from

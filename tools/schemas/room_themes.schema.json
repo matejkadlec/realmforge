@@ -16,6 +16,12 @@
           "title": "Ceiling Light",
           "type": "string"
         },
+        "ceiling_web": {
+          "description": "A hallway's webs where a wall meets the ceiling (a cobweb, minecraft:cobweb).",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Ceiling Web",
+          "type": "string"
+        },
         "floor": {
           "description": "The floor (a full block).",
           "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
@@ -64,6 +70,12 @@
           "title": "Stairs",
           "type": "string"
         },
+        "storage": {
+          "description": "A hallway's lone container against a wall, which a run keeps a quarter of the time (a barrel, minecraft:barrel).",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Storage",
+          "type": "string"
+        },
         "wall_base": {
           "description": "The bottom row of the walls and the pillars (a full block).",
           "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
@@ -94,6 +106,12 @@
           "title": "Wall Cornice",
           "type": "string"
         },
+        "wall_growth": {
+          "description": "A hallway's growth hanging from the top of its walls (a vine, minecraft:vine).",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Wall Growth",
+          "type": "string"
+        },
         "wall_light": {
           "description": "Lights on the walls (a wall torch, e.g. minecraft:wall_torch).",
           "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
@@ -117,7 +135,10 @@
         "rubble",
         "rubble_slab",
         "wall_light",
-        "ceiling_light"
+        "ceiling_light",
+        "ceiling_web",
+        "wall_growth",
+        "storage"
       ],
       "title": "ThemeBlocks",
       "type": "object"

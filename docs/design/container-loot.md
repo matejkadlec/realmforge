@@ -60,9 +60,14 @@ Built by RLM-289 from `content/container_loot/` (`normal.yaml`, `treasure.yaml`)
    Checked when Lootr went in (RLM-288): Lootr also takes over a vanilla container with a loot table by itself, but
    only once the 25 chunks around it are loaded, and a player who opens it earlier gets vanilla's one shared roll,
    so the builder does not rely on it ([architecture 15.5](../architecture.md#155-instances)).
-4. **Where the containers come from:** W6's chest markers; the imported rooms' 100 chests and their barrels, which
-   the import turns into loot spots of the normal table (RLM-290); the import dressing's barrels; set-piece
-   containers ([set-piece design](set-pieces.md#gameplay-rules)).
+4. **Where the containers come from:** W6's chest markers; the imported rooms' chests and barrels and the import
+   dressing's barrels (42 chests and 44 barrels in the test dungeon's pool today, before the chance tables); the
+   generated corridors' lone barrel (RLM-410); set-piece containers
+   ([set-piece design](set-pieces.md#gameplay-rules)). Since RLM-290 a dungeon type names the table of its rooms'
+   containers by role (`container_loot` in `content/dungeons/<id>.yaml`: the treasure table for the treasure
+   rooms, the normal one as the default, set pieces included), and the builder makes every chest, trapped chest and
+   barrel it places a loot container with that table. The templates themselves carry no table, so another dungeon
+   type can give the same rooms other loot, and validation refuses a type that would leave a container empty.
 5. **Progression items** (keys, chain items) never depend on a container roll: they drop at 100 % (LE-1).
 
 ## The tables
@@ -112,8 +117,8 @@ Built by RLM-289 from `content/container_loot/` (`normal.yaml`, `treasure.yaml`)
   above Undervault's band of Common to Uncommon. RLM-567 gives our loot its bands; for containers that needs a
   table per realm (or the band on the dungeon type) and a list of rarities on `realmforge:tier_affix_item`.
 - **Trying it:** `/qa loot chest normal` and `/qa loot barrel treasure` place a loot container in front of the
-  player, as the dungeon builder does; `/apoth set_world_tier @s frontier` sets the world tier. The rooms'
-  containers get the tables with RLM-290 and W6.
+  player, as the dungeon builder does; `/apoth set_world_tier @s frontier` sets the world tier. In a run, every
+  chest and barrel of the rooms carries its table since RLM-290; W6's chest markers follow.
 
 ## How many containers a room keeps
 
@@ -136,7 +141,7 @@ The test dungeon's tables (`content/dungeons/test_dungeon.yaml`):
 | Rooms | Chests | Barrels |
 | --- | --- | --- |
 | Treasure rooms (Matěj's table) | 2 at 25 %, 3 at 40 %, 4 at 25 %, 5 at 10 % | none at 40 %, 1 at 40 %, 2 at 20 % |
-| Every other room (`default`) | 1 at 60 %, 2 at 30 %, 3 at 10 % | none at 20 %, 1 at 40 %, 2 at 30 %, 3 at 10 % |
+| Every other room (`default`) | 1 at 85 %, 2 at 15 % | none at 60 %, 1 at 30 %, 2 at 10 % |
 | `treasure/tiny_cap` (Matěj's own table) | 1 at 75 %, 2 at 20 %, 3 at 5 % | none |
 | `pillager_dungeon/rooms/jail` (Matěj, 2026-10-25) | always its 1 | always its 1 |
 | `treasure/mooshroom_king`, the throne room | always all 6: a sight behind its iron bars, which never break, not loot | none |
@@ -147,6 +152,11 @@ The test dungeon's tables (`content/dungeons/test_dungeon.yaml`):
 - **Over 300 seeds** (`DungeonContainerGameTests`, the test dungeon's pool on 2026-10-27), a run held about
   41 containers to about 13.7 spawners, 2.99 per spawner, down from about 83 to 13 before
   the tables (6.4 per spawner); the throne room's display chests are not counted.
+- **The corridors' lone barrels and the set pieces** (RLM-410, RLM-282) added about 6 and 5 containers a run, 3.8
+  per spawner. The default, Claude's table, gave way (it was 1 chest at 60 %, 2 at 30 %, 3 at 10 %; none, 1, 2 or 3
+  barrels at 20, 40, 30 and 10 %), not Matěj's treasure table or his quarter for a corridor's barrel: over 300 seeds
+  (2026-11-23) a run holds about 35.8 containers in its rooms and 5.2 in its set pieces to 13.7 spawners, 3.00 per
+  spawner. Open until his playtest, which RLM-663 owes.
 - **Tuning:** the numbers can vary (Matěj). A playtest that finds too much or too little loot changes the tables in
   YAML; the GameTest keeps a run within 0.5 of 3 per spawner.
 

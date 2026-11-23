@@ -9,8 +9,10 @@ from pydantic import ValidationError
 
 from realmforge_tools.id_universe import load_vanilla
 from realmforge_tools.project import DATA_VERSION, REPO_ROOT, RepoPaths
+from realmforge_tools.rooms import dress as dress_module
 from realmforge_tools.rooms.check import check_structure
-from realmforge_tools.rooms.dress import DressRules, dress, family
+from realmforge_tools.rooms.dress import DressRules, dress, family, reach
+from realmforge_tools.rooms.importer import load_rules
 from realmforge_tools.rooms.structure import (
     BlockState,
     Pos,
@@ -304,6 +306,104 @@ def test_the_throne_room_behind_its_bars_gets_no_dressing() -> None:
     assert any(name == "minecraft:gold_block" for name in names.values())
     assert not barrels(room)
     assert not any(name in ("minecraft:cobweb", "minecraft:vine") for name in names.values())
+
+
+# --- barrels on their side (RLM-410) ----------------------------------------------------------------------------
+
+SIDES = {"north": (0, -1), "south": (0, 1), "east": (1, 0), "west": (-1, 0)}
+# The sources whose rules dress their rooms (art/rooms/README.md).
+DRESSED_SOURCES = ("stonevaults", "dungeon_now_loading")
+# Dungeon Now Loading's explosive barrels are the source's own block, remapped to a barrel without its data: the five
+# of this room cannot be told from the two the dressing adds to it.
+MIXED_BARRELS = {"dungeon_now_loading/labyrinth/rooms/explosive_barrel"}
+
+
+def added_barrels(structure: Structure) -> list[StructureBlock]:
+    """The barrels the dressing adds: it writes no block entity data, and a source's own barrels keep theirs."""
+    return [b for b in structure.blocks if b.state.name == "minecraft:barrel" and b.nbt is None]
+
+
+def test_half_the_added_barrels_lie_with_their_lid_towards_the_room() -> None:
+    # Matěj's playtest of 2026-10-24: "on their side 50% / upright 50%, with the lid facing the room, not the wall".
+    lying = total = 0
+    for i in range(60):
+        dressed, _ = dress(box_room(), RULES, name=f"lid-{i}", tags=["combat"])
+        blocks = {b.pos: b.state.name for b in dressed.blocks}
+        for barrel in added_barrels(dressed):
+            facing = barrel.state.get("facing")
+            assert barrel.state.get("open") == "false"
+            total += 1
+            if facing == "up":
+                continue
+            lying += 1
+            x, y, z = barrel.pos
+            dx, dz = SIDES[facing]
+            # Towards open floor, never its neighbour in a pair, and away from a wall it stands against: the block
+            # behind it is the room's shell (13 x 13).
+            assert blocks[(x + dx, y, z + dz)] == "minecraft:air", (i, barrel)
+            assert x - dx in (0, 12) or z - dz in (0, 12), (i, barrel)
+    assert total > 100 and 0.4 <= lying / total <= 0.6, (lying, total)
+
+
+def test_a_corner_barrel_faces_either_open_side() -> None:
+    facings: Counter[tuple[Pos, str]] = Counter()
+    for i in range(120):
+        dressed, _ = dress(box_room(), RULES, name=f"corner-{i}", tags=["hallway", "straight"])
+        for barrel in added_barrels(dressed):  # at most one, in a corner
+            facings[barrel.pos, barrel.state.get("facing")] += 1
+    open_sides = {(1, 1, 1): {"east", "south"}, (11, 1, 11): {"west", "north"}}
+    for corner, sides in open_sides.items():
+        seen = {facing for (pos, facing) in facings if pos == corner}
+        assert seen == sides | {"up"}, (corner, seen)  # never towards one of its two walls
+
+
+def test_each_barrel_draws_its_facing_for_itself(monkeypatch: pytest.MonkeyPatch) -> None:
+    # The patterns of ADR 0036 stay: with every barrel upright, as before RLM-410, the barrels stand where they
+    # stood and no vine, cobweb or variant moves. Only the lying barrels' facing differs.
+    names = [f"draw-{i}" for i in range(8)]
+    room = box_room(under_floor=STONE_BRICKS)
+    lying = {name: dress(room, RULES, name=name, tags=["combat"])[0] for name in names}
+    monkeypatch.setattr(dress_module, "BARREL_LYING", 0.0)
+    turned = 0
+    for name in names:
+        upright, _ = dress(room, RULES, name=name, tags=["combat"])
+        before = {b.pos: b for b in upright.blocks}
+        for block in lying[name].blocks:
+            if block != before[block.pos]:
+                turned += 1
+                assert block.state.name == before[block.pos].state.name == "minecraft:barrel", (name, block)
+                assert before[block.pos].state.get("facing") == "up" != block.state.get("facing")
+        assert lying[name].entities == upright.entities
+    assert turned
+
+
+def test_about_half_of_the_committed_rooms_added_barrels_lie_lid_towards_the_room() -> None:
+    # The dressed sources as committed after their re-import for RLM-410: of the barrels the dressing added, about
+    # half lie on their side, each with its lid towards a cell a player walks through from the room's doorways.
+    lying = total = 0
+    for source in DRESSED_SOURCES:
+        rules = load_rules(REPO_ROOT / f"art/rooms/{source}/rules.yaml").dress
+        assert rules is not None
+        folder = REPO_ROOT / "content/rooms/third_party" / source
+        for path in sorted(folder.rglob("*.nbt")):
+            name = path.relative_to(folder).with_suffix("").as_posix()
+            if rules.excludes(name) or "barrels" not in rules.decorations_for(name):
+                continue  # the dressing adds no barrel here: a plain one is the source's or the rules' own
+            if f"{source}/{name}" in MIXED_BARRELS:
+                continue
+            room = read_structure(path.read_bytes())
+            added = added_barrels(room)
+            reached = reach(room) if added else set()
+            for barrel in added:
+                facing = barrel.state.get("facing")
+                total += 1
+                if facing == "up":
+                    continue
+                lying += 1
+                x, y, z = barrel.pos
+                dx, dz = SIDES[facing]
+                assert (x + dx, y, z + dz) in reached, (source, name, barrel)
+    assert total >= 30 and 0.35 <= lying / total <= 0.65, (lying, total)
 
 
 def with_states(room: Structure, placed: dict[Pos, str]) -> Structure:

@@ -13,7 +13,7 @@ from realmforge_tools.problems import ValidationFailed
 from realmforge_tools.project import DATA_VERSION, REPO_ROOT, RepoPaths
 from realmforge_tools.rooms.check import markers
 from realmforge_tools.rooms.connectors import Connector, connectors, could_attach, doorway_gap
-from realmforge_tools.rooms.containers import candidates
+from realmforge_tools.rooms.containers import candidates, loot_containers
 from realmforge_tools.rooms.dress import reach, reachable_hazards
 from realmforge_tools.rooms.structure import (
     BlockState,
@@ -33,6 +33,9 @@ DATA = "mod/src/generated/resources/data/realmforge/realmforge/dungeon_type"
 EXPECTATIONS = "qa-mod/src/generated/java/io/github/matejkadlec/realmforge/qa/generated/GeneratedDungeonTypeExpectations.java"
 POOL = "realmforge:crypt"
 LAYOUT = "layout:\n  main_path: [2, 4]\n  branches: [0, 1]\n  branch_rooms: [1, 2]\n  ending: boss\n"
+# The container loot tables of a type whose rooms hold chests or barrels (RLM-290): content/container_loot/'s two.
+LOOT = "container_loot:\n  default: realmforge:normal\n  treasure: realmforge:treasure\n"
+GENERATED = REPO_ROOT / "mod/src/generated/resources/data/realmforge"
 
 
 def dungeon(
@@ -350,7 +353,7 @@ def test_a_pacing_reaches_the_game_with_the_rooms_spawners_and_chests(repo: Repo
     add_fight(repo, "crypt/guard", spawners=2, chests=3)
     add_room(repo, "crypt/end", ["hallway", "dead_end"], "north")
     path = repo.content / "dungeons" / "crypt.yaml"
-    path.write_text(dungeon(layout=LAYOUT + PACING), encoding="utf-8")
+    path.write_text(dungeon(layout=LAYOUT + PACING) + LOOT, encoding="utf-8")
     files = generate(repo)
     data = json.loads(files[f"{DATA}/crypt.json"])
     assert data["layout"]["pacing"] == {"corridors": [1, 2], "fights": [2, 4], "repeat": 6}
@@ -403,7 +406,7 @@ def test_chance_tables_reach_the_game_resolved_per_room(repo: RepoPaths) -> None
         "  combat:\n    chests: {0: 20, 1: 80}\n"
         "  default:\n    chests: {1: 100}\n    barrels: {0: 50, 1: 50}\n"
     )
-    (repo.content / "dungeons" / "crypt.yaml").write_text(dungeon() + tables, encoding="utf-8")
+    (repo.content / "dungeons" / "crypt.yaml").write_text(dungeon() + tables + LOOT, encoding="utf-8")
     files = generate(repo)
     data = json.loads(files[f"{DATA}/crypt.json"])
     assert "containers" not in data, "the type's tables are resolved into its rooms"
@@ -416,8 +419,92 @@ def test_chance_tables_reach_the_game_resolved_per_room(repo: RepoPaths) -> None
     assert "containers" not in rooms["hall"], "a room without containers lists none"
     java = files[EXPECTATIONS].decode()
     assert (
-        "List.of(), -1, 1, 3, false,\n                                    3, List.of(20, 80), List.of(), List.of())"
-        in java
+        "List.of(), -1, 1, 3, false,\n                                    3, List.of(20, 80), List.of(), List.of(),\n"
+        '                                    "realmforge:containers/normal", 0, 0)' in java
+    )
+
+
+def test_container_loot_reaches_each_room_by_its_role(repo: RepoPaths) -> None:
+    # RLM-290: a room carries the loot table its chests and barrels get when a run is built: the type's container
+    # loot table for its role, else the default; the type's own field is resolved into its rooms.
+    crypt(repo)
+    add_fight(repo, "crypt/guard", spawners=1, chests=2)
+    (repo.content / "dungeons" / "crypt.yaml").write_text(dungeon() + LOOT, encoding="utf-8")
+    files = generate(repo)
+    data = json.loads(files[f"{DATA}/crypt.json"])
+    assert "container_loot" not in data and "set_pieces" not in data
+    rooms = {room["template"].rsplit("/", 1)[1]: room for room in data["rooms"]}
+    assert rooms["nook"]["container_loot"] == "realmforge:containers/treasure", (
+        "the treasure room's own table"
+    )
+    assert {rooms[name]["container_loot"] for name in ("guard", "hall", "entrance", "lair")} == {
+        "realmforge:containers/normal"
+    }, "every other room the default, whether it holds a container today or not"
+    java = files[EXPECTATIONS].decode()
+    assert '"realmforge:containers/treasure", 0, 0)' in java
+    assert f"{GENERATED.relative_to(REPO_ROOT)}/loot_table/containers/normal.json" in files
+
+
+def test_a_dungeon_types_containers_need_a_loot_table(repo: RepoPaths) -> None:
+    # ADR 0041: no container in a dungeon is empty, so a type whose rooms hold a chest or a barrel names the table.
+    crypt(repo)
+    add_fight(repo, "crypt/guard", spawners=1, chests=2)
+    path = repo.content / "dungeons" / "crypt.yaml"
+    problems = problems_for(repo)
+    assert any("container_loot" in p and "crypt/guard" in p and "would stand empty" in p for p in problems)
+    path.write_text(dungeon() + "container_loot:\n  combat: realmforge:normal\n", encoding="utf-8")
+    load_and_validate(repo)  # the room's role has a table: nothing stands empty
+    path.write_text(dungeon() + "container_loot:\n  default: realmforge:nope\n", encoding="utf-8")
+    assert any(
+        "container_loot.default" in p and "unknown container loot table 'realmforge:nope'" in p
+        for p in problems_for(repo)
+    )
+    path.write_text(dungeon() + "container_loot:\n  lobby: realmforge:normal\n", encoding="utf-8")
+    assert any("container_loot.lobby" in p for p in problems_for(repo)), "a role that is none"
+
+
+def test_a_container_with_its_own_loot_table_needs_none(repo: RepoPaths) -> None:
+    crypt(repo)
+    add_room(repo, "crypt/guard", ["combat", "straight"], "north", "south")
+    room = room_structure((7, 5, 7), "north", "south")
+    own = StructureBlock(
+        (2, 1, 3),
+        BlockState("minecraft:chest"),
+        {"id": "minecraft:chest", "LootTable": "minecraft:chests/simple_dungeon"},
+    )
+    (repo.content / "rooms" / "crypt" / "guard.nbt").write_bytes(
+        write_structure(Structure(room.size, DATA_VERSION, (*room.blocks, own)))
+    )
+    load_and_validate(repo)
+    assert loot_containers(Structure(room.size, DATA_VERSION, (*room.blocks, own))) == 0
+
+
+def test_no_container_of_a_dungeon_is_left_without_a_loot_table() -> None:
+    # Done when of RLM-290, over the repository's own dungeon types as generated: every room whose template holds a
+    # chest, a trapped chest or a barrel (the imported rooms' and the import dressing's, the generated corridors')
+    # carries a container loot table that exists, the treasure table in a treasure room.
+    entries = sorted((GENERATED / "realmforge" / "dungeon_type").glob("*.json"))
+    assert entries, "no generated dungeon type; run `uv run rf gen`"
+    holding = 0
+    for entry in entries:
+        data = json.loads(entry.read_text(encoding="utf-8"))
+        for room in data["rooms"]:
+            if room["role"] == "wall":
+                continue
+            template = GENERATED / "structure" / (room["template"].split(":", 1)[1] + ".nbt")
+            held = loot_containers(read_structure(template.read_bytes()))
+            if held:
+                holding += held
+                assert "container_loot" in room, (
+                    f"{room['template']} holds {held} containers without a loot table"
+                )
+            table = room.get("container_loot")
+            if table is not None:
+                assert (GENERATED / "loot_table" / (table.split(":", 1)[1] + ".json")).is_file(), table
+                wanted = "treasure" if room["role"] == "treasure" else "normal"
+                assert table == f"realmforge:containers/{wanted}", f"{room['template']} ({room['role']})"
+    assert holding >= 80, (
+        f"only {holding} containers in the dungeon types' rooms: the imported ones are gone?"
     )
 
 
@@ -484,7 +571,7 @@ def test_openings_reach_the_game_by_side(repo: RepoPaths) -> None:
     assert openings["west"] == [[2, 1, 3]]
     assert "openings" not in rooms["hall"]
     java = files[EXPECTATIONS].decode()
-    assert 'List.of("north 3 1 2", "east 4 1 3", "south 3 1 4", "west 2 1 3"))' in java
+    assert 'List.of("north 3 1 2", "east 4 1 3", "south 3 1 4", "west 2 1 3"),\n' in java
 
 
 @pytest.mark.parametrize(

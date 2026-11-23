@@ -72,6 +72,14 @@ public final class LootContainers {
         return result;
     }
 
+    /**
+     * Whether {@code state} is a vanilla chest, trapped chest or barrel: the containers a dungeon gives a loot table
+     * and places through {@link #perPlayer} when it builds a room (RLM-290).
+     */
+    public static boolean holdsLoot(BlockState state) {
+        return state.is(Blocks.CHEST) || state.is(Blocks.TRAPPED_CHEST) || state.is(Blocks.BARREL);
+    }
+
     /** Whether {@code state} is one of Lootr's containers. */
     public static boolean isPerPlayer(BlockState state) {
         return BuiltInRegistries.BLOCK.getKey(state.getBlock()).getNamespace().equals(LOOTR);

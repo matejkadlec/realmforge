@@ -8,10 +8,12 @@ import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
+import net.minecraft.world.level.storage.loot.LootTable;
 
 /**
  * A room of a dungeon type's pool as the planner sees it: its template, size, role, weight and connectors, all
@@ -36,16 +38,22 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
  *     (RLM-365)
  * @param openings the sides a run may open, such as the one in front of a hidden spawner: a run opens one that is
  *     not its way in (RLM-412)
+ * @param containerLoot the loot table its chests, trapped chests and barrels get when a run is built, each becoming
+ *     a loot container (RLM-290): its dungeon type's container loot for its role
+ * @param setPieceSpots the spot patterns its dungeon type's set pieces fit, which a run fills by the type's density
+ *     ({@link SetPieces}, RLM-282)
  */
 public record DungeonRoom(Identifier template, Vec3i size, RoomRole role, int weight, List<Connector> connectors,
         Optional<Integer> maxPerLayout, boolean nearStart, List<Identifier> explosionBreaks,
         Optional<Integer> entry, int spawners, int chests, boolean hazard, RoomContainers containers,
-        RoomOpenings openings) {
+        RoomOpenings openings, Optional<ResourceKey<LootTable>> containerLoot,
+        List<SetPieces.Pattern> setPieceSpots) {
     /** The most a structure block saves per axis, which room validation allows. */
     public static final int MAX_SIZE = 48;
     /** The chests that make a room a treasure stop besides the treasure rooms (Matěj's playtest of 2026-10-24). */
     public static final int TREASURE_CHESTS = 3;
 
+    // Sixteen fields, the most a record codec groups: the next one goes into a part of its own.
     public static final Codec<DungeonRoom> CODEC = RecordCodecBuilder.<DungeonRoom>create(instance -> instance.group(
                     Identifier.CODEC.fieldOf("template").forGetter(DungeonRoom::template),
                     Vec3i.CODEC.fieldOf("size").forGetter(DungeonRoom::size),
@@ -63,12 +71,25 @@ public record DungeonRoom(Identifier template, Vec3i size, RoomRole role, int we
                     RoomContainers.CODEC.optionalFieldOf("containers", RoomContainers.NONE)
                             .forGetter(DungeonRoom::containers),
                     RoomOpenings.CODEC.optionalFieldOf("openings", RoomOpenings.NONE)
-                            .forGetter(DungeonRoom::openings))
+                            .forGetter(DungeonRoom::openings),
+                    LootTable.KEY_CODEC.optionalFieldOf("container_loot").forGetter(DungeonRoom::containerLoot),
+                    SetPieces.Pattern.CODEC.listOf().optionalFieldOf("set_piece_spots", List.of())
+                            .forGetter(DungeonRoom::setPieceSpots))
             .apply(instance, DungeonRoom::new)).validate(DungeonRoom::validate);
 
     public DungeonRoom {
         connectors = List.copyOf(connectors);
         explosionBreaks = List.copyOf(explosionBreaks);
+        setPieceSpots = List.copyOf(setPieceSpots);
+    }
+
+    /** A room whose containers get no loot table and that has no set-piece spots. */
+    public DungeonRoom(Identifier template, Vec3i size, RoomRole role, int weight, List<Connector> connectors,
+            Optional<Integer> maxPerLayout, boolean nearStart, List<Identifier> explosionBreaks,
+            Optional<Integer> entry, int spawners, int chests, boolean hazard, RoomContainers containers,
+            RoomOpenings openings) {
+        this(template, size, role, weight, connectors, maxPerLayout, nearStart, explosionBreaks, entry, spawners,
+                chests, hazard, containers, openings, Optional.empty(), List.of());
     }
 
     /** A room whose containers all stay and that opens nothing. */
@@ -136,6 +157,16 @@ public record DungeonRoom(Identifier template, Vec3i size, RoomRole role, int we
                         || pos.getY() >= size.getY() || pos.getZ() >= size.getZ()) {
                     return DataResult.error(() -> room.template + ": an opening clears " + pos.toShortString()
                             + ", outside the room");
+                }
+            }
+        }
+        for (SetPieces.Pattern pattern : room.setPieceSpots) {
+            for (SetPieces.Spot spot : pattern.spots()) {
+                BlockPos pos = spot.pos();
+                if (pos.getX() < 0 || pos.getY() < 0 || pos.getZ() < 0 || pos.getX() >= size.getX()
+                        || pos.getY() >= size.getY() || pos.getZ() >= size.getZ()) {
+                    return DataResult.error(() -> room.template + ": a set-piece spot at " + pos.toShortString()
+                            + " lies outside the room");
                 }
             }
         }

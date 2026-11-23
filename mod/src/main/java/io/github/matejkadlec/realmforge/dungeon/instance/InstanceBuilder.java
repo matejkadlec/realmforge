@@ -89,7 +89,8 @@ final class InstanceBuilder {
      * framed flowers a combination lock's comparators read) come with it: each slice places those whose block lies
      * in it, so each once (RLM-362), with the block it hangs at moved along ({@link AttachedEntityProcessor}). The
      * plot's chunks do not tick entities while it is built, so a frame placed before the wall it hangs on stays. The
-     * containers its dungeon's chance tables dropped become the blocks they leave behind (RLM-365).
+     * containers its dungeon's chance tables dropped become the blocks they leave behind (RLM-365), and those that
+     * stay become loot containers with the room's loot table (RLM-290).
      */
     static StructurePlaceSettings settings(RoomPlacement room) {
         // Rooms are built with correct block shapes, so placing skips the neighbour shape pass.
@@ -99,6 +100,24 @@ final class InstanceBuilder {
         if (!room.swaps().isEmpty()) {
             settings.addProcessor(new BlockSwapProcessor(room.swaps()));
         }
+        room.containerLoot().ifPresent(table -> settings.addProcessor(new LootContainerProcessor(table)));
+        return settings;
+    }
+
+    /**
+     * The settings a set piece is placed with (RLM-282): mirrored and turned as the run drew it, with its entities
+     * (item frames and the like, as for a room), the variants the run drew as swaps, and its chests and barrels as
+     * loot containers. A piece keeps the block shapes it was saved with, like a room: a neighbour shape pass on a
+     * piece cut by a chunk border would pop what hangs on the half not placed yet.
+     */
+    static StructurePlaceSettings settings(PiecePlacement piece) {
+        StructurePlaceSettings settings = new StructurePlaceSettings().setRotation(piece.rotation())
+                .setMirror(piece.mirror()).setIgnoreEntities(false).setKnownShape(true)
+                .addProcessor(BlockIgnoreProcessor.STRUCTURE_BLOCK).addProcessor(AttachedEntityProcessor.INSTANCE);
+        if (!piece.swaps().isEmpty()) {
+            settings.addProcessor(new BlockSwapProcessor(piece.swaps()));
+        }
+        piece.containerLoot().ifPresent(table -> settings.addProcessor(new LootContainerProcessor(table)));
         return settings;
     }
 
@@ -135,12 +154,27 @@ final class InstanceBuilder {
                 .orElseThrow(() -> new IllegalArgumentException("unknown room template " + room.template()));
     }
 
+    static StructureTemplate template(ServerLevel level, PiecePlacement piece) {
+        return level.getStructureManager().get(piece.template())
+                .orElseThrow(() -> new IllegalArgumentException("unknown set piece template " + piece.template()));
+    }
+
+    /**
+     * Places the part of a room inside the unit's slice, then the part of each of the room's set pieces inside it: a
+     * piece stands in its room's box, so every block of it lies in one slice of the room and is placed once, over the
+     * air the room left for it.
+     */
     private static void place(ServerLevel level, Plot plot, PlotWork.Place unit) {
         RoomPlacement room = plot.layout().orElseThrow().rooms().get(unit.room());
         BlockPos pos = plot.origin().offset(room.offset());
         StructurePlaceSettings settings = settings(room).setBoundingBox(unit.slice());
         RandomSource random = RandomSource.create((long) plot.id() << 16 ^ unit.room());
         template(level, room).placeInWorld(level, pos, pos, settings, random, PLACE_FLAGS);
+        for (PiecePlacement piece : room.pieces()) {
+            BlockPos at = plot.origin().offset(piece.offset());
+            template(level, piece).placeInWorld(level, at, at, settings(piece).setBoundingBox(unit.slice()), random,
+                    PLACE_FLAGS);
+        }
     }
 
     private static long clear(ServerLevel level, BoundingBox slice) {

@@ -71,6 +71,10 @@ public final class ContentDungeonTypeGameTests {
             helper.assertValueEqual(type.level(), expected.level(), expected.id() + " level");
             helper.assertTrue(BuiltInRegistries.ITEM.get(type.key()).map(key -> key.is(DungeonType.KEYS)).orElse(false),
                     expected.id() + "'s key is in the item tag " + DungeonType.KEYS.location());
+            helper.assertValueEqual(type.setPieces().pieces().keySet().stream().map(Identifier::toString).toList(),
+                    expected.setPieces(), expected.id() + " set pieces");
+            helper.assertValueEqual(type.setPieces().containerLoot().map(table -> table.identifier().toString())
+                    .orElse(""), expected.setPieceLoot(), expected.id() + " set pieces' container loot");
             helper.assertValueEqual(type.rooms().stream().map(ContentDungeonTypeGameTests::asWritten).toList(),
                     expected.rooms(), expected.id() + " rooms");
         }
@@ -131,7 +135,10 @@ public final class ContentDungeonTypeGameTests {
                 room.maxPerLayout().orElse(0), room.nearStart(),
                 room.explosionBreaks().stream().map(Identifier::toString).toList(), room.entry().orElse(-1),
                 room.spawners(), room.chests(), room.hazard(), room.containers().spots().size(),
-                room.containers().chests(), room.containers().barrels(), openings(room));
+                room.containers().chests(), room.containers().barrels(), openings(room),
+                room.containerLoot().map(table -> table.identifier().toString()).orElse(""),
+                room.setPieceSpots().size(),
+                room.setPieceSpots().stream().mapToInt(pattern -> pattern.spots().size()).sum());
     }
 
     /** The room's openings as written: "side x y z" per block, the sides in the order the game draws from. */

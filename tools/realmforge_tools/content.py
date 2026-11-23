@@ -21,6 +21,7 @@ from realmforge_tools.rooms.generator import (
     RoomGeneratorError,
     generate_room,
     room_id,
+    spec_containers,
     spec_tags,
 )
 from realmforge_tools.rooms.structure import Pos, Structure, StructureError, read_structure
@@ -573,14 +574,18 @@ def _generated_rooms(
 ) -> tuple[RoomEntry, ...]:
     """A room for every kept seed of every spec (A4d), built by the room generator. A spec whose theme does not
     exist builds nothing (validation reports the theme). The cache keeps each built room under a key of what it is
-    built from, so an unchanged spec is not built again."""
+    built from, so an unchanged spec is not built again. Its sidecar is the spec's: the pools, the weight, the tags
+    of its kind and connectors, and a hallway's own container table for its one barrel (``spec_containers``,
+    RLM-410)."""
     by_id = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in themes}
     rooms: list[RoomEntry] = []
     for entry in sorted(specs, key=lambda e: e.model.id):
         spec, theme = entry.model, by_id.get(entry.model.theme)
         if theme is None:
             continue
-        model = RoomDef(pools=spec.pools, tags=spec_tags(spec), weight=spec.weight)
+        model = RoomDef(
+            pools=spec.pools, tags=spec_tags(spec), weight=spec.weight, containers=spec_containers(spec)
+        )
         for seed in sorted(spec.seeds):
             loaded = _built_room(spec, theme, seed, cache)
             if isinstance(loaded, str):

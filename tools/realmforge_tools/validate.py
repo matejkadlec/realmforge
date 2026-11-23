@@ -30,7 +30,7 @@ from realmforge_tools.rooms.check import (
     markers,
 )
 from realmforge_tools.rooms.connectors import Connector, connectors, could_attach, doorway_gap
-from realmforge_tools.rooms.containers import KINDS, candidates
+from realmforge_tools.rooms.containers import KINDS, candidates, loot_containers
 from realmforge_tools.rooms.generator import GENERATED_DIR, theme_blocks, unknown_blocks
 from realmforge_tools.rooms.openings import digest as opening_digest
 from realmforge_tools.rooms.openings import problems as opening_problems
@@ -55,6 +55,7 @@ from realmforge_tools.schema.dimension_rules import WORLDGEN_STRUCTURE_REGISTRY
 from realmforge_tools.schema.dungeon import (
     CORRIDOR_ROLES,
     DEAD_END_ROLES,
+    DEFAULT_CONTAINERS,
     PATH_ROLES,
     ROOM_ROLES,
     WALL_HEIGHT,
@@ -102,7 +103,17 @@ from realmforge_tools.schema.quest import (
 from realmforge_tools.schema.realm import FRAME_HEIGHT, PORTAL_PARTICLES, unlock_advancement
 from realmforge_tools.schema.recipe import is_tag
 from realmforge_tools.schema.requirement import ChapterCompletedDef, HasAdvancementDef, LevelAtLeastDef
-from realmforge_tools.schema.room_spec import FULL, LANTERN, SLAB, STAIRS, THEME_ROLES, WALL_TORCH
+from realmforge_tools.schema.room_spec import (
+    BARREL,
+    COBWEB,
+    FULL,
+    LANTERN,
+    SLAB,
+    STAIRS,
+    THEME_ROLES,
+    VINE,
+    WALL_TORCH,
+)
 from realmforge_tools.schema.sound import sound_id
 from realmforge_tools.schema.spell import (
     ALLY,
@@ -506,13 +517,16 @@ def _full_block(content: Content) -> Callable[[str], bool]:
 
 def _check_room_themes(content: Content, universe: IdUniverse) -> list[Problem]:
     """Every block of a theme exists and is what its role needs: a full block, stairs, a slab, a wall torch, a
-    lantern (``schema/room_spec.py``)."""
+    lantern, a cobweb, a vine, a barrel (``schema/room_spec.py``)."""
     needs = {
         FULL: (_full_block(content), _NOT_FULL),
         STAIRS: (lambda name: name.endswith("_stairs"), "a stairs block"),
         SLAB: (lambda name: name.endswith("_slab"), "a slab"),
         WALL_TORCH: (lambda name: name.endswith("wall_torch"), "a wall torch"),
         LANTERN: (lambda name: name.endswith("lantern"), "a lantern"),
+        COBWEB: (lambda name: name.endswith("cobweb"), "a cobweb"),
+        VINE: (lambda name: name.endswith("vine"), "a vine"),
+        BARREL: (lambda name: name.endswith("barrel"), "a barrel"),
     }
     problems: list[Problem] = []
     for entry in content.room_themes:
@@ -679,6 +693,7 @@ def _check_dungeons(content: Content, universe: IdUniverse) -> list[Problem]:
                 )
             )
         problems += _check_walls(entry, shapes, universe, full)
+        problems += _check_dungeon_dressing(entry, rooms, content)
         everything = [connector for _, _, found in shapes for connector in found]
         for room, _, found in shapes:
             for connector in found:
@@ -692,6 +707,73 @@ def _check_dungeons(content: Content, universe: IdUniverse) -> list[Problem]:
                             f"meets no connector in pool {dungeon.pool}, so {entry.source} can never place it",
                         )
                     )
+    return problems
+
+
+def _check_dungeon_dressing(
+    entry: Entry[DungeonTypeDef], rooms: list[RoomEntry], content: Content
+) -> list[Problem]:
+    """A dungeon type's container loot tables exist, and every chest and barrel its runs build gets one: no container
+    in a dungeon is empty (ADR 0041, RLM-290). A room's containers take the table of the room's role, else the
+    default; a set piece's the default. The tags of its set pieces are tags some piece has (RLM-282)."""
+    dungeon = entry.model
+    problems = []
+    tables = {f"{MOD_ID}:{table.model.id}" for table in content.container_loot}
+    for role, table in dungeon.container_loot.items():
+        if table not in tables:
+            problems.append(
+                Problem(
+                    entry.source,
+                    f"container_loot.{role}",
+                    f"unknown container loot table {table!r}: content/container_loot/ has "
+                    f"{', '.join(sorted(tables)) or 'none'}",
+                )
+            )
+    default = DEFAULT_CONTAINERS in dungeon.container_loot
+    bare = [
+        room
+        for room in rooms
+        if room_role(room.model.tags) not in dungeon.container_loot
+        and not default
+        and room.derived("loot_containers", loot_containers) > 0
+    ]
+    if bare:
+        problems.append(
+            Problem(
+                entry.source,
+                "container_loot",
+                f"pool {dungeon.pool} has rooms with chests or barrels ({len(bare)}, the first: {bare[0].id}), but "
+                "the type names no container loot table for their role or as default: they would stand empty (ADR "
+                "0041)",
+            )
+        )
+    if dungeon.set_pieces is None:
+        return problems
+    known = {tag for piece in content.set_pieces for tag in piece.model.tags}
+    wanted = set(dungeon.set_pieces.tags)
+    for tag in dungeon.set_pieces.tags:
+        if tag not in known:
+            problems.append(
+                Problem(
+                    entry.source,
+                    "set_pieces.tags",
+                    f"no set piece has the tag {tag!r}: content/set_pieces/ has {', '.join(sorted(known)) or 'none'}",
+                )
+            )
+    holding = [
+        piece.id
+        for piece in content.set_pieces
+        if wanted & set(piece.model.tags) and piece.derived("loot_containers", loot_containers) > 0
+    ]
+    if holding and not default:
+        problems.append(
+            Problem(
+                entry.source,
+                "container_loot",
+                f"its set pieces hold chests or barrels (the first: {holding[0]}), which get the default container "
+                "loot table, but the type names none: they would stand empty (ADR 0041)",
+            )
+        )
     return problems
 
 

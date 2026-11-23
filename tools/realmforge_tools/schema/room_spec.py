@@ -165,6 +165,9 @@ STAIRS = "stairs"
 SLAB = "slab"
 WALL_TORCH = "wall_torch"
 LANTERN = "lantern"
+COBWEB = "cobweb"
+VINE = "vine"  # it clings to the wall beside it: a block with a property per side
+BARREL = "barrel"  # the block a dungeon's container tables count as a barrel (rooms/containers.py)
 THEME_ROLES: dict[str, str] = {
     "floor": FULL,
     "floor_variant": FULL,
@@ -182,6 +185,9 @@ THEME_ROLES: dict[str, str] = {
     "rubble_slab": SLAB,
     "wall_light": WALL_TORCH,
     "ceiling_light": LANTERN,
+    "ceiling_web": COBWEB,
+    "wall_growth": VINE,
+    "storage": BARREL,
 }
 
 
@@ -210,6 +216,16 @@ class ThemeBlocks(StrictModel):
         description="Lights on the walls (a wall torch, e.g. minecraft:wall_torch)."
     )
     ceiling_light: ResourceId = Field(description="Lights hanging from the ceiling (a lantern).")
+    ceiling_web: ResourceId = Field(
+        description="A hallway's webs where a wall meets the ceiling (a cobweb, minecraft:cobweb)."
+    )
+    wall_growth: ResourceId = Field(
+        description="A hallway's growth hanging from the top of its walls (a vine, minecraft:vine)."
+    )
+    storage: ResourceId = Field(
+        description="A hallway's lone container against a wall, which a run keeps a quarter of the time (a barrel, "
+        "minecraft:barrel)."
+    )
 
 
 class RoomThemeDef(StrictModel):
