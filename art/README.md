@@ -12,6 +12,7 @@ images before they are processed into game textures. Nothing here is loaded by t
 | `realm-portal/` | the realm portal's batch (RLM-300, RLM-301): the candidates of the Gatewright Bricks' tile, with their prompts and the pick in `candidates/gallery.yaml`. Every look of the frame is made from that one tile (below); the portal's animated textures and the sealstone's socket are drawn by the pipeline |
 | `robes/` | the caster robes' batch (RLM-505): the candidates of the four sets' item icons and of each set's cloth and trim tile, with their prompts and picks in `candidates/gallery.yaml`. Only the Arcane Silk icons are picks: the other three sets' icons are scripted from them (`textures/variants.yaml`), and their own candidates are kept as the alternative |
 | `rooms/` | the import rules of the third-party dungeon rooms in `content/rooms/third_party/`, one folder per source, and where each source comes from ([README](rooms/README.md)) |
+| `sounds/` | **our sound files:** each pick converted to mono OGG Vorbis, `<subject>/<name>.ogg`, which `rf gen` copies into the jar and a sound event of `content/sounds/` plays (`file: <subject>/<name>`), and `sources.yaml`, where every file comes from: the candidate and its prompt, or a third-party sound's author, URL and licence (our credits). The candidates themselves are in the sound store, outside the repository (Sound pipeline, below) |
 | `spell-icons/` | A1's first batch (RLM-588, RLM-591, RLM-609, RLM-642): the candidates of every M1 player spell's icon, the Frozen and Bleeding effect icons and the spellbook's two tiles, with their prompts and picks in `candidates/gallery.yaml` |
 | `spike5/` | spike 5: the same 10 textures from Retro Diffusion and PixelLab, and their review gallery ([README](spike5/README.md)) |
 | `spike-guide-ui/` | guide UI spike: window frames (two RD Fast rounds and an RD Pro version) and category icons from Retro Diffusion, nine-slice previews ([README](spike-guide-ui/README.md)) |
@@ -118,3 +119,84 @@ generator.
 Until a piece of content has approved art, its texture is a generated placeholder
 (`tools/realmforge_tools/generate/textures.py`). Never use vanilla textures or recolors of them, not even as AI
 input.
+
+## Sound pipeline
+
+Our own sounds ([ADR 0079](../docs/decisions/0079-our-sounds-come-from-elevenlabs-through-its-api-and-ship-as-committed-mono-ogg.md),
+RLM-126; tools in `tools/realmforge_tools/sound/`). Until a sound event has a file of ours, it plays vanilla sounds
+by reference (`content/sounds/`, [ADR 0007](../docs/decisions/0007-asset-pipeline.md)); never copy a vanilla sound.
+
+1. **Generate candidates** into the **sound store**, `~/realmforge-sounds/` (or `REALMFORGE_SOUND_STORE`), which
+   lives outside the repository and every worktree and is never committed. One event:
+
+   ```bash
+   uv run rf sound gen frostbolt impact --ticket RLM-445 --sound-event realmforge:spell.frostbolt.impact \
+     --prompt "magic ice shattering on impact, crisp crystalline shards" --duration 1.2 --influence 0.5 --variants 4
+   ```
+
+   or a plan of several, which only makes what its prompts still lack, so it can be run again after a stop
+   (`--dry-run` says what it would make and roughly cost):
+
+   ```yaml
+   # <store>/plans/frost.yaml
+   ticket: RLM-590            # each entry may name its own
+   entries:
+     - subject: frostbolt     # the content id: a spell, mob, block, or a theme such as ui
+       event: impact          # the event's name
+       sound_event: realmforge:spell.frostbolt.impact
+       note: Frostbolt hits its target and shatters
+       prompt: magic ice shattering on impact, crisp crystalline shards, fantasy spell sound effect
+       duration: 1.2          # seconds, 0.5-30 (left out: the model guesses)
+       influence: 0.5         # prompt influence 0-1
+       variants: 4
+     - {subject: undervault, event: ambient, prompt: ..., duration: 20, loop: true, variants: 3}
+     - {subject: astone, event: music, kind: music, prompt: ..., duration: 120, variants: 2}
+   ```
+
+   `uv run rf sound gen --plan <file>`. ElevenLabs needs `ELEVENLABS_API_KEY`
+   ([dev setup](../docs/dev-setup.md#5-claude-code)). Every request reads the subscription before and after, records
+   the real cost (`character-cost`) in its sidecar and the store's ledger, prints the credits left and the reset
+   date, and is refused before it is sent when it would leave fewer than `--reserve` (default 1,000).
+   `uv run rf sound credits` shows the credits at any time. Never buy credit, upgrade or turn on usage-based billing.
+   Each candidate is `candidates/<subject>/<event>/<nn>.wav` with its sidecar `<nn>.yaml`: the prompt and
+   parameters, the date, the source, the ticket and sound event it is for, what it cost, and its measurements.
+2. **Review:** `uv run rf sound gallery` writes `<store>/gallery/index.html` (from Windows:
+   `\\wsl.localhost\Ubuntu\home\<user>\realmforge-sounds\gallery\index.html`): every candidate with a player, grouped
+   by ticket and event, best score first. The score (`rank.py`) is what can be checked without listening: no clipping
+   in any channel, at least 60 % of the length asked for and not cut off at the end, little silence before the
+   sound, a level above the noise, and a loop's seam. A candidate's buttons copy the command that picks it, swaps it
+   in for the event's current pick, or rejects it. `uv run rf sound list [FILTER]` prints the same ranking, and
+   `uv run rf sound measure` measures the store again after the checks change.
+3. **Pick:** `uv run rf sound pick <subject>/<event>/<nn>` converts the candidate into
+   `art/sounds/<subject>/<event>_<n>.ogg` (`--name` for another name, `--replace` to swap a pick): the silence before
+   and after cut (never a loop's) with short fades, the loudness brought to -18 LUFS (a loop to -26, `--loudness` to
+   change it), never past a sample peak of -1 dBFS, then mono Vorbis (libvorbis q5) through the pinned ffmpeg with
+   the bitexact flags, so the same candidate gives the same bytes on every run. It records the source in
+   `sources.yaml`, with who picked it (`--by`).
+4. **Wire it:** name the file in the event, `{file: <subject>/<name>}` in `content/sounds/<subject>.yaml` (with
+   `weight`, `volume`, `pitch`, `stream` for long sounds, `attenuation_distance` when it should carry farther than 16
+   blocks), and run `uv run rf gen`, which copies it to `assets/realmforge/sounds/<subject>/<name>.ogg`.
+   `uv run rf validate` refuses a file that is not mono Vorbis, has no source or that no event plays, and an event
+   that names a file that does not exist.
+
+Music (Eleven Music, `kind: music` in a plan or `rf sound gen --music`) comes as MP3 candidates in the same store;
+its conversion and wiring come with the ticket that plays it (RLM-622). A batch whose playtest Matěj deferred picks
+its sounds itself by the best score, as [ADR 0074](../docs/decisions/0074-an-agent-picks-the-art-of-a-batch-whose-review-matej-deferred.md)
+says for art: the source's `picked_by` says it is provisional and names the batch's deferred ticket, which owes his
+listening in the gallery. Candidates made for later tickets (the sound bank) wait in the store, and a comment on
+each target ticket lists them, so no later session generates them again.
+
+**The licence rule** ([ADR 0079](../docs/decisions/0079-our-sounds-come-from-elevenlabs-through-its-api-and-ship-as-committed-mono-ogg.md),
+after [ADR 0067](../docs/decisions/0067-the-mod-is-all-rights-reserved-imported-rooms-included.md): the mod and its
+assets are All Rights Reserved). We ship:
+
+| Source | `license` in `sources.yaml` | Needs |
+| --- | --- | --- |
+| ElevenLabs output from the paid plan (Starter and up: commercial licence) | `elevenlabs-paid` | the candidate, prompt and model (`rf sound pick` writes them) |
+| Stable Audio output (Stability AI Community License, free under 1M USD revenue) | `stability-community` | the candidate, prompt and model |
+| CC0 sounds (Kenney, OpenGameArt CC0 packs, Freesound CC0) | `cc0` | the URL |
+| CC BY 4.0 sounds (Freesound and others) | `cc-by-4.0` | the author and the URL: they are the credit we owe |
+
+Never: ElevenLabs free-plan output (no commercial licence), CC BY-NC, CC BY-SA, GPL, Pixabay or Sonniss GDC sounds,
+and never a copy of a vanilla sound. A third-party file is converted to mono OGG by hand (or picked from a store
+candidate) and gets its `sources.yaml` entry written by hand.

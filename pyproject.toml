@@ -6,6 +6,9 @@ readme = "tools/README.md"
 license = "LicenseRef-All-Rights-Reserved"
 requires-python = ">=3.12"
 dependencies = [
+    # The ffmpeg build that converts picked sounds to OGG Vorbis (rf sound pick, RLM-126, ADR 0079). Pinned exactly: the
+    # same build gives the same bytes, which a system ffmpeg cannot promise across machines.
+    "imageio-ffmpeg==0.8.1",
     # Reads .schem and .litematic rooms and renders the room gallery (rf rooms). Pinned exactly: its API moves
     # between minor versions, and its README does not match the released API (RLM-119).
     "nucleation==0.10.24",

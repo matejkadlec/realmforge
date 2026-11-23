@@ -305,10 +305,14 @@ Rules:
 - `sounds/` holds our sound events ([ADR 0007](../docs/decisions/0007-asset-pipeline.md), A3): one file per subject
   (a mob, a spell, a block), its `category` (`entity`, `block`, `item`, `spell`, `ambient`, `ui`) and its `events`,
   each `realmforge:<category>.<subject>.<name>` with a `subtitle` (vanilla's style: "Hewn Sentinel cracks") and the
-  vanilla `sounds` it plays, one at random, each with its own `volume` (at most 1) and `pitch` (0.5 to 2). They
-  become `assets/realmforge/sounds.json` entries that play vanilla's events by reference (never copies of vanilla's
-  files), `GeneratedSounds` registrations and the subtitles `subtitles.realmforge.<...>`. New sounds (RLM-126) later
-  replace what an event plays, never its id.
+  `sounds` it plays, one at random, each with its own `volume` (at most 1) and `pitch` (0.5 to 2). A sound is a
+  vanilla `event`, played by reference (never a copy of vanilla's files), or one of our own files, `file:
+  <subject>/<name>`, which is `art/sounds/<subject>/<name>.ogg` (RLM-126, ADR 0079, the
+  [sound pipeline](../art/README.md#sound-pipeline)); a file also takes a `weight` (how often against the others),
+  `stream` (for long sounds and music) and `attenuation_distance` (blocks it carries, 16 by default). They become
+  `assets/realmforge/sounds.json` entries, `GeneratedSounds` registrations, the subtitles
+  `subtitles.realmforge.<...>`, and copies of our files in `assets/realmforge/sounds/`. A new sound replaces what an
+  event plays, never its id.
 - `dungeons/` names each type's `key`, the item that opens a dungeon portal to it (one type per key),
   `open_minutes`, how long that portal stays open (1 to 240), and `level`, its base level (RLM-459): the level of its
   boss where the campaign places it (its chapter and its order in the chapter), or for a type without a boss the level
