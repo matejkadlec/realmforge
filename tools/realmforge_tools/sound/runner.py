@@ -120,7 +120,8 @@ def run(
     say: Callable[[str], None] = print,
 ) -> list[Candidate]:
     """Makes ``count`` candidates of ``spec`` (its variants when not given), each behind the credit guard. Raises
-    ``CreditsReserved`` before a request that would go below ``reserve``; the candidates made until then stay."""
+    ``CreditsReserved`` before a request that would go below ``reserve``, and ``ElevenLabsError`` before one on the
+    free tier (its output may not ship); the candidates made until then stay."""
     if not spec.ticket:
         raise RunnerError(f"{spec.subject}/{spec.event}: no ticket")
     store.ensure_store(root)
@@ -133,6 +134,7 @@ def run(
         before = client.subscription()
         history = store.ledger(root)
         left = elevenlabs.credits_left(before, store.used(root, before.reset_unix, before.count))
+        elevenlabs.check_paid(before)
         elevenlabs.check_reserve(left, elevenlabs.estimate(spec.kind, model, spec.duration, history), reserve)
         if spec.kind == "music":
             assert spec.duration is not None
@@ -183,6 +185,7 @@ def run(
                 after=after.count,
                 limit=after.limit,
                 reset_unix=after.reset_unix,
+                tier=before.tier,
             ),
             measured=measured,
         )
@@ -201,6 +204,7 @@ def run(
                 "after": after.count,
                 "limit": after.limit,
                 "reset_unix": after.reset_unix,
+                "tier": before.tier,
                 "ticket": spec.ticket,
             },
         )

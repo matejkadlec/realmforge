@@ -45,12 +45,15 @@ jar. RLM-126 builds that pipeline, under these decisions and facts:
    period's limit minus the higher of the subscription's count and the ledger's own floor (a request's count before
    it plus every charge since). A request whose estimate (the ledger's highest rate per second for its kind and
    model, cautious defaults until there is one) would leave fewer than `--reserve` (default 1,000) is refused
-   before it is sent. Agents never buy credit, upgrade or enable usage-based billing.
+   before it is sent. Nothing is generated while the account is on the free tier (its output has no commercial
+   licence), and each sidecar records the tier its candidate was made on. Agents never buy credit, upgrade or enable
+   usage-based billing.
 4. **A pick ships as a committed mono OGG Vorbis file:** `uv run rf sound pick <candidate>` cuts the silence before
    and after (never a loop's) with short fades, brings the sound to -18 LUFS (a loop to -26), never past a sample
    peak of -1 dBFS, and encodes it with libvorbis at quality 5 through ffmpeg with the bitexact flags and no
    metadata. The ffmpeg build is pinned with the `imageio-ffmpeg` package in `uv.lock`. The file goes to
-   `art/sounds/<subject>/<name>.ogg`, its source into `art/sounds/sources.yaml`. `rf gen` only copies it to
+   `art/sounds/<subject>/<name>.ogg`, its source into `art/sounds/sources.yaml`; it refuses a candidate whose sidecar
+   records no paid tier. `rf gen` only copies it to
    `assets/realmforge/sounds/`; a sound event of `content/sounds/` plays it with `file: <subject>/<name>`.
    Validation refuses a file that is not mono Vorbis, has no source, or that no event plays, and an event that names
    a file that does not exist. The loudness targets follow vanilla's own sounds (one-shots about -19 LUFS, ambient

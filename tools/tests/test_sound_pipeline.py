@@ -35,8 +35,9 @@ def sample_wav(seconds: float = 0.8, freq: float = 500.0) -> bytes:
 class FakeClient(elevenlabs.Client):
     """Charges 10 credits a second, and its subscription count lags one request behind, like the real one."""
 
-    def __init__(self, limit: int = 70000, used: int = 0) -> None:
+    def __init__(self, limit: int = 70000, used: int = 0, tier: str = "starter") -> None:
         super().__init__("test-key")
+        self.tier = tier
         self.limit = limit
         self.charged = used
         self.shown = used
@@ -44,7 +45,7 @@ class FakeClient(elevenlabs.Client):
 
     def subscription(self) -> Subscription:
         shown, self.shown = self.shown, self.charged
-        return Subscription(count=shown, limit=self.limit, reset_unix=RESET, tier="starter", status="active")
+        return Subscription(count=shown, limit=self.limit, reset_unix=RESET, tier=self.tier, status="active")
 
     def sound_effect(
         self, text, *, duration, loop, influence, model=elevenlabs.SFX_MODEL, output_format="wav_48000"
@@ -111,6 +112,23 @@ def test_a_request_that_would_go_below_the_reserve_is_refused_before_it_is_made(
     # The default estimate is the docs' 40 credits a second: nothing was requested.
     assert client.requests == []
     assert store.candidates(tmp_path) == []
+
+
+def test_nothing_is_generated_on_the_free_tier_and_its_output_is_never_picked(
+    repo: RepoPaths, tmp_path: Path
+) -> None:
+    free = FakeClient(tier="free")
+    with pytest.raises(elevenlabs.ElevenLabsError, match="free tier"):
+        runner.run(spec(), tmp_path, free, reserve=0, say=lambda _: None)
+    assert free.requests == []
+    made = runner.run(spec(variants=1), tmp_path, FakeClient(), reserve=0, say=lambda _: None)[0]
+    assert made.cost.tier == "starter"
+    unpaid = made.model_copy(update={"cost": made.cost.model_copy(update={"tier": "free"})})
+    with pytest.raises(art.SoundsError, match="only paid-plan output may ship"):
+        art.pick(repo, tmp_path, unpaid, picked_by="Matěj")
+    unknown = made.model_copy(update={"cost": made.cost.model_copy(update={"tier": None})})
+    with pytest.raises(art.SoundsError, match="unrecorded tier"):
+        art.pick(repo, tmp_path, unknown, picked_by="Matěj")
 
 
 def test_the_estimate_learns_the_real_rate_from_the_ledger(tmp_path: Path) -> None:

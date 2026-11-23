@@ -38,6 +38,8 @@ DEFAULT_MUSIC_RATE_PER_SECOND = 100.0
 MAX_SFX_SECONDS = 30.0
 RETRIES = 3
 TIMEOUT = 300
+# The tiers whose output may not ship: no commercial licence (ADR 0079).
+FREE_TIERS = frozenset({"free"})
 
 
 class ElevenLabsError(RuntimeError):
@@ -197,6 +199,20 @@ def estimate(kind: str, model: str, seconds: float | None, history: list[dict[st
         return math.ceil(rate * (seconds or 60.0))
     rate = max(rates, default=DEFAULT_SFX_RATE)
     return math.ceil(rate * (seconds if seconds is not None else MAX_SFX_SECONDS))
+
+
+def is_paid(tier: str | None) -> bool:
+    """Whether audio made on ``tier`` may ship: only a paid plan's output has the commercial licence (ADR 0079). The
+    Starter plan ends at its reset date and the account falls back to ``free``."""
+    return bool(tier) and tier.strip().lower() not in FREE_TIERS
+
+
+def check_paid(subscription: Subscription) -> None:
+    if not is_paid(subscription.tier):
+        raise ElevenLabsError(
+            f"the account is on the {subscription.tier or 'unknown'} tier: free-plan output has no commercial licence "
+            "and may not ship (ADR 0079), so nothing is generated"
+        )
 
 
 def check_reserve(left: int, cost: int, reserve: int) -> None:

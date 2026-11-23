@@ -21,7 +21,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_valida
 from realmforge_tools.content import Content
 from realmforge_tools.problems import Problem
 from realmforge_tools.project import RepoPaths
-from realmforge_tools.sound import convert, store
+from realmforge_tools.sound import convert, elevenlabs, store
 from realmforge_tools.sound.store import Candidate
 from realmforge_tools.sound.wav import read_wav
 from realmforge_tools.yamlio import YamlLoadError, dump_yaml, load_yaml
@@ -176,6 +176,11 @@ def pick(
     name and what the treatment did."""
     if candidate.kind != "sfx":
         raise SoundsError(f"{candidate.id}: music is converted when RLM-622 wires it, not by rf sound pick")
+    if not elevenlabs.is_paid(candidate.cost.tier):
+        raise SoundsError(
+            f"{candidate.id}: made on the {candidate.cost.tier or 'unrecorded'} tier; only paid-plan output may ship "
+            "(ADR 0079)"
+        )
     name = name or next_name(paths, candidate.subject, candidate.event)
     if not store.NAME.match(name):
         raise SoundsError(f"{name}: a sound file's name is lowercase snake_case")
