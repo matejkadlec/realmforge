@@ -2145,14 +2145,19 @@ which plays: a cast's on `CastStartedPayload`, lowered at the client tick after 
 cast again by then, so it shows for the caster
 and every tracking player, one who starts tracking mid-cast included (the server sends them the cast in progress).
 An instant spell's `CastStartedPayload` (marked `instant`) is played and timed but kept out of the casts in progress,
-so it has no cast bar and nothing forms; the release is timed the same way from the cast's end.
+so it has no cast bar and nothing forms; the release is timed the same way, from the client tick after the cast's end
+(below).
 `client/spell/TimedPoses` keeps the casters whose arms play such an animation with the game time it ends, and the
 client tick lowers the arms then, unless a cast took them meanwhile (game time stands still while the game is paused,
 so nothing is due then); `TimedPosesTest` covers it, and `CurrentCastsTest` which casts end in the release. The
 server ends a cast that another replaces before it starts the new one, in the same tick, so the end arrives first;
 lowering at once dipped the hands and raised them again from the animation's first frame (RLM-454).
-`client/spell/PendingLowerings` keeps the casters whose casts ended until that tick, and `PendingLoweringsTest` covers
-it.
+`client/spell/PendingLowerings` keeps the casters whose casts ended until that tick, each with whether its latest end
+lowers the hands or plays the release, and `PendingLoweringsTest` covers it. The release waits for that tick too
+(RLM-662): a spell pressed in a cast's last quarter second waits for it and starts in the server tick it completes
+(RLM-517), so a Fireball chained to a Frostbolt starts before the tick, and the caster, casting again, keeps the
+running `cast` animation as it is, with no release and no dip; a formed cast with no cast after it plays the release
+then.
 `AimedCastAnimation` wraps the animation with the aim above, and `CastArms` holds its math (decomposing the turned
 rotation into the part's angles, the short way round, and the pivot turned about the eye), which `CastArmsTest`
 covers. Player Animation Library is a required dependency on the client only (`side = "CLIENT"`); every PAL call of
@@ -2209,7 +2214,9 @@ show each of the four on a real cast.
   order, a new press replacing the waiting one at size 1. A held key casts its spell again whenever its cooldowns
   allow, at most every half second, and never cancels a cast; pressing the spell being cast does nothing. Two spells
   never cast at once. An aura (RLM-595) is toggled by a press only, never by a held key, is off the global cooldown on
-  the client too, and with queueing its press does not wait for a cast in progress, which its toggle leaves running. `client/spell/SpellBarInput` sends `CastSpellPayload` (the spell, the living entity under the
+  the client too, and with queueing its press does not wait for a cast in progress, which its toggle leaves running,
+nor for the waiting presses ahead of it, which it goes past at Spells Queue Size 2 or 3 and which keep their places
+(RLM-637; `CastQueueTest` covers an aura's press and its held key). `client/spell/SpellBarInput` sends `CastSpellPayload` (the spell, the living entity under the
   crosshair within its range, `client/spell/SpellTargetPicker`, none for a direction spell, which flies where the
   crosshair points, and `replaceCast`); `spell/SpellBar` picks a targeted spell's target by aim assistance when it names
   none ([11.2](#112-casting-server-authoritative)) and casts it through `SpellCaster`, which with `replaceCast` skips
