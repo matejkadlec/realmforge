@@ -9,6 +9,7 @@ spends nothing on what is already there.
 from __future__ import annotations
 
 import re
+import time
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
@@ -110,6 +111,23 @@ def measure(body: bytes) -> tuple[Measured | None, str]:
         return None, suffix
 
 
+def _charge_from_usage(
+    client: elevenlabs.Client, product: str, before: float | None, sleep: Callable[[float], None]
+) -> int | None:
+    """A request's charge as the usage stats' growth for ``product`` across it (they show it within seconds), or
+    None when they give no answer or show nothing new."""
+    if before is None:
+        return None
+    for _ in range(elevenlabs.USAGE_POLLS):
+        now = client.usage(product)
+        if now is None:
+            return None
+        if now > before:
+            return round(now - before)
+        sleep(elevenlabs.USAGE_WAIT)
+    return None
+
+
 def run(
     spec: Spec,
     root: Path,
@@ -118,6 +136,7 @@ def run(
     reserve: int,
     count: int | None = None,
     say: Callable[[str], None] = print,
+    sleep: Callable[[float], None] = time.sleep,
 ) -> list[Candidate]:
     """Makes ``count`` candidates of ``spec`` (its variants when not given), each behind the credit guard. Raises
     ``CreditsReserved`` before a request that would go below ``reserve``, and ``ElevenLabsError`` before one on the
@@ -136,6 +155,8 @@ def run(
         left = elevenlabs.credits_left(before, store.used(root, before.reset_unix, before.count))
         elevenlabs.check_paid(before)
         elevenlabs.check_reserve(left, elevenlabs.estimate(spec.kind, model, spec.duration, history), reserve)
+        product = elevenlabs.PRODUCTS[spec.kind]
+        usage_before = client.usage(product) if spec.kind == "music" else None
         if spec.kind == "music":
             assert spec.duration is not None
             audio = client.music(
@@ -156,6 +177,9 @@ def run(
                 output_format=output_format,
             )
             endpoint = "/v1/sound-generation"
+        charged = audio.charged
+        if charged is None:
+            charged = _charge_from_usage(client, product, usage_before, sleep)
         after = client.subscription()
         measured, suffix = measure(audio.body)
         number = store.next_number(root, spec.subject, spec.event)
@@ -180,12 +204,13 @@ def run(
             created=datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
             request_id=audio.request_id,
             cost=Cost(
-                charged=audio.charged,
+                charged=charged,
                 before=before.count,
                 after=after.count,
                 limit=after.limit,
                 reset_unix=after.reset_unix,
                 tier=before.tier,
+                status=before.status,
             ),
             measured=measured,
         )
@@ -199,19 +224,20 @@ def run(
                 "kind": spec.kind,
                 "model": model,
                 "seconds": seconds,
-                "charged": audio.charged,
+                "charged": charged,
                 "before": before.count,
                 "after": after.count,
                 "limit": after.limit,
                 "reset_unix": after.reset_unix,
                 "tier": before.tier,
+                "status": before.status,
                 "ticket": spec.ticket,
             },
         )
         left_after = elevenlabs.credits_left(after, store.used(root, after.reset_unix, after.count))
         length = f"{measured.seconds:.2f} s" if measured else "unmeasured"
         say(
-            f"{candidate.id}: {audio.charged if audio.charged is not None else '?'} credits ({length}); "
+            f"{candidate.id}: {charged if charged is not None else '?'} credits ({length}); "
             f"{left_after} left, resets {after.reset_date()}"
         )
         made.append(candidate)

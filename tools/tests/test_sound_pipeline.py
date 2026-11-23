@@ -35,17 +35,36 @@ def sample_wav(seconds: float = 0.8, freq: float = 500.0) -> bytes:
 class FakeClient(elevenlabs.Client):
     """Charges 10 credits a second, and its subscription count lags one request behind, like the real one."""
 
-    def __init__(self, limit: int = 70000, used: int = 0, tier: str = "starter") -> None:
+    def __init__(
+        self, limit: int = 70000, used: int = 0, tier: str = "starter", status: str = "active"
+    ) -> None:
         super().__init__("test-key")
         self.tier = tier
+        self.status = status
         self.limit = limit
         self.charged = used
         self.shown = used
         self.requests: list[dict[str, object]] = []
+        self.music_charged = 0
+
+    def usage(self, product: str) -> float | None:
+        return float(self.music_charged) if product == "Music" else None
+
+    def music(
+        self, prompt, *, length_ms, instrumental, model=elevenlabs.MUSIC_MODEL, output_format="mp3_44100_128"
+    ):  # type: ignore[no-untyped-def,override]
+        # No character-cost header, like the real endpoint: only the usage stats show the charge.
+        cost = math.ceil(12 * length_ms / 1000)
+        self.charged += cost
+        self.music_charged += cost
+        self.requests.append({"text": prompt, "length_ms": length_ms, "model": model})
+        return Audio(sample_wav(), "audio/wav", None, "song-1")
 
     def subscription(self) -> Subscription:
         shown, self.shown = self.shown, self.charged
-        return Subscription(count=shown, limit=self.limit, reset_unix=RESET, tier=self.tier, status="active")
+        return Subscription(
+            count=shown, limit=self.limit, reset_unix=RESET, tier=self.tier, status=self.status
+        )
 
     def sound_effect(
         self, text, *, duration, loop, influence, model=elevenlabs.SFX_MODEL, output_format="wav_48000"
@@ -114,21 +133,49 @@ def test_a_request_that_would_go_below_the_reserve_is_refused_before_it_is_made(
     assert store.candidates(tmp_path) == []
 
 
-def test_nothing_is_generated_on_the_free_tier_and_its_output_is_never_picked(
+@pytest.mark.parametrize(
+    ("tier", "status"),
+    [
+        ("free", "free"),
+        ("trial", "free"),
+        ("starter", "free_disabled"),
+        ("starter", "past_due"),
+        ("", "active"),
+    ],
+)
+def test_nothing_is_generated_unless_a_paid_plan_is_active(tmp_path: Path, tier: str, status: str) -> None:
+    client = FakeClient(tier=tier, status=status)
+    with pytest.raises(elevenlabs.ElevenLabsError, match="only an active paid plan"):
+        runner.run(spec(), tmp_path, client, reserve=0, say=lambda _: None)
+    assert client.requests == []
+
+
+def test_a_candidate_is_picked_only_when_it_was_made_on_an_active_paid_plan(
     repo: RepoPaths, tmp_path: Path
 ) -> None:
-    free = FakeClient(tier="free")
-    with pytest.raises(elevenlabs.ElevenLabsError, match="free tier"):
-        runner.run(spec(), tmp_path, free, reserve=0, say=lambda _: None)
-    assert free.requests == []
     made = runner.run(spec(variants=1), tmp_path, FakeClient(), reserve=0, say=lambda _: None)[0]
-    assert made.cost.tier == "starter"
-    unpaid = made.model_copy(update={"cost": made.cost.model_copy(update={"tier": "free"})})
-    with pytest.raises(art.SoundsError, match="only paid-plan output may ship"):
-        art.pick(repo, tmp_path, unpaid, picked_by="Matěj")
-    unknown = made.model_copy(update={"cost": made.cost.model_copy(update={"tier": None})})
-    with pytest.raises(art.SoundsError, match="unrecorded tier"):
-        art.pick(repo, tmp_path, unknown, picked_by="Matěj")
+    assert (made.cost.tier, made.cost.status) == ("starter", "active")
+    for tier, status in (("free", "active"), ("trial", "free"), ("starter", None), (None, "active")):
+        unpaid = made.model_copy(
+            update={"cost": made.cost.model_copy(update={"tier": tier, "status": status})}
+        )
+        with pytest.raises(art.SoundsError, match="only an active paid plan"):
+            art.pick(repo, tmp_path, unpaid, picked_by="Matěj")
+
+
+def test_music_is_charged_as_the_usage_stats_grew_across_its_request(tmp_path: Path) -> None:
+    made = runner.run(
+        spec(subject="astone", event="music", kind="music", duration=10.0, variants=1),
+        tmp_path,
+        FakeClient(),
+        reserve=0,
+        say=lambda _: None,
+        sleep=lambda _: None,
+    )[0]
+    assert made.kind == "music"
+    assert made.music_length_ms == 10000
+    assert made.cost.charged == 120
+    assert store.ledger(tmp_path)[0]["charged"] == 120
 
 
 def test_the_estimate_learns_the_real_rate_from_the_ledger(tmp_path: Path) -> None:

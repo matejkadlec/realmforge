@@ -77,7 +77,8 @@ class _Model(BaseModel):
 class Cost(_Model):
     """What a request cost: ``charged`` is the response's ``character-cost`` header, ``before`` and ``after`` the
     subscription's ``character_count`` around it (which can lag), ``limit`` and ``reset_unix`` the period's, and
-    ``tier`` the plan it was made on, which decides whether its audio may ship (ADR 0079: the paid plan only)."""
+    ``tier`` and ``status`` the plan it was made on, which decide whether its audio may ship (ADR 0079: an active
+    paid plan only)."""
 
     charged: int | None = None
     before: int | None = None
@@ -85,6 +86,7 @@ class Cost(_Model):
     limit: int | None = None
     reset_unix: int | None = None
     tier: str | None = None
+    status: str | None = None
 
 
 class Measured(_Model):

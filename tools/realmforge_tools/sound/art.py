@@ -176,10 +176,10 @@ def pick(
     name and what the treatment did."""
     if candidate.kind != "sfx":
         raise SoundsError(f"{candidate.id}: music is converted when RLM-622 wires it, not by rf sound pick")
-    if not elevenlabs.is_paid(candidate.cost.tier):
+    if not elevenlabs.is_paid(candidate.cost.tier, candidate.cost.status):
         raise SoundsError(
-            f"{candidate.id}: made on the {candidate.cost.tier or 'unrecorded'} tier; only paid-plan output may ship "
-            "(ADR 0079)"
+            f"{candidate.id}: made on {candidate.cost.tier or 'an unrecorded tier'} "
+            f"({candidate.cost.status or 'unrecorded status'}); only an active paid plan's output may ship (ADR 0079)"
         )
     name = name or next_name(paths, candidate.subject, candidate.event)
     if not store.NAME.match(name):

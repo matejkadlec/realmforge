@@ -38,8 +38,15 @@ DEFAULT_MUSIC_RATE_PER_SECOND = 100.0
 MAX_SFX_SECONDS = 30.0
 RETRIES = 3
 TIMEOUT = 300
-# The tiers whose output may not ship: no commercial licence (ADR 0079).
-FREE_TIERS = frozenset({"free"})
+# The usage stats' product names, for a charge that a response does not carry in its header.
+PRODUCTS = {"sfx": "Sound Effects", "music": "Music"}
+# How often and how long to wait for the usage stats to show a charge.
+USAGE_POLLS = 6
+USAGE_WAIT = 3.0
+# A paid plan's subscription is active (SubscriptionStatusType: trialing, active, incomplete, past_due, free,
+# free_disabled); a free account may still name a tier, so these tier names never count as paid either (ADR 0079).
+PAID_STATUS = "active"
+UNPAID_TIERS = frozenset({"", "none", "null", "free", "trial"})
 
 
 class ElevenLabsError(RuntimeError):
@@ -121,6 +128,23 @@ class Client:
                 raise ElevenLabsError(f"{method} {path}: {e.reason}") from e
         raise ElevenLabsError(f"{method} {path}: no answer")  # pragma: no cover - the loop returns or raises
 
+    def usage(self, product: str) -> float | None:
+        """The credits ``product`` (``Music``, ``Sound Effects``) used in the last two days, from
+        ``GET /v1/usage/character-stats``; None when the API gives no answer. A response without a
+        ``character-cost`` header (music) is charged as the difference across the request."""
+        now = int(time.time())
+        query = {
+            "start_unix": str((now - 2 * 86400) * 1000),
+            "end_unix": str((now + 3600) * 1000),
+            "breakdown_type": "product_type",
+        }
+        try:
+            body, _ = self._request("GET", "/v1/usage/character-stats", query)
+            series = json.loads(body).get("usage", {}).get(product, [])
+            return float(sum(series))
+        except (ElevenLabsError, ValueError, TypeError, AttributeError):
+            return None
+
     def subscription(self) -> Subscription:
         body, _ = self._request("GET", "/v1/user/subscription")
         data = json.loads(body)
@@ -128,8 +152,8 @@ class Client:
             count=int(data["character_count"]),
             limit=int(data["character_limit"]),
             reset_unix=int(data["next_character_count_reset_unix"]),
-            tier=str(data.get("tier", "")),
-            status=str(data.get("status", "")),
+            tier=str(data.get("tier") or ""),
+            status=str(data.get("status") or ""),
         )
 
     def _audio(self, path: str, output_format: str, body: dict[str, object]) -> Audio:
@@ -201,17 +225,21 @@ def estimate(kind: str, model: str, seconds: float | None, history: list[dict[st
     return math.ceil(rate * (seconds if seconds is not None else MAX_SFX_SECONDS))
 
 
-def is_paid(tier: str | None) -> bool:
-    """Whether audio made on ``tier`` may ship: only a paid plan's output has the commercial licence (ADR 0079). The
-    Starter plan ends at its reset date and the account falls back to ``free``."""
-    return bool(tier) and tier.strip().lower() not in FREE_TIERS
+def is_paid(tier: str | None, status: str | None) -> bool:
+    """Whether audio made under ``tier`` and ``status`` may ship: only an active paid plan's output has the
+    commercial licence (ADR 0079). Fails closed: an unknown status, a missing tier or a free one is unpaid. The
+    Starter plan ends at its reset date and the account falls back to the free plan."""
+    if not tier or not status or status.strip().lower() != PAID_STATUS:
+        return False
+    name = tier.strip().lower()
+    return name not in UNPAID_TIERS and not name.startswith(("free", "trial"))
 
 
 def check_paid(subscription: Subscription) -> None:
-    if not is_paid(subscription.tier):
+    if not is_paid(subscription.tier, subscription.status):
         raise ElevenLabsError(
-            f"the account is on the {subscription.tier or 'unknown'} tier: free-plan output has no commercial licence "
-            "and may not ship (ADR 0079), so nothing is generated"
+            f"the subscription is {subscription.tier or 'no tier'} ({subscription.status or 'no status'}): only an "
+            "active paid plan's output has a commercial licence and may ship (ADR 0079), so nothing is generated"
         )
 
 

@@ -155,10 +155,11 @@ by reference (`content/sounds/`, [ADR 0007](../docs/decisions/0007-asset-pipelin
 
    `uv run rf sound gen --plan <file>`. ElevenLabs needs `ELEVENLABS_API_KEY`
    ([dev setup](../docs/dev-setup.md#5-claude-code)). Every request reads the subscription before and after, records
-   the real cost (`character-cost`) in its sidecar and the store's ledger, prints the credits left and the reset
+   the real cost (the `character-cost` header; for music, the usage stats' growth across the request) in its sidecar and the store's ledger, prints the credits left and the reset
    date, and is refused before it is sent when it would leave fewer than `--reserve` (default 1,000).
-   `uv run rf sound credits` shows the credits at any time. Nothing is generated on the free tier (no commercial
-   licence; the Starter plan falls back to it at its last reset), and each sidecar records the tier. Never buy
+   `uv run rf sound credits` shows the credits at any time. Nothing is generated unless the subscription is an active
+   paid plan (free-plan output has no commercial licence; the Starter plan falls back to free at its last reset), and
+   each sidecar records the tier and status. Never buy
    credit, upgrade or turn on usage-based billing.
    Each candidate is `candidates/<subject>/<event>/<nn>.wav` with its sidecar `<nn>.yaml`: the prompt and
    parameters, the date, the source, the ticket and sound event it is for, what it cost, and its measurements.
@@ -174,7 +175,7 @@ by reference (`content/sounds/`, [ADR 0007](../docs/decisions/0007-asset-pipelin
    and after cut (never a loop's) with short fades, the loudness brought to -18 LUFS (a loop to -26, `--loudness` to
    change it), never past a sample peak of -1 dBFS, then mono Vorbis (libvorbis q5) through the pinned ffmpeg with
    the bitexact flags, so the same candidate gives the same bytes on every run. It refuses a candidate whose
-   sidecar records no paid tier. It records the source in
+   sidecar does not record an active paid plan. It records the source in
    `sources.yaml`, with who picked it (`--by`).
 4. **Wire it:** name the file in the event, `{file: <subject>/<name>}` in `content/sounds/<subject>.yaml` (with
    `weight`, `volume`, `pitch`, `stream` for long sounds, `attenuation_distance` when it should carry farther than 16
