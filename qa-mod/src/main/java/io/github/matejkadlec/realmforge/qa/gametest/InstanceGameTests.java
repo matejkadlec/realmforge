@@ -11,15 +11,21 @@ import io.github.matejkadlec.realmforge.dungeon.instance.InstanceDimension;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceLayout;
 import io.github.matejkadlec.realmforge.dungeon.instance.InstanceManager;
 import io.github.matejkadlec.realmforge.dungeon.instance.Plot;
+import io.github.matejkadlec.realmforge.dungeon.instance.PlotGrid;
 import io.github.matejkadlec.realmforge.dungeon.instance.PlotState;
+import io.github.matejkadlec.realmforge.dungeon.instance.PlotWork;
 import io.github.matejkadlec.realmforge.dungeon.instance.PortalLink;
 import io.github.matejkadlec.realmforge.dungeon.instance.RoomPlacement;
 import io.github.matejkadlec.realmforge.dungeon.plan.DungeonRoom;
 import io.github.matejkadlec.realmforge.generated.GeneratedBlocks;
 import io.github.matejkadlec.realmforge.qa.RealmforgeQa;
+import io.github.matejkadlec.realmforge.qa.instance.HeldBackEntities;
 import io.github.matejkadlec.realmforge.qa.instance.InstanceBench;
 import io.github.matejkadlec.realmforge.qa.instance.SpikeLayouts;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.longs.LongSet;
 import java.lang.reflect.Field;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -55,7 +61,8 @@ import net.minecraft.world.phys.Vec3;
  * Spike 3 and W4b: instanced dungeons in plots of {@code realmforge:instances}. A plot is built from the spike rooms,
  * entered at its entrance marker, completed, left and cleared with the margin around its rooms; a player who
  * reconnects stays in a live run and is sent back from a gone one; a pending member can leave; a build whose template
- * is gone is released; and plots built at the same time share the builder's time.
+ * is gone is released, and a good plot opened beside it holds its chunks; a build waits for every chunk it wants, those
+ * only its margin reaches included; and plots built at the same time share the builder's time.
  *
  * <p>The GameTest world has the dimension only through {@code GameTestServerMixin}. Coordinates in the test
  * structure are relative to the template's corner: the stone floor is at y = 0.
@@ -63,6 +70,11 @@ import net.minecraft.world.phys.Vec3;
 public final class InstanceGameTests {
     /** Building and clearing take a few dozen ticks; this leaves room for a slow CI machine. */
     private static final int TIMEOUT = 600;
+    /**
+     * How long a test holds back a chunk's entities at most: long enough for a build, short enough that a test failing
+     * while it holds them never stalls a later build in the same plot cell until that one times out.
+     */
+    private static final long HOLD_BACK_TICKS = 200L;
     private static final Identifier TEST_DUNGEON = Realmforge.id("test_dungeon");
 
     private InstanceGameTests() {
@@ -285,6 +297,97 @@ public final class InstanceGameTests {
     }
 
     /**
+     * RLM-651: a build finishes only once its plot holds every chunk it wants. A unit waits for the chunks it places
+     * in, but none places in a chunk that only the margin around the rooms reaches, such as the column west of the
+     * start room, whose wall stands on the origin's chunk border. When that column's entities loaded a tick after the
+     * last unit ran (as after the plot's cell was freed and taken again), the plot turned playable without holding it,
+     * and {@link #instanceIsBuiltEnteredLeftAndCleared} failed now and then ("a built plot holds its chunks"). Here the
+     * column's entities are held back until every unit has run: the plot waits, and is ready once they load.
+     */
+    @QaGameTest(timeoutTicks = TIMEOUT)
+    public static void aBuildWaitsForTheChunksOnlyItsMarginReaches(GameTestHelper helper) {
+        InstanceManager manager = manager(helper);
+        ServerLevel instances = InstanceDimension.level(helper.getLevel().getServer());
+        int expected = nextPlot(manager);
+        BlockPos origin = PlotGrid.origin(expected);
+        LongSet west = new LongOpenHashSet();
+        for (int z = -1; z <= 1; z++) {
+            west.add(ChunkPos.pack((origin.getX() >> 4) - 1, (origin.getZ() >> 4) + z));
+        }
+        // Before opening: the plot holds every wanted chunk that is ready when it opens.
+        west.forEach(chunk -> HeldBackEntities.holdBack(instances, chunk, HOLD_BACK_TICKS));
+        Plot plot = manager.open(SpikeLayouts.spike(), List.of());
+        helper.assertValueEqual(plot.id(), expected, "the plot the manager took");
+        LongSet roomChunks = PlotWork.chunks(plot.rooms());
+        for (long chunk : west) {
+            helper.assertTrue(plot.wantedChunks().contains(chunk) && !roomChunks.contains(chunk),
+                    "only the margin reaches " + ChunkPos.unpack(chunk));
+        }
+        int units = PlotWork.units(plot.dirty(), plot.rooms()).size();
+
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(plot.state() != PlotState.BUILDING || plot.step() >= units,
+                        "the plot is at unit " + plot.step() + " of " + units))
+                .thenIdle(5)
+                .thenExecute(() -> {
+                    helper.assertTrue(plot.state() == PlotState.BUILDING,
+                            "every unit ran, but the margin's chunks are not held yet, and the plot is " + plot.state());
+                    helper.assertFalse(plot.chunks().containsAll(plot.wantedChunks()), "the held-back chunks are held");
+                    west.forEach(chunk -> HeldBackEntities.letGo(instances, chunk));
+                })
+                .thenWaitUntil(() -> helper.assertTrue(plot.state() == PlotState.READY, "plot is " + plot.state()))
+                .thenExecute(() -> {
+                    helper.assertTrue(plot.chunks().containsAll(plot.wantedChunks()), "a built plot holds its chunks");
+                    manager.release(plot);
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * RLM-651's first guess, ruled out: a build that fails and releases its plot takes no chunk from a good plot opened
+     * in the same tick, nor from one opened once the failed plot is free, often into its cell. Each plot holds its
+     * chunks under its own origin, and a closing plot's cell is handed out only once it is cleared. Every good plot is
+     * playable only while it holds all its chunks.
+     */
+    @QaGameTest(timeoutTicks = TIMEOUT)
+    public static void aGoodPlotOpenedBesideAFailedBuildHoldsItsChunks(GameTestHelper helper) {
+        InstanceManager manager = manager(helper);
+        StructureTemplateManager templates = helper.getLevel().getStructureManager();
+        Identifier gone = RealmforgeQa.id("gametest/gone_beside_a_good_plot");
+        templates.getOrCreate(gone).fillFromWorld(helper.getLevel(), helper.absolutePos(BlockPos.ZERO),
+                new Vec3i(3, 2, 3), false, List.of());
+        Plot failed = manager.open(new InstanceLayout(List.of(
+                new RoomPlacement(SpikeLayouts.START, BlockPos.ZERO, Rotation.NONE),
+                new RoomPlacement(gone, new BlockPos(15, 0, 6), Rotation.NONE)), Optional.empty()), List.of());
+        long failedRun = failed.run();
+        // Plots are reused, so each good plot is ours only while it holds the run it opened with.
+        Map<Plot, Long> good = new LinkedHashMap<>();
+        Plot beside = manager.open(SpikeLayouts.spike(), List.of());
+        good.put(beside, beside.run());
+        templates.remove(gone);
+        helper.onEachTick(() -> good.forEach((plot, run) -> {
+            if (plot.run() == run && plot.state().isPlayable()) {
+                helper.assertTrue(plot.chunks().containsAll(plot.wantedChunks()),
+                        "plot " + plot.id() + " is playable without holding all its chunks");
+            }
+        }));
+
+        helper.startSequence()
+                // Free, or already taken again by another test's run.
+                .thenWaitUntil(() -> helper.assertTrue(failed.state() == PlotState.FREE
+                        || (failed.run() != 0L && failed.run() != failedRun), "the failed plot is " + failed.state()))
+                .thenExecute(() -> {
+                    Plot next = manager.open(SpikeLayouts.spike(), List.of());
+                    good.put(next, next.run());
+                })
+                .thenWaitUntil(() -> good.forEach((plot, run) -> helper.assertTrue(
+                        plot.run() == run && plot.state() == PlotState.READY,
+                        "plot " + plot.id() + " is " + plot.state())))
+                .thenExecute(() -> good.keySet().forEach(manager::release))
+                .thenSucceed();
+    }
+
+    /**
      * Done when of W4b: plots opened in the same tick both make progress in every tick once their chunks are held:
      * the builder's time goes round the plots, and each plot being built runs a unit every tick.
      */
@@ -449,5 +552,11 @@ public final class InstanceGameTests {
         InstanceManager manager = InstanceManager.get(helper.getLevel().getServer());
         helper.assertTrue(manager != null, "the GameTest world has no realmforge:instances dimension");
         return manager;
+    }
+
+    /** The plot {@code InstanceManager#open} takes next: the lowest free one, else a new one after the last. */
+    private static int nextPlot(InstanceManager manager) {
+        return manager.plots().stream().filter(plot -> plot.state() == PlotState.FREE).mapToInt(Plot::id).min()
+                .orElse(manager.plots().size());
     }
 }

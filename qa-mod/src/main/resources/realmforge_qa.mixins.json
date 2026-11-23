@@ -4,7 +4,8 @@
   "package": "io.github.matejkadlec.realmforge.qa.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
-    "GameTestServerMixin"
+    "GameTestServerMixin",
+    "ServerLevelMixin"
   ],
   "client": [
     "MinecraftProfileLookupMixin",

@@ -79,6 +79,12 @@ def test_only_the_gone_template_tests_failed_build_is_allowed() -> None:
     )
     assert gametest_problems(line.replace("TEMPLATE", "realmforge_qa:gametest/gone") + PASSED) == []
     assert gametest_problems(line.replace("TEMPLATE", "realmforge_qa:gametest/portal_gone") + PASSED) == []
+    assert (
+        gametest_problems(line.replace("TEMPLATE", "realmforge_qa:gametest/gone_beside_a_good_plot") + PASSED)
+        == []
+    )
+    (other,) = gametest_problems(line.replace("TEMPLATE", "realmforge_qa:gametest/gone_too") + PASSED)
+    assert "unknown room template realmforge_qa:gametest/gone_too" in other
     (problem,) = gametest_problems(line.replace("TEMPLATE", "realmforge:rooms/stone/hall") + PASSED)
     assert "unknown room template realmforge:rooms/stone/hall" in problem
 

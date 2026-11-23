@@ -4147,7 +4147,11 @@ Spike 3 built this and measured it; the numbers and the reasons are in
   (`realmforge:instance_loading`: loading only, renewed every tick until the chunk has loaded and gone 20 ticks
   later, not saved), and the controller holds each chunk only once it has loaded, its entities included
   (`ServerLevel#areEntitiesLoaded`: the entity manager makes a chunk's entity sections accessible after its blocks, and a
-  room's item frames placed before that stay hidden from every entity query, RLM-483). After a restart, a plot asks again
+  room's item frames placed before that stay hidden from every entity query, RLM-483). A build finishes, and its plot
+  becomes playable, only once the plot holds every chunk it wants (RLM-651): a unit waits for the chunks it places in,
+  but none places in a chunk that only the margin around the rooms reaches (the column west of a start room whose wall
+  stands on the origin's chunk border), and its entities can load a tick or more after the last unit ran, above all
+  in a cell that was just freed and taken again. After a restart, a plot asks again
   for the chunks it does not hold, and a build released before any of its units ran loads none. The GameTest server
   runs its ticks back to back, so the background loading of a new plot cell (seconds) would outlast the tests' tick
   timeouts; there the QA mod loads the chunks plots wait for before each tick (`GameTestChunkLoads`).
@@ -4714,9 +4718,12 @@ still has the plain list; once a pinned build fixes it, the mixin can be removed
 fixed and level-free ([14.4](#144-merchants), RLM-285; `MerchantGameTests`): `VillagerSpecialPricesMixin` makes
 `Villager#updateSpecialPrices`, private and called by every `startTrading`, do nothing for a profession in
 `#realmforge:fixed_price` (Hero of the Village's discount is unconditional there), and `MerchantProgressBarMixin`
-makes `AbstractVillager#showProgressBar` false for one, the flag of every offers packet. The QA mod has two, for dev
+makes `AbstractVillager#showProgressBar` false for one, the flag of every offers packet. The QA mod has three, for dev
 runs only: `GameTestServerMixin` gives the
-GameTest world the data pack dimensions, which vanilla leaves out ([20](#20-tests-per-layer)), and
+GameTest world the data pack dimensions, which vanilla leaves out ([20](#20-tests-per-layer)), `ServerLevelMixin`
+makes `ServerLevel#areEntitiesLoaded` read false for a chunk a GameTest holds back (`HeldBackEntities`, with a
+deadline, RLM-651), as while its entities still load on the entity manager's IO thread, which a test cannot otherwise
+slow down, and
 `MinecraftProfileLookupMixin`, a client mixin (the config's `client` list), retries the dev client's one profile
 lookup at startup up to three times, 1 s and then 2 s apart (`ProfileLookupRetry`, RLM-570;
 `ProfileLookupRetryGameTests`). Mojang's session server sometimes times out there, and vanilla then plays the whole
