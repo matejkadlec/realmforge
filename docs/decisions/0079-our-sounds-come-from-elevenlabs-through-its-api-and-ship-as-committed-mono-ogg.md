@@ -85,3 +85,8 @@ jar. RLM-126 builds that pipeline, under these decisions and facts:
   `\\wsl.localhost\<distro>\home\<user>\realmforge-sounds\gallery\index.html`.
 - Agents' picks of a deferred batch are in the game before Matěj hears them; a swap is one command from the gallery
   and an `rf gen`.
+- **The store's first candidates got their status afterwards** (2026-11-23): the sidecars made before the tools
+  recorded `cost.status` (135, made that day on the Starter plan, `limit` 70,000, the period resetting
+  2026-12-17) were given `status: active` once, by hand, because the subscription read `starter`, `active` all
+  that day. Without it `rf sound pick` would refuse them and a plan would count them as made, so they would have to
+  be paid for again. No later sidecar needs this: the tools record the status with every candidate.

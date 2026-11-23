@@ -159,7 +159,8 @@ by reference (`content/sounds/`, [ADR 0007](../docs/decisions/0007-asset-pipelin
    date, and is refused before it is sent when it would leave fewer than `--reserve` (default 1,000).
    `uv run rf sound credits` shows the credits at any time. Nothing is generated unless the subscription is an active
    paid plan (free-plan output has no commercial licence; the Starter plan falls back to free at its last reset), and
-   each sidecar records the tier and status. Never buy
+   each sidecar records the tier and status (the store's first candidates, made on 2026-11-23 before the status was
+   recorded, had it filled in once: ADR 0079, Consequences). Never buy
    credit, upgrade or turn on usage-based billing.
    Each candidate is `candidates/<subject>/<event>/<nn>.wav` with its sidecar `<nn>.yaml`: the prompt and
    parameters, the date, the source, the ticket and sound event it is for, what it cost, and its measurements.
