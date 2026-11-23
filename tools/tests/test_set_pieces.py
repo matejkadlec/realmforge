@@ -755,6 +755,61 @@ def test_a_set_pieces_containers_need_the_default_loot_table(repo: RepoPaths) ->
     )
 
 
+# A piece whose template holds no container: a hay bale against the wall, a skull on it.
+HAY_NBT = Structure(
+    (1, 2, 1),
+    DATA_VERSION,
+    (
+        StructureBlock((0, 0, 0), BlockState.parse("minecraft:hay_block[axis=y]")),
+        StructureBlock(
+            (0, 1, 0), BlockState.parse("minecraft:skeleton_skull[rotation=0]"), {"id": "minecraft:skull"}
+        ),
+    ),
+)
+HAY_PIECES = "set_pieces:\n  tags: [hay]\n"
+
+
+def hay_piece(repo: RepoPaths, swap_to: str | None) -> None:
+    """The crypt with a dungeon type that places only the hay piece, which swaps its bale to ``swap_to`` (if any)."""
+    walled_hall(repo, HAY_PIECES)
+    rule = BARREL_RULE.replace("tags: [storage]", "tags: [hay]")
+    if swap_to is not None:
+        rule += f"variants:\n  swaps:\n    minecraft:hay_block:\n      to: {swap_to}\n"
+    add_piece(repo, "hay_niche", rule, HAY_NBT)
+
+
+@pytest.mark.parametrize(
+    "swap_to", ["minecraft:chest[facing=south]", "minecraft:trapped_chest", "minecraft:barrel"]
+)
+def test_a_set_piece_that_swaps_a_block_to_a_container_needs_the_default_loot_table(
+    repo: RepoPaths, swap_to: str
+) -> None:
+    # RLM-664: a swap (ADR 0078) makes a chest or barrel at placement, with no loot table of its own; it gets the
+    # type's default like a template's own container (ADR 0041), so a type without one is refused.
+    hay_piece(repo, swap_to)
+    path = repo.content / "dungeons" / "crypt.yaml"
+    path.write_text(
+        dungeon() + "container_loot:\n  treasure: realmforge:treasure\n" + HAY_PIECES, encoding="utf-8"
+    )
+    assert any(
+        "container_loot" in p and "swap a block to one" in p and "hay_niche" in p for p in problems_for(repo)
+    )
+    path.write_text(dungeon() + LOOT + HAY_PIECES, encoding="utf-8")
+    load_and_validate(repo)  # the type's default fills the swapped container
+
+
+@pytest.mark.parametrize("swap_to", [None, "minecraft:dried_kelp_block"])
+def test_a_set_piece_that_never_places_a_container_needs_no_loot_table(
+    repo: RepoPaths, swap_to: str | None
+) -> None:
+    hay_piece(repo, swap_to)
+    path = repo.content / "dungeons" / "crypt.yaml"
+    path.write_text(
+        dungeon() + "container_loot:\n  treasure: realmforge:treasure\n" + HAY_PIECES, encoding="utf-8"
+    )
+    load_and_validate(repo)
+
+
 # --- the mask report --------------------------------------------------------------------------------------------
 
 

@@ -593,14 +593,21 @@ public final class InstanceManager extends SavedData {
      * Runs the plot's next unit, unless its chunks are still loading, and finishes the job after its last one.
      * Returns whether the plot moved on. A unit that fails (a room template that no longer resolves after a restart,
      * say) releases a plot being built and is skipped by a closing one, instead of failing every tick.
+     *
+     * <p>A build finishes only once the plot holds every chunk it wants: a unit waits for the chunks it places in, but
+     * a chunk only the margin around the rooms reaches is placed in by none, and its entities can load a tick or more
+     * after the rooms' (after the plot's cell was freed and taken again, say). A playable plot holds all its chunks
+     * (RLM-651).
      */
     private boolean runUnit(ServerLevel level, Plot plot) {
         List<PlotWork.Unit> units = plot.units();
+        boolean ran = false;
         if (plot.step() < units.size()) {
             PlotWork.Unit unit = units.get(plot.step());
             if (!InstanceBuilder.ready(level, unit)) {
                 return false;
             }
+            ran = true;
             long start = System.nanoTime();
             try {
                 long cleared = InstanceBuilder.run(level, plot, unit);
@@ -620,10 +627,15 @@ public final class InstanceManager extends SavedData {
                 LOGGER.error("Instance plot {} failed to clear ({}): {}; skipping it", plot.id(), unit, e.getMessage(), e);
             }
             plot.advance();
+            lastServed = plot.id();
         }
-        lastServed = plot.id();
         if (plot.step() >= units.size()) {
+            if (plot.state() == PlotState.BUILDING && !plot.chunks().containsAll(plot.wantedChunks())) {
+                // Waiting for a chunk to be held moves nothing on, or the tick's loop would never end.
+                return ran;
+            }
             finishWork(plot);
+            lastServed = plot.id();
         }
         return true;
     }

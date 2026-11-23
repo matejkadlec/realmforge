@@ -30,7 +30,7 @@ from realmforge_tools.rooms.check import (
     markers,
 )
 from realmforge_tools.rooms.connectors import Connector, connectors, could_attach, doorway_gap
-from realmforge_tools.rooms.containers import KINDS, candidates, loot_containers
+from realmforge_tools.rooms.containers import KINDS, LOOT_CONTAINERS, candidates, loot_containers
 from realmforge_tools.rooms.generator import GENERATED_DIR, theme_blocks, unknown_blocks
 from realmforge_tools.rooms.openings import digest as opening_digest
 from realmforge_tools.rooms.openings import problems as opening_problems
@@ -765,18 +765,34 @@ def _check_dungeon_dressing(
     holding = [
         piece.id
         for piece in content.set_pieces
-        if wanted & set(piece.model.tags) and piece.derived("loot_containers", loot_containers) > 0
+        if wanted & set(piece.model.tags) and _holds_containers(piece)
     ]
     if holding and not default:
         problems.append(
             Problem(
                 entry.source,
                 "container_loot",
-                f"its set pieces hold chests or barrels (the first: {holding[0]}), which get the default container "
-                "loot table, but the type names none: they would stand empty (ADR 0041)",
+                f"its set pieces hold chests or barrels, or swap a block to one (the first: {holding[0]}), which get "
+                "the default container loot table, but the type names none: they would stand empty (ADR 0041)",
             )
         )
     return problems
+
+
+def _holds_containers(piece: SetPieceEntry) -> bool:
+    """Whether a set piece can place a chest, trapped chest or barrel that gets its dungeon type's default container
+    loot table: one its template holds without a loot table of its own, or one a swap turns a block into when the
+    piece is placed (ADR 0078, RLM-664), which never carries one."""
+    if piece.derived("loot_containers", loot_containers) > 0:
+        return True
+    for swap in piece.model.variants.swaps.values():
+        try:
+            target = BlockState.parse(swap.to)
+        except StructureError:
+            continue  # reported with the piece's own rule (_set_piece_rule_problems)
+        if target.name in LOOT_CONTAINERS:
+            return True
+    return False
 
 
 def _check_walls(

@@ -106,8 +106,10 @@ GAMETEST_ALLOWED_ERRORS: tuple[tuple[str, str], ...] = (
     ),
     (
         r"^io\.github\.matejkadlec\.realmforge\.dungeon\.instance\.InstanceManager: Instance plot \d+ failed to "
-        r"build \(.*\): unknown room template realmforge_qa:gametest/(portal_)?gone; releasing it$",
-        "InstanceGameTests.aBuildWhoseTemplateIsGoneIsReleased and DungeonPortalGameTests"
+        r"build \(.*\): unknown room template realmforge_qa:gametest/(portal_gone|gone|gone_beside_a_good_plot); "
+        r"releasing it$",
+        "InstanceGameTests.aBuildWhoseTemplateIsGoneIsReleased, InstanceGameTests"
+        ".aGoodPlotOpenedBesideAFailedBuildHoldsItsChunks and DungeonPortalGameTests"
         ".aKeyComesBackWhenItsDungeonCannotBeBuilt remove those room templates on purpose; any other failed build "
         "stays an error",
     ),
