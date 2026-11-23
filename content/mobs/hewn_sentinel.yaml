@@ -18,9 +18,11 @@ attributes:
   knockback_resistance_percent: 60
 melee: {attack_interval_seconds: 1.5, knock_up_blocks: 0.5}
 sounds:
+  ambient: realmforge:entity.hewn_sentinel.ambient
   hurt: realmforge:entity.hewn_sentinel.hurt
   death: realmforge:entity.hewn_sentinel.death
   step: realmforge:entity.hewn_sentinel.step
+  attack: realmforge:entity.hewn_sentinel.attack
 death_particles: realmforge:vaultstone_bricks
 tags: [realmforge:stone_creatures]
 loot:

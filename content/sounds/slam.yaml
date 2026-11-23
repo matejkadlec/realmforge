@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../tools/schemas/sounds.schema.json
+# Slam's sounds (RLM-445): the greatsword's swing as it begins, and its hit on whatever it strikes.
+# Our own sounds from ElevenLabs (ADR 0079), an agent's provisional picks until Matěj listens (RLM-669).
+id: slam
+category: spell
+events:
+  swing:
+    subtitle: {en_us: Greatsword swings}
+    sounds:
+      - {file: slam/swing_1}
+  hit:
+    subtitle: {en_us: Slam lands}
+    sounds:
+      - {file: slam/hit_1}

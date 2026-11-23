@@ -602,6 +602,11 @@ class MeleeEffectDef(StrictModel):
     effects: list[EntityEffectDef] = Field(
         min_length=1, description="What it does to each enemy inside, in order."
     )
+    sound: ResourceId | None = Field(
+        default=None,
+        description="A sound event of the hit (RLM-445), played once where the first enemy it strikes stands; "
+        "nothing when it strikes none.",
+    )
 
 
 class ConeEffectDef(StrictModel):
@@ -814,6 +819,11 @@ class InstantCastDef(StrictModel):
         allow_inf_nan=False,
         description="When its effects run, in percent of the animation (50 by default: the middle of a swing).",
     )
+    sound: ResourceId | None = Field(
+        default=None,
+        description="A sound event the caster makes as it casts (RLM-445): the push of the hands' short cast sound "
+        "(realmforge:spell.cast.instant), or a swing's whoosh as the swing begins.",
+    )
     player_animation: ResourceId | None = Field(
         default=None,
         description="A player animation of ours (assets/realmforge/player_animations/, by its name: "
@@ -917,6 +927,11 @@ class ChannelCastDef(_TimedCastDef):
         description="How long the channel lasts, before Cast Time Reduction: a whole number of intervals."
     )
     interval_seconds: Seconds = Field(description="The time between two ticks of the effects; more than 0.")
+    tick_sound: ResourceId | None = Field(
+        default=None,
+        description="A sound event the caster makes at each tick, as its effects run (RLM-445: each of Arcane "
+        "Missiles' launches); the cast's own sound plays once as it begins.",
+    )
     cast_time_reduction: Literal["shortens", "adds_ticks"] | None = Field(
         default=None,
         description="What Cast Time Reduction does to the channel: shortens (left out) shortens its interval and "

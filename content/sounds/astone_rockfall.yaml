@@ -1,11 +1,11 @@
 # yaml-language-server: $schema=../../tools/schemas/sounds.schema.json
 # Rockfall's sound (W5b, RLM-491): cracking rock as Astone calls rocks down, her tell to step out of the marked
-# ring. Vanilla sounds until A3's own (RLM-126).
+# ring.
+# Our own sounds from ElevenLabs (ADR 0079), an agent's provisional picks until Matěj listens (RLM-669).
 id: astone_rockfall
 category: spell
 events:
   crack:
     subtitle: {en_us: Astone calls down rocks}
     sounds:
-      - {event: minecraft:block.pointed_dripstone.break, pitch: 0.6}
-      - {event: minecraft:block.dripstone_block.break, pitch: 0.5}
+      - {file: astone_rockfall/crack_1}

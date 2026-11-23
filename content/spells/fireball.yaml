@@ -12,10 +12,10 @@ description: {en_us: "Hurls a ball of fire for {damage} damage that burns the ta
 school: realmforge:fire
 scales_with: spell_power
 targeting: {type: realmforge:direction, range: 40}
-cast: {type: cast_time, duration_seconds: 1.5}
+cast: {type: cast_time, duration_seconds: 1.5, sound: realmforge:spell.fireball.form}
 cost: {resource: realmforge:mana, amount: 12}
 max_level: 5
-visuals: {look: realmforge:fire, forming: grow}
+visuals: {look: realmforge:fire, forming: grow, impact_sound: realmforge:spell.fireball.impact}
 effects:
   - type: realmforge:projectile
     speed: 30

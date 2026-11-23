@@ -9,7 +9,8 @@
   "cast": {
     "type": "instant",
     "animation_ticks": 10,
-    "hit_at": 0.5
+    "hit_at": 0.5,
+    "sound": "realmforge:spell.slam.swing"
   },
   "cost": {
     "amount": 30.0,
@@ -42,7 +43,8 @@
           "armor_shred": 0.05,
           "armor_shred_per_level": 0.05
         }
-      ]
+      ],
+      "sound": "realmforge:spell.slam.hit"
     }
   ]
 }

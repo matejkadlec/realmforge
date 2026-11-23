@@ -13,7 +13,7 @@ description: {en_us: "Slams every enemy in front of you for {damage} damage, ign
 school: realmforge:physical
 scales_with: attack_damage
 targeting: {type: realmforge:self}
-cast: {type: instant, animation_seconds: 0.5, hit_at_percent: 50}
+cast: {type: instant, animation_seconds: 0.5, hit_at_percent: 50, sound: realmforge:spell.slam.swing}
 cost: {resource: realmforge:rage, amount: 30}
 cooldown_seconds: 4
 max_level: 5
@@ -21,6 +21,7 @@ requires: [melee_weapon]
 effects:
   - type: realmforge:melee
     shape: swing
+    sound: realmforge:spell.slam.hit
     effects:
       - type: realmforge:damage
         amount: 5

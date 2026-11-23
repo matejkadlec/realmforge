@@ -240,7 +240,11 @@ def test_a_spells_visuals_reach_its_data_and_its_expectations(repo: RepoPaths) -
     assert "forms_projectile" not in boulder["cast"]
     assert boulder["effects"][0]["model"] == "realmforge:orb"
     missiles = json.loads(files[f"{DATA}/spell/arcane_missiles.json"])
-    assert missiles["visuals"] == {"look": "realmforge:arcane", "forming": "hands"}
+    assert missiles["visuals"] == {
+        "look": "realmforge:arcane",
+        "forming": "hands",
+        "impact_sound": "realmforge:spell.arcane_missiles.impact",
+    }
     # A spell without visuals has none in its data, and its projectile still names how it flies.
     missile = json.loads(files[f"{DATA}/spell/test_missile.json"])
     assert "visuals" not in missile

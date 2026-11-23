@@ -7,7 +7,8 @@
     "type": "realmforge:self"
   },
   "cast": {
-    "type": "instant"
+    "type": "instant",
+    "sound": "realmforge:spell.cast.instant"
   },
   "cost": {
     "amount": 25.0,

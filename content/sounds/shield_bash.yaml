@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../tools/schemas/sounds.schema.json
+# Shield Bash's sounds (RLM-445): the shield's thrust, and its bash on whatever it strikes.
+# Our own sounds from ElevenLabs (ADR 0079), an agent's provisional picks until Matěj listens (RLM-669).
+id: shield_bash
+category: spell
+events:
+  swing:
+    subtitle: {en_us: Shield thrusts}
+    sounds:
+      - {file: shield_bash/swing_1}
+  hit:
+    subtitle: {en_us: Shield bashes}
+    sounds:
+      - {file: shield_bash/hit_1}

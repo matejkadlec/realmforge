@@ -134,6 +134,7 @@ public final class QaGameTests {
             StatsGameTests.class,
             StunGameTests.class,
             SwingAndSplashGameTests.class,
+            SpellSoundGameTests.class,
             TrainingDummyGameTests.class,
             WeaponBlockGameTests.class,
             WelcomeGameTests.class,

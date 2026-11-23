@@ -24,6 +24,10 @@ public final class GeneratedSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> ENTITY_ASTONE_AMBIENT =
             register("entity.astone.ambient");
 
+    /** {@code realmforge:entity.astone.attack} from {@code content/sounds/astone.yaml}. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> ENTITY_ASTONE_ATTACK =
+            register("entity.astone.attack");
+
     /** {@code realmforge:entity.astone.death} from {@code content/sounds/astone.yaml}. */
     public static final DeferredHolder<SoundEvent, SoundEvent> ENTITY_ASTONE_DEATH =
             register("entity.astone.death");
@@ -48,6 +52,14 @@ public final class GeneratedSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> ENTITY_HEWN_CHANTER_HURT =
             register("entity.hewn_chanter.hurt");
 
+    /** {@code realmforge:entity.hewn_sentinel.ambient} from {@code content/sounds/hewn_sentinel.yaml}. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> ENTITY_HEWN_SENTINEL_AMBIENT =
+            register("entity.hewn_sentinel.ambient");
+
+    /** {@code realmforge:entity.hewn_sentinel.attack} from {@code content/sounds/hewn_sentinel.yaml}. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> ENTITY_HEWN_SENTINEL_ATTACK =
+            register("entity.hewn_sentinel.attack");
+
     /** {@code realmforge:entity.hewn_sentinel.death} from {@code content/sounds/hewn_sentinel.yaml}. */
     public static final DeferredHolder<SoundEvent, SoundEvent> ENTITY_HEWN_SENTINEL_DEATH =
             register("entity.hewn_sentinel.death");
@@ -59,6 +71,14 @@ public final class GeneratedSounds {
     /** {@code realmforge:entity.hewn_sentinel.step} from {@code content/sounds/hewn_sentinel.yaml}. */
     public static final DeferredHolder<SoundEvent, SoundEvent> ENTITY_HEWN_SENTINEL_STEP =
             register("entity.hewn_sentinel.step");
+
+    /** {@code realmforge:spell.arcane_missiles.impact} from {@code content/sounds/arcane_missiles.yaml}. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> SPELL_ARCANE_MISSILES_IMPACT =
+            register("spell.arcane_missiles.impact");
+
+    /** {@code realmforge:spell.arcane_missiles.launch} from {@code content/sounds/arcane_missiles.yaml}. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> SPELL_ARCANE_MISSILES_LAUNCH =
+            register("spell.arcane_missiles.launch");
 
     /** {@code realmforge:spell.astone_boulder.form} from {@code content/sounds/astone_boulder.yaml}. */
     public static final DeferredHolder<SoundEvent, SoundEvent> SPELL_ASTONE_BOULDER_FORM =
@@ -76,6 +96,54 @@ public final class GeneratedSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> SPELL_ASTONE_ROCKFALL_CRACK =
             register("spell.astone_rockfall.crack");
 
+    /** {@code realmforge:spell.cast.instant} from {@code content/sounds/cast.yaml}. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> SPELL_CAST_INSTANT =
+            register("spell.cast.instant");
+
+    /** {@code realmforge:spell.cast.interrupt} from {@code content/sounds/cast.yaml}. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> SPELL_CAST_INTERRUPT =
+            register("spell.cast.interrupt");
+
+    /** {@code realmforge:spell.fireball.form} from {@code content/sounds/fireball.yaml}. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> SPELL_FIREBALL_FORM =
+            register("spell.fireball.form");
+
+    /** {@code realmforge:spell.fireball.impact} from {@code content/sounds/fireball.yaml}. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> SPELL_FIREBALL_IMPACT =
+            register("spell.fireball.impact");
+
+    /** {@code realmforge:spell.frostbolt.form} from {@code content/sounds/frostbolt.yaml}. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> SPELL_FROSTBOLT_FORM =
+            register("spell.frostbolt.form");
+
+    /** {@code realmforge:spell.frostbolt.impact} from {@code content/sounds/frostbolt.yaml}. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> SPELL_FROSTBOLT_IMPACT =
+            register("spell.frostbolt.impact");
+
+    /** {@code realmforge:spell.reckless_strike.hit} from {@code content/sounds/reckless_strike.yaml}. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> SPELL_RECKLESS_STRIKE_HIT =
+            register("spell.reckless_strike.hit");
+
+    /** {@code realmforge:spell.reckless_strike.swing} from {@code content/sounds/reckless_strike.yaml}. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> SPELL_RECKLESS_STRIKE_SWING =
+            register("spell.reckless_strike.swing");
+
+    /** {@code realmforge:spell.shield_bash.hit} from {@code content/sounds/shield_bash.yaml}. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> SPELL_SHIELD_BASH_HIT =
+            register("spell.shield_bash.hit");
+
+    /** {@code realmforge:spell.shield_bash.swing} from {@code content/sounds/shield_bash.yaml}. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> SPELL_SHIELD_BASH_SWING =
+            register("spell.shield_bash.swing");
+
+    /** {@code realmforge:spell.slam.hit} from {@code content/sounds/slam.yaml}. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> SPELL_SLAM_HIT =
+            register("spell.slam.hit");
+
+    /** {@code realmforge:spell.slam.swing} from {@code content/sounds/slam.yaml}. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> SPELL_SLAM_SWING =
+            register("spell.slam.swing");
+
     /** {@code realmforge:spell.stoneform.form} from {@code content/sounds/stoneform.yaml}. */
     public static final DeferredHolder<SoundEvent, SoundEvent> SPELL_STONEFORM_FORM =
             register("spell.stoneform.form");
@@ -86,7 +154,7 @@ public final class GeneratedSounds {
 
     /** Every event above, in id order. */
     public static final List<DeferredHolder<SoundEvent, SoundEvent>> ALL =
-            List.of(ENTITY_ASTONE_AMBIENT, ENTITY_ASTONE_DEATH, ENTITY_ASTONE_HURT, ENTITY_ASTONE_STEP, ENTITY_HEWN_CHANTER_AMBIENT, ENTITY_HEWN_CHANTER_DEATH, ENTITY_HEWN_CHANTER_HURT, ENTITY_HEWN_SENTINEL_DEATH, ENTITY_HEWN_SENTINEL_HURT, ENTITY_HEWN_SENTINEL_STEP, SPELL_ASTONE_BOULDER_FORM, SPELL_ASTONE_BOULDER_IMPACT, SPELL_ASTONE_QUAKE_RUMBLE, SPELL_ASTONE_ROCKFALL_CRACK, SPELL_STONEFORM_FORM, SPELL_STONEFORM_IMPACT);
+            List.of(ENTITY_ASTONE_AMBIENT, ENTITY_ASTONE_ATTACK, ENTITY_ASTONE_DEATH, ENTITY_ASTONE_HURT, ENTITY_ASTONE_STEP, ENTITY_HEWN_CHANTER_AMBIENT, ENTITY_HEWN_CHANTER_DEATH, ENTITY_HEWN_CHANTER_HURT, ENTITY_HEWN_SENTINEL_AMBIENT, ENTITY_HEWN_SENTINEL_ATTACK, ENTITY_HEWN_SENTINEL_DEATH, ENTITY_HEWN_SENTINEL_HURT, ENTITY_HEWN_SENTINEL_STEP, SPELL_ARCANE_MISSILES_IMPACT, SPELL_ARCANE_MISSILES_LAUNCH, SPELL_ASTONE_BOULDER_FORM, SPELL_ASTONE_BOULDER_IMPACT, SPELL_ASTONE_QUAKE_RUMBLE, SPELL_ASTONE_ROCKFALL_CRACK, SPELL_CAST_INSTANT, SPELL_CAST_INTERRUPT, SPELL_FIREBALL_FORM, SPELL_FIREBALL_IMPACT, SPELL_FROSTBOLT_FORM, SPELL_FROSTBOLT_IMPACT, SPELL_RECKLESS_STRIKE_HIT, SPELL_RECKLESS_STRIKE_SWING, SPELL_SHIELD_BASH_HIT, SPELL_SHIELD_BASH_SWING, SPELL_SLAM_HIT, SPELL_SLAM_SWING, SPELL_STONEFORM_FORM, SPELL_STONEFORM_IMPACT);
 
     private GeneratedSounds() {
     }

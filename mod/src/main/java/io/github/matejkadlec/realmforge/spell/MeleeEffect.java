@@ -3,6 +3,9 @@ package io.github.matejkadlec.realmforge.spell;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import java.util.List;
+import java.util.Optional;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.ExtraCodecs;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -27,8 +30,11 @@ import net.minecraft.world.phys.Vec3;
  *
  * @param shape a swing (the default melee hit shape) or a stab
  * @param effects what it does to each enemy in the shape, in order
+ * @param sound   the hit's sound, played once where the first enemy it strikes stands; nothing when it strikes none
+ *                (RLM-445)
  */
-public record MeleeEffect(MeleeShape.Kind shape, List<SpellEffect> effects) implements SpellEffect {
+public record MeleeEffect(MeleeShape.Kind shape, List<SpellEffect> effects, Optional<Identifier> sound)
+        implements SpellEffect {
     /** Points spread through a hitbox for the cover check: at most 3 along each axis, inside its faces. */
     private static final int COVER_SAMPLES = 3;
     private static final double COVER_SPACING = 0.5;
@@ -37,7 +43,8 @@ public record MeleeEffect(MeleeShape.Kind shape, List<SpellEffect> effects) impl
     public static final MapCodec<MeleeEffect> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance
             .group(MeleeShape.Kind.CODEC.fieldOf("shape").forGetter(MeleeEffect::shape),
                     ExtraCodecs.nonEmptyList(SpellEffect.CODEC.listOf()).fieldOf("effects")
-                            .forGetter(MeleeEffect::effects))
+                            .forGetter(MeleeEffect::effects),
+                    Identifier.CODEC.optionalFieldOf("sound").forGetter(MeleeEffect::sound))
             .apply(instance, MeleeEffect::new));
 
     public MeleeEffect {
@@ -68,7 +75,13 @@ public record MeleeEffect(MeleeShape.Kind shape, List<SpellEffect> effects) impl
     @Override
     public void apply(EffectContext context, SpellTarget target) {
         LivingEntity caster = context.caster();
-        for (LivingEntity entity : struck(caster)) {
+        List<LivingEntity> struck = struck(caster);
+        if (!struck.isEmpty()) {
+            LivingEntity first = struck.getFirst();
+            sound.map(BuiltInRegistries.SOUND_EVENT::getValue).ifPresent(event -> caster.level().playSound(null,
+                    first.getX(), first.getY(0.5), first.getZ(), event, caster.getSoundSource(), 1.0F, 1.0F));
+        }
+        for (LivingEntity entity : struck) {
             SpellTarget hit = SpellTarget.of(caster, entity);
             for (SpellEffect effect : effects) {
                 effect.apply(context, hit);

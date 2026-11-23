@@ -246,6 +246,10 @@ class MobSoundsDef(StrictModel):
     step: ResourceId | Literal["silent"] | None = Field(
         default=None, description="Each step it takes; silent: it walks without a sound."
     )
+    attack: ResourceId | None = Field(
+        default=None,
+        description="Each melee attack, as it swings (a melee mob's or a boss's); none when left out (RLM-621).",
+    )
 
 
 class MobVariantDef(StrictModel):

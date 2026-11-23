@@ -1,19 +1,30 @@
 # yaml-language-server: $schema=../../tools/schemas/sounds.schema.json
-# The Hewn Sentinel's sounds (W3, RLM-33; Matěj's playtest, 2026-10-23): a forceful stone hit when it is hurt, a crush
-# when it breaks apart, and heavy stone steps. Vanilla sounds, deeper, until A3's own (RLM-126).
+# The Hewn Sentinel's sounds (W3, RLM-33; Matěj's playtest, 2026-10-23; RLM-621): stone joints and its gem now and
+# then, a forceful stone hit when it is hurt, a crush when it breaks apart, heavy stone steps, and its fist's swing.
+# Our own sounds from ElevenLabs (ADR 0079), an agent's provisional picks until Matěj listens (RLM-669).
 id: hewn_sentinel
 category: entity
 events:
+  ambient:
+    subtitle: {en_us: Hewn Sentinel grinds}
+    sounds:
+      - {file: hewn_sentinel/ambient_1, volume: 0.8}
+      - {file: hewn_sentinel/ambient_2, volume: 0.8}
   hurt:
     subtitle: {en_us: Hewn Sentinel cracks}
     sounds:
-      - {event: minecraft:block.deepslate.break, pitch: 0.8}
-      - {event: minecraft:entity.iron_golem.hurt, pitch: 0.7}
+      - {file: hewn_sentinel/hurt_1}
+      - {file: hewn_sentinel/hurt_2}
   death:
     subtitle: {en_us: Hewn Sentinel crumbles}
     sounds:
-      - {event: minecraft:entity.iron_golem.death, pitch: 0.8}
+      - {file: hewn_sentinel/death_1}
   step:
     subtitle: {en_us: Hewn Sentinel stomps}
     sounds:
-      - {event: minecraft:entity.iron_golem.step, pitch: 0.7}
+      - {file: hewn_sentinel/step_1, volume: 0.5}
+      - {file: hewn_sentinel/step_2, volume: 0.5}
+  attack:
+    subtitle: {en_us: Hewn Sentinel swings}
+    sounds:
+      - {file: hewn_sentinel/attack_1}

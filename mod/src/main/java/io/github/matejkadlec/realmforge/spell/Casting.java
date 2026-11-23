@@ -4,6 +4,7 @@ import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.combat.CombatConfig;
 import io.github.matejkadlec.realmforge.combat.DamagePipeline;
 import io.github.matejkadlec.realmforge.effect.Effects;
+import io.github.matejkadlec.realmforge.generated.GeneratedSounds;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.spell.CombatState.Cast;
 import io.github.matejkadlec.realmforge.spell.net.CastEndedPayload;
@@ -19,6 +20,7 @@ import java.util.OptionalDouble;
 import javax.annotation.Nullable;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -177,8 +179,16 @@ public final class Casting {
         RUNNING.put(caster, running);
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new CastStartedPayload(caster.getId(), cast));
         showCircle(running);
-        spellCast.sound().map(BuiltInRegistries.SOUND_EVENT::getValue).ifPresent(sound -> caster.level()
-                .playSound(null, caster, sound, caster.getSoundSource(), 1.0F, 1.0F));
+        playSound(caster, spellCast.sound());
+    }
+
+    /**
+     * {@code caster} makes {@code sound} where it stands, heard by everyone near (RLM-445): a cast's sound as it
+     * begins, a channel's at each tick, an instant spell's as its hands push. Nothing for an unknown id.
+     */
+    static void playSound(LivingEntity caster, Optional<Identifier> sound) {
+        sound.map(BuiltInRegistries.SOUND_EVENT::getValue).ifPresent(event -> caster.level()
+                .playSound(null, caster, event, caster.getSoundSource(), 1.0F, 1.0F));
     }
 
     /**
@@ -198,6 +208,7 @@ public final class Casting {
         Running running = new Running(caster, spell, level, target, (ServerLevel) caster.level(), cast, 0, 0, 0,
                 damageScale, paid);
         RUNNING.put(caster, running);
+        playSound(caster, spell.value().cast().sound());
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new CastStartedPayload(caster.getId(), cast));
     }
 
@@ -417,6 +428,7 @@ public final class Casting {
                     return;
                 }
                 running.ticksRun++;
+                playSound(caster, spell.cast().tickSound());
                 SpellCaster.runEffects(running.level(), caster, running.spell(), running.spellLevel(),
                         running.target().now(caster, spell.targeting()), Optional.empty(), running.damageScale());
                 if (RUNNING.get(caster) != running) {
@@ -628,12 +640,26 @@ public final class Casting {
         if (end.completed()) {
             SpellCaster.wentOff(caster, running.spell());
         }
+        if (fizzles(running, end)) {
+            caster.level().playSound(null, caster, GeneratedSounds.SPELL_CAST_INTERRUPT.value(),
+                    caster.getSoundSource(), 1.0F, 1.0F);
+        }
         NeoForge.EVENT_BUS.post(new CastEndedEvent(caster, running.spell(), end));
         if (running.next != null && end != CastEnd.CANCELLED && end != CastEnd.DIED
                 && end != CastEnd.CHANGED_DIMENSION && end != CastEnd.LOGGED_OUT) {
             STARTING.put(caster, running.next);
         }
         return true;
+    }
+
+    /**
+     * Whether an end makes the interrupt sound (RLM-445: what gathered for a cast-time or channelled spell fades, so the
+     * sound is a fade, not a burst): a stun, a knockback or another cast cutting it. A swing has nothing gathering, and
+     * a death, a logout or a dimension change leaves nobody there to hear it.
+     */
+    private static boolean fizzles(Running running, CastEnd end) {
+        return !running.cast().swing()
+                && (end == CastEnd.STUNNED || end == CastEnd.KNOCKED_BACK || end == CastEnd.CANCELLED);
     }
 
     /** Removes Better Combat's disable tag if a cast or an instant spell's animation added it; an operator's own stays. */

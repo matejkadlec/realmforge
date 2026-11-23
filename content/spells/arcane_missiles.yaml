@@ -14,10 +14,10 @@ description: {en_us: "Fires 3 arcane missiles, each for {damage} damage, ignorin
 school: realmforge:arcane
 scales_with: spell_power
 targeting: {type: realmforge:direction, range: 40}
-cast: {type: channel, duration_seconds: 1.5, interval_seconds: 0.5}
+cast: {type: channel, duration_seconds: 1.5, interval_seconds: 0.5, tick_sound: realmforge:spell.arcane_missiles.launch}
 cost: {resource: realmforge:mana, amount: 12}
 max_level: 5
-visuals: {look: realmforge:arcane, forming: hands}
+visuals: {look: realmforge:arcane, forming: hands, impact_sound: realmforge:spell.arcane_missiles.impact}
 effects:
   - type: realmforge:projectile
     speed: 35

@@ -29,7 +29,10 @@ import net.minecraft.util.StringRepresentable;
  * @param keepRange           for this share of the cast (more than 0, at most 1) the target entity must stay in range,
  *                            or the cast ends at once; after it, range no longer matters, not even before the effects.
  *                            Empty: range is checked only before the effects
- * @param sound               the sound event the caster makes when the cast begins, if any
+ * @param sound               the sound event the caster makes when the cast begins, if any: a cast's chant, an
+ *                            instant spell's push of the hands or a swing's whoosh (RLM-445)
+ * @param tickSound           a channel's sound at each tick, as its effects run (RLM-445: each of Arcane Missiles'
+ *                            launches), if any
  * @param animation           how a custom mob or boss moves its arms while a cast-time or channelled spell runs (its
  *                            model's animation); players' casts ignore it
  * @param animationTicks      an instant spell that plays out over its animation (RLM-399, a Warrior's swing): how
@@ -45,7 +48,7 @@ import net.minecraft.util.StringRepresentable;
  */
 public record SpellCast(Type type, int durationTicks, int intervalTicks, boolean castableWhileMoving,
         boolean lockOn, boolean keepSight, Optional<Double> keepRange, Optional<Identifier> sound,
-        Animation animation, int animationTicks, double hitAt, Haste castTimeReduction,
+        Optional<Identifier> tickSound, Animation animation, int animationTicks, double hitAt, Haste castTimeReduction,
         Optional<Identifier> playerAnimation) {
     /** When an animated instant spell lands by default: the middle of its swing (Matěj, 2026-10-24). */
     public static final double DEFAULT_HIT_AT = 0.5;
@@ -55,7 +58,7 @@ public record SpellCast(Type type, int durationTicks, int intervalTicks, boolean
      */
     public static final int PUSH_TICKS = 10;
     public static final SpellCast INSTANT = new SpellCast(Type.INSTANT, 0, 0, false, false, false, Optional.empty(),
-            Optional.empty(), Animation.RAISE, 0, DEFAULT_HIT_AT, Haste.SHORTENS, Optional.empty());
+            Optional.empty(), Optional.empty(), Animation.RAISE, 0, DEFAULT_HIT_AT, Haste.SHORTENS, Optional.empty());
 
     public static final Codec<SpellCast> CODEC = RecordCodecBuilder.<SpellCast>create(instance -> instance.group(
                     Type.CODEC.fieldOf("type").forGetter(SpellCast::type),
@@ -69,6 +72,7 @@ public record SpellCast(Type type, int durationTicks, int intervalTicks, boolean
                     Codec.BOOL.optionalFieldOf("keep_sight", false).forGetter(SpellCast::keepSight),
                     Codec.doubleRange(0, 1).optionalFieldOf("keep_range").forGetter(SpellCast::keepRange),
                     Identifier.CODEC.optionalFieldOf("sound").forGetter(SpellCast::sound),
+                    Identifier.CODEC.optionalFieldOf("tick_sound").forGetter(SpellCast::tickSound),
                     Animation.CODEC.optionalFieldOf("animation", Animation.RAISE).forGetter(SpellCast::animation),
                     ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("animation_ticks", 0)
                             .forGetter(SpellCast::animationTicks),
@@ -81,13 +85,14 @@ public record SpellCast(Type type, int durationTicks, int intervalTicks, boolean
     /** A cast time of {@code ticks} (1 or more). */
     public static SpellCast castTime(int ticks, boolean castableWhileMoving, boolean lockOn) {
         return new SpellCast(Type.CAST_TIME, ticks, 0, castableWhileMoving, lockOn, false, Optional.empty(),
-                Optional.empty(), Animation.RAISE, 0, DEFAULT_HIT_AT, Haste.SHORTENS, Optional.empty());
+                Optional.empty(), Optional.empty(), Animation.RAISE, 0, DEFAULT_HIT_AT, Haste.SHORTENS,
+                Optional.empty());
     }
 
     /** An instant spell that plays out over {@code animationTicks}, its effects at the {@code hitAt} share of it. */
     public static SpellCast swing(int animationTicks, double hitAt) {
         return new SpellCast(Type.INSTANT, 0, 0, false, false, false, Optional.empty(), Optional.empty(),
-                Animation.RAISE, animationTicks, hitAt, Haste.SHORTENS, Optional.empty());
+                Optional.empty(), Animation.RAISE, animationTicks, hitAt, Haste.SHORTENS, Optional.empty());
     }
 
     /** A channel of {@code durationTicks} that ticks every {@code intervalTicks}, which divides the duration. */
@@ -100,8 +105,8 @@ public record SpellCast(Type type, int durationTicks, int intervalTicks, boolean
     public static SpellCast channel(int durationTicks, int intervalTicks, boolean castableWhileMoving,
             boolean lockOn, Haste castTimeReduction) {
         return new SpellCast(Type.CHANNEL, durationTicks, intervalTicks, castableWhileMoving, lockOn, false,
-                Optional.empty(), Optional.empty(), Animation.RAISE, 0, DEFAULT_HIT_AT, castTimeReduction,
-                Optional.empty());
+                Optional.empty(), Optional.empty(), Optional.empty(), Animation.RAISE, 0, DEFAULT_HIT_AT,
+                castTimeReduction, Optional.empty());
     }
 
     /** Whether the effects run at once, without a current cast. */
@@ -162,16 +167,19 @@ public record SpellCast(Type type, int durationTicks, int intervalTicks, boolean
             return DataResult.error(() -> "Only an instant spell plays out over an animation, its hit moment within "
                     + "it: " + cast);
         }
+        if (cast.tickSound.isPresent() && cast.type != Type.CHANNEL) {
+            return DataResult.error(() -> "Only a channel ticks, so only a channel has a tick sound: " + cast);
+        }
         if (cast.animationTicks > 0 && cast.playerAnimation.isPresent()) {
             return DataResult.error(() -> "A swing's weapon move is its own: it names no player animation: " + cast);
         }
         return switch (cast.type) {
             case INSTANT -> cast.durationTicks == 0 && cast.intervalTicks == 0 && !cast.castableWhileMoving
-                    && !cast.lockOn && !cast.keepSight && cast.keepRange.isEmpty() && cast.sound.isEmpty()
+                    && !cast.lockOn && !cast.keepSight && cast.keepRange.isEmpty()
                     && cast.animation == Animation.RAISE
                     ? DataResult.success(cast)
                     : DataResult.error(() -> "An instant cast has no duration, interval, movement, lock-on, kept "
-                            + "sight or range, sound or animation: " + cast);
+                            + "sight or range, or animation: " + cast);
             case CAST_TIME -> cast.durationTicks > 0 && cast.intervalTicks == 0
                     ? DataResult.success(cast)
                     : DataResult.error(() -> "A cast time lasts a tick or more and has no interval: " + cast);

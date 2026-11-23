@@ -11,6 +11,7 @@
     "castable_while_moving": false,
     "lock_on": false,
     "keep_sight": false,
+    "sound": "realmforge:spell.fireball.form",
     "type": "cast_time",
     "duration_ticks": 30
   },
@@ -31,7 +32,8 @@
   "castable_while_stunned": false,
   "visuals": {
     "look": "realmforge:fire",
-    "forming": "grow"
+    "forming": "grow",
+    "impact_sound": "realmforge:spell.fireball.impact"
   },
   "effects": [
     {

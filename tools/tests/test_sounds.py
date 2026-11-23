@@ -42,27 +42,51 @@ def sounds(repo: RepoPaths, name: str, body: str) -> None:
     write(repo.content / "sounds" / f"{name}.yaml", f"id: {name}\n{body}")
 
 
-def test_repository_sounds_are_the_hewns_stoneforms_and_astones() -> None:
-    content, universe = load_and_validate(RepoPaths())
+def test_repository_sounds_are_the_first_spells_the_hewns_and_astones(repo: RepoPaths) -> None:
+    content, universe = load_and_validate(repo)
     ids = sorted(sound_id(entry.model, name) for entry in content.sounds for name in entry.model.events)
     assert ids == [
         "realmforge:entity.astone.ambient",
+        "realmforge:entity.astone.attack",
         "realmforge:entity.astone.death",
         "realmforge:entity.astone.hurt",
         "realmforge:entity.astone.step",
         "realmforge:entity.hewn_chanter.ambient",
         "realmforge:entity.hewn_chanter.death",
         "realmforge:entity.hewn_chanter.hurt",
+        "realmforge:entity.hewn_sentinel.ambient",
+        "realmforge:entity.hewn_sentinel.attack",
         "realmforge:entity.hewn_sentinel.death",
         "realmforge:entity.hewn_sentinel.hurt",
         "realmforge:entity.hewn_sentinel.step",
+        "realmforge:spell.arcane_missiles.impact",
+        "realmforge:spell.arcane_missiles.launch",
         "realmforge:spell.astone_boulder.form",
         "realmforge:spell.astone_boulder.impact",
         "realmforge:spell.astone_quake.rumble",
         "realmforge:spell.astone_rockfall.crack",
+        "realmforge:spell.cast.instant",
+        "realmforge:spell.cast.interrupt",
+        "realmforge:spell.fireball.form",
+        "realmforge:spell.fireball.impact",
+        "realmforge:spell.frostbolt.form",
+        "realmforge:spell.frostbolt.impact",
+        "realmforge:spell.reckless_strike.hit",
+        "realmforge:spell.reckless_strike.swing",
+        "realmforge:spell.shield_bash.hit",
+        "realmforge:spell.shield_bash.swing",
+        "realmforge:spell.slam.hit",
+        "realmforge:spell.slam.swing",
         "realmforge:spell.stoneform.form",
         "realmforge:spell.stoneform.impact",
     ]
+    # Every event plays our own files now (RLM-445, RLM-621), and every file is in the copied art/sounds/.
+    assert all(
+        ref.file is not None
+        for entry in content.sounds
+        for e in entry.model.events.values()
+        for ref in e.sounds
+    )
     assert all(universe.contains("minecraft:sound_event", sound) for sound in ids)
 
 

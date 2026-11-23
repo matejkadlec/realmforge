@@ -1,0 +1,904 @@
+# Where every sound in art/sounds/ comes from (RLM-126, ADR 0079): `rf sound pick` writes ElevenLabs picks here;
+# a third-party sound gets its author, URL and licence by hand (our credits). The licence rule: art/README.md.
+arcane_missiles/impact_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: arcane_missiles/impact/01
+  prompt: 'A small arcane crystal missile bursting on impact: a sparkling magical pop with a glassy crystalline shimmer, fantasy spell, no music'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-445
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.0
+    cut_after: 0.163
+    gain_db: 1.46
+    loudness_lufs: -31.75
+    peak_dbfs: -1.0
+    limited_by_peak: true
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+arcane_missiles/launch_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: arcane_missiles/launch/01
+  prompt: 'A small arcane magic missile launching: a short bright magical whoosh with a shimmering zap, fantasy spell, no music'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-445
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.0
+    cut_after: 0.016
+    gain_db: 3.37
+    loudness_lufs: -18.0
+    peak_dbfs: -2.48
+    limited_by_peak: false
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+astone/ambient_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: astone/ambient/01
+  prompt: 'A colossal living stone giant breathing: a deep earth-shaking grinding rumble of huge boulders shifting, fantasy boss, no voice, no music'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-621
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.0
+    cut_after: 0.0
+    gain_db: 1.74
+    loudness_lufs: -20.86
+    peak_dbfs: -1.0
+    limited_by_peak: true
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+astone/ambient_2:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: astone/ambient/02
+  prompt: 'A colossal living stone giant breathing: a deep earth-shaking grinding rumble of huge boulders shifting, fantasy boss, no voice, no music'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-621
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.0
+    cut_after: 0.382
+    gain_db: 2.87
+    loudness_lufs: -18.06
+    peak_dbfs: -1.0
+    limited_by_peak: true
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+astone/attack_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: astone/attack/01
+  prompt: 'A colossal stone fist swinging down and smashing the ground: a huge heavy whoosh and a crushing stone impact, fantasy boss attack, no voice'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-621
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.017
+    cut_after: 0.141
+    gain_db: 0.82
+    loudness_lufs: -18.38
+    peak_dbfs: -1.0
+    limited_by_peak: true
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+astone/death_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: astone/death/01
+  prompt: 'A colossal stone giant collapsing: massive boulders cracking, toppling and crashing into a heap of rubble, then a long deep rumble fading out, fantasy boss death, no voice, no music'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-621
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.019
+    cut_after: 0.666
+    gain_db: -0.54
+    loudness_lufs: -18.0
+    peak_dbfs: -2.68
+    limited_by_peak: false
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+astone/hurt_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: astone/hurt/01
+  prompt: 'A colossal stone giant struck: a heavy deep crack of boulders splintering with rocks clattering down, fantasy boss hurt, no voice'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-621
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.0
+    cut_after: 0.109
+    gain_db: 0.47
+    loudness_lufs: -20.42
+    peak_dbfs: -1.0
+    limited_by_peak: true
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+astone/hurt_2:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: astone/hurt/02
+  prompt: 'A colossal stone giant struck: a heavy deep crack of boulders splintering with rocks clattering down, fantasy boss hurt, no voice'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-621
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.0
+    cut_after: 0.125
+    gain_db: 4.04
+    loudness_lufs: -19.52
+    peak_dbfs: -1.0
+    limited_by_peak: true
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+astone/step_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: astone/step/01
+  prompt: "A colossal stone giant's single footstep: a massive deep thud that shakes the ground, pebbles rattling, no voice"
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-621
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.003
+    cut_after: 0.174
+    gain_db: -0.5
+    loudness_lufs: -24.34
+    peak_dbfs: -1.0
+    limited_by_peak: true
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+astone/step_2:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: astone/step/02
+  prompt: "A colossal stone giant's single footstep: a massive deep thud that shakes the ground, pebbles rattling, no voice"
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-621
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.088
+    cut_after: 0.108
+    gain_db: 3.53
+    loudness_lufs: -22.64
+    peak_dbfs: -1.0
+    limited_by_peak: true
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+astone_boulder/form_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: astone_boulder/form/01
+  prompt: 'A giant boulder forming out of the ground: huge rocks grinding and pulling together with a deep rising rumble, fantasy boss spell, no voice'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-621
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.05
+    cut_after: 0.079
+    gain_db: 0.23
+    loudness_lufs: -18.41
+    peak_dbfs: -1.0
+    limited_by_peak: true
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+astone_boulder/impact_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: astone_boulder/impact/01
+  prompt: 'A giant boulder crashing to the ground and shattering: a massive rock impact with flying debris and a short rumble, no voice'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-621
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.0
+    cut_after: 0.106
+    gain_db: 1.49
+    loudness_lufs: -18.09
+    peak_dbfs: -1.0
+    limited_by_peak: true
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+astone_quake/rumble_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: astone_quake/rumble/01
+  prompt: 'A giant stone fist slamming the ground in an earthquake: a deep heavy boom with the ground cracking and rumbling, no voice'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-621
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.0
+    cut_after: 0.027
+    gain_db: 5.72
+    loudness_lufs: -21.13
+    peak_dbfs: -1.0
+    limited_by_peak: true
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+astone_rockfall/crack_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: astone_rockfall/crack/01
+  prompt: 'A cave ceiling cracking overhead before a rockfall: sharp stone cracks and trickling pebbles and dust, tense, no voice'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-621
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.086
+    cut_after: 0.156
+    gain_db: 11.18
+    loudness_lufs: -25.7
+    peak_dbfs: -1.0
+    limited_by_peak: true
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+cast/instant_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: cast/instant/01
+  prompt: 'A quick magical cast: a short soft whoosh of energy released from the hands with a subtle shimmer, fantasy game spell, no music'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-445
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.0
+    cut_after: 0.0
+    gain_db: 17.78
+    loudness_lufs: -19.15
+    peak_dbfs: -1.0
+    limited_by_peak: true
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+cast/interrupt_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: cast/interrupt/01
+  prompt: 'A spell being interrupted: gathered magical energy fizzling out and fading away, a soft deflating shimmer that dies down, fantasy game, no music'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-445
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.0
+    cut_after: 0.114
+    gain_db: 8.42
+    loudness_lufs: -18.57
+    peak_dbfs: -1.0
+    limited_by_peak: true
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+fireball/form_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: fireball/form/01
+  prompt: "A ball of fire forming in a mage's hands: swirling roaring flames building up in intensity, crackling fire gathering, fantasy spell charging, no music, no voice"
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-445
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.008
+    cut_after: 0.0
+    gain_db: -0.31
+    loudness_lufs: -18.0
+    peak_dbfs: -3.45
+    limited_by_peak: false
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+fireball/impact_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: fireball/impact/01
+  prompt: 'A magic fireball bursting on impact: a fiery whoomp explosion with crackling embers scattering, fantasy spell impact, no music'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-445
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.0
+    cut_after: 0.0
+    gain_db: 2.33
+    loudness_lufs: -20.98
+    peak_dbfs: -1.0
+    limited_by_peak: true
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+frostbolt/form_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: frostbolt/form/01
+  prompt: "Magical ice forming and growing in a mage's hands: a rising crackle of freezing frost and crystalline tinkling that builds up, fantasy spell charging, no music, no voice"
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-445
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.0
+    cut_after: 0.0
+    gain_db: 1.6
+    loudness_lufs: -25.51
+    peak_dbfs: -1.0
+    limited_by_peak: true
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+frostbolt/impact_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: frostbolt/impact/01
+  prompt: 'A frostbolt of magic ice shattering on impact: crisp crystalline ice shards breaking and scattering, a short glassy magical chime, fantasy game spell sound effect, no music'
+  model: eleven_text_to_sound_v2
+  created: '2026-11-23'
+  ticket: RLM-445
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.0
+    cut_after: 0.0
+    gain_db: -1.23
+    loudness_lufs: -18.0
+    peak_dbfs: -1.23
+    limited_by_peak: false
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+hewn_chanter/ambient_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: hewn_chanter/ambient/01
+  prompt: 'A small carved stone construct chanting: an eerie low resonant hum like singing stone with faint grinding, mystical, no words, no music'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-621
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.105
+    cut_after: 0.0
+    gain_db: 17.15
+    loudness_lufs: -18.0
+    peak_dbfs: -5.99
+    limited_by_peak: false
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+hewn_chanter/ambient_2:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: hewn_chanter/ambient/02
+  prompt: 'A small carved stone construct chanting: an eerie low resonant hum like singing stone with faint grinding, mystical, no words, no music'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-621
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.011
+    cut_after: 0.0
+    gain_db: 10.42
+    loudness_lufs: -18.0
+    peak_dbfs: -4.31
+    limited_by_peak: false
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+hewn_chanter/death_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: hewn_chanter/death/01
+  prompt: A small stone construct crumbling into gravel while a magical humming chant fades away, fantasy creature death, no voice
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-621
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.053
+    cut_after: 0.0
+    gain_db: 10.51
+    loudness_lufs: -26.51
+    peak_dbfs: -1.0
+    limited_by_peak: true
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+hewn_chanter/hurt_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: hewn_chanter/hurt/04
+  prompt: 'A small stone creature hit: a light sharp crack of stone and chipping pebbles, fantasy creature hurt, no voice'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-621
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.0
+    cut_after: 0.215
+    gain_db: 0.19
+    loudness_lufs: -30.58
+    peak_dbfs: -1.0
+    limited_by_peak: true
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+hewn_chanter/hurt_2:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: hewn_chanter/hurt/02
+  prompt: 'A small stone creature hit: a light sharp crack of stone and chipping pebbles, fantasy creature hurt, no voice'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-621
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.0
+    cut_after: 0.234
+    gain_db: 12.45
+    loudness_lufs: -25.3
+    peak_dbfs: -1.0
+    limited_by_peak: true
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+hewn_sentinel/ambient_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: hewn_sentinel/ambient/01
+  prompt: 'A carved stone golem standing guard: low grinding of heavy stone joints shifting and a faint resonant hum of a magic gem, fantasy creature, no voice, no music'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-621
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.026
+    cut_after: 0.122
+    gain_db: 8.79
+    loudness_lufs: -18.03
+    peak_dbfs: -1.0
+    limited_by_peak: true
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+hewn_sentinel/ambient_2:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: hewn_sentinel/ambient/02
+  prompt: 'A carved stone golem standing guard: low grinding of heavy stone joints shifting and a faint resonant hum of a magic gem, fantasy creature, no voice, no music'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-621
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.04
+    cut_after: 0.1
+    gain_db: -1.16
+    loudness_lufs: -18.0
+    peak_dbfs: -3.81
+    limited_by_peak: false
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+hewn_sentinel/attack_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: hewn_sentinel/attack/01
+  prompt: 'A stone golem swinging a heavy stone fist: a grinding stone whoosh through the air, fantasy creature attack, no voice'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-621
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.01
+    cut_after: 0.0
+    gain_db: 0.55
+    loudness_lufs: -18.86
+    peak_dbfs: -1.0
+    limited_by_peak: true
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+hewn_sentinel/death_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: hewn_sentinel/death/01
+  prompt: 'A stone golem breaking apart: carved stone cracking and crumbling into a pile of rubble with a fading magical hum, fantasy creature death, no voice'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-621
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.066
+    cut_after: 0.112
+    gain_db: -2.58
+    loudness_lufs: -18.0
+    peak_dbfs: -3.61
+    limited_by_peak: false
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+hewn_sentinel/hurt_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: hewn_sentinel/hurt/01
+  prompt: 'A stone golem struck by a weapon: a sharp forceful crack of carved stone with small chips falling, fantasy creature hurt, no voice'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-621
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.0
+    cut_after: 0.037
+    gain_db: 7.86
+    loudness_lufs: -18.34
+    peak_dbfs: -1.0
+    limited_by_peak: true
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+hewn_sentinel/hurt_2:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: hewn_sentinel/hurt/02
+  prompt: 'A stone golem struck by a weapon: a sharp forceful crack of carved stone with small chips falling, fantasy creature hurt, no voice'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-621
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.0
+    cut_after: 0.04
+    gain_db: 3.28
+    loudness_lufs: -24.55
+    peak_dbfs: -1.0
+    limited_by_peak: true
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+hewn_sentinel/step_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: hewn_sentinel/step/01
+  prompt: 'A single heavy stone footstep on a stone floor: one dull solid thud, no echo, no voice'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-621
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.002
+    cut_after: 0.017
+    gain_db: 4.45
+    loudness_lufs: -23.76
+    peak_dbfs: -1.0
+    limited_by_peak: true
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+hewn_sentinel/step_2:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: hewn_sentinel/step/02
+  prompt: 'A single heavy stone footstep on a stone floor: one dull solid thud, no echo, no voice'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-621
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.066
+    cut_after: 0.026
+    gain_db: 4.9
+    loudness_lufs: -25.83
+    peak_dbfs: -1.0
+    limited_by_peak: true
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+reckless_strike/hit_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: reckless_strike/hit/01
+  prompt: 'A sword slash cutting into an enemy: a sharp slicing impact with a meaty thud, medieval combat, no voice'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-445
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.0
+    cut_after: 0.042
+    gain_db: -0.86
+    loudness_lufs: -18.0
+    peak_dbfs: -1.36
+    limited_by_peak: false
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+reckless_strike/swing_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: reckless_strike/swing/01
+  prompt: 'A fast reckless sword slash through the air: a sharp quick whoosh, medieval combat, no voice'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-445
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.0
+    cut_after: 0.037
+    gain_db: 13.67
+    loudness_lufs: -18.7
+    peak_dbfs: -1.0
+    limited_by_peak: true
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+shield_bash/hit_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: shield_bash/hit/01
+  prompt: 'A heavy shield bashing into an enemy: a dull heavy wooden thud with an iron clank, medieval combat, no voice'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-445
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.0
+    cut_after: 0.06
+    gain_db: 0.71
+    loudness_lufs: -19.4
+    peak_dbfs: -1.0
+    limited_by_peak: true
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+shield_bash/swing_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: shield_bash/swing/01
+  prompt: 'A heavy wooden shield with iron rim thrust forward: a short heavy whoosh, medieval combat, no voice'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-445
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.0
+    cut_after: 0.007
+    gain_db: 0.41
+    loudness_lufs: -18.0
+    peak_dbfs: -1.67
+    limited_by_peak: false
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+slam/hit_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: slam/hit/01
+  prompt: 'A heavy greatsword slamming into an armored enemy: a crunchy heavy impact with a metallic clang, medieval combat, no voice'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-445
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.0
+    cut_after: 0.083
+    gain_db: 0.68
+    loudness_lufs: -18.17
+    peak_dbfs: -1.0
+    limited_by_peak: true
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+slam/swing_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: slam/swing/04
+  prompt: 'A heavy two-handed greatsword swung hard through the air: a powerful deep whoosh, medieval combat, no voice'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-445
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.0
+    cut_after: 0.095
+    gain_db: 2.01
+    loudness_lufs: -20.45
+    peak_dbfs: -1.0
+    limited_by_peak: true
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+stoneform/form_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: stoneform/form/01
+  prompt: "Magic stone forming in a caster's hands: gravel and rocks grinding and pulling together, a rising earthy rumble, fantasy spell charging, no voice"
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-621
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.014
+    cut_after: 0.0
+    gain_db: 15.0
+    loudness_lufs: -18.0
+    peak_dbfs: -2.79
+    limited_by_peak: false
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers
+stoneform/impact_1:
+  source: elevenlabs
+  license: elevenlabs-paid
+  candidate: stoneform/impact/01
+  prompt: 'A thrown magic stone shattering on impact: rock breaking into chips and dust, fantasy spell impact, no voice'
+  model: eleven_text_to_sound_v3
+  created: '2026-11-23'
+  ticket: RLM-621
+  picked_by: 'Claude, provisional (deferred review: RLM-669)'
+  stereo: false
+  conversion:
+    loop: false
+    loudness_target: -18.0
+    ceiling_dbfs: -1.0
+    cut_before: 0.0
+    cut_after: 0.04
+    gain_db: 11.43
+    loudness_lufs: -22.53
+    peak_dbfs: -1.0
+    limited_by_peak: true
+    encoder: libvorbis q5
+    ffmpeg: ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers

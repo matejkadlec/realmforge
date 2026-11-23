@@ -2,25 +2,26 @@
   "entity.astone.ambient": {
     "sounds": [
       {
-        "name": "minecraft:block.grindstone.use",
-        "pitch": 0.5,
-        "type": "event",
-        "volume": 0.7
+        "name": "realmforge:astone/ambient_1"
       },
       {
-        "name": "minecraft:block.deepslate.place",
-        "pitch": 0.5,
-        "type": "event"
+        "name": "realmforge:astone/ambient_2"
       }
     ],
     "subtitle": "subtitles.realmforge.entity.astone.ambient"
   },
+  "entity.astone.attack": {
+    "sounds": [
+      {
+        "name": "realmforge:astone/attack_1"
+      }
+    ],
+    "subtitle": "subtitles.realmforge.entity.astone.attack"
+  },
   "entity.astone.death": {
     "sounds": [
       {
-        "name": "minecraft:entity.iron_golem.death",
-        "pitch": 0.5,
-        "type": "event"
+        "name": "realmforge:astone/death_1"
       }
     ],
     "subtitle": "subtitles.realmforge.entity.astone.death"
@@ -28,14 +29,10 @@
   "entity.astone.hurt": {
     "sounds": [
       {
-        "name": "minecraft:block.deepslate.break",
-        "pitch": 0.6,
-        "type": "event"
+        "name": "realmforge:astone/hurt_1"
       },
       {
-        "name": "minecraft:entity.iron_golem.hurt",
-        "pitch": 0.5,
-        "type": "event"
+        "name": "realmforge:astone/hurt_2"
       }
     ],
     "subtitle": "subtitles.realmforge.entity.astone.hurt"
@@ -43,9 +40,12 @@
   "entity.astone.step": {
     "sounds": [
       {
-        "name": "minecraft:entity.iron_golem.step",
-        "pitch": 0.5,
-        "type": "event"
+        "name": "realmforge:astone/step_1",
+        "volume": 0.8
+      },
+      {
+        "name": "realmforge:astone/step_2",
+        "volume": 0.8
       }
     ],
     "subtitle": "subtitles.realmforge.entity.astone.step"
@@ -53,9 +53,12 @@
   "entity.hewn_chanter.ambient": {
     "sounds": [
       {
-        "name": "minecraft:block.amethyst_block.chime",
-        "pitch": 0.8,
-        "type": "event"
+        "name": "realmforge:hewn_chanter/ambient_1",
+        "volume": 0.7
+      },
+      {
+        "name": "realmforge:hewn_chanter/ambient_2",
+        "volume": 0.7
       }
     ],
     "subtitle": "subtitles.realmforge.entity.hewn_chanter.ambient"
@@ -63,9 +66,7 @@
   "entity.hewn_chanter.death": {
     "sounds": [
       {
-        "name": "minecraft:entity.iron_golem.death",
-        "pitch": 1.2,
-        "type": "event"
+        "name": "realmforge:hewn_chanter/death_1"
       }
     ],
     "subtitle": "subtitles.realmforge.entity.hewn_chanter.death"
@@ -73,24 +74,39 @@
   "entity.hewn_chanter.hurt": {
     "sounds": [
       {
-        "name": "minecraft:block.stone.break",
-        "pitch": 0.9,
-        "type": "event"
+        "name": "realmforge:hewn_chanter/hurt_1"
       },
       {
-        "name": "minecraft:block.deepslate.break",
-        "pitch": 1.1,
-        "type": "event"
+        "name": "realmforge:hewn_chanter/hurt_2"
       }
     ],
     "subtitle": "subtitles.realmforge.entity.hewn_chanter.hurt"
   },
+  "entity.hewn_sentinel.ambient": {
+    "sounds": [
+      {
+        "name": "realmforge:hewn_sentinel/ambient_1",
+        "volume": 0.8
+      },
+      {
+        "name": "realmforge:hewn_sentinel/ambient_2",
+        "volume": 0.8
+      }
+    ],
+    "subtitle": "subtitles.realmforge.entity.hewn_sentinel.ambient"
+  },
+  "entity.hewn_sentinel.attack": {
+    "sounds": [
+      {
+        "name": "realmforge:hewn_sentinel/attack_1"
+      }
+    ],
+    "subtitle": "subtitles.realmforge.entity.hewn_sentinel.attack"
+  },
   "entity.hewn_sentinel.death": {
     "sounds": [
       {
-        "name": "minecraft:entity.iron_golem.death",
-        "pitch": 0.8,
-        "type": "event"
+        "name": "realmforge:hewn_sentinel/death_1"
       }
     ],
     "subtitle": "subtitles.realmforge.entity.hewn_sentinel.death"
@@ -98,14 +114,10 @@
   "entity.hewn_sentinel.hurt": {
     "sounds": [
       {
-        "name": "minecraft:block.deepslate.break",
-        "pitch": 0.8,
-        "type": "event"
+        "name": "realmforge:hewn_sentinel/hurt_1"
       },
       {
-        "name": "minecraft:entity.iron_golem.hurt",
-        "pitch": 0.7,
-        "type": "event"
+        "name": "realmforge:hewn_sentinel/hurt_2"
       }
     ],
     "subtitle": "subtitles.realmforge.entity.hewn_sentinel.hurt"
@@ -113,19 +125,36 @@
   "entity.hewn_sentinel.step": {
     "sounds": [
       {
-        "name": "minecraft:entity.iron_golem.step",
-        "pitch": 0.7,
-        "type": "event"
+        "name": "realmforge:hewn_sentinel/step_1",
+        "volume": 0.5
+      },
+      {
+        "name": "realmforge:hewn_sentinel/step_2",
+        "volume": 0.5
       }
     ],
     "subtitle": "subtitles.realmforge.entity.hewn_sentinel.step"
   },
+  "spell.arcane_missiles.impact": {
+    "sounds": [
+      {
+        "name": "realmforge:arcane_missiles/impact_1"
+      }
+    ],
+    "subtitle": "subtitles.realmforge.spell.arcane_missiles.impact"
+  },
+  "spell.arcane_missiles.launch": {
+    "sounds": [
+      {
+        "name": "realmforge:arcane_missiles/launch_1"
+      }
+    ],
+    "subtitle": "subtitles.realmforge.spell.arcane_missiles.launch"
+  },
   "spell.astone_boulder.form": {
     "sounds": [
       {
-        "name": "minecraft:block.grindstone.use",
-        "pitch": 0.5,
-        "type": "event"
+        "name": "realmforge:astone_boulder/form_1"
       }
     ],
     "subtitle": "subtitles.realmforge.spell.astone_boulder.form"
@@ -133,14 +162,7 @@
   "spell.astone_boulder.impact": {
     "sounds": [
       {
-        "name": "minecraft:block.deepslate.break",
-        "pitch": 0.7,
-        "type": "event"
-      },
-      {
-        "name": "minecraft:block.stone.break",
-        "pitch": 0.6,
-        "type": "event"
+        "name": "realmforge:astone_boulder/impact_1"
       }
     ],
     "subtitle": "subtitles.realmforge.spell.astone_boulder.impact"
@@ -148,9 +170,7 @@
   "spell.astone_quake.rumble": {
     "sounds": [
       {
-        "name": "minecraft:entity.warden.dig",
-        "pitch": 0.7,
-        "type": "event"
+        "name": "realmforge:astone_quake/rumble_1"
       }
     ],
     "subtitle": "subtitles.realmforge.spell.astone_quake.rumble"
@@ -158,25 +178,111 @@
   "spell.astone_rockfall.crack": {
     "sounds": [
       {
-        "name": "minecraft:block.pointed_dripstone.break",
-        "pitch": 0.6,
-        "type": "event"
-      },
-      {
-        "name": "minecraft:block.dripstone_block.break",
-        "pitch": 0.5,
-        "type": "event"
+        "name": "realmforge:astone_rockfall/crack_1"
       }
     ],
     "subtitle": "subtitles.realmforge.spell.astone_rockfall.crack"
   },
+  "spell.cast.instant": {
+    "sounds": [
+      {
+        "name": "realmforge:cast/instant_1"
+      }
+    ],
+    "subtitle": "subtitles.realmforge.spell.cast.instant"
+  },
+  "spell.cast.interrupt": {
+    "sounds": [
+      {
+        "name": "realmforge:cast/interrupt_1"
+      }
+    ],
+    "subtitle": "subtitles.realmforge.spell.cast.interrupt"
+  },
+  "spell.fireball.form": {
+    "sounds": [
+      {
+        "name": "realmforge:fireball/form_1"
+      }
+    ],
+    "subtitle": "subtitles.realmforge.spell.fireball.form"
+  },
+  "spell.fireball.impact": {
+    "sounds": [
+      {
+        "name": "realmforge:fireball/impact_1"
+      }
+    ],
+    "subtitle": "subtitles.realmforge.spell.fireball.impact"
+  },
+  "spell.frostbolt.form": {
+    "sounds": [
+      {
+        "name": "realmforge:frostbolt/form_1"
+      }
+    ],
+    "subtitle": "subtitles.realmforge.spell.frostbolt.form"
+  },
+  "spell.frostbolt.impact": {
+    "sounds": [
+      {
+        "name": "realmforge:frostbolt/impact_1"
+      }
+    ],
+    "subtitle": "subtitles.realmforge.spell.frostbolt.impact"
+  },
+  "spell.reckless_strike.hit": {
+    "sounds": [
+      {
+        "name": "realmforge:reckless_strike/hit_1"
+      }
+    ],
+    "subtitle": "subtitles.realmforge.spell.reckless_strike.hit"
+  },
+  "spell.reckless_strike.swing": {
+    "sounds": [
+      {
+        "name": "realmforge:reckless_strike/swing_1"
+      }
+    ],
+    "subtitle": "subtitles.realmforge.spell.reckless_strike.swing"
+  },
+  "spell.shield_bash.hit": {
+    "sounds": [
+      {
+        "name": "realmforge:shield_bash/hit_1"
+      }
+    ],
+    "subtitle": "subtitles.realmforge.spell.shield_bash.hit"
+  },
+  "spell.shield_bash.swing": {
+    "sounds": [
+      {
+        "name": "realmforge:shield_bash/swing_1"
+      }
+    ],
+    "subtitle": "subtitles.realmforge.spell.shield_bash.swing"
+  },
+  "spell.slam.hit": {
+    "sounds": [
+      {
+        "name": "realmforge:slam/hit_1"
+      }
+    ],
+    "subtitle": "subtitles.realmforge.spell.slam.hit"
+  },
+  "spell.slam.swing": {
+    "sounds": [
+      {
+        "name": "realmforge:slam/swing_1"
+      }
+    ],
+    "subtitle": "subtitles.realmforge.spell.slam.swing"
+  },
   "spell.stoneform.form": {
     "sounds": [
       {
-        "name": "minecraft:block.grindstone.use",
-        "pitch": 0.6,
-        "type": "event",
-        "volume": 0.8
+        "name": "realmforge:stoneform/form_1"
       }
     ],
     "subtitle": "subtitles.realmforge.spell.stoneform.form"
@@ -184,14 +290,7 @@
   "spell.stoneform.impact": {
     "sounds": [
       {
-        "name": "minecraft:block.stone.break",
-        "pitch": 1.1,
-        "type": "event"
-      },
-      {
-        "name": "minecraft:block.pointed_dripstone.break",
-        "pitch": 0.9,
-        "type": "event"
+        "name": "realmforge:stoneform/impact_1"
       }
     ],
     "subtitle": "subtitles.realmforge.spell.stoneform.impact"

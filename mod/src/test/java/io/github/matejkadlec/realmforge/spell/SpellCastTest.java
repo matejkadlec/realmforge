@@ -20,11 +20,11 @@ import org.junit.jupiter.api.Test;
 class SpellCastTest {
     /** The Hewn Chanter's Stoneform as {@code rf gen} writes it: every field W3 added, set. */
     private static final SpellCast STONEFORM = new SpellCast(SpellCast.Type.CAST_TIME, 30, 0, false, false, true,
-            Optional.of(0.5), Optional.of(Identifier.parse("realmforge:spell.stoneform.form")),
+            Optional.of(0.5), Optional.of(Identifier.parse("realmforge:spell.stoneform.form")), Optional.empty(),
             SpellCast.Animation.RAISE, 0, SpellCast.DEFAULT_HIT_AT, SpellCast.Haste.SHORTENS, Optional.empty());
     /** Astone's Quake as {@code rf gen} writes it: a channel that slams. */
     private static final SpellCast QUAKE = new SpellCast(SpellCast.Type.CHANNEL, 60, 15, false, false, false,
-            Optional.empty(), Optional.of(Identifier.parse("realmforge:spell.astone_quake.rumble")),
+            Optional.empty(), Optional.of(Identifier.parse("realmforge:spell.astone_quake.rumble")), Optional.empty(),
             SpellCast.Animation.SLAM, 0, SpellCast.DEFAULT_HIT_AT, SpellCast.Haste.SHORTENS, Optional.empty());
 
     private static DataResult<SpellCast> parse(String json) {
@@ -45,6 +45,15 @@ class SpellCastTest {
         assertEquals(QUAKE, parse("{\"castable_while_moving\": false, \"lock_on\": false, \"keep_sight\": false, "
                 + "\"sound\": \"realmforge:spell.astone_quake.rumble\", \"animation\": \"slam\", "
                 + "\"type\": \"channel\", \"duration_ticks\": 60, \"interval_ticks\": 15}").getOrThrow());
+    }
+
+    /** A channel's tick sound (RLM-445: each of Arcane Missiles' launches) is read and written as {@code tick_sound}. */
+    @Test
+    void aChannelReadsItsTickSound() {
+        SpellCast missiles = parse("{\"type\": \"channel\", \"duration_ticks\": 30, \"interval_ticks\": 10, "
+                + "\"tick_sound\": \"realmforge:spell.arcane_missiles.launch\"}").getOrThrow();
+        assertEquals(Optional.of(Identifier.parse("realmforge:spell.arcane_missiles.launch")), missiles.tickSound());
+        assertEquals(missiles, RoundTrip.json(SpellCast.CODEC, missiles));
     }
 
     @Test
@@ -76,8 +85,12 @@ class SpellCastTest {
                 .isError(), "a locked-on cast that keeps range");
         assertTrue(parse("{\"type\": \"cast_time\", \"duration_ticks\": 20, \"keep_range\": 0}").isError(),
                 "a kept range of no share of the cast");
-        assertTrue(parse("{\"type\": \"instant\", \"sound\": \"realmforge:spell.stoneform.form\"}").isError(),
-                "an instant cast with a sound");
+        assertTrue(parse("{\"type\": \"instant\", \"sound\": \"realmforge:spell.cast.instant\"}").isSuccess(),
+                "an instant cast with its push's sound (RLM-445)");
+        assertTrue(parse("{\"type\": \"cast_time\", \"duration_ticks\": 20, "
+                + "\"tick_sound\": \"realmforge:spell.cast.instant\"}").isError(), "a cast time with a tick sound");
+        assertTrue(parse("{\"type\": \"instant\", \"tick_sound\": \"realmforge:spell.cast.instant\"}").isError(),
+                "an instant cast with a tick sound");
         assertTrue(parse("{\"type\": \"instant\", \"animation\": \"slam\"}").isError(),
                 "an instant cast with an animation: nothing runs long enough to show it");
         assertTrue(parse("{\"type\": \"cast_time\", \"duration_ticks\": 20, \"animation\": \"dance\"}").isError(),

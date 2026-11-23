@@ -66,8 +66,9 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   hostile mobs get levels near the nearest player's, floored per realm (W1, RLM-303), scaled by curves. The first
   custom mobs exist (W3): Undervault's Hewn, the Hewn Sentinel (melee, of one of three gems it may drop) and the
   Hewn Chanter (a caster of Stoneform that kites), from `content/mobs/`, wandering as vanilla's mobs do, with
-  GeckoLib placeholder models until A2's art, and our own sound events from `content/sounds/` (vanilla sounds
-  remapped); every custom mob follows Matěj's Realmforge Mobs Guideline (Jira copy: RLM-491 comment 23008,
+  GeckoLib placeholder models until A2's art, and our own sound events from `content/sounds/`, which since RLM-621
+  play our own ElevenLabs sounds (`art/sounds/`, ADR 0079: ambient, hurt, death, step and a melee swing's attack
+  sound; agents' provisional picks until Matěj listens, RLM-669); every custom mob follows Matěj's Realmforge Mobs Guideline (Jira copy: RLM-491 comment 23008,
   [architecture 14.2](docs/architecture.md#142-custom-mobs)). Bosses run on the boss framework (W5a, RLM-490): a
   boss's body is a custom mob of archetype `boss` and its fight an entry of `content/bosses/` (phases named in the boss
   bar, entered by health or by time, abilities and `on_enter` spells through the spell engine, a short unhurt phase
@@ -99,6 +100,9 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   waves to it (RLM-572: Matěj's Frost numbers, cooldowns and costs by rank, a channel's cost up front), a cast with less
   than 0.25 s left finishes before the next spell (RLM-517), and an effect over time keeps the pace of its first
   application however often it is applied again (RLM-487).
+  The first spells play our own sounds (RLM-445: Frostbolt's and Fireball's forming and impact, each of Arcane
+  Missiles' launches and bursts, the instant spells' push, the Warrior swings' whoosh and hit, and an interrupted cast's
+  fade).
   Slam, Reckless Strike and Shield Bash are swings with hit shapes in
   front of the player (Better Combat's sword swing, the default, and its stab, at the player's melee reach, so they grow
   with it), counted down on the cast bar, that hit every enemy in them at their hit moment, never through walls, and the

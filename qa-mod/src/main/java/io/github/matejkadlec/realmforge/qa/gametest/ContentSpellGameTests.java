@@ -92,6 +92,8 @@ public final class ContentSpellGameTests {
             helper.assertValueEqual(spell.cast().keepRange(), expected.keepRange(), id + " keeps range");
             helper.assertValueEqual(spell.cast().sound().map(Identifier::toString), expected.castSound(),
                     id + " cast sound");
+            helper.assertValueEqual(spell.cast().tickSound().map(Identifier::toString), expected.tickSound(),
+                    id + " tick sound");
             helper.assertValueEqual(spell.visuals().map(visuals -> visuals.look().getRegisteredName()),
                     expected.look(), id + " look");
             helper.assertValueEqual(spell.visuals().flatMap(Visuals::forming).map(Visuals.Forming::getSerializedName),
@@ -201,8 +203,7 @@ public final class ContentSpellGameTests {
                     projectile.effects().stream().map(ContentSpellGameTests::effect).toList());
             case DamageOverTimeEffect dot -> new EffectExpectation(type, damageOverTimeNumbers(dot),
                     Map.of("effect", dot.effect().getRegisteredName()), List.of());
-            case MeleeEffect melee -> new EffectExpectation(type, Map.of(),
-                    Map.of("shape", melee.shape().getSerializedName()),
+            case MeleeEffect melee -> new EffectExpectation(type, Map.of(), meleeNames(melee),
                     melee.effects().stream().map(ContentSpellGameTests::effect).toList());
             case ConeEffect cone -> new EffectExpectation(type, Map.of("range", cone.range(), "angle_degrees",
                     cone.angleDegrees()), coneNames(cone),
@@ -221,6 +222,14 @@ public final class ContentSpellGameTests {
         projectile.model().ifPresent(model -> names.put("model", model.getRegisteredName()));
         names.put("trajectory", projectile.trajectory().getRegisteredName());
         return names;
+    }
+
+    /** A melee shape's names (RLM-399): its shape, and its hit's sound when it has one (RLM-445). */
+    private static Map<String, String> meleeNames(MeleeEffect melee) {
+        Map<String, String> names = new HashMap<>();
+        names.put("shape", melee.shape().getSerializedName());
+        melee.sound().ifPresent(sound -> names.put("sound", sound.toString()));
+        return Map.copyOf(names);
     }
 
     /** A cone's names (RLM-542): its sound and particle block, each only when it has one. */

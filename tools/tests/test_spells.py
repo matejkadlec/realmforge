@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+from pathlib import Path
 
 import pydantic
 import pytest
@@ -501,6 +502,7 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
         "                    false,\n"
         "                    false,\n"
         "                    false,\n"
+        "                    Optional.empty(),\n"
         "                    Optional.empty(),\n"
         "                    Optional.empty(),\n"
         "                    Optional.empty(),\n"
@@ -1791,3 +1793,43 @@ def test_a_procs_effect_may_last_longer_per_rank() -> None:
     proc = frostbite.passive.procs[0].apply_effect
     assert proc is not None
     assert [proc.duration_at(rank) for rank in (1, 2, 3)] == [4, 6, 8]
+
+
+def test_a_channels_tick_sound_and_a_melee_hits_sound_are_written_and_checked(repo: RepoPaths) -> None:
+    # RLM-445: a channel's sound at each tick, an instant spell's or a swing's own sound, a melee hit's sound.
+    files = generate(repo)
+    missiles = json.loads(files[f"{SPELL_DATA}/arcane_missiles.json"])
+    assert missiles["cast"]["tick_sound"] == "realmforge:spell.arcane_missiles.launch"
+    slam = json.loads(files[f"{SPELL_DATA}/slam.json"])
+    assert slam["cast"]["sound"] == "realmforge:spell.slam.swing"
+    assert slam["effects"][0]["sound"] == "realmforge:spell.slam.hit"
+    barrier = json.loads(files[f"{SPELL_DATA}/ice_barrier.json"])
+    assert barrier["cast"] == {"type": "instant", "sound": "realmforge:spell.cast.instant"}
+    spell(
+        repo,
+        "test_hum",
+        "school: realmforge:arcane\nscales_with: spell_power\ntargeting: {type: realmforge:enemy, range: 24}\n"
+        "cast: {type: channel, duration_seconds: 1, interval_seconds: 0.5, tick_sound: minecraft:no.such.sound}\n"
+        "effects:\n  - {type: realmforge:damage, amount: 1}\n",
+    )
+    assert_problem(repo, "cast.tick_sound: unknown id 'minecraft:no.such.sound'")
+
+
+def test_only_a_channel_has_a_tick_sound(repo: RepoPaths) -> None:
+    spell(
+        repo,
+        "test_hum",
+        FIREBALL.replace(
+            "cast: {type: instant}", "cast: {type: instant, tick_sound: minecraft:block.bell.use}"
+        ),
+    )
+    assert_problem(repo, "tick_sound")
+
+
+def test_a_melee_hits_sound_must_exist(repo: RepoPaths) -> None:
+    body = (Path(repo.content / "spells" / "test_cleave.yaml")).read_text(encoding="utf-8")
+    body = body.replace(
+        "  - type: realmforge:melee\n", "  - type: realmforge:melee\n    sound: minecraft:no.such.hit\n", 1
+    )
+    (repo.content / "spells" / "test_cleave.yaml").write_text(body, encoding="utf-8")
+    assert_problem(repo, "sound: unknown id 'minecraft:no.such.hit'")

@@ -559,6 +559,21 @@
           "description": "A sound event the caster makes when the cast begins, e.g. its chant.",
           "title": "Sound"
         },
+        "tick_sound": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A sound event the caster makes at each tick, as its effects run (RLM-445: each of Arcane Missiles' launches); the cast's own sound plays once as it begins.",
+          "title": "Tick Sound"
+        },
         "type": {
           "const": "channel",
           "title": "Type",
@@ -1623,6 +1638,21 @@
           "description": "A player animation of ours (assets/realmforge/player_animations/, by its name: realmforge:<name>) that a casting player's arms play instead of realmforge:instant, the push of both hands every instant spell plays for half a second (RLM-641). It plays once and is over within 10 ticks, the time the spell keeps its caster from melee. Never with animation_seconds: a swing's weapon move is its own.",
           "title": "Player Animation"
         },
+        "sound": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A sound event the caster makes as it casts (RLM-445): the push of the hands' short cast sound (realmforge:spell.cast.instant), or a swing's whoosh as the swing begins.",
+          "title": "Sound"
+        },
         "type": {
           "const": "instant",
           "title": "Type",
@@ -1770,6 +1800,21 @@
           ],
           "title": "Shape",
           "type": "string"
+        },
+        "sound": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A sound event of the hit (RLM-445), played once where the first enemy it strikes stands; nothing when it strikes none.",
+          "title": "Sound"
         },
         "type": {
           "const": "realmforge:melee",

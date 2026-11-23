@@ -13,7 +13,8 @@
     "keep_sight": false,
     "type": "channel",
     "duration_ticks": 30,
-    "interval_ticks": 10
+    "interval_ticks": 10,
+    "tick_sound": "realmforge:spell.arcane_missiles.launch"
   },
   "cost": {
     "amount": 12.0,
@@ -32,7 +33,8 @@
   "castable_while_stunned": false,
   "visuals": {
     "look": "realmforge:arcane",
-    "forming": "hands"
+    "forming": "hands",
+    "impact_sound": "realmforge:spell.arcane_missiles.impact"
   },
   "effects": [
     {

@@ -1,10 +1,11 @@
 # yaml-language-server: $schema=../../tools/schemas/sounds.schema.json
 # Quake's sound (W5b, RLM-491): a deep rumble as Astone begins to beat the ground with her fists, her tell to step out
-# of the ring round her. Vanilla sounds until A3's own (RLM-126).
+# of the ring round her.
+# Our own sounds from ElevenLabs (ADR 0079), an agent's provisional picks until Matěj listens (RLM-669).
 id: astone_quake
 category: spell
 events:
   rumble:
     subtitle: {en_us: Ground rumbles}
     sounds:
-      - {event: minecraft:entity.warden.dig, pitch: 0.7}
+      - {file: astone_quake/rumble_1}

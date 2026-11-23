@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../tools/schemas/sounds.schema.json
+# Every spell's shared sounds (RLM-445): the instant spells' push of the hands, and an interrupted cast's fade
+# (a stun, a knockback or another cast cutting it; Casting plays it). Not a spell of its own.
+# Our own sounds from ElevenLabs (ADR 0079), an agent's provisional picks until Matěj listens (RLM-669).
+id: cast
+category: spell
+events:
+  instant:
+    subtitle: {en_us: Spell is cast}
+    sounds:
+      - {file: cast/instant_1}
+  interrupt:
+    subtitle: {en_us: Spell fizzles}
+    sounds:
+      - {file: cast/interrupt_1}

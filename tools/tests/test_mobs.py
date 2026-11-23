@@ -193,7 +193,7 @@ def test_a_mob_may_walk_silently(repo: RepoPaths) -> None:
     mob(repo, "hewn_brute", MELEE + "sounds: {step: silent, hurt: realmforge:entity.hewn_sentinel.hurt}\n")
     registrations = generate(repo)[REGISTRATIONS].decode()
     assert 'CustomMobSpec.id("realmforge:entity.hewn_sentinel.hurt")' in registrations
-    assert "Optional.empty(), true)," in registrations
+    assert "Optional.empty(), true,\n" in registrations
 
 
 def test_a_mob_may_ignore_armor_and_drain_magic_shields(repo: RepoPaths) -> None:
@@ -562,3 +562,12 @@ def test_no_mobs_still_compile(repo: RepoPaths) -> None:
     assert "ALL =\n            List.of();" in registrations
     assert "MOBS = List.of();" in files[EXPECTATIONS].decode()
     assert not any(path.startswith(LOOT) or path.startswith(TAGS) for path in files)
+
+
+def test_a_mobs_attack_sound_must_exist_and_reaches_the_game(repo: RepoPaths) -> None:
+    # RLM-621: a melee mob's sound as it swings for a hit.
+    mob(repo, "hewn_brute", MELEE + "sounds: {attack: minecraft:entity.iron_golem.attack}\n")
+    mobs_java = next(v for k, v in generate(repo).items() if k.endswith("GeneratedMobs.java")).decode()
+    assert 'CustomMobSpec.id("minecraft:entity.iron_golem.attack")' in mobs_java
+    mob(repo, "hewn_brute", MELEE + "sounds: {attack: minecraft:no.such.swing}\n")
+    assert_problem(repo, "sounds.attack: unknown id 'minecraft:no.such.swing'")
