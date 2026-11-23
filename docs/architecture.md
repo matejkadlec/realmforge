@@ -2154,9 +2154,10 @@ server ends a cast that another replaces before it starts the new one, in the sa
 lowering at once dipped the hands and raised them again from the animation's first frame (RLM-454).
 `client/spell/PendingLowerings` keeps the casters whose casts ended until that tick, each with whether its latest end
 lowers the hands or plays the release, and `PendingLoweringsTest` covers it. The release waits for that tick too
-(RLM-662): the spell queue starts a queued cast in the server tick the one before it completes, so a chained
-Frostbolt's start arrives before the tick, and the caster, casting again, keeps the running `cast` animation as it is,
-with no release and no dip; a formed cast with no cast after it plays the release then.
+(RLM-662): a spell pressed in a cast's last quarter second waits for it and starts in the server tick it completes
+(RLM-517), so a Fireball chained to a Frostbolt starts before the tick, and the caster, casting again, keeps the
+running `cast` animation as it is, with no release and no dip; a formed cast with no cast after it plays the release
+then.
 `AimedCastAnimation` wraps the animation with the aim above, and `CastArms` holds its math (decomposing the turned
 rotation into the part's angles, the short way round, and the pivot turned about the eye), which `CastArmsTest`
 covers. Player Animation Library is a required dependency on the client only (`side = "CLIENT"`); every PAL call of

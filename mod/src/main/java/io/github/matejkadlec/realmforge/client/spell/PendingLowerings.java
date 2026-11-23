@@ -7,12 +7,13 @@ import java.util.function.IntPredicate;
 
 /**
  * The casters whose arms change on the next client tick because a cast ended (RLM-454, RLM-662, architecture 11.6):
- * they go down, or, after a cast time that formed a projectile, play the release. A cast that replaces another, or that
- * the spell queue starts right after it, comes in the same server tick as the end, so {@code CastEndedPayload} arrives
- * before the new cast's {@code CastStartedPayload}: lowering the hands at the end, or playing the release then, would
- * dip them and raise them again from the animation's first frame. An end therefore only marks its caster, and the next
- * client tick lowers the hands of, or plays the release for, each marked caster that has no cast by then; one that
- * cast again keeps its running cast animation as it is. Without world access, so JUnit covers it. Main thread only.
+ * they go down, or, after a cast time that formed a projectile, play the release. A cast that replaces another, or a
+ * spell pressed in a cast's last quarter second, which waits for it to finish (RLM-517), starts in the same server
+ * tick as the end, so {@code CastEndedPayload} arrives before the new cast's {@code CastStartedPayload}: lowering the
+ * hands at the end, or playing the release then, would dip them and raise them again from the animation's first
+ * frame. An end therefore only marks its caster, and the next client tick lowers the hands of, or plays the release
+ * for, each marked caster that has no cast by then; one that cast again keeps its running cast animation as it is.
+ * Without world access, so JUnit covers it. Main thread only.
  */
 public final class PendingLowerings {
     /** A marked caster's arms at the next tick: {@code release} plays the release, else they go down. */

@@ -32,15 +32,15 @@ class PendingLoweringsTest {
     }
 
     /**
-     * RLM-662: the spell queue starts the next Frostbolt in the server tick the formed one completes, so its start
-     * arrives before the next client tick; nothing is due, the release is never played and the running cast animation
-     * keeps the pose, with no dip.
+     * RLM-662: a Fireball pressed in Frostbolt's last quarter second waits for it (RLM-517) and starts in the server
+     * tick the formed Frostbolt completes, so its start arrives before the next client tick; nothing is due, the
+     * release is never played and the running cast animation keeps the pose, with no dip.
      */
     @Test
-    void aFormedCastThatTheQueueFollowsAtOnceKeepsTheCastPose() {
+    void aFormedCastThatANewCastFollowsAtOnceKeepsTheCastPose() {
         PendingLowerings lowerings = new PendingLowerings();
         lowerings.released(5);
-        assertEquals(List.of(), lowerings.due(id -> id == 5), "the queued cast started before the tick");
+        assertEquals(List.of(), lowerings.due(id -> id == 5), "the waiting cast started before the tick");
         assertEquals(List.of(), lowerings.due(id -> false), "and the release is not played later either");
     }
 

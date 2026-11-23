@@ -35,10 +35,10 @@ import net.neoforged.neoforge.common.NeoForge;
  *
  * <p>Which animation the arms play (RLM-641, ADR 0073 decision 8): a cast time's {@code cast}, a channel's {@code
  * channel}, or the one the spell names; a cast time that completes and formed a projectile ends in the short {@code
- * release}, a tick after the end like the lowering, so a cast the spell queue starts at once keeps the pose instead
- * (RLM-662); and an instant spell's {@code CastStartedPayload}, marked as an instant, plays its push. The push is no
- * cast: it is kept apart from the casts in progress ({@link TimedPoses}), so it has no cast bar, nothing forms and
- * nothing ends it but its time, after which the arms go down.
+ * release}, a tick after the end like the lowering, so a cast that starts in the same server tick keeps the pose
+ * instead (RLM-662); and an instant spell's {@code CastStartedPayload}, marked as an instant, plays its push. The push
+ * is no cast: it is kept apart from the casts in progress ({@link TimedPoses}), so it has no cast bar, nothing forms
+ * and nothing ends it but its time, after which the arms go down.
  *
  * <p>While the local player casts, the attack key does nothing, not even a swing, and neither while an instant
  * spell's animation blocks their melee, which the synced {@code combat} attachment says ({@link
@@ -106,8 +106,9 @@ public final class ClientCasts {
     /**
      * A cast ended. A cast time that completed and formed a projectile ends in the release, a short push as the
      * projectile leaves (RLM-641), timed like an instant spell's animation; otherwise the hands go down. Either waits
-     * for the next client tick ({@link PendingLowerings}), so a cast the spell queue starts in the same server tick
-     * keeps the arms up in its pose, with no release and no dip (RLM-662).
+     * for the next client tick ({@link PendingLowerings}), so a cast that starts in the same server tick (a spell
+     * pressed in the cast's last quarter second waits for it to finish, RLM-517) keeps the arms up in its pose, with
+     * no release and no dip (RLM-662).
      */
     public static void end(CastEndedPayload payload) {
         int casterId = payload.casterId();
