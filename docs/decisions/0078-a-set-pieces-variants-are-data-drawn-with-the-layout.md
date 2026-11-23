@@ -1,4 +1,4 @@
-# 0077. A set piece's variants are data, drawn with the layout
+# 0078. A set piece's variants are data, drawn with the layout
 
 Date: 2026-11-11
 

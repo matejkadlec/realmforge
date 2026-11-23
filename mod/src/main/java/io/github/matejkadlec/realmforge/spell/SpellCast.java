@@ -38,14 +38,24 @@ import net.minecraft.util.StringRepresentable;
  *                            default
  * @param castTimeReduction   what Cast Time Reduction does to a channel (RLM-572): shortens it, so it keeps its ticks,
  *                            or adds ticks to it, so it keeps its duration; {@link Haste#SHORTENS} for every other cast
+ * @param playerAnimation     the player animation a casting player's arms play instead of the cast type's own
+ *                            (RLM-641: {@code realmforge:cast} for a cast time, {@code realmforge:channel} for a
+ *                            channel, {@code realmforge:instant} for an instant spell), by the id Player Animation
+ *                            Library gives it; never for a swing, whose weapon move is its own
  */
 public record SpellCast(Type type, int durationTicks, int intervalTicks, boolean castableWhileMoving,
         boolean lockOn, boolean keepSight, Optional<Double> keepRange, Optional<Identifier> sound,
-        Animation animation, int animationTicks, double hitAt, Haste castTimeReduction) {
+        Animation animation, int animationTicks, double hitAt, Haste castTimeReduction,
+        Optional<Identifier> playerAnimation) {
     /** When an animated instant spell lands by default: the middle of its swing (Matěj, 2026-10-24). */
     public static final double DEFAULT_HIT_AT = 0.5;
+    /**
+     * How long an instant spell's animation plays, in ticks, and how long it keeps its caster from melee (RLM-641,
+     * ADR 0073 decision 8): half a second, the global cooldown's length (Matěj, 2026-10-29).
+     */
+    public static final int PUSH_TICKS = 10;
     public static final SpellCast INSTANT = new SpellCast(Type.INSTANT, 0, 0, false, false, false, Optional.empty(),
-            Optional.empty(), Animation.RAISE, 0, DEFAULT_HIT_AT, Haste.SHORTENS);
+            Optional.empty(), Animation.RAISE, 0, DEFAULT_HIT_AT, Haste.SHORTENS, Optional.empty());
 
     public static final Codec<SpellCast> CODEC = RecordCodecBuilder.<SpellCast>create(instance -> instance.group(
                     Type.CODEC.fieldOf("type").forGetter(SpellCast::type),
@@ -64,19 +74,20 @@ public record SpellCast(Type type, int durationTicks, int intervalTicks, boolean
                             .forGetter(SpellCast::animationTicks),
                     Codec.doubleRange(0, 1).optionalFieldOf("hit_at", DEFAULT_HIT_AT).forGetter(SpellCast::hitAt),
                     Haste.CODEC.optionalFieldOf("cast_time_reduction", Haste.SHORTENS)
-                            .forGetter(SpellCast::castTimeReduction))
+                            .forGetter(SpellCast::castTimeReduction),
+                    Identifier.CODEC.optionalFieldOf("player_animation").forGetter(SpellCast::playerAnimation))
             .apply(instance, SpellCast::new)).validate(SpellCast::validate);
 
     /** A cast time of {@code ticks} (1 or more). */
     public static SpellCast castTime(int ticks, boolean castableWhileMoving, boolean lockOn) {
         return new SpellCast(Type.CAST_TIME, ticks, 0, castableWhileMoving, lockOn, false, Optional.empty(),
-                Optional.empty(), Animation.RAISE, 0, DEFAULT_HIT_AT, Haste.SHORTENS);
+                Optional.empty(), Animation.RAISE, 0, DEFAULT_HIT_AT, Haste.SHORTENS, Optional.empty());
     }
 
     /** An instant spell that plays out over {@code animationTicks}, its effects at the {@code hitAt} share of it. */
     public static SpellCast swing(int animationTicks, double hitAt) {
         return new SpellCast(Type.INSTANT, 0, 0, false, false, false, Optional.empty(), Optional.empty(),
-                Animation.RAISE, animationTicks, hitAt, Haste.SHORTENS);
+                Animation.RAISE, animationTicks, hitAt, Haste.SHORTENS, Optional.empty());
     }
 
     /** A channel of {@code durationTicks} that ticks every {@code intervalTicks}, which divides the duration. */
@@ -89,7 +100,8 @@ public record SpellCast(Type type, int durationTicks, int intervalTicks, boolean
     public static SpellCast channel(int durationTicks, int intervalTicks, boolean castableWhileMoving,
             boolean lockOn, Haste castTimeReduction) {
         return new SpellCast(Type.CHANNEL, durationTicks, intervalTicks, castableWhileMoving, lockOn, false,
-                Optional.empty(), Optional.empty(), Animation.RAISE, 0, DEFAULT_HIT_AT, castTimeReduction);
+                Optional.empty(), Optional.empty(), Animation.RAISE, 0, DEFAULT_HIT_AT, castTimeReduction,
+                Optional.empty());
     }
 
     /** Whether the effects run at once, without a current cast. */
@@ -149,6 +161,9 @@ public record SpellCast(Type type, int durationTicks, int intervalTicks, boolean
         if (cast.animationTicks > 0 && cast.type != Type.INSTANT || !(cast.hitAt > 0)) {
             return DataResult.error(() -> "Only an instant spell plays out over an animation, its hit moment within "
                     + "it: " + cast);
+        }
+        if (cast.animationTicks > 0 && cast.playerAnimation.isPresent()) {
+            return DataResult.error(() -> "A swing's weapon move is its own: it names no player animation: " + cast);
         }
         return switch (cast.type) {
             case INSTANT -> cast.durationTicks == 0 && cast.intervalTicks == 0 && !cast.castableWhileMoving

@@ -406,11 +406,11 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | `worldgen/<registry>/<id>.json` (JSON, [ADR 0012](decisions/0012-procedural-dungeons-and-dimensions.md)) | validated and copied unchanged to `data/realmforge/dimension/`, `dimension_type/`, `worldgen/<registry>/` | vanilla worldgen registries |
 | `rooms/` (NBT plus a YAML sidecar; [15.4](#154-rooms)) | validated and copied, normalized, to `data/realmforge/structure/rooms/` | structure templates |
 | `room_specs/`, `room_themes/` (exist, A4d; [15.4](#154-rooms)) | each kept seed of a spec built by the room generator into `data/realmforge/structure/rooms/generated/<spec>/seed_<n>.nbt`; themes name the blocks it builds with | structure templates |
-| `set_pieces/` (NBT plus a YAML fit rule; exist, RLM-280; [15.4](#154-rooms)) | the template, normalized, at `data/realmforge/structure/set_pieces/<id>.nbt`; its spots, and the blocks of it that vary, in the dungeon type entries that place it ([ADR 0077](decisions/0077-a-set-pieces-variants-are-data-drawn-with-the-layout.md)); QA expectations | structure templates; the planner's set-piece draw |
+| `set_pieces/` (NBT plus a YAML fit rule; exist, RLM-280; [15.4](#154-rooms)) | the template, normalized, at `data/realmforge/structure/set_pieces/<id>.nbt`; its spots, and the blocks of it that vary, in the dungeon type entries that place it ([ADR 0078](decisions/0078-a-set-pieces-variants-are-data-drawn-with-the-layout.md)); QA expectations | structure templates; the planner's set-piece draw |
 | item YAML with a weapon preset | `data/realmforge/weapon_attributes/<item>.json` (Better Combat format) | read by Better Combat |
 | mob YAML | Xaero's Minimap icon files (*verify* format) | read by Xaero's Minimap |
 | `texts/` (exists) | lang keys `<group>.realmforge.<name>`, `GeneratedTexts` constants | translations |
-| `art/textures/<kind>/<id>.png` (not content: the approved art, the cleaned texture of the candidate picked in the gallery; A1, RLM-642, [ADR 0007](decisions/0007-asset-pipeline.md), [art/README.md](../art/README.md)) | in place of the generated placeholder: an item's texture (`item`; or, named in `art/textures/variants.yaml`, another item's texture recoloured ramp by ramp, ADR 0007's variants scripted from one base, `art/variants.py`, RLM-505: three of the four caster sets' icons), a status effect's icon (`effect`, a 16 x 16 one centred on vanilla's 18 x 18), a spell's icon as the GUI sprite `textures/gui/sprites/spell/<id>.png` with `GeneratedSpellIcons`, the list of the spells that have one (`spell`), the tiles a generator composes a GUI texture of (`gui`: the spellbook's book, `generate/spellbook.py`), and the cloth and trim tiles of an armor look (`armor`, `armor_trim`), from which `generate/worn_armor.py` composes the look's two worn textures on vanilla's 64 x 32 humanoid armor layout (RLM-505: a cap, robes, pants and sandals, shaded down the palette's ramps); re-encoded by our own encoder, so the bytes are the same on every machine (`art/approved.py`). Validation refuses a file that names no content or that `rf art clean` did not write (its size, half-transparent pixels, colours outside the palette) | assets |
+| `art/textures/<kind>/<id>.png` (not content: the approved art, the cleaned texture of the candidate picked in the gallery; A1, RLM-642, [ADR 0007](decisions/0007-asset-pipeline.md), [art/README.md](../art/README.md)) | in place of the generated placeholder: an item's texture (`item`; or, named in `art/textures/variants.yaml`, another item's texture recoloured ramp by ramp, ADR 0007's variants scripted from one base, `art/variants.py`, RLM-505: three of the four caster sets' icons), a status effect's icon (`effect`, a 16 x 16 one centred on vanilla's 18 x 18), a spell's icon as the GUI sprite `textures/gui/sprites/spell/<id>.png` with `GeneratedSpellIcons`, the list of the spells that have one (`spell`), the tiles a generator composes a GUI texture of (`gui`: the spellbook's book, `generate/spellbook.py`), the cloth and trim tiles of an armor look (`armor`, `armor_trim`), from which `generate/worn_armor.py` composes the look's two worn textures on vanilla's 64 x 32 humanoid armor layout (RLM-505: a cap, robes, pants and sandals, shaded down the palette's ramps), and a block's tile (`block`, RLM-301: a `simple` block's texture, and for the Gatewright Bricks the one tile every look of the realm portal's frame is made from, `art/frame_looks.py`, `generate/portal_frame.py`); re-encoded by our own encoder, so the bytes are the same on every machine (`art/approved.py`). Validation refuses a file that names no content or that `rf art clean` did not write (its size, half-transparent pixels, colours outside the palette) | assets |
 | `apotheosis_new_affixes/` (exists, RLM-557) | an affix of our own at `data/realmforge/apotheosis/affixes/<id>.json`, its name and suffix in lang (`affix.realmforge:<id>`, `.suffix`) ([19.4](#194-optional-integrations)) | Apotheosis's affix registry, which reads every namespace |
 | `apotheosis_affixes/` (exists, RLM-271), `apotheosis_gems/`, `apotheosis_tier_augments/`, `apotheosis_rarities/`, `apotheosis_stat_remaps/` (exist, RLM-272), `apotheosis_rarity_overrides/` (exists, RLM-232) | each Apotheosis entry they change, from its snapshot, at Apotheosis's own path `data/apotheosis/apotheosis/<kind>/<path>.json`, and Apotheosis's MIT `LICENSE` with our `NOTICE` in `META-INF/third_party/apotheosis/` ([19.4](#194-optional-integrations)) | Apotheosis's affix, gem, tier augment, rarity and rarity override registries |
 | `enchantments/` (exists, RLM-537) | `data/realmforge/enchantment/<id>.json`, the vanilla enchantment tags it joins, its highest level with Apothic Enchanting (`data/apothic_enchanting/data_maps/enchantment/enchantment_info.json`), `#realmforge:protections` and `#minecraft:exclusive_set/armor` without Fire, Blast and Projectile Protection, `GeneratedEnchantments` keys, lang ([13](#13-items-gear-and-loot)) | vanilla's enchantment registry (datapack) |
@@ -427,9 +427,12 @@ when the mod is constructed (`dungeon/portal/DungeonBlocks`, `world/realm/RealmP
 blockstate and models (`generate/blocks.py`), and `BlockKinds#blocks(kind)` hands the owner its blocks, for a block
 entity type, a point-of-interest type or for placing one. Kinds the game uses one block of (`dungeon_exit` and the realm
 portal's three) allow one block each. `gatewright_bricks` and `gatewright_sealstone` have the blockstate property
-`generated`, which a trip sets on the frames it builds, and their loot tables drop the block only without it. The
-sealstone also has `glow` (0 to 15), its block light, which its block entity's ticker sets (RLM-406); its blockstate
-names `generated` alone, which matches every `glow`.
+`generated`, which a trip sets on the frames it builds, and their loot tables drop the block only without it, and
+`look` (RLM-301), the frame's look, which picks their model: one per look, the sealstone's with the look's bricks on
+its sides and bottom and the signet's socket on its top. The sealstone also has `glow` (0 to 15), its block light,
+which its block entity's ticker sets (RLM-406); their blockstates name `look` alone, which matches every `generated`
+and every `glow`. `realm_portal` has `animation` beside its `axis` (RLM-300), one animated texture for each
+([15.1](#151-dimensions)).
 `realm_portal` has no item: no block item, no loot table (`noLootTable`), no recipe and no creative tab. `hardness: -1`
 makes a block unbreakable, as vanilla's bedrock and portals.
 
@@ -1056,6 +1059,16 @@ Casting and Better Combat ([ADR 0020](decisions/0020-cast-animations-and-melee-w
   `spell/Casting` cancels the event and sets, records (`CombatState#setBetterCombatTag`, saved) and removes the tag;
   `client/spell/ClientCasts` cancels the attack key, swing included, while the local player casts. A mob attacks
   only when its AI says so, so W3's goal library keeps a casting mob from attacking (C3a-4 left it there).
+- **No melee during an instant spell's animation either** (RLM-641,
+  [ADR 0073](decisions/0073-spell-visuals-are-reusable-parts-in-data.md) decision 8, which amends ADR 0020's
+  "instant spells have no such window"; Matěj, 2026-10-29): for the half second a player's instant spell plays its
+  push ([11.2](#112-casting-server-authoritative)), the same three parts hold. The `combat` attachment keeps the
+  window (`CombatState#meleeBlockedUntil`, a game time; transient, synced to the owner), `Casting#onAttack` cancels
+  `AttackEntityEvent` while it is open, the spell sets `bettercombat_disabled` and the server tick after the
+  window's end removes it (unless a cast runs by then, whose end removes it; a logout or a death ends the window at
+  once), and `ClientCasts` cancels the attack key while `Casting#meleeBlocked` says so, read from the synced
+  attachment, since the push is no cast in the client's store. So a held attack key neither swings nor breaks a
+  block during the push.
 
 ### 9.3 Blocking with two-handed weapons
 
@@ -1533,7 +1546,8 @@ component lists spells granted while equipped or on use): the vision's "some fro
    spell's target is in range and line of sight, a player holds what the spell `requires` (11.1), and the caster is
    not silenced, stunned (but for a spell `castable_while_stunned`, C4) or already casting. A
    direction or a ground point never refuses a cast for its target (spell aiming, below).
-3. Instant spells run now. A spell the spell bar asks for while a cast has less than a quarter of a second left waits
+3. Instant spells run now, and a player's arms play the spell's animation for half a second, during which they
+   cannot melee (RLM-641, below). A spell the spell bar asks for while a cast has less than a quarter of a second left waits
    for it and is cast right after it (RLM-517, [11.6](#116-client-side)). A cast-time or channelled spell stores the
    current cast in the `combat` attachment and sends `CastStartedPayload` to the caster and tracking players (cast
    bar, animation). A player who starts
@@ -1577,6 +1591,27 @@ damage over time is no hit, so a bleed on another mob leaves it) is below
 the share, and closes it once it is not; a cast leaves that entry alone and still checks the health of the target it
 aims at. `WindowsAndProcsGameTests` covers both openers, a gray kill, and Execute's condition and extra rage;
 `ArmsTreeGameTests` Execute's lit slot.
+
+**In code (RLM-641, [ADR 0077](decisions/0077-an-instant-spells-animation-is-a-players-cast-never-an-auras-toggle.md)):
+an instant spell's animation.** Every instant spell a player casts, but a swing (below) and an
+aura's toggle ([11.7](#117-class-spells-and-stances): toggled, not cast, and off the global cooldown), runs its
+effects at once and then plays its animation: `SpellCaster` calls `Casting#push`, which sends `CastStartedPayload` to
+the caster and every tracking player with a `CombatState.Cast` marked `instant` whose duration is the animation's
+length, `SpellCast#PUSH_TICKS` (10 ticks, half a second, the global cooldown's default length; Matěj, 2026-10-29).
+
+- **It is no cast.** Nothing goes into the `combat` attachment's current cast or `Casting`'s running casts, so no
+  cast bar shows, a second spell is not refused as "already casting", and neither a stun, a new spell nor a cancel
+  ends it. No `CastEndedPayload` follows: the client lowers the arms when the length has passed
+  ([11.6](#116-client-side)). A player who starts tracking the caster mid-animation is not told of it.
+- **No melee for its length** ([9.2](#92-better-combat)): the window in the `combat` attachment, the cancelled
+  `AttackEntityEvent`, Better Combat's tag. `Casting` keeps the players whose window is open and closes each on the
+  server tick its time is over.
+- **Players only:** a mob has no arm layer for it and no `Player#attack`, and a proc's spell
+  (`SpellCaster#castProc`) is not cast by anyone's hands, so neither sends it.
+
+`InstantAnimationGameTests` covers the payload, the window, the attack inside and after it, the tag set and cleared,
+a cast that begins as the window ends, an operator's own tag, a logout mid-animation, and that an aura and a mob play
+none.
 
 **In code (RLM-399): swings.** An instant spell may play out over an animation (`SpellCast#animationTicks`, Slam's
 0.5 s swing): it starts at once, paying its cost and starting the global and its own cooldown, but `Casting` keeps it as
@@ -1859,8 +1894,9 @@ type only for genuinely new behaviour.
 [design](design/spell-visuals.md)).** A spell's look is a combination of parts, each defined once in `content/` and
 named by id, so Frostbolt and Fireball share a model and a trajectory and differ in their look. The engine comes in
 three parts: the kit as content and what the server runs (RLM-639), the GeckoLib models and the forming in the
-caster's hands (RLM-640, [11.6](#116-client-side)), and the instant spells' animation with its no-melee window
-(RLM-641).
+caster's hands (RLM-640, [11.6](#116-client-side)), and the instant spells' animation with its no-melee window and
+the `release` and `channel` animations (RLM-641, [11.2](#112-casting-server-authoritative),
+[11.6](#116-client-side)).
 
 - **A look** (`realmforge:spell_look`, `spell/SpellLook`, `content/spell_looks/`: frost, fire, arcane, stone) is what
   makes an element recognisable: its `colors` (lightest first, at most 16; frost's are Matěj's range of 2026-10-29,
@@ -2088,12 +2124,31 @@ the model's arms hang on a body that never pitches and trails the head by up to 
 turn rigidly with the camera about the eye (rotation and shoulder pivots), so the hands keep their place on screen;
 seen from outside only their rotation follows the head, like vanilla's bow pose.
 
-**In code (C6-1, RLM-435): the cast animation.** Every cast-time and channelled spell raises the hands with one
-animation, `realmforge:cast` (`player_animations/cast.json`, the QA mod's former test cast), until C6's spell visuals
-(epic RLM-434) give spells their own. `client/animation/CastAnimation` registers one PAL layer per player at priority
-3000 at client setup and shows or lowers it with a 4-tick fade; `ClientCasts` raises it on `CastStartedPayload` and
-lowers it at the client tick after `CastEndedPayload`, unless the caster cast again by then, so it shows for the caster
-and every tracking player, one who starts tracking mid-cast included (the server sends them the cast in progress). The
+**In code (C6-1, RLM-435; RLM-641): the cast animations.** `client/animation/CastAnimation` registers one PAL layer
+per player at priority 3000 at client setup and plays one of four animations of `player_animations/` on it
+([ADR 0073](decisions/0073-spell-visuals-are-reusable-parts-in-data.md) decision 8,
+[ADR 0077](decisions/0077-an-instant-spells-animation-is-a-players-cast-never-an-auras-toggle.md)):
+
+| Animation | File | Plays | When |
+| --- | --- | --- | --- |
+| `realmforge:cast` | `cast.json` (the QA mod's former test cast) | looped | a cast time: both hands rise and meet below the crosshair |
+| `realmforge:channel` | `channel.json` | looped | a channel: both hands pushed forward and held side by side |
+| `realmforge:instant` | `instant.json` | once, 10 ticks | an instant spell: both hands push forward and back (the server's `SpellCast#PUSH_TICKS`) |
+| `realmforge:release` | `release.json` | once, 5 ticks | a cast time that completed and formed a projectile in the hands (`SpellVisuals#formedProjectile`): a short push as it leaves (`CastAnimation#RELEASE_TICKS`) |
+
+A spell's cast may name another animation of ours for the first three (`cast.player_animation`,
+`SpellCast#playerAnimation`); validation refuses one that is missing or does not fit (an instant spell's plays once
+within 10 ticks, a cast time's or a channel's loops), and a swing names none, as its weapon move comes with RLM-444.
+A looped animation fades in over 4 ticks and stays as it is when the next cast shows the same one; one that plays
+once fades in over 2 ticks and always starts again; every animation fades out over 4 ticks. `ClientCasts` decides
+which plays: a cast's on `CastStartedPayload`, lowered at the client tick after `CastEndedPayload` unless the caster
+cast again by then, so it shows for the caster
+and every tracking player, one who starts tracking mid-cast included (the server sends them the cast in progress).
+An instant spell's `CastStartedPayload` (marked `instant`) is played and timed but kept out of the casts in progress,
+so it has no cast bar and nothing forms; the release is timed the same way from the cast's end.
+`client/spell/TimedPoses` keeps the casters whose arms play such an animation with the game time it ends, and the
+client tick lowers the arms then, unless a cast took them meanwhile (game time stands still while the game is paused,
+so nothing is due then); `TimedPosesTest` covers it, and `CurrentCastsTest` which casts end in the release. The
 server ends a cast that another replaces before it starts the new one, in the same tick, so the end arrives first;
 lowering at once dipped the hands and raised them again from the animation's first frame (RLM-454).
 `client/spell/PendingLowerings` keeps the casters whose casts ended until that tick, and `PendingLoweringsTest` covers
@@ -2101,8 +2156,9 @@ it.
 `AimedCastAnimation` wraps the animation with the aim above, and `CastArms` holds its math (decomposing the turned
 rotation into the part's angles, the short way round, and the pivot turned about the eye), which `CastArmsTest`
 covers. Player Animation Library is a required dependency on the client only (`side = "CLIENT"`); every PAL call of
-the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays the same animation through
-`CastAnimation#show`.
+the core mod sits in `client/animation`. The QA mod's `/qa cast <ticks>` plays `realmforge:cast` through
+`CastAnimation#show`, and its cast screenshots (`REALMFORGE_QA_CAST_SHOTS`, [dev setup](dev-setup.md#33-in-wsl-quick-checks))
+show each of the four on a real cast.
 
 **In code (C3b, RLM-25): the spell bar.**
 
@@ -3344,7 +3400,8 @@ Specialist (Ancient Workbench), which sell the Nether's and the End's materials.
     signet of the realm its lit portal opens onto, or any signet while the portal is dark, in Overworld; inside a
     realm, that realm's own signet, dark or lit (`RealmPortals.lightsSealstone`); in a dimension without an entry,
     none (RLM-458). A server-side block entity
-    ticker (`RealmPortals.tickGlow`) moves its `glow` one level a tick towards 15 or 0, so it rises or fades over 15
+    ticker (`RealmPortals.tickSealstone`, which also keeps the frame's look and starts storm blinks, below) moves its
+    `glow` one level a tick towards 15 or 0 (`tickGlow`), so it rises or fades over 15
     ticks; the block state is its light (`lightLevel`), so every player sees it, and it is set without shape updates;
   - **the portal block:** like vanilla's nether portal it has an axis and no collision, and checks its frame on every
     neighbour update, so a broken frame block takes the whole opening with it. It implements `Portal`: every entity
@@ -3370,10 +3427,32 @@ Specialist (Ancient Workbench), which sell the Nether's and the End's materials.
     the exit's chunks for a short time;
   - **arrival** (`RealmArrivals`): on every arrival in a realm, a 2-second title with its name, element and level
     band (the realm entry's `levels`); the first arrival also shows its flavour line in chat (`realmforge:visited_realms`);
-  - **look:** the portal's texture is one greyscale, see-through swirl (so the chunk mesher puts it in the translucent
+  - **look:** the portal's textures are greyscale and see-through (so the chunk mesher puts them in the translucent
     layer), tinted on the client with the destination's colour (`client/render/RealmPortalColors`, a
     `BlockTintSource`); the sealstone's block entity is synced, and a change re-renders the opening. `animateTick`
     shows dust in that colour, the realm's particle and the vanilla portal hum at its pitch.
+  - **a look per realm in block states** (RLM-300, RLM-301): a realm entry's `portal` names the lit portal's
+    `animation`, whether it has a `storm`, and its `frame`'s look. A block's states and textures are fixed when the
+    game starts, so each is one of a fixed set (`PortalAnimation`, `FrameLook`; the pipeline's `PORTAL_ANIMATIONS`
+    and `FRAME_LOOKS` in `schema/realm.py` name the same values, and a GameTest compares them). The server sets them
+    as block states, which is all a client needs, and what a GameTest can read:
+    - the portal block's `animation`, set by `RealmPortals.light`, picks one of its animated textures (a strip of
+      frames with a `.png.mcmeta`, as vanilla's nether portal; `generate/portal_textures.py` draws them, because a
+      frame has to join its neighbours and the last has to lead into the first);
+    - the frame blocks' `look` (the Gatewright Bricks and the sealstone; `washed` while dark) is set on the frame by
+      `RealmPortals.light` and taken back by `close`; the sealstone's ticker (`RealmPortals.tickLook`, every 10
+      ticks) catches what they cannot see, a frame that went dark by a broken brick and a brick placed into a lit
+      frame's corner, and breaking the sealstone washes out the bricks it leaves
+      (`SealstoneBlock#affectNeighborsAfterRemoval`). A frame dresses only its own sealstone and Gatewright Bricks
+      (`RealmPortals#dress`): another sealstone in a corner or a brick's place keeps its own look, or the two would
+      wash and dress each other at every check. Every look's textures are made from the bricks' one approved
+      tile (`art/frame_looks.py`, `generate/portal_frame.py`);
+    - **a storm blink** cannot be a texture's loop, which is never random, so it is the tint: the sealstone's ticker
+      rolls for it (`PortalStorm`, about every 15 seconds) and sends the block event `SealstoneBlockEntity.EVENT_STORM`
+      (`Level#blockEvent`, which reaches the clients within 64 blocks); each client counts the blink down in the block
+      entity's client ticker, which does not run while the game is paused or its ticks are frozen, redraws the
+      opening when the darkness changes, and the tint source reads `SealstoneBlockEntity#stormDark`. Common code
+      holds all of it but the tint, so nothing outside `client/` touches a client class.
 - A technical dimension `realmforge:instances` (void, no natural spawning, fixed time) hosts dungeon instances. The
   code depends on it, so it lives in the core mod's resources (`data/realmforge/dimension/instances.json` and
   `dimension_type/instances.json`), not in `content/worldgen/`
@@ -3461,7 +3540,7 @@ entry. A type with `set_pieces` (RLM-280, RLM-282) gets its rooms' set-piece spo
 the pieces of the type's tags that may fill it and its spots (`pos`, the footprint's lowest corner at the height the
 piece stands on; `facing`, the way the piece's front faces; `mirror`). The entry's `set_pieces` then holds `pieces`
 (each piece's template, size, weight, whether it may be mirrored, and `variants`, the blocks of it that vary: where,
-at what chance, and what they become, [ADR 0077](decisions/0077-a-set-pieces-variants-are-data-drawn-with-the-layout.md)),
+at what chance, and what they become, [ADR 0078](decisions/0078-a-set-pieces-variants-are-data-drawn-with-the-layout.md)),
 `density` (how many patterns a room of each role fills, as weights by count: the type's chance table, else the
 default) and `container_loot` (the type's default, which the pieces' containers get). Validation checks that a type
 whose rooms or set pieces hold a chest or a barrel names a container loot table for them, so none stands empty
@@ -3819,7 +3898,7 @@ Rooms are generated or imported; nobody has to build one by hand
   only; validation checks its size, cells, ids and that it holds no connector, marker, spawner, redstone, fluid,
   locked-looking door or container loot table. `rf gen` writes it normalized as `realmforge:set_pieces/<id>` and its
   variants as data into the dungeon type entries that place it (each block that varies: a chance block becomes air,
-  a swap its state; [ADR 0077](decisions/0077-a-set-pieces-variants-are-data-drawn-with-the-layout.md)).
+  a swap its state; [ADR 0078](decisions/0078-a-set-pieces-variants-are-data-drawn-with-the-layout.md)).
   **The matcher** (`rooms/set_pieces.py`) finds, for every pooled room, the spots of
   the pieces that reach its role: the mask turned four ways and mirrored (`StructureTemplate#transform`), on a floor
   block (no barrier), with air up to the piece's height, wall behind and beside where the mask says (a generated
@@ -3849,7 +3928,7 @@ Rooms are generated or imported; nobody has to build one by hand
   room one or two), picks those patterns at random, and fills each with one piece on every spot, picked by weight
   among the pieces that fit it, mirrored where the spot is and the piece allows it, or leaves the pattern empty. A
   piece's variants are drawn once per pattern, so the pieces of a pattern look alike
-  ([ADR 0077](decisions/0077-a-set-pieces-variants-are-data-drawn-with-the-layout.md): the entry lists each block that
+  ([ADR 0078](decisions/0078-a-set-pieces-variants-are-data-drawn-with-the-layout.md): the entry lists each block that
   varies, and the draw becomes swaps of the placement). The spot's `pos` is the lowest corner of the piece's turned
   and mirrored box in the room's template; vanilla places a template from its origin corner, mirrored and then turned
   about it, so `SetPieces#place` moves the origin back by where that corner ends up and adds the room's own turn
@@ -4349,7 +4428,8 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   Target going on or off, sent by `client/spell/TargetCircle`), `CancelCast`, `LearnTalent`, `ToggleNightVision` (exists:
   `world/net/ToggleNightVisionPayload`, sent by `client/input/NightVisionKey`).
 - Server → client: `CastStarted` and `CastEnded` (exist: `spell/net/CastStartedPayload` and `CastEndedPayload`, kept by
-  `client/spell/ClientCasts`, the local player's end also shown by `client/hud/CastBarHud`), `CastRefused` (exists:
+  `client/spell/ClientCasts`, the local player's end also shown by `client/hud/CastBarHud`; a `CastStarted` marked
+  `instant` is an instant spell's animation, RLM-641: played and never kept as a cast, with no `CastEnded`), `CastRefused` (exists:
   `spell/net/CastRefusedPayload`, the reason shown by `client/hud/CastBarHud`), `CastTarget` (exists:
   `spell/net/CastTargetPayload`, the mob under the target circle of the player's own cast, drawn by
   `client/spell/TargetCircle`), `HighlightedTarget` (exists: `spell/net/HighlightedTargetPayload`, the mob under the
@@ -4372,6 +4452,12 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   `client/particle` (the provider of our particle types, RLM-639),
   `client/tooltip`, `client/network`, `client/spell` (the casts in progress, C3a-2), `client/animation` (the PAL cast
   layer), and `client/compat/<mod>` for the client parts of integrations (JEI plugins, Jade tooltips).
+- **A block's look from data** needs no client code when it is a block state: the realm portal's animation and its
+  frame's look are states the server sets, and the blockstate files pick the models and the animated textures
+  ([15.1](#151-dimensions), RLM-300, RLM-301). Only what a state cannot say is client code: the portal's colour, a
+  tint from the synced realm registry, and its storm blink, which darkens that tint
+  (`client/render/RealmPortalColors`). A tint is baked into the chunk mesh, so whatever changes it re-renders the
+  blocks (`Level#sendBlockUpdated` on the client level).
 - **The rule:** no class outside `client/` imports `net.minecraft.client.*`, `com.mojang.blaze3d.*`,
   `net.neoforged.neoforge.client.*` or a library's rendering classes. An automated import check enforces it
   (`tools/tests/test_client_isolation.py`, run by `uv run pytest`): it scans the main and generated sources of the
@@ -5067,7 +5153,8 @@ that agents can read. So far:
   x, z (0, 0 by default) the way `/tp` does, so a player without the realm's unlock or below its entry level
   (`/qa level 6`) is refused, and grant or revoke the unlock advancement as
   `/advancement grant|revoke @s only realmforge:realm/<realm>` does
-  ([15.1](#151-dimensions));
+  ([15.1](#151-dimensions)); `/qa realm storm` starts a storm blink now on the nearest lit realm portal within 16
+  blocks whose realm has one, which in play comes at random (RLM-300);
 - the combat log, `logs/realmforge-combat.log` in the game directory (`run/client/`, `run/gametest/`, ...): one line
   per hit or dodge that involves a player or a dummy, with the damage type, school, crit, attacker level, the
   original damage, what armor blocked, and the damage dealt and taken from health. A new server starts a new file.

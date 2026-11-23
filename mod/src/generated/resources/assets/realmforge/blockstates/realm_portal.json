@@ -1,10 +1,16 @@
 {
   "variants": {
-    "axis=x": {
+    "animation=swirl,axis=x": {
       "model": "realmforge:block/realm_portal_ns"
     },
-    "axis=z": {
+    "animation=swirl,axis=z": {
       "model": "realmforge:block/realm_portal_ew"
+    },
+    "animation=stream,axis=x": {
+      "model": "realmforge:block/realm_portal_stream_ns"
+    },
+    "animation=stream,axis=z": {
+      "model": "realmforge:block/realm_portal_stream_ew"
     }
   }
 }

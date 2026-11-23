@@ -37,7 +37,7 @@ import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 
 /**
- * RLM-282 (ADR 0050, ADR 0077, architecture 15.4): a run places set pieces in the spots {@code rf gen} found in its
+ * RLM-282 (ADR 0050, ADR 0078, architecture 15.4): a run places set pieces in the spots {@code rf gen} found in its
  * rooms. With the test piece (a barrel against a wall, a chest instead a quarter of the time, a skull on it half the
  * time) in the test dungeon: every spot pattern is filled as a whole or left empty, the same seed gives the same
  * pieces and another seed others, a built piece faces away from its wall, its container is a loot container with the

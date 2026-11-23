@@ -31,9 +31,9 @@ public record Visuals(Holder<SpellLook> look, Optional<Forming> forming, Optiona
     }
 
     /**
-     * What shows in a caster's hands during a cast (Matěj's choice of 2026-10-29, RLM-463). Until the forming renderer
-     * (RLM-640) a custom mob's cast shows {@link #GROW} and {@link #STORM} alike, its projectile growing as a whole,
-     * and {@link #HANDS} shows nothing.
+     * What shows in a caster's hands during a cast (Matěj's choice of 2026-10-29, RLM-463), for players and mobs
+     * alike ({@code client/render/SpellForming}, RLM-640). Only a model of cubes grows cube by cube: the orb, which
+     * has none, scales up as a whole under {@link #GROW} too.
      */
     public enum Forming implements StringRepresentable {
         /** The projectile's model grows there cube by cube during a cast time, in a storm of the look's particles. */

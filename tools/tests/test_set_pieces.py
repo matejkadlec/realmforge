@@ -606,7 +606,7 @@ def test_rf_gen_writes_each_rooms_spots_into_its_dungeon_type(repo: RepoPaths) -
         "qa-mod/src/generated/java/io/github/matejkadlec/realmforge/qa/generated/GeneratedSetPieceExpectations.java"
     ]
     assert b'new SetPieceExpectation("realmforge:set_pieces/test_barrel", 1, 2, 1, 2)' in java
-    assert not any("processor_list/set_pieces" in path for path in files), "variants are data now (ADR 0077)"
+    assert not any("processor_list/set_pieces" in path for path in files), "variants are data now (ADR 0078)"
     types = files[
         "qa-mod/src/generated/java/io/github/matejkadlec/realmforge/qa/generated/GeneratedDungeonTypeExpectations.java"
     ].decode()
@@ -646,7 +646,7 @@ def test_only_mirrorable_pieces_take_a_mirrored_spot_of_an_asymmetric_mask(repo:
 
 
 def test_a_pieces_variants_reach_the_dungeon_type_as_data(repo: RepoPaths) -> None:
-    # ADR 0077: a block that is there only by chance becomes air at one minus its chance, and a swap its state with
+    # ADR 0078: a block that is there only by chance becomes air at one minus its chance, and a swap its state with
     # the properties it keeps; each is listed with its place in the template, and the game draws them with the layout.
     walled_hall(repo)
     rule = BARREL_RULE + (

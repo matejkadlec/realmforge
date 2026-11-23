@@ -1,6 +1,7 @@
 package io.github.matejkadlec.realmforge.spell.net;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.spell.CastEnd;
@@ -52,5 +53,14 @@ class CastPayloadsTest {
                 new SetSpellBarSlotPayload(5, Optional.of(DRAIN)), new SetSpellBarSlotPayload(0, Optional.empty())}) {
             assertEquals(payload, RoundTrip.stream(SetSpellBarSlotPayload.STREAM_CODEC, payload));
         }
+    }
+
+    @Test
+    void castStartedRoundTripsAnInstantSpellsAnimation() {
+        CastStartedPayload payload = new CastStartedPayload(42, Cast.instant(DRAIN, 123_456L, 10));
+        CastStartedPayload read = RoundTrip.stream(CastStartedPayload.STREAM_CODEC, payload);
+        assertEquals(payload, read);
+        assertTrue(read.cast().instant(), "marked as an instant");
+        assertEquals(123_466L, read.cast().endGameTime(), "with its length");
     }
 }

@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "realmforge:block/gatewright_sealstone_top_stone",
+    "side": "realmforge:block/gatewright_bricks_stone",
+    "bottom": "realmforge:block/gatewright_bricks_stone"
+  }
+}

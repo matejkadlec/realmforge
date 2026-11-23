@@ -21,11 +21,11 @@ class SpellCastTest {
     /** The Hewn Chanter's Stoneform as {@code rf gen} writes it: every field W3 added, set. */
     private static final SpellCast STONEFORM = new SpellCast(SpellCast.Type.CAST_TIME, 30, 0, false, false, true,
             Optional.of(0.5), Optional.of(Identifier.parse("realmforge:spell.stoneform.form")),
-            SpellCast.Animation.RAISE, 0, SpellCast.DEFAULT_HIT_AT, SpellCast.Haste.SHORTENS);
+            SpellCast.Animation.RAISE, 0, SpellCast.DEFAULT_HIT_AT, SpellCast.Haste.SHORTENS, Optional.empty());
     /** Astone's Quake as {@code rf gen} writes it: a channel that slams. */
     private static final SpellCast QUAKE = new SpellCast(SpellCast.Type.CHANNEL, 60, 15, false, false, false,
             Optional.empty(), Optional.of(Identifier.parse("realmforge:spell.astone_quake.rumble")),
-            SpellCast.Animation.SLAM, 0, SpellCast.DEFAULT_HIT_AT, SpellCast.Haste.SHORTENS);
+            SpellCast.Animation.SLAM, 0, SpellCast.DEFAULT_HIT_AT, SpellCast.Haste.SHORTENS, Optional.empty());
 
     private static DataResult<SpellCast> parse(String json) {
         return SpellCast.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(json));
@@ -120,5 +120,22 @@ class SpellCastTest {
     void onlyAChannelAddsTicks() {
         assertTrue(parse("{\"type\": \"cast_time\", \"duration_ticks\": 40, \"cast_time_reduction\": "
                 + "\"adds_ticks\"}").isError());
+    }
+
+    /** RLM-641: a cast may name the player animation a casting player's arms play instead of its cast type's own. */
+    @Test
+    void aCastNamesAPlayerAnimationOfItsOwnButASwingNever() {
+        Identifier gesture = Identifier.parse("realmforge:gesture");
+        assertEquals(Optional.empty(), SpellCast.INSTANT.playerAnimation(), "none unless the data names one");
+        for (String cast : new String[] {"{\"type\": \"instant\"", "{\"type\": \"cast_time\", \"duration_ticks\": 30",
+                "{\"type\": \"channel\", \"duration_ticks\": 60, \"interval_ticks\": 20"}) {
+            SpellCast read = parse(cast + ", \"player_animation\": \"realmforge:gesture\"}").getOrThrow();
+            assertEquals(Optional.of(gesture), read.playerAnimation(), cast);
+            assertEquals(read, RoundTrip.json(SpellCast.CODEC, read), "it round-trips");
+        }
+        assertTrue(parse("{\"type\": \"instant\", \"animation_ticks\": 10, "
+                + "\"player_animation\": \"realmforge:gesture\"}").isError(), "a swing's weapon move is its own");
+        assertEquals(10, SpellCast.PUSH_TICKS, "half a second, the global cooldown's default length");
+        assertEquals(Spell.DEFAULT_GLOBAL_COOLDOWN_TICKS, SpellCast.PUSH_TICKS);
     }
 }

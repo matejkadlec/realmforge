@@ -27,16 +27,31 @@ class RealmTest {
             Optional.of(new Realm.Levels(6, 18)),
             "realm.realmforge.stone.flavour", Optional.of(Realmforge.id("vaultstone")),
             Optional.of(Realmforge.id("undervault_signet")), 0xFF7A8FB0, Optional.of(Identifier.withDefaultNamespace("ash")),
-            0.8F, new Realm.Arrival(20, 90, Realmforge.id("vaultstone"), 3));
+            0.8F, new Realm.Portal(PortalAnimation.STREAM, true, FrameLook.STONE),
+            new Realm.Arrival(20, 90, Realmforge.id("vaultstone"), 3));
     private static final Realm OVERWORLD = new Realm(Level.OVERWORLD, "realm.realmforge.overworld.name",
             "realm.realmforge.overworld.in_sentence", "", "", "", Optional.empty(), "", Optional.empty(), Optional.empty(), 0xFF5DBB63, Optional.empty(), 1.0F,
-            new Realm.Arrival(63, 310, Identifier.withDefaultNamespace("stone_bricks"), 3));
+            Realm.Portal.DEFAULT, new Realm.Arrival(63, 310, Identifier.withDefaultNamespace("stone_bricks"), 3));
 
     @Test
     void codecRoundTrips() {
         assertEquals(STONE, RoundTrip.json(Realm.CODEC, STONE));
         assertEquals(STONE, RoundTrip.nbt(Realm.CODEC, STONE));
         assertEquals(OVERWORLD, RoundTrip.json(Realm.CODEC, OVERWORLD));
+    }
+
+    /** An entry without a look of its own has the shared one: the swirl, no storm and the washed-out frame. */
+    @Test
+    void anEntryWithoutAPortalLookHasTheSharedOne() {
+        JsonElement stone = Realm.CODEC.encodeStart(JsonOps.INSTANCE, STONE).getOrThrow();
+        stone.getAsJsonObject().remove("portal");
+        Realm.Portal look = Realm.CODEC.parse(JsonOps.INSTANCE, stone).getOrThrow().portal();
+        assertEquals(new Realm.Portal(PortalAnimation.SWIRL, false, FrameLook.WASHED), look);
+        assertEquals(Realm.Portal.DEFAULT, look);
+        assertEquals(new Realm.Portal(PortalAnimation.STREAM, false, FrameLook.WASHED), Realm.Portal.CODEC.parse(
+                JsonOps.INSTANCE, JsonParser.parseString("{\"animation\": \"stream\"}")).getOrThrow());
+        assertTrue(Realm.Portal.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString("{\"frame\": \"gold\"}"))
+                .isError(), "a look the game does not have");
     }
 
     @Test

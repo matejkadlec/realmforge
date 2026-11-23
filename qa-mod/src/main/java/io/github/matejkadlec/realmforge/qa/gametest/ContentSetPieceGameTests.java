@@ -15,7 +15,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
  * Checks that the game loads every set piece in {@code content/set_pieces/} as written (ADR 0050), using expectations
  * generated from the same files ({@link GeneratedSetPieceExpectations}): its template with its size, and, in every
  * dungeon type that places it, the same size and as many blocks that vary (chance blocks and swaps,
- * {@code generate/set_pieces.py}, ADR 0077). {@code DungeonSetPieceGameTests} builds a dungeon with them.
+ * {@code generate/set_pieces.py}, ADR 0078). {@code DungeonSetPieceGameTests} builds a dungeon with them.
  */
 public final class ContentSetPieceGameTests {
     private static final String TEST_PIECE = "realmforge:set_pieces/test_barrel";

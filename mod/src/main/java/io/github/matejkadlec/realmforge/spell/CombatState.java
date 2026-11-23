@@ -17,14 +17,15 @@ import net.minecraft.resources.ResourceKey;
 /**
  * The value of the {@code realmforge:combat} attachment on players and on mobs that cast (architecture 7 and 11): the
  * resource pools (mana, rage), the cooldowns, the current cast, the open windows of spells usable only for a while
- * (RLM-540), and whether a cast set Better Combat's disable tag.
+ * (RLM-540), until when an instant spell's animation keeps the holder from melee (RLM-641), and whether a cast or
+ * that animation set Better Combat's disable tag.
  *
  * <p>Unlike the other attachment values it is mutable, because it changes too often to replace and sync on every
  * change: the owner mutates it in place and calls {@code syncData} at most a few times per second or on important
  * changes (a cast or cooldown starting). Cooldowns are the server game time when they end, so they survive relogging
- * without per-tick updates. The current cast and the open windows are transient: {@link #CODEC} leaves them out, so
- * neither relogging nor the copy on death (which round-trips the saved codec) brings them back; only the client sync
- * carries them.
+ * without per-tick updates. The current cast, the open windows and the melee block are transient: {@link #CODEC}
+ * leaves them out, so neither relogging nor the copy on death (which round-trips the saved codec) brings them back;
+ * only the client sync carries them.
  *
  * <p>Better Combat's tag {@value #BETTER_COMBAT_DISABLED_TAG} is saved with the player, so the flag that a cast set it
  * is saved too: an operator's own tag survives a cast, and a login removes a tag a crash left behind (ADR 0020,
@@ -61,10 +62,12 @@ public final class CombatState {
             ByteBufCodecs.BOOL, CombatState::setBetterCombatTag,
             ByteBufCodecs.<ByteBuf, ResourceKey<Spell>, Long, Map<ResourceKey<Spell>, Long>>map(HashMap::new,
                     ResourceKey.streamCodec(SpellRegistries.SPELL), ByteBufCodecs.VAR_LONG), CombatState::windows,
-            (resources, cooldowns, globalCooldownEnd, cast, setBetterCombatTag, windows) -> {
+            ByteBufCodecs.VAR_LONG, CombatState::meleeBlockedUntil,
+            (resources, cooldowns, globalCooldownEnd, cast, setBetterCombatTag, windows, meleeBlockedUntil) -> {
                 CombatState state = new CombatState(resources, cooldowns, globalCooldownEnd, cast.orElse(null),
                         setBetterCombatTag);
                 windows.forEach(state::openWindow);
+                state.meleeBlockedUntil = meleeBlockedUntil;
                 return state;
             });
 
@@ -76,6 +79,8 @@ public final class CombatState {
     @Nullable
     private Cast currentCast;
     private boolean setBetterCombatTag;
+    /** The game time until which an instant spell's animation blocks melee (RLM-641); 0 for none. Transient. */
+    private long meleeBlockedUntil;
     /** The server's bookkeeping for aim assistance (rule 4): neither saved, synced nor compared. */
     @Nullable
     private UUID currentTarget;
@@ -202,7 +207,36 @@ public final class CombatState {
         this.currentCast = null;
     }
 
-    /** Whether a cast, not an operator, added {@value #BETTER_COMBAT_DISABLED_TAG} to the holder. */
+    /**
+     * Blocks the holder's melee until game time {@code untilGameTime} (RLM-641, ADR 0073 decision 8): an instant
+     * spell's animation plays until then. A later instant spell moves it on; it never moves back.
+     */
+    public void blockMelee(long untilGameTime) {
+        if (untilGameTime < 0) {
+            throw new IllegalArgumentException("A melee block ends at a game time of 0 or more: " + untilGameTime);
+        }
+        this.meleeBlockedUntil = Math.max(meleeBlockedUntil, untilGameTime);
+    }
+
+    /** Forgets the melee block: its time is over. */
+    public void clearMeleeBlock() {
+        this.meleeBlockedUntil = 0L;
+    }
+
+    /** The game time an instant spell's animation blocks the holder's melee until; 0 for none. */
+    public long meleeBlockedUntil() {
+        return meleeBlockedUntil;
+    }
+
+    /**
+     * Whether an instant spell's animation keeps the holder from melee at game time {@code now}. The owner's client
+     * reads the same answer from the synced attachment, for the attack key.
+     */
+    public boolean isMeleeBlocked(long now) {
+        return now < meleeBlockedUntil;
+    }
+
+    /** Whether a cast or an instant spell's animation, not an operator, added {@value #BETTER_COMBAT_DISABLED_TAG}. */
     public boolean setBetterCombatTag() {
         return setBetterCombatTag;
     }
@@ -240,25 +274,28 @@ public final class CombatState {
                 && globalCooldownEnd == state.globalCooldownEnd
                 && Objects.equals(currentCast, state.currentCast)
                 && setBetterCombatTag == state.setBetterCombatTag
-                && windows.equals(state.windows);
+                && windows.equals(state.windows)
+                && meleeBlockedUntil == state.meleeBlockedUntil;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(resources, cooldowns, globalCooldownEnd, currentCast, setBetterCombatTag, windows);
+        return Objects.hash(resources, cooldowns, globalCooldownEnd, currentCast, setBetterCombatTag, windows,
+                meleeBlockedUntil);
     }
 
     @Override
     public String toString() {
         return "CombatState[resources=" + resources + ", cooldowns=" + cooldowns + ", globalCooldownEnd="
                 + globalCooldownEnd + ", currentCast=" + currentCast + ", setBetterCombatTag=" + setBetterCombatTag
-                + ", windows=" + windows + "]";
+                + ", windows=" + windows + ", meleeBlockedUntil=" + meleeBlockedUntil + "]";
     }
 
     /**
      * A cast-time or channelled spell in progress (architecture 11.2): drawn by clients from its start and duration,
      * so it needs no per-tick packets. The owner gets it with this attachment, every other player in
-     * {@code CastStartedPayload}.
+     * {@code CastStartedPayload}. An {@code instant} one is no cast in progress and never the holder's current cast:
+     * it only tells clients, in {@code CastStartedPayload}, to play an instant spell's animation (RLM-641).
      *
      * @param spell         the spell being cast
      * @param startGameTime the game time the cast started
@@ -266,15 +303,18 @@ public final class CombatState {
      * @param channel       whether it is a channel (a bar that empties) rather than a cast time (one that fills)
      * @param swing         whether it is an instant spell playing out over its animation (RLM-399): no cast bar, no
      *                      cast animation, no slow
+     * @param instant       whether it is the animation of an instant spell that already ran its effects (RLM-641):
+     *                      no cast bar, nothing to interrupt, and its duration is the animation's length
      */
     public record Cast(ResourceKey<Spell> spell, long startGameTime, int durationTicks, boolean channel,
-            boolean swing) {
+            boolean swing, boolean instant) {
         public static final StreamCodec<ByteBuf, Cast> STREAM_CODEC = StreamCodec.composite(
                 ResourceKey.streamCodec(SpellRegistries.SPELL), Cast::spell,
                 ByteBufCodecs.VAR_LONG, Cast::startGameTime,
                 ByteBufCodecs.VAR_INT, Cast::durationTicks,
                 ByteBufCodecs.BOOL, Cast::channel,
                 ByteBufCodecs.BOOL, Cast::swing,
+                ByteBufCodecs.BOOL, Cast::instant,
                 Cast::new);
 
         public Cast {
@@ -284,11 +324,25 @@ public final class CombatState {
                         "A cast starts at a game time of 0 or more and lasts a tick or more: " + startGameTime + ", "
                                 + durationTicks);
             }
+            if ((channel ? 1 : 0) + (swing ? 1 : 0) + (instant ? 1 : 0) > 1) {
+                throw new IllegalArgumentException("A cast is a channel, a swing or an instant spell's animation, "
+                        + "never two of them: " + spell.identifier());
+            }
         }
 
         /** A cast time ({@code channel} false) or a channel, not a swing. */
         public Cast(ResourceKey<Spell> spell, long startGameTime, int durationTicks, boolean channel) {
-            this(spell, startGameTime, durationTicks, channel, false);
+            this(spell, startGameTime, durationTicks, channel, false, false);
+        }
+
+        /** A cast time, a channel or a swing, never an instant spell's animation. */
+        public Cast(ResourceKey<Spell> spell, long startGameTime, int durationTicks, boolean channel, boolean swing) {
+            this(spell, startGameTime, durationTicks, channel, swing, false);
+        }
+
+        /** The animation of the instant spell {@code spell}, cast at {@code startGameTime}, {@code ticks} long. */
+        public static Cast instant(ResourceKey<Spell> spell, long startGameTime, int ticks) {
+            return new Cast(spell, startGameTime, ticks, false, false, true);
         }
 
         /** The game time the cast completes. */

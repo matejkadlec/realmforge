@@ -11,10 +11,12 @@ public final class GeneratedRealmExpectations {
      * Expected state of one entry. Ids are full resource locations: the realm's, e.g. {@code realmforge:stone},
      * its dimension's, its unlock advancement's and its signet's; the colour is RGB. Overworld's entry, which is
      * no realm, has an empty hint, unlock and signet. {@code inSentenceKey} is the name as a sentence refers to
-     * the realm ("the Undervault").
+     * the realm ("the Undervault"). {@code animation}, {@code storm} and {@code frame} are the lit portal's
+     * look: the portal block's animation, whether it blinks like a storm, and the frame's look.
      */
     public record RealmExpectation(String id, String dimension, String nameKey, String inSentenceKey,
-            String lockedHintKey, String unlockAdvancement, String signet, int colour) {
+            String lockedHintKey, String unlockAdvancement, String signet, int colour, String animation,
+            boolean storm, String frame) {
     }
 
     public static final List<RealmExpectation> REALMS = List.of(
@@ -26,7 +28,8 @@ public final class GeneratedRealmExpectations {
                     "",
                     "",
                     "",
-                    0x5DBB63),
+                    0x5DBB63,
+                    "swirl", false, "washed"),
             new RealmExpectation(
                     "realmforge:stone",
                     "realmforge:stone",
@@ -35,7 +38,8 @@ public final class GeneratedRealmExpectations {
                     "realm.realmforge.stone.locked_hint",
                     "realmforge:realm/stone",
                     "realmforge:undervault_signet",
-                    0x7A8FB0));
+                    0x7A8FB0,
+                    "stream", true, "stone"));
 
     private GeneratedRealmExpectations() {
     }

@@ -669,6 +669,12 @@ def test_a_model_of_at_most_64_cubes_is_fine_and_one_more_is_refused(repo: RepoP
             "bone body, cube 0: origin is three numbers, not [0, 0]",
         ),
         (geo([{**CUBE, "rotation": [0, "a", 0]}]), "bone body, cube 0: rotation is three numbers"),
+        (
+            geo([{**CUBE, "inflate": 0.5}]),
+            "bone body, cube 0 is inflated by 0.5: the game draws a spell model's cubes at their own size",
+        ),
+        (geo([{**CUBE, "inflate": "a"}]), "bone body, cube 0: inflate is a number, not 'a'"),
+        (geo([CUBE], inflate=0.25), "bone body is inflated by 0.25"),
     ],
 )
 def test_a_cubes_model_needs_a_source_the_game_can_draw(

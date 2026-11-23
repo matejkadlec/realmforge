@@ -6,6 +6,8 @@ import io.github.matejkadlec.realmforge.dungeon.instance.InstanceDimension;
 import io.github.matejkadlec.realmforge.generated.GeneratedTexts;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedRealmExpectations.RealmExpectation;
 import io.github.matejkadlec.realmforge.world.WorldRegistries;
+import io.github.matejkadlec.realmforge.world.realm.FrameLook;
+import io.github.matejkadlec.realmforge.world.realm.PortalAnimation;
 import io.github.matejkadlec.realmforge.world.realm.PortalFrame;
 import io.github.matejkadlec.realmforge.world.realm.GatewrightBricksBlock;
 import io.github.matejkadlec.realmforge.world.realm.Realm;
@@ -15,12 +17,14 @@ import io.github.matejkadlec.realmforge.world.realm.RealmPortalLinker;
 import io.github.matejkadlec.realmforge.world.realm.RealmPortals;
 import io.github.matejkadlec.realmforge.world.realm.Realms;
 import io.github.matejkadlec.realmforge.world.realm.SealstoneBlock;
+import io.github.matejkadlec.realmforge.world.realm.SealstoneBlockEntity;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
+import java.util.stream.Stream;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
@@ -28,6 +32,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundBlockEventPacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -224,6 +229,143 @@ public final class RealmPortalGameTests {
             level.getServer().getPlayerList().remove(player);
         }
         helper.succeed();
+    }
+
+    /**
+     * RLM-300, RLM-301: a lit frame takes the look of the realm its portal opens onto, its sealstone, its 13 bricks
+     * and a brick in a corner, and its portal blocks that realm's animation; switched onto another entry it takes
+     * that one's; closed, or dark because a brick broke, it washes out again, and so do the bricks left when the
+     * sealstone of a lit frame breaks.
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_9X9, timeoutTicks = 200)
+    public static void aLitFrameTakesItsRealmsLookAndWashesOutWhenItGoesDark(GameTestHelper helper) {
+        RealmExpectation stone = RealmGameTests.stone();
+        ServerLevel level = helper.getLevel();
+        PortalFrame.Frame frame = new PortalFrame.Frame(helper.absolutePos(SEALSTONE), Direction.Axis.X);
+        buildFrame(level, frame);
+        // A corner, which no frame needs: its brick is dressed with the frame all the same.
+        BlockPos corner = frame.corners().getFirst();
+        level.setBlockAndUpdate(corner, RealmPortalBlocks.bricks().defaultBlockState());
+        FrameLook stoneLook = look(helper, stone.frame());
+        PortalAnimation stoneAnimation = animation(helper, stone.animation());
+        helper.assertTrue(stoneLook != FrameLook.WASHED && stoneAnimation != PortalAnimation.SWIRL,
+                "the stone realm has a frame look and an animation of its own: " + stoneLook + ", " + stoneAnimation);
+        assertLook(helper, level, frame, FrameLook.WASHED, "a dark frame is washed out");
+
+        RealmPortals.light(level, frame, id(stone));
+        assertLook(helper, level, frame, stoneLook, "a frame lit onto the stone realm takes its look");
+        assertAnimation(helper, level, frame, stoneAnimation, "its portal blocks show the stone realm's animation");
+
+        // Switched onto Overworld's entry, which has no look of its own: the shared swirl in a washed-out frame.
+        RealmPortals.light(level, frame, Realmforge.id("overworld"));
+        assertLook(helper, level, frame, FrameLook.WASHED, "a frame switched onto Overworld's entry washes out");
+        assertAnimation(helper, level, frame, PortalAnimation.SWIRL, "its portal blocks show the shared swirl");
+        RealmPortals.light(level, frame, id(stone));
+        assertLook(helper, level, frame, stoneLook, "switched back, it takes the stone realm's look again");
+        assertAnimation(helper, level, frame, stoneAnimation, "and its animation");
+
+        RealmPortals.close(level, frame.sealstone());
+        helper.assertTrue(dark(level, frame), "the closed portal is dark");
+        assertLook(helper, level, frame, FrameLook.WASHED, "a closed frame washes out at once");
+
+        // A broken brick takes the opening with it; nobody closed the portal, so the sealstone's own check washes
+        // the rest of the frame out, within its interval.
+        RealmPortals.light(level, frame, id(stone));
+        BlockPos side = frame.at(-1, 1);
+        level.setBlockAndUpdate(side, Blocks.AIR.defaultBlockState());
+        helper.assertTrue(dark(level, frame), "breaking a frame block takes the whole opening with it");
+        helper.startSequence()
+                .thenWaitUntil(() -> assertLook(helper, level, frame, FrameLook.WASHED,
+                        "a frame that went dark by a broken brick washes out"))
+                .thenExecute(() -> {
+                    level.setBlockAndUpdate(side, RealmPortalBlocks.bricks().defaultBlockState());
+                    // A brick put into the other bottom corner of a lit frame takes the frame's look too.
+                    RealmPortals.light(level, frame, id(stone));
+                    level.setBlockAndUpdate(frame.corners().get(1), RealmPortalBlocks.bricks().defaultBlockState());
+                })
+                .thenWaitUntil(() -> helper.assertValueEqual(
+                        level.getBlockState(frame.corners().get(1)).getValue(FrameLook.PROPERTY), stoneLook,
+                        "a brick placed into a lit frame's corner takes the frame's look"))
+                .thenExecute(() -> {
+                    // The sealstone of a lit frame breaks: the bricks it leaves wash out with it.
+                    level.destroyBlock(frame.sealstone(), false);
+                    helper.assertTrue(dark(level, frame), "a frame without its sealstone is dark");
+                    for (BlockPos pos : frame.bricks()) {
+                        helper.assertValueEqual(level.getBlockState(pos).getValue(FrameLook.PROPERTY),
+                                FrameLook.WASHED, "the bricks of a frame whose sealstone broke wash out: " + pos);
+                    }
+                    helper.assertValueEqual(level.getBlockState(corner).getValue(FrameLook.PROPERTY),
+                            FrameLook.WASHED, "and the brick in its corner");
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * RLM-301: another sealstone standing in a lit frame's corners is no part of that frame. It keeps its own
+     * washed-out look and the frame keeps its realm's, over several look checks: dressed with the frame, each dark
+     * sealstone would wash the frame's sealstone and bricks out at its own check, and they would trade looks for ever.
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_9X9, timeoutTicks = 100)
+    public static void aSealstoneInALitFramesCornerLeavesBothLooksAlone(GameTestHelper helper) {
+        RealmExpectation stone = RealmGameTests.stone();
+        ServerLevel level = helper.getLevel();
+        PortalFrame.Frame frame = new PortalFrame.Frame(helper.absolutePos(SEALSTONE), Direction.Axis.X);
+        buildFrame(level, frame);
+        for (BlockPos corner : frame.corners()) {
+            level.setBlockAndUpdate(corner, RealmPortalBlocks.sealstone().defaultBlockState());
+        }
+        FrameLook stoneLook = look(helper, stone.frame());
+        RealmPortals.light(level, frame, id(stone));
+        Runnable bothKeepTheirLook = () -> {
+            for (BlockPos corner : frame.corners()) {
+                helper.assertValueEqual(level.getBlockState(corner).getValue(FrameLook.PROPERTY), FrameLook.WASHED,
+                        "a dark sealstone in the lit frame's corner stays washed out: " + corner);
+            }
+            helper.assertValueEqual(level.getBlockState(frame.sealstone()).getValue(FrameLook.PROPERTY), stoneLook,
+                    "the lit frame's sealstone keeps its realm's look");
+            for (BlockPos pos : frame.bricks()) {
+                helper.assertValueEqual(level.getBlockState(pos).getValue(FrameLook.PROPERTY), stoneLook,
+                        "the lit frame's brick keeps its realm's look: " + pos);
+            }
+        };
+        bothKeepTheirLook.run();
+        helper.startSequence()
+                .thenExecuteFor(RealmPortals.LOOK_INTERVAL * 3, bothKeepTheirLook)
+                .thenSucceed();
+    }
+
+    /**
+     * RLM-300: only a portal lit onto a realm with a storm blinks, and its blink reaches a player near as the
+     * sealstone's block event, which starts the blink on their client.
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_9X9, timeoutTicks = 100)
+    public static void aStormBlinkReachesThePlayersNearAPortalOfARealmWithAStorm(GameTestHelper helper) {
+        RealmExpectation stone = RealmGameTests.stone();
+        ServerLevel level = helper.getLevel();
+        PortalFrame.Frame frame = new PortalFrame.Frame(helper.absolutePos(SEALSTONE), Direction.Axis.X);
+        buildFrame(level, frame);
+        helper.assertTrue(stone.storm(), "the stone realm's portal has a storm");
+        helper.assertFalse(RealmPortals.storms(level, frame.sealstone()), "a dark frame has no storm");
+        RealmPortals.light(level, frame, Realmforge.id("overworld"));
+        helper.assertFalse(RealmPortals.storms(level, frame.sealstone()), "a portal onto Overworld's entry has no storm");
+        RealmPortals.light(level, frame, id(stone));
+        helper.assertTrue(RealmPortals.storms(level, frame.sealstone()), "a portal onto the stone realm has its storm");
+
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-portal-storm", new Vec3(4.5, 1, 7.5));
+        QaPlayers.sentPackets(player, ClientboundBlockEventPacket.class);
+        RealmPortals.storm(level, frame.sealstone());
+        // The level runs its block events at the end of its tick.
+        helper.startSequence()
+                .thenWaitUntil(() -> {
+                    List<ClientboundBlockEventPacket> events =
+                            QaPlayers.sentPackets(player, ClientboundBlockEventPacket.class);
+                    helper.assertTrue(events.stream().anyMatch(event -> event.getPos().equals(frame.sealstone())
+                                    && event.getBlock() == RealmPortalBlocks.sealstone()
+                                    && event.getB0() == SealstoneBlockEntity.EVENT_STORM),
+                            "the storm's block event reached the player: " + events.size() + " other events");
+                })
+                .thenExecute(() -> level.getServer().getPlayerList().remove(player))
+                .thenSucceed();
     }
 
     /**
@@ -970,6 +1112,51 @@ public final class RealmPortalGameTests {
             }
             light.tryScheduleUpdate();
             LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(1));
+        }
+    }
+
+    /** The frame look {@code content/realms/} names, as the block state's value. */
+    private static FrameLook look(GameTestHelper helper, String name) {
+        return java.util.Arrays.stream(FrameLook.values())
+                .filter(look -> look.getSerializedName().equals(name))
+                .findFirst()
+                .orElseThrow(() -> helper.assertionException("no frame look " + name));
+    }
+
+    /** The portal animation {@code content/realms/} names, as the block state's value. */
+    private static PortalAnimation animation(GameTestHelper helper, String name) {
+        return java.util.Arrays.stream(PortalAnimation.values())
+                .filter(animation -> animation.getSerializedName().equals(name))
+                .findFirst()
+                .orElseThrow(() -> helper.assertionException("no portal animation " + name));
+    }
+
+    /**
+     * The sealstone and every brick of {@code frame}, of its 13 and in its corners, show {@code look}; at most one of
+     * the 13 is missing, the one a test broke.
+     */
+    private static void assertLook(GameTestHelper helper, ServerLevel level, PortalFrame.Frame frame, FrameLook look,
+            String what) {
+        helper.assertValueEqual(level.getBlockState(frame.sealstone()).getValue(FrameLook.PROPERTY), look,
+                what + " (the sealstone)");
+        int bricks = 0;
+        for (BlockPos pos : Stream.concat(frame.bricks().stream(), frame.corners().stream()).toList()) {
+            BlockState state = level.getBlockState(pos);
+            if (state.hasProperty(FrameLook.PROPERTY)) {
+                helper.assertValueEqual(state.getValue(FrameLook.PROPERTY), look, what + " (" + pos + ")");
+                bricks += frame.bricks().contains(pos) ? 1 : 0;
+            }
+        }
+        helper.assertTrue(bricks >= frame.bricks().size() - 1, what + ": the frame has its bricks, not " + bricks);
+    }
+
+    /** Every portal block of {@code frame}'s lit opening shows {@code animation}. */
+    private static void assertAnimation(GameTestHelper helper, ServerLevel level, PortalFrame.Frame frame,
+            PortalAnimation animation, String what) {
+        helper.assertTrue(lit(level, frame), what + ": the frame is lit");
+        for (BlockPos pos : frame.opening()) {
+            helper.assertValueEqual(level.getBlockState(pos).getValue(RealmPortalBlock.ANIMATION), animation,
+                    what + " (" + pos + ")");
         }
     }
 

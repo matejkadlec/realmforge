@@ -508,6 +508,7 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
         "                    Optional.empty(),\n"
         '                    "raise",\n'
         '                    "shortens",\n'
+        "                    Optional.empty(),\n"
         '                    Optional.of("realmforge:mana"),\n'
         "                    10.0,\n"
         "                    5.0,\n"

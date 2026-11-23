@@ -1,0 +1,36 @@
+{
+    "name": "channel",
+    "author": "Realmforge",
+    "description": "The animation of every channelled spell (RLM-641, ADR 0073 decision 8): both arms pushed forward and held side by side, palms out, with a slow pulse while the channel runs. In first person the hands stay apart at the bottom of the view, clear of the crosshair. Animates only the arms' rotations, so lower layers (Better Combat's idle poses, walking) show through everywhere else.",
+    "emote": {
+        "isLoop": true,
+        "returnTick": 5,
+        "beginTick": 0,
+        "endTick": 25,
+        "stopTick": 25,
+        "degrees": false,
+        "moves": [
+            {
+                "tick": 5,
+                "easing": "EASEOUTQUAD",
+                "turn": 0,
+                "rightArm": {"pitch": -1.50, "yaw": 0.04, "roll": -0.25},
+                "leftArm": {"pitch": -1.50, "yaw": -0.04, "roll": 0.25}
+            },
+            {
+                "tick": 15,
+                "easing": "EASEINOUTSINE",
+                "turn": 0,
+                "rightArm": {"pitch": -1.58, "yaw": 0.08, "roll": -0.30},
+                "leftArm": {"pitch": -1.58, "yaw": -0.08, "roll": 0.30}
+            },
+            {
+                "tick": 25,
+                "easing": "EASEINOUTSINE",
+                "turn": 0,
+                "rightArm": {"pitch": -1.50, "yaw": 0.04, "roll": -0.25},
+                "leftArm": {"pitch": -1.50, "yaw": -0.04, "roll": 0.25}
+            }
+        ]
+    }
+}

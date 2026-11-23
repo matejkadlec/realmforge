@@ -87,6 +87,13 @@ import net.neoforged.neoforge.network.PacketDistributor;
  *   cancelled, and the cast sets Better Combat's tag {@value CombatState#BETTER_COMBAT_DISABLED_TAG}, which stops its
  *   swings, unless the player already had it. The {@code combat} attachment records that the cast set it, so the end
  *   of the cast removes only a tag it added, and a login removes one a crash left behind.</li>
+ *   <li><b>An instant spell's animation</b> (RLM-641; ADR 0073 decision 8, which amends ADR 0020 decision 3, and
+ *   ADR 0077): a player's instant spell that is no swing runs its effects at once and is no cast in progress, but its animation
+ *   plays for {@link SpellCast#PUSH_TICKS} ({@link #push}): its clients learn of it from a {@link CastStartedPayload}
+ *   marked as an instant, with no end sent, as nothing can interrupt it. For that long the player's melee is blocked
+ *   as during a cast: the {@code combat} attachment keeps the window ({@link CombatState#isMeleeBlocked}, synced to
+ *   the owner for the attack key), the {@code AttackEntityEvent} is cancelled, and Better Combat's tag is set, and
+ *   removed when the window is over unless a cast runs by then.</li>
  * </ul>
  */
 public final class Casting {
@@ -108,6 +115,11 @@ public final class Casting {
      * the end of the server tick, after the ended casts' effects. Server thread only.
      */
     private static final Map<LivingEntity, Queued> STARTING = new LinkedHashMap<>();
+    /**
+     * The players whose instant spell's animation still blocks their melee (RLM-641), with the game time it ends.
+     * Server thread only.
+     */
+    private static final Map<Player, Long> PUSHING = new HashMap<>();
 
     private Casting() {
     }
@@ -124,6 +136,7 @@ public final class Casting {
         NeoForge.EVENT_BUS.addListener(ServerStoppedEvent.class, event -> {
             RUNNING.clear();
             STARTING.clear();
+            PUSHING.clear();
         });
         NeoForge.EVENT_BUS.addListener(MobEffectEvent.Added.class, Casting::onEffectAdded);
     }
@@ -186,6 +199,63 @@ public final class Casting {
                 damageScale, paid);
         RUNNING.put(caster, running);
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new CastStartedPayload(caster.getId(), cast));
+    }
+
+    /**
+     * {@code caster} cast the instant spell {@code spell} at game time {@code now} (RLM-641, ADR 0073 decision 8): a
+     * player's arms play its animation for {@link SpellCast#PUSH_TICKS}, for themselves and every player tracking
+     * them, and their melee is blocked for that long, all three parts of ADR 0020 decision 3 (the attachment's window
+     * for the event and the owner's attack key, Better Combat's tag). It is no cast: nothing is kept that a new spell,
+     * a stun or a cancel could end, and no end is sent. A mob has no such animation and no melee of this kind.
+     * Either way the {@code combat} attachment is synced, the spell's cost and cooldowns with it.
+     */
+    static void push(LivingEntity caster, Holder.Reference<Spell> spell, long now) {
+        if (caster instanceof Player player) {
+            CombatState state = player.getData(SpellAttachments.COMBAT);
+            state.blockMelee(now + SpellCast.PUSH_TICKS);
+            if (player.addTag(CombatState.BETTER_COMBAT_DISABLED_TAG)) {
+                state.setSetBetterCombatTag(true);
+            }
+            PUSHING.put(player, state.meleeBlockedUntil());
+            PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new CastStartedPayload(player.getId(),
+                    Cast.instant(spell.key(), now, SpellCast.PUSH_TICKS)));
+        }
+        caster.syncData(SpellAttachments.COMBAT);
+    }
+
+    /**
+     * Ends the melee block of {@code player}'s instant spell: the window closes, and Better Combat's tag goes unless
+     * a cast that began meanwhile still needs it.
+     */
+    private static void endPush(Player player) {
+        if (PUSHING.remove(player) == null) {
+            return;
+        }
+        CombatState state = player.getData(SpellAttachments.COMBAT);
+        state.clearMeleeBlock();
+        if (state.currentCast().isEmpty()) {
+            clearBetterCombatTag(player, state);
+        }
+        player.syncData(SpellAttachments.COMBAT);
+    }
+
+    /** Ends every instant spell's melee block whose time is over, or whose player is gone. */
+    private static void endPushes() {
+        for (Map.Entry<Player, Long> pushing : List.copyOf(PUSHING.entrySet())) {
+            Player player = pushing.getKey();
+            if (player.isRemoved() || player.level().getGameTime() >= pushing.getValue()) {
+                endPush(player);
+            }
+        }
+    }
+
+    /**
+     * Whether an instant spell's animation keeps {@code entity} from melee now (RLM-641). Reads the {@code combat}
+     * attachment, so the entity's own client gets the same answer for its attack key.
+     */
+    public static boolean meleeBlocked(Entity entity) {
+        return entity instanceof LivingEntity living && living.getExistingData(SpellAttachments.COMBAT)
+                .filter(state -> state.isMeleeBlocked(living.level().getGameTime())).isPresent();
     }
 
     /**
@@ -290,6 +360,7 @@ public final class Casting {
                 tick(running);
             }
         }
+        endPushes();
         startQueued();
     }
 
@@ -538,7 +609,10 @@ public final class Casting {
         CombatState state = caster.getData(SpellAttachments.COMBAT);
         refundSwing(running, end, state);
         state.clearCast();
-        clearBetterCombatTag(caster, state);
+        if (!state.isMeleeBlocked(caster.level().getGameTime())) {
+            // RLM-641: an instant spell's animation may still block melee; its end removes the tag then.
+            clearBetterCombatTag(caster, state);
+        }
         AttributeInstance speed = caster.getAttribute(Attributes.MOVEMENT_SPEED);
         if (speed != null) {
             speed.removeModifier(CAST_SLOW.id());
@@ -562,7 +636,7 @@ public final class Casting {
         return true;
     }
 
-    /** Removes Better Combat's disable tag if a cast added it; an operator's own tag stays. */
+    /** Removes Better Combat's disable tag if a cast or an instant spell's animation added it; an operator's own stays. */
     private static void clearBetterCombatTag(LivingEntity caster, CombatState state) {
         if (state.setBetterCombatTag()) {
             caster.removeTag(CombatState.BETTER_COMBAT_DISABLED_TAG);
@@ -570,9 +644,12 @@ public final class Casting {
         }
     }
 
-    /** Vanilla melee and Better Combat's server-side hits both go through {@code Player#attack}. */
+    /**
+     * Vanilla melee and Better Combat's server-side hits both go through {@code Player#attack}: none during a cast,
+     * nor during an instant spell's animation (RLM-641).
+     */
     private static void onAttack(AttackEntityEvent event) {
-        if (isCasting(event.getEntity())) {
+        if (isCasting(event.getEntity()) || meleeBlocked(event.getEntity())) {
             event.setCanceled(true);
         }
     }
@@ -587,6 +664,9 @@ public final class Casting {
     /** Vanilla's client fires it too (entity event 3), so the server's casts are left to the server thread. */
     private static void onDeath(LivingDeathEvent event) {
         if (!event.getEntity().level().isClientSide()) {
+            if (event.getEntity() instanceof Player player) {
+                endPush(player);
+            }
             end(event.getEntity(), CastEnd.DIED);
         }
     }
@@ -604,6 +684,7 @@ public final class Casting {
 
     /** Fires before the player is saved, so a cast's tag never reaches the save on a clean logout. */
     private static void onLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
+        endPush(event.getEntity());
         end(event.getEntity(), CastEnd.LOGGED_OUT);
     }
 

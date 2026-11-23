@@ -18,6 +18,10 @@ Two more kinds are the tiles of an armor look's worn textures, which ``generate/
 ``armor`` (``art/textures/armor/<look>.png``, the look's cloth) and ``armor_trim``
 (``art/textures/armor_trim/<look>.png``, its trim, which needs the cloth), both 16 x 16 and tileable.
 
+``block`` (``art/textures/block/<block>.png``, 16 x 16 and tileable, RLM-301) is a block's tile: a simple block's
+texture on every side, and for the Gatewright Bricks the tile every look of the realm portal's frame is made from
+(``generate/portal_frame.py``). Blocks of other kinds draw their own textures (``BLOCK_TILE_KINDS``).
+
 ``art/textures/variants.yaml`` names the item textures that are scripted from another one instead of having a file
 (``art/variants.py``, ADR 0007: an armor tier's icon recoloured from its base's): ``rf gen`` computes them from the
 base's file.
@@ -46,6 +50,10 @@ from realmforge_tools.yamlio import YamlLoadError, load_yaml_text
 APPROVED_DIR = Path("art") / "textures"
 ITEM, SPELL, EFFECT, GUI = "item", "spell", "effect", "gui"
 ARMOR, ARMOR_TRIM = "armor", "armor_trim"
+BLOCK = "block"
+# The block kinds whose texture is one tile: a full cube with it on every side, and the realm portal frame's bricks,
+# whose looks are made from it. The other kinds' textures are drawn or composed by their generators.
+BLOCK_TILE_KINDS = ("simple", "gatewright_bricks")
 ICON_SIZE = 16
 EFFECT_ICON_SIZE = 18
 # The parts of GUI textures that generators compose, and their sizes: the spellbook's page and cover tiles (RLM-609).
@@ -57,10 +65,11 @@ _SIZES: dict[str, tuple[tuple[int, int], ...]] = {
     EFFECT: ((EFFECT_ICON_SIZE, EFFECT_ICON_SIZE), (ICON_SIZE, ICON_SIZE)),
     ARMOR: ((ICON_SIZE, ICON_SIZE),),
     ARMOR_TRIM: ((ICON_SIZE, ICON_SIZE),),
+    BLOCK: ((ICON_SIZE, ICON_SIZE),),
 }
-KINDS = (ITEM, SPELL, EFFECT, GUI, ARMOR, ARMOR_TRIM)
-# The kinds whose textures are tiles a generator composes: every pixel opaque.
-TILE_KINDS = (GUI, ARMOR, ARMOR_TRIM)
+KINDS = (ITEM, SPELL, EFFECT, GUI, ARMOR, ARMOR_TRIM, BLOCK)
+# The kinds whose textures are tiles: every pixel opaque.
+TILE_KINDS = (GUI, ARMOR, ARMOR_TRIM, BLOCK)
 TRANSPARENT: Rgba = (0, 0, 0, 0)
 
 
@@ -99,7 +108,7 @@ def image(paths: RepoPaths, kind: str, art_id: str) -> Image | None:
     if base is None:
         return None
     try:
-        return variants.recolor(base, variants.groups(variant, _palette(paths)))
+        return variants.recolor(base, variants.groups(variant, palette(paths)))
     except (variants.VariantError, OSError, PaletteError):
         return None
 
@@ -124,7 +133,8 @@ def _parse_variants(text: str) -> variants.VariantsFile:
     return variants.VariantsFile.model_validate(load_yaml_text(text) or {})
 
 
-def _palette(paths: RepoPaths) -> Palette:
+def palette(paths: RepoPaths) -> Palette:
+    """The project palette. Raises ``OSError`` or ``PaletteError`` when it cannot be read."""
     return _parse_palette(paths.root / DEFAULT_PALETTE, (paths.root / DEFAULT_PALETTE).read_bytes())
 
 
@@ -171,9 +181,10 @@ def problems(paths: RepoPaths, content: Content) -> list[Problem]:
         GUI: set(GUI_PARTS),
         ARMOR: looks,
         ARMOR_TRIM: looks,
+        BLOCK: {entry.model.id for entry in content.blocks if entry.model.kind in BLOCK_TILE_KINDS},
     }
     found: list[Problem] = []
-    palette = None
+    colours = None
     for file in sorted(p for p in root.rglob("*") if p.is_file()):
         rel = paths.rel(file)
         parts = file.relative_to(root).parts
@@ -188,6 +199,16 @@ def problems(paths: RepoPaths, content: Content) -> list[Problem]:
         kind, art_id = parts[0], file.stem
         if art_id not in known[kind]:
             what = {GUI: "GUI part", ARMOR: "armor look", ARMOR_TRIM: "armor look"}.get(kind, kind)
+            if kind == BLOCK and art_id in {entry.model.id for entry in content.blocks}:
+                found.append(
+                    Problem(
+                        rel,
+                        "",
+                        f"the block {art_id!r} takes no tile: only a block of kind "
+                        f"{' or '.join(BLOCK_TILE_KINDS)} does, the others' textures are drawn by the pipeline",
+                    )
+                )
+                continue
             found.append(Problem(rel, "", f"no {what} has the id {art_id!r}"))
             continue
         if kind == ARMOR_TRIM and not (root / ARMOR / file.name).is_file():
@@ -204,17 +225,17 @@ def problems(paths: RepoPaths, content: Content) -> list[Problem]:
             wanted = " or ".join(f"{width} x {height}" for width, height in sizes)
             found.append(Problem(rel, "", f"is {art.width} x {art.height}; this texture is {wanted}"))
             continue
-        if palette is None:
+        if colours is None:
             try:
-                palette = {color.rgb for color in load_gpl(paths.root / DEFAULT_PALETTE).colors}
+                colours = {color.rgb for color in load_gpl(paths.root / DEFAULT_PALETTE).colors}
             except (OSError, PaletteError) as e:
                 return [*found, Problem(paths.rel(paths.root / DEFAULT_PALETTE), "", f"cannot be read: {e}")]
         if any(pixel[3] not in (0, 255) for pixel in art.pixels):
             found.append(Problem(rel, "", _unclean("it has half-transparent pixels")))
-        elif any(pixel[3] == 255 and pixel[:3] not in palette for pixel in art.pixels):
+        elif any(pixel[3] == 255 and pixel[:3] not in colours for pixel in art.pixels):
             found.append(Problem(rel, "", _unclean("it has colours outside the project palette")))
         elif kind in TILE_KINDS and not art.is_opaque():
-            what = "a GUI part" if kind == GUI else "an armor look's cloth or trim"
+            what = {GUI: "a GUI part", BLOCK: "a block's tile"}.get(kind, "an armor look's cloth or trim")
             found.append(Problem(rel, "", f"{what} is a tile without transparent pixels"))
     return found
 
@@ -235,7 +256,7 @@ def _variant_problems(paths: RepoPaths, items: set[str]) -> list[Problem]:
             Problem(rel, ".".join(str(part) for part in error["loc"]), error["msg"]) for error in e.errors()
         ]
     try:
-        palette = _palette(paths)
+        colours = palette(paths)
     except (OSError, PaletteError) as e:
         return [Problem(paths.rel(paths.root / DEFAULT_PALETTE), "", f"cannot be read: {e}")]
     found: list[Problem] = []
@@ -256,7 +277,7 @@ def _variant_problems(paths: RepoPaths, items: set[str]) -> list[Problem]:
             )
         else:
             try:
-                variants.groups(variant, palette)
+                variants.groups(variant, colours)
             except variants.VariantError as e:
                 found.append(Problem(rel, where, str(e)))
     return found

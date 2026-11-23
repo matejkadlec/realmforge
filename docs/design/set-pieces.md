@@ -9,7 +9,7 @@
 > content type, the matcher and the spots, [ADR 0050](../decisions/0050-set-pieces-hand-built-nbt-placed-at-dungeon-generation.md),
 > [architecture 15.4](../architecture.md#154-rooms)), RLM-281 (the jig and the import) and RLM-282 (the dungeon
 > places the pieces, 2026-11-11: [as built](#as-built), with
-> [ADR 0077](../decisions/0077-a-set-pieces-variants-are-data-drawn-with-the-layout.md) for the variants).
+> [ADR 0078](../decisions/0078-a-set-pieces-variants-are-data-drawn-with-the-layout.md) for the variants).
 
 ## At a glance
 
@@ -296,7 +296,7 @@ above, or was left to the ticket:
   two in a combat room.
 - **Variants are drawn from the run's seed,** not by vanilla's `rule` processor, which draws from a block's position
   and would show the same skull on every run of a plot
-  ([ADR 0077](../decisions/0077-a-set-pieces-variants-are-data-drawn-with-the-layout.md)); and once per pattern, so
+  ([ADR 0078](../decisions/0078-a-set-pieces-variants-are-data-drawn-with-the-layout.md)); and once per pattern, so
   the two barrels of a mirrored pair both carry the skull or neither does. "Cheap variety" above still holds, only
   the mechanism of points 3 and 4 changed.
 - **A room can refuse pieces:** `set_pieces: false` in its sidecar (Stonevaults' `jail`, which holds exactly one chest

@@ -403,6 +403,21 @@
           "title": "Lock On",
           "type": "boolean"
         },
+        "player_animation": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A player animation of ours (assets/realmforge/player_animations/, by its name: realmforge:<name>) that a casting player's arms play instead of the cast type's own (RLM-641): realmforge:cast for a cast time, realmforge:channel for a channel. It loops for as long as the cast runs. Mobs' casts ignore it (animation is theirs).",
+          "title": "Player Animation"
+        },
         "sound": {
           "anyOf": [
             {
@@ -513,6 +528,21 @@
           "description": "Whether the spell keeps its target once cast: the target must still be alive and in the caster's dimension, but range and line of sight are not checked again.",
           "title": "Lock On",
           "type": "boolean"
+        },
+        "player_animation": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A player animation of ours (assets/realmforge/player_animations/, by its name: realmforge:<name>) that a casting player's arms play instead of the cast type's own (RLM-641): realmforge:cast for a cast time, realmforge:channel for a channel. It loops for as long as the cast runs. Mobs' casts ignore it (animation is theirs).",
+          "title": "Player Animation"
         },
         "sound": {
           "anyOf": [
@@ -1547,7 +1577,7 @@
     },
     "InstantCastDef": {
       "additionalProperties": false,
-      "description": "The spell's effects run when it is cast; with ``animation_seconds``, it starts at once but plays out over its\nanimation (RLM-399: a Warrior's swing), and its effects run at its hit moment. The caster may move but not swing a\nweapon meanwhile; another spell cuts it, and a stun or death before the hit moment gives half its cost and half its\ncooldown back.",
+      "description": "The spell's effects run when it is cast, and a player's arms play its animation for half a second, the push of\nboth hands, during which the player cannot melee (RLM-641, ADR 0073 decision 8). With ``animation_seconds``, it\nstarts at once but plays out over its animation (RLM-399: a Warrior's swing), and its effects run at its hit\nmoment. The caster may move but not swing a weapon meanwhile; another spell cuts it, and a stun or death before the\nhit moment gives half its cost and half its cooldown back.",
       "properties": {
         "animation_seconds": {
           "anyOf": [
@@ -1577,6 +1607,21 @@
           "default": null,
           "description": "When its effects run, in percent of the animation (50 by default: the middle of a swing).",
           "title": "Hit At Percent"
+        },
+        "player_animation": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A player animation of ours (assets/realmforge/player_animations/, by its name: realmforge:<name>) that a casting player's arms play instead of realmforge:instant, the push of both hands every instant spell plays for half a second (RLM-641). It plays once and is over within 10 ticks, the time the spell keeps its caster from melee. Never with animation_seconds: a swing's weapon move is its own.",
+          "title": "Player Animation"
         },
         "type": {
           "const": "instant",
@@ -2423,7 +2468,7 @@
             }
           ],
           "default": null,
-          "description": "What shows in the caster's hands while it casts. grow: the projectile's model grows there cube by cube during a cast time (Matěj's choice, 2026-10-29); storm: it scales up there as a whole, grow's fallback; hands: only the look's particles at the hands, during a cast time or a channel. A projectile that forms flies from the hands. Until the forming renderer (RLM-640), grow and storm both show a mob's projectile growing as a whole, and hands shows nothing.",
+          "description": "What shows in the caster's hands while it casts. grow: the projectile's model grows there cube by cube during a cast time (Matěj's choice, 2026-10-29); storm: it scales up there as a whole, grow's fallback; hands: only the look's swirl of particles at the hands, during a cast time or a channel. A projectile that forms flies from the hands. Only a model of cubes grows cube by cube: the orb, which has none, scales up as a whole under grow too.",
           "title": "Forming"
         },
         "impact_sound": {

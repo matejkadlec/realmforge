@@ -23,6 +23,10 @@ import io.github.matejkadlec.realmforge.spell.SpellCaster;
 import io.github.matejkadlec.realmforge.spell.Spellbook;
 import io.github.matejkadlec.realmforge.spell.Spells;
 import io.github.matejkadlec.realmforge.stats.CharacterStats;
+import io.github.matejkadlec.realmforge.world.realm.PortalFrame;
+import io.github.matejkadlec.realmforge.world.realm.RealmPortalBlocks;
+import io.github.matejkadlec.realmforge.world.realm.RealmPortals;
+import io.github.matejkadlec.realmforge.world.realm.SealstoneBlockEntity;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -35,6 +39,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.protocol.game.ClientboundBlockEventPacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -323,6 +328,59 @@ public final class QaCommandGameTests {
             server.getPlayerList().remove(player);
         }
         helper.succeed();
+    }
+
+    /**
+     * The setup line of the realm portal's look playtest (RLM-300, RLM-301), as its command block runs it: the
+     * realm's unlock and its entry level, a frame's blocks with four bricks over for its corners, and the signet.
+     */
+    static final String PORTAL_LOOK_PLAYTEST = "qa run qa realm unlock realmforge:stone; qa level 6;"
+            + " give @s realmforge:gatewright_bricks 17; give @s realmforge:gatewright_sealstone;"
+            + " give @s realmforge:undervault_signet";
+
+    /**
+     * The look playtest's setup line runs whole, and {@code /qa realm storm} blinks the nearest lit portal of a realm
+     * with a storm: nothing without one near, the sealstone's block event with one.
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_9X9, timeoutTicks = 100)
+    public static void thePortalLookPlaytestsSetupLineRunsAndTheStormCommandBlinks(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-portal-look", new Vec3(4.5, 1, 7.5));
+        run(server, player, "qa realm lock realmforge:stone");
+        run(server, player, "qa level 1");
+        run(server, player, PORTAL_LOOK_PLAYTEST);
+        Inventory inventory = player.getInventory();
+        helper.assertValueEqual(inventory.countItem(item("realmforge:gatewright_bricks")), 17,
+                "Gatewright Bricks for a frame and its corners");
+        helper.assertValueEqual(inventory.countItem(item("realmforge:gatewright_sealstone")), 1, "a sealstone");
+        helper.assertValueEqual(inventory.countItem(item("realmforge:undervault_signet")), 1, "the signet");
+        helper.assertValueEqual(Characters.level(player), 6, "the player is at the realm's entry level");
+
+        PortalFrame.Frame frame = new PortalFrame.Frame(helper.absolutePos(new BlockPos(4, 0, 4)), Direction.Axis.X);
+        helper.getLevel().setBlockAndUpdate(frame.sealstone(), RealmPortalBlocks.sealstone().defaultBlockState());
+        for (BlockPos pos : frame.bricks()) {
+            helper.getLevel().setBlockAndUpdate(pos, RealmPortalBlocks.bricks().defaultBlockState());
+        }
+        QaPlayers.sentPackets(player, ClientboundBlockEventPacket.class);
+        // A dark frame has no storm: the command finds nothing to blink. The frame is lit only after that is checked:
+        // a lit portal starts a blink of its own now and then, which would be taken for the command's.
+        run(server, player, "qa realm storm");
+        helper.startSequence()
+                .thenIdle(2)
+                .thenExecute(() -> {
+                    helper.assertTrue(QaPlayers.sentPackets(player, ClientboundBlockEventPacket.class).stream()
+                                    .noneMatch(event -> event.getPos().equals(frame.sealstone())),
+                            "/qa realm storm blinks nothing over a dark frame");
+                    RealmPortals.light(helper.getLevel(), frame, Identifier.parse("realmforge:stone"));
+                    run(server, player, "qa realm storm");
+                })
+                .thenWaitUntil(() -> helper.assertTrue(
+                        QaPlayers.sentPackets(player, ClientboundBlockEventPacket.class).stream()
+                                .anyMatch(event -> event.getPos().equals(frame.sealstone())
+                                        && event.getB0() == SealstoneBlockEntity.EVENT_STORM),
+                        "/qa realm storm sends the storm's block event of the lit portal near"))
+                .thenExecute(() -> server.getPlayerList().remove(player))
+                .thenSucceed();
     }
 
     private static Item item(String id) {

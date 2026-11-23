@@ -14,6 +14,8 @@ builds a portal (realm portal spec, "Building a portal").
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import Field, model_validator
 
 from realmforge_tools.schema.common import ContentId, LocalizedText, ResourceId, StrictModel
@@ -44,6 +46,13 @@ PORTAL_PARTICLES: tuple[str, ...] = (
 )
 # The frame a trip builds: the bottom row and five more above it (the opening's four, then the top row).
 FRAME_HEIGHT = 6
+# The portal block's animations (RLM-300), each a texture the pipeline draws (generate/portal_textures.py) and a value
+# of the block's `animation` state (world/realm/RealmPortalBlock.Animation): the first is the shared one.
+PORTAL_ANIMATIONS: tuple[str, ...] = ("swirl", "stream")
+# The looks of a realm portal's frame (RLM-301), each a set of textures the pipeline makes from the Gatewright
+# Bricks' tile (generate/portal_frame.py) and a value of the frame blocks' `look` state (world/realm/FrameLook): the
+# first is a dark frame's, washed out.
+FRAME_LOOKS: tuple[str, ...] = ("washed", "stone")
 
 
 def unlock_advancement(realm_id: str) -> str:
@@ -80,6 +89,35 @@ class ArrivalDef(StrictModel):
         if self.y[0] > self.y[1]:
             raise ValueError("y is [lowest, highest]: the first is not above the second")
         return self
+
+
+class PortalLookDef(StrictModel):
+    """How the realm portal looks while it opens onto the entry (RLM-300, RLM-301): the portal blocks' animation and
+    the frame's look. Each is one of a fixed set, because a block's states and textures are fixed when the game
+    starts: a new one is a texture in the pipeline and a value in the block's state."""
+
+    animation: Literal["swirl", "stream"] = Field(
+        default="swirl",
+        description=(
+            "The portal blocks' animated texture: swirl, the shared one, spirals that turn where four blocks meet; "
+            "stream, pixels flowing at 45 degrees from the bottom left to the top right (Undervault's)."
+        ),
+    )
+    storm: bool = Field(
+        default=False,
+        description=(
+            "Whether the portal blinks like a storm: now and then, at random, the whole opening darkens twice in a "
+            "row (Undervault's)."
+        ),
+    )
+    frame: Literal["washed", "stone"] = Field(
+        default="washed",
+        description=(
+            "The look the frame's Gatewright Bricks and its sealstone take while the portal is lit: washed, a dark "
+            "frame's own washed-out bricks; stone, heavy grey stone with a grey stone in the sealstone's socket "
+            "(Undervault's)."
+        ),
+    )
 
 
 class RealmDef(StrictModel):
@@ -169,6 +207,13 @@ class RealmDef(StrictModel):
         le=2.0,
         allow_inf_nan=False,
         description="The pitch of the vanilla portal sounds for this realm until our own sounds exist (A3): 0.5-2.",
+    )
+    portal: PortalLookDef = Field(
+        default_factory=PortalLookDef,
+        description=(
+            "How the lit portal and its frame look: the animation, the storm blinks and the frame's look. Without "
+            "it: the shared swirl, no storm and the washed-out frame, as Overworld's return portals have."
+        ),
     )
     arrival: ArrivalDef = Field(description="Where a trip may build a portal in the dimension.")
 

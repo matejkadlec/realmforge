@@ -1,5 +1,5 @@
 """Set pieces: ``content/set_pieces/<id>.nbt`` -> ``data/realmforge/structure/set_pieces/<id>.nbt``, normalized
-(ADR 0050), and what varies in a piece, for the dungeon type entries (ADR 0077).
+(ADR 0050), and what varies in a piece, for the dungeon type entries (ADR 0078).
 
 The template is written back normalized (``rooms/structure.py``), so the game knows it as the structure
 ``realmforge:set_pieces/<id>``. The fit rule's variants become data the dungeon type entry carries with the piece

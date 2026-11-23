@@ -31,7 +31,7 @@ import net.minecraft.world.level.storage.loot.LootTable;
  * the type's rooms ({@link DungeonRoom#setPieceSpots}). A run fills some of a room's spot patterns, each with one
  * piece on every spot of the pattern, and leaves the others empty; everything is drawn from the layout's seed when the
  * run is planned ({@link DungeonPlan#toInstanceLayout}), so the same seed always gives the same pieces, and a new run
- * new ones, wherever its plot lies (ADR 0077).
+ * new ones, wherever its plot lies (ADR 0078).
  *
  * @param density how many patterns a room of each role fills: the chance of each count as weights by count (index 0:
  *     none); a role without a table fills none

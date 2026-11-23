@@ -35,7 +35,7 @@ that may fill it. The entry's ``set_pieces`` lists those pieces (template, size,
 mirrored, and the blocks that vary, ``generate/set_pieces.py``), how many patterns a room of each role fills as
 weights by count (``density``: the type's chance table, else the default of ``rooms/set_pieces.py``), and the loot
 table of the pieces' containers (``container_loot``, the type's default), so the game picks and places pieces
-without reading a fit rule (RLM-282, ADR 0077).
+without reading a fit rule (RLM-282, ADR 0078).
 """
 
 from __future__ import annotations

@@ -40,6 +40,14 @@ public final class CurrentCasts {
         return Optional.ofNullable(cast);
     }
 
+    /**
+     * Whether {@code cast}, completed, ends in the release, the short push as a projectile leaves the hands (RLM-641):
+     * a cast time, never a channel or a swing, whose spell formed a projectile there ({@code formsProjectile}).
+     */
+    public static boolean releases(Cast cast, boolean formsProjectile) {
+        return formsProjectile && !cast.channel() && !cast.swing() && !cast.instant();
+    }
+
     /** How far the cast is, from 0 at its start to 1 at its end, at game time {@code gameTime} (partial ticks too). */
     public static float progress(Cast cast, double gameTime) {
         double elapsed = gameTime - cast.startGameTime();

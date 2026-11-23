@@ -67,6 +67,8 @@ def test_a_realm_becomes_its_entry_unlock_and_texts(repo: RepoPaths) -> None:
         "colour": "#7A8FB0",
         "particle": "minecraft:ash",
         "sound_pitch": 0.8,
+        # The lit portal's look (RLM-300, RLM-301).
+        "portal": {"animation": "stream", "storm": True, "frame": "stone"},
         "arrival": {"y": [20, 90], "floor": "realmforge:vaultstone", "pocket_radius": 3},
     }
     unlock = json.loads(files[f"{DATA}/advancement/realm/stone.json"])
@@ -85,8 +87,8 @@ def test_a_realm_becomes_its_entry_unlock_and_texts(repo: RepoPaths) -> None:
     assert lang["advancement.realmforge.realm_unlocked"] == "Realm unlocked: %1$s"
     expectations = files[EXPECTATIONS].decode()
     assert (
-        '"realmforge:realm/stone",\n                    "realmforge:undervault_signet",\n                    0x7A8FB0)'
-        in (expectations)
+        '"realmforge:realm/stone",\n                    "realmforge:undervault_signet",\n                    0x7A8FB0,\n'
+        '                    "stream", true, "stone")' in (expectations)
     )
 
 
@@ -205,6 +207,8 @@ def test_overworlds_entry_is_no_realm(repo: RepoPaths) -> None:
         "in_sentence": "realm.realmforge.overworld.in_sentence",
         "colour": "#5DBB63",
         "sound_pitch": 1.0,
+        # Overworld's entry names no look: its return portals show the shared one.
+        "portal": {"animation": "swirl", "storm": False, "frame": "washed"},
         "arrival": {"y": [63, 310], "floor": "minecraft:stone_bricks", "pocket_radius": 3},
     }
     assert f"{DATA}/advancement/realm/overworld.json" not in files

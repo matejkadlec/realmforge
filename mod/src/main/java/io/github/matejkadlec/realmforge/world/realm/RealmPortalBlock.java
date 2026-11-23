@@ -53,12 +53,15 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  *       or steps back into it at once, from bouncing straight back: it starts again on every tick spent inside;
  *   <li>it refuses every fluid, flowing or from a bucket or a dispenser ({@link LiquidBlockContainer},
  *       {@link #canBeReplaced(BlockState, Fluid)}), so no fluid washes the opening away;
- *   <li>its colour, particles and hum are the destination realm's, read from the frame's sealstone on the client.
+ *   <li>its colour, particles and hum are the destination realm's, read from the frame's sealstone on the client;
+ *   <li>its animated texture is the destination realm's too ({@link #ANIMATION}, RLM-300), set when the frame lights.
  * </ul>
  */
 public final class RealmPortalBlock extends Block implements Portal, LiquidBlockContainer {
     public static final MapCodec<RealmPortalBlock> CODEC = simpleCodec(RealmPortalBlock::new);
     public static final EnumProperty<Direction.Axis> AXIS = BlockStateProperties.HORIZONTAL_AXIS;
+    /** Which animated texture the block shows: the one of the realm its portal opens onto. */
+    public static final EnumProperty<PortalAnimation> ANIMATION = PortalAnimation.PROPERTY;
 
     private static final Map<Direction.Axis, VoxelShape> SHAPES =
             Shapes.rotateHorizontalAxis(Block.column(4.0, 16.0, 0.0, 16.0));
@@ -66,7 +69,8 @@ public final class RealmPortalBlock extends Block implements Portal, LiquidBlock
 
     public RealmPortalBlock(BlockBehaviour.Properties properties) {
         super(properties);
-        registerDefaultState(stateDefinition.any().setValue(AXIS, Direction.Axis.X));
+        registerDefaultState(stateDefinition.any().setValue(AXIS, Direction.Axis.X)
+                .setValue(ANIMATION, PortalAnimation.SWIRL));
     }
 
     @Override
@@ -76,7 +80,7 @@ public final class RealmPortalBlock extends Block implements Portal, LiquidBlock
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(AXIS);
+        builder.add(AXIS, ANIMATION);
     }
 
     @Override
