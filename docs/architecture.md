@@ -3557,7 +3557,8 @@ piece stands on; `facing`, the way the piece's front faces; `mirror`). The entry
 at what chance, and what they become, [ADR 0078](decisions/0078-a-set-pieces-variants-are-data-drawn-with-the-layout.md)),
 `density` (how many patterns a room of each role fills, as weights by count: the type's chance table, else the
 default) and `container_loot` (the type's default, which the pieces' containers get). Validation checks that a type
-whose rooms or set pieces hold a chest or a barrel names a container loot table for them, so none stands empty
+whose rooms or set pieces hold a chest or a barrel, or whose set pieces swap a block to one (RLM-664), names a
+container loot table for them, so none stands empty
 ([ADR 0041](decisions/0041-dungeon-containers-hold-loot-through-lootr.md)), that its tables exist and that its tags
 are tags some piece has. It also checks that the pool holds an entrance, rooms to pass through (two connectors, a third when
 the rules always want a branch), a room for the ending and a dead end, that every room in it has exactly one role tag,

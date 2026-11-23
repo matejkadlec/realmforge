@@ -820,7 +820,8 @@ Rules:
   A run draws the variants from its layout's seed, once for each pattern it fills, so a mirrored pair looks alike
   ([ADR 0078](../docs/decisions/0078-a-set-pieces-variants-are-data-drawn-with-the-layout.md)). A dungeon type
   places the pieces of the tags it names (`set_pieces` in `dungeons/`), and a piece's chest or barrel is a loot
-  container with the type's default container loot table.
+  container with the type's default container loot table, one a swap makes too: `rf validate` refuses a type without
+  a `default` whose pieces hold or swap to a chest, trapped chest or barrel (RLM-664).
   `source` names the workshop jig's save it came from. The template is built as the mask shows it, wall to the north,
   and holds the piece's cells only (not even air elsewhere), no connector, marker, spawner, redstone, fluid,
   locked-looking door or container loot table, and no entity but item frames, paintings, armor stands and displays. `uv run rf set-pieces import` writes both files from a jig save
