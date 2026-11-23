@@ -141,7 +141,7 @@ The test dungeon's tables (`content/dungeons/test_dungeon.yaml`):
 | Rooms | Chests | Barrels |
 | --- | --- | --- |
 | Treasure rooms (Matěj's table) | 2 at 25 %, 3 at 40 %, 4 at 25 %, 5 at 10 % | none at 40 %, 1 at 40 %, 2 at 20 % |
-| Every other room (`default`) | 1 at 60 %, 2 at 30 %, 3 at 10 % | none at 20 %, 1 at 40 %, 2 at 30 %, 3 at 10 % |
+| Every other room (`default`) | 1 at 85 %, 2 at 15 % | none at 60 %, 1 at 30 %, 2 at 10 % |
 | `treasure/tiny_cap` (Matěj's own table) | 1 at 75 %, 2 at 20 %, 3 at 5 % | none |
 | `pillager_dungeon/rooms/jail` (Matěj, 2026-10-25) | always its 1 | always its 1 |
 | `treasure/mooshroom_king`, the throne room | always all 6: a sight behind its iron bars, which never break, not loot | none |
@@ -152,6 +152,11 @@ The test dungeon's tables (`content/dungeons/test_dungeon.yaml`):
 - **Over 300 seeds** (`DungeonContainerGameTests`, the test dungeon's pool on 2026-10-27), a run held about
   41 containers to about 13.7 spawners, 2.99 per spawner, down from about 83 to 13 before
   the tables (6.4 per spawner); the throne room's display chests are not counted.
+- **The corridors' lone barrels and the set pieces** (RLM-410, RLM-282) added about 6 and 5 containers a run, 3.8
+  per spawner. The default, Claude's table, gave way (it was 1 chest at 60 %, 2 at 30 %, 3 at 10 %; none, 1, 2 or 3
+  barrels at 20, 40, 30 and 10 %), not Matěj's treasure table or his quarter for a corridor's barrel: over 300 seeds
+  (2026-11-23) a run holds about 35.8 containers in its rooms and 5.2 in its set pieces to 13.7 spawners, 3.00 per
+  spawner. Open until his playtest (RLM-282's, deferred).
 - **Tuning:** the numbers can vary (Matěj). A playtest that finds too much or too little loot changes the tables in
   YAML; the GameTest keeps a run within 0.5 of 3 per spawner.
 

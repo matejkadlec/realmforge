@@ -3500,8 +3500,8 @@ containers:                           # how many chests and barrels a room keeps
     chests: {2: 25, 3: 40, 4: 25, 5: 10}   # the chance in percent of each count, adding up to 100
     barrels: {0: 40, 1: 40, 2: 20}
   default:
-    chests: {1: 60, 2: 30, 3: 10}
-    barrels: {0: 20, 1: 40, 2: 30, 3: 10}
+    chests: {1: 85, 2: 15}
+    barrels: {0: 60, 1: 30, 2: 10}
 container_loot:                       # what they hold: a container loot table by role (RLM-290)
   default: realmforge:normal          #   every role without its own, and the containers of set pieces
   treasure: realmforge:treasure

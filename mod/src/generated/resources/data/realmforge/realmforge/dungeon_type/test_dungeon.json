@@ -168,8 +168,7 @@
           }
         ],
         "barrels": [
-          20,
-          40,
+          60,
           30,
           10
         ]
@@ -401,9 +400,8 @@
         ],
         "chests": [
           0,
-          60,
-          30,
-          10
+          85,
+          15
         ]
       },
       "container_loot": "realmforge:containers/normal"
@@ -474,9 +472,8 @@
         ],
         "chests": [
           0,
-          60,
-          30,
-          10
+          85,
+          15
         ]
       },
       "container_loot": "realmforge:containers/normal"
@@ -565,9 +562,8 @@
         ],
         "chests": [
           0,
-          60,
-          30,
-          10
+          85,
+          15
         ]
       },
       "container_loot": "realmforge:containers/normal",
@@ -789,9 +785,8 @@
         ],
         "chests": [
           0,
-          60,
-          30,
-          10
+          85,
+          15
         ]
       },
       "container_loot": "realmforge:containers/normal"
@@ -850,9 +845,8 @@
         ],
         "chests": [
           0,
-          60,
-          30,
-          10
+          85,
+          15
         ]
       },
       "container_loot": "realmforge:containers/normal"
@@ -994,13 +988,11 @@
         ],
         "chests": [
           0,
-          60,
-          30,
-          10
+          85,
+          15
         ],
         "barrels": [
-          20,
-          40,
+          60,
           30,
           10
         ]
@@ -1439,8 +1431,7 @@
           }
         ],
         "barrels": [
-          20,
-          40,
+          60,
           30,
           10
         ]
@@ -1673,8 +1664,7 @@
           }
         ],
         "barrels": [
-          20,
-          40,
+          60,
           30,
           10
         ]
@@ -1795,13 +1785,11 @@
         ],
         "chests": [
           0,
-          60,
-          30,
-          10
+          85,
+          15
         ],
         "barrels": [
-          20,
-          40,
+          60,
           30,
           10
         ]
@@ -1884,13 +1872,11 @@
         ],
         "chests": [
           0,
-          60,
-          30,
-          10
+          85,
+          15
         ],
         "barrels": [
-          20,
-          40,
+          60,
           30,
           10
         ]
@@ -1986,8 +1972,7 @@
           }
         ],
         "barrels": [
-          20,
-          40,
+          60,
           30,
           10
         ]
@@ -2617,9 +2602,8 @@
         ],
         "chests": [
           0,
-          60,
-          30,
-          10
+          85,
+          15
         ]
       },
       "container_loot": "realmforge:containers/normal",
@@ -2906,13 +2890,11 @@
         ],
         "chests": [
           0,
-          60,
-          30,
-          10
+          85,
+          15
         ],
         "barrels": [
-          20,
-          40,
+          60,
           30,
           10
         ]
@@ -3120,13 +3102,11 @@
         ],
         "chests": [
           0,
-          60,
-          30,
-          10
+          85,
+          15
         ],
         "barrels": [
-          20,
-          40,
+          60,
           30,
           10
         ]
@@ -3334,8 +3314,7 @@
           }
         ],
         "barrels": [
-          20,
-          40,
+          60,
           30,
           10
         ]
@@ -3459,9 +3438,8 @@
         ],
         "chests": [
           0,
-          60,
-          30,
-          10
+          85,
+          15
         ]
       },
       "container_loot": "realmforge:containers/normal"
@@ -3625,9 +3603,8 @@
         ],
         "chests": [
           0,
-          60,
-          30,
-          10
+          85,
+          15
         ]
       },
       "container_loot": "realmforge:containers/normal",
@@ -3905,8 +3882,7 @@
           }
         ],
         "barrels": [
-          20,
-          40,
+          60,
           30,
           10
         ]
