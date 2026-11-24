@@ -65,7 +65,7 @@ WOUNDS = (
     "    - trigger: crit\n"
     "      chance_percent: 100\n"
     "      damage_over_time:\n"
-    "        effect: realmforge:bleeding\n"
+    "        effect: realmforge:rend\n"
     "        damage_percent: 20\n"
     "        damage_per_level_percent: 20\n"
     "        duration_seconds: 6\n"
@@ -313,7 +313,7 @@ def test_a_procs_damage_over_time_is_in_game_units(repo: RepoPaths) -> None:
     spell(repo, "test_wounds", WOUNDS)
     proc = spell_data(repo, "test_wounds")["passive"]["procs"][0]
     assert proc["damage_over_time"] == {
-        "effect": "realmforge:bleeding",
+        "effect": "realmforge:rend",
         "damage": 0.2,
         "damage_per_level": 0.2,
         "duration_ticks": 120,
@@ -325,7 +325,7 @@ def test_a_procs_damage_over_time_is_in_game_units(repo: RepoPaths) -> None:
     [
         (("trigger: crit", "trigger: kill"), "a damage_over_time proc takes a share of a hit"),
         (
-            ("effect: realmforge:bleeding", "effect: realmforge:stunned"),
+            ("effect: realmforge:rend", "effect: realmforge:stunned"),
             "is no effect of content/effects/ with stacks",
         ),
         (("duration_seconds: 6", "duration_seconds: 6.25"), "a whole number of its intervals"),

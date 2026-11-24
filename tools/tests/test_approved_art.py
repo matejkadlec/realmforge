@@ -227,7 +227,12 @@ def test_the_repositorys_art_is_clean_and_names_content() -> None:
     # The player spells of the first icon batch keep their icons (RLM-588, RLM-591, RLM-642). A spell added later
     # may still show its initials: an icon needs the texture generator, which a cloud session does not have.
     assert set(approved.ids(paths, approved.SPELL)) >= FIRST_BATCH_SPELLS
-    assert {"frozen", "bleeding"} <= set(approved.ids(paths, approved.EFFECT))
+    # Rend's and Deep Wounds' effects show their spells' icons, as WoW shows a debuff (RLM-601).
+    assert {"frozen", "rend", "deep_wounds"} <= set(approved.ids(paths, approved.EFFECT))
+    root = approved.approved_dir(paths)
+    for spell in ("rend", "deep_wounds"):
+        effect_icon = (root / approved.EFFECT / f"{spell}.png").read_bytes()
+        assert effect_icon == (root / approved.SPELL / f"{spell}.png").read_bytes(), spell
 
 
 def test_the_school_icons_are_drawn_in_palette_colours_with_their_gap() -> None:
@@ -349,11 +354,15 @@ def test_the_repositorys_picks_have_their_textures() -> None:
     batch = REPO_ROOT / "art" / "spell-icons" / "candidates"
     palette = load_gpl(REPO_ROOT / DEFAULT_PALETTE)
     info, _ = gallery.collect(batch, palette, 16)
-    targets = {"effect_frozen": "effect/frozen", "effect_bleeding": "effect/bleeding"}
+    targets = {"effect_frozen": "effect/frozen"}
     targets |= {"book_page": "gui/spellbook_page", "book_cover": "gui/spellbook_cover"}
+    # Bleeding split into Rend and Deep Wounds, which show their spells' icons (RLM-601): its pick is no texture.
+    retired = {"effect_bleeding"}
     assert all(subject.pick for subject in info.subjects.values())
     for name, subject in info.subjects.items():
         assert (batch / name / f"{subject.pick}.png").is_file(), name
+        if name in retired:
+            continue
         target = REPO_ROOT / "art" / "textures" / f"{targets.get(name, f'spell/{name}')}.png"
         width, height, _ = decode_rgba(target.read_bytes())
         assert (width, height) == (subject.size or 16, subject.size or 16), name

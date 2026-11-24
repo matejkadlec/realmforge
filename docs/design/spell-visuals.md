@@ -271,7 +271,9 @@ open until Matěj has played it:
 - **Its length is one number,** 10 ticks, for every instant spell: the server's window and the default animation
   share it, and validation refuses an instant spell's own animation that loops or lasts longer.
 - **The release is the client's alone:** it plays for 5 ticks when a cast time that formed a projectile completes,
-  and blocks no melee (the cast is over).
+  from the client tick after the end, and only when no cast starts in the same server tick (RLM-662): a spell pressed
+  in the cast's last quarter second starts as the cast completes (RLM-517), so the hands keep the running `cast`
+  animation instead of dipping into the release. It blocks no melee (the cast is over).
 - **A spell names its own animation** as `cast.player_animation`, an animation of the core mod's
   `player_animations/` by its name; a cast time's or a channel's must loop.
 - **A swing still raises no arms** until RLM-444 gives it its weapon move, and names no player animation.

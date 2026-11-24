@@ -1104,7 +1104,7 @@ public final class GeneratedSpellExpectations {
                     Optional.empty(),
                     List.of(
                             new EffectExpectation("realmforge:damage", Map.of("amount", 5.0, "attack_damage", 0.5, "attack_damage_per_level", 0.1, "per_level", 1.0, "spell_power", 0.0, "spell_power_per_level", 0.0), Map.of(), List.of()),
-                            new EffectExpectation("realmforge:damage_over_time", Map.of("amount", 8.0, "attack_damage", 0.9, "attack_damage_per_level", 0.2, "duration_ticks", 120.0, "per_level", 2.0, "spell_power", 0.0, "spell_power_per_level", 0.0), Map.of("effect", "realmforge:bleeding"), List.of()))),
+                            new EffectExpectation("realmforge:damage_over_time", Map.of("amount", 8.0, "attack_damage", 0.9, "attack_damage_per_level", 0.2, "duration_ticks", 120.0, "per_level", 2.0, "spell_power", 0.0, "spell_power_per_level", 0.0), Map.of("effect", "realmforge:rend"), List.of()))),
             new SpellExpectation(
                     "realmforge:shatter",
                     "spell.realmforge.shatter.name",
@@ -1623,7 +1623,7 @@ public final class GeneratedSpellExpectations {
                     false,
                     Optional.empty(),
                     List.of(
-                            new EffectExpectation("realmforge:damage_over_time", Map.of("amount", 6.0, "attack_damage", 0.0, "attack_damage_per_level", 0.0, "duration_ticks", 120.0, "per_level", 0.0, "spell_power", 0.0, "spell_power_per_level", 0.0), Map.of("effect", "realmforge:bleeding"), List.of()))),
+                            new EffectExpectation("realmforge:damage_over_time", Map.of("amount", 6.0, "attack_damage", 0.0, "attack_damage_per_level", 0.0, "duration_ticks", 120.0, "per_level", 0.0, "spell_power", 0.0, "spell_power_per_level", 0.0), Map.of("effect", "realmforge:deep_wounds"), List.of()))),
             new SpellExpectation(
                     "realmforge:test_deep_wounds",
                     "spell.realmforge.test_deep_wounds.name",
@@ -2096,7 +2096,7 @@ public final class GeneratedSpellExpectations {
                     false,
                     Optional.empty(),
                     List.of(
-                            new EffectExpectation("realmforge:damage_over_time", Map.of("amount", 6.0, "attack_damage", 0.0, "attack_damage_per_level", 0.0, "duration_ticks", 120.0, "per_level", 0.0, "spell_power", 0.0, "spell_power_per_level", 0.0), Map.of("effect", "realmforge:bleeding"), List.of()))),
+                            new EffectExpectation("realmforge:damage_over_time", Map.of("amount", 6.0, "attack_damage", 0.0, "attack_damage_per_level", 0.0, "duration_ticks", 120.0, "per_level", 0.0, "spell_power", 0.0, "spell_power_per_level", 0.0), Map.of("effect", "realmforge:rend"), List.of()))),
             new SpellExpectation(
                     "realmforge:test_mend",
                     "spell.realmforge.test_mend.name",
@@ -2572,7 +2572,7 @@ public final class GeneratedSpellExpectations {
                     false,
                     Optional.empty(),
                     List.of(
-                            new EffectExpectation("realmforge:damage_over_time", Map.of("amount", 12.0, "attack_damage", 0.0, "attack_damage_per_level", 0.5, "duration_ticks", 120.0, "per_level", 0.0, "spell_power", 0.0, "spell_power_per_level", 0.0), Map.of("effect", "realmforge:bleeding"), List.of()))),
+                            new EffectExpectation("realmforge:damage_over_time", Map.of("amount", 12.0, "attack_damage", 0.0, "attack_damage_per_level", 0.5, "duration_ticks", 120.0, "per_level", 0.0, "spell_power", 0.0, "spell_power_per_level", 0.0), Map.of("effect", "realmforge:rend"), List.of()))),
             new SpellExpectation(
                     "realmforge:test_sap",
                     "spell.realmforge.test_sap.name",

@@ -86,9 +86,9 @@ public class SchoolDamageSource extends DamageSource {
     /**
      * One tick of a damage over time (RLM-539): never dodged or blocked, as the hit that applied it already landed.
      *
-     * @param effect the status effect that ticks, e.g. {@code realmforge:bleeding}
+     * @param effect the status effect that ticks, e.g. {@code realmforge:rend}
      * @param spell the spell that applied it, if a spell did
-     * @param ignoresArmor whether the target's armor reduces nothing of it (Bleeding)
+     * @param ignoresArmor whether the target's armor reduces nothing of it (a bleed)
      */
     public record Tick(Identifier effect, Optional<Identifier> spell, boolean ignoresArmor) {
         public Tick {

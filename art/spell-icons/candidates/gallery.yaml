@@ -132,6 +132,7 @@ subjects:
     title: Effect icon, Frozen
     prompt: a solid cube of pale blue ice with white highlights, frost on its edges and small icicles hanging from the bottom
     pick: rd-fast-1
+  # Retired: Bleeding split into the Rend and Deep Wounds effects, which show their spells' icons (RLM-601).
   effect_bleeding:
     title: Effect icon, Bleeding
     prompt: three glossy dark red blood drops falling, the biggest in the middle with a white highlight

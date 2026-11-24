@@ -1,5 +1,6 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
+import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.boss.BossMob;
 import io.github.matejkadlec.realmforge.effect.EffectLooks;
 import io.github.matejkadlec.realmforge.effect.EffectSource;
@@ -16,12 +17,16 @@ import io.github.matejkadlec.realmforge.spell.Spell;
 import io.github.matejkadlec.realmforge.spell.SpellAttachments;
 import io.github.matejkadlec.realmforge.spell.SpellCaster;
 import io.github.matejkadlec.realmforge.spell.Spells;
+import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -35,12 +40,16 @@ import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * RLM-539: Frozen, a root (architecture 11.4), and Bleeding, physical damage over time kept per caster's spell
- * ({@code effect/StackTicks}). {@code test_rend} bleeds 12 over 6 s, 1 every half second; {@code test_lacerate} 6 over
- * 6 s. A stack's ticks come at the end of every half second since it was applied, so the checks sample the health
- * between two ticks: about 9, 19, ..., 119 ticks after the cast.
+ * RLM-539: Frozen, a root (architecture 11.4), and the bleeds, physical damage over time kept per caster's spell
+ * ({@code effect/StackTicks}): since RLM-601 Rend's and Deep Wounds' effects of their own, both of the tag
+ * {@code #realmforge:bleeds}. {@code test_rend} bleeds 12 over 6 s of Rend's effect, 1 every half second;
+ * {@code test_lacerate} 6 over 6 s of it. A stack's ticks come at the end of every half second since it was applied,
+ * so the checks sample the health between two ticks: about 9, 19, ..., 119 ticks after the cast.
  */
 public final class FrozenAndBleedingGameTests {
+    /** Every bleed (RLM-601): Rend and Deep Wounds. */
+    static final TagKey<MobEffect> BLEEDS = TagKey.create(Registries.MOB_EFFECT, Realmforge.id("bleeds"));
+
     private static final double TOLERANCE = 1e-3;
     private static final double HEALTH = SpellGameTests.HEALTH;
     /** How far a Frozen mob may drift from where it stood: rounding, never a step. */
@@ -82,10 +91,40 @@ public final class FrozenAndBleedingGameTests {
                 "the titan took Frozen");
         helper.assertFalse(titan.hasEffect(GeneratedEffects.FROZEN), "the titan is Frozen");
         helper.assertTrue(titan.addEffect(new MobEffectInstance(GeneratedEffects.STUNNED, 20)),
-                "it is immune to Frozen only, so a stun still lands");
+                "it is immune to Frozen and the bleeds, not to a stun");
         Husk husk = SpellGameTests.husk(helper, new BlockPos(0, 1, 0));
         helper.assertTrue(husk.addEffect(new MobEffectInstance(GeneratedEffects.FROZEN, 100)),
                 "an ordinary mob has no immunity");
+        helper.succeed();
+    }
+
+    /**
+     * RLM-601: Rend and Deep Wounds are the bleeds of {@code #realmforge:bleeds}, and a boss whose {@code immune_to}
+     * names the tag (the test titan) takes neither, from a spell or added by hand; an ordinary mob takes both, and the
+     * titan's Frozen immunity leaves a stun to land.
+     */
+    @QaGameTest
+    public static void anImmuneBossIgnoresEveryBleed(GameTestHelper helper) {
+        helper.assertTrue(GeneratedEffects.REND.is(BLEEDS), "Rend is a bleed");
+        helper.assertTrue(GeneratedEffects.DEEP_WOUNDS.is(BLEEDS), "Deep Wounds is a bleed");
+        helper.assertFalse(GeneratedEffects.FROZEN.is(BLEEDS), "Frozen is no bleed");
+        ServerPlayer player = player(helper, "qa-bleed-boss", new Vec3(2.5, 1, 0.5));
+        BossMob titan = (BossMob) helper.spawn(GeneratedMobs.TEST_TITAN.get(), new Vec3(2.5, 1, 2.5));
+        titan.targetSelector.removeAllGoals(goal -> true);
+        Husk husk = SpellGameTests.husk(helper, new BlockPos(0, 1, 4));
+        EffectSource source = new EffectSource(player.getUUID(), Optional.empty(), Optional.empty());
+        for (Holder<MobEffect> bleed : List.of(GeneratedEffects.REND, GeneratedEffects.DEEP_WOUNDS)) {
+            String name = bleed.unwrapKey().orElseThrow().identifier().toString();
+            helper.assertFalse(StackTicks.apply(titan, bleed, player, source, 12, 120), "the titan bled from " + name);
+            helper.assertFalse(titan.addEffect(new MobEffectInstance(bleed, 120)), "the titan took " + name);
+            helper.assertFalse(titan.hasEffect(bleed), "the titan has " + name);
+            helper.assertValueEqual(StackTicks.of(titan, bleed).size(), 0, "no stack of " + name + " on the titan");
+            helper.assertTrue(StackTicks.apply(husk, bleed, player, source, 12, 120), "an ordinary mob bleeds");
+            helper.assertTrue(husk.hasEffect(bleed), "the husk has " + name);
+        }
+        helper.assertTrue(titan.addEffect(new MobEffectInstance(GeneratedEffects.STUNNED, 20)),
+                "the titan is immune to the bleeds and Frozen only, so a stun still lands");
+        logout(player);
         helper.succeed();
     }
 
@@ -103,8 +142,8 @@ public final class FrozenAndBleedingGameTests {
     }
 
     /**
-     * Bleeding deals its total over 6 s in 12 ticks of a half second, fixed when applied, through the target's armor:
-     * 1 a tick against 20 armor.
+     * Rend's bleed deals its total over 6 s in 12 ticks of a half second, fixed when applied, through the target's
+     * armor: 1 a tick against 20 armor; only Rend's effect shows, never Deep Wounds' (RLM-601).
      */
     @QaGameTest(timeoutTicks = 160)
     public static void bleedingDealsItsTotalInTwelveTicksThroughArmor(GameTestHelper helper) {
@@ -112,28 +151,29 @@ public final class FrozenAndBleedingGameTests {
         Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 2));
         CombatGameTests.setBase(husk, Attributes.ARMOR, 20);
         cast(helper, player, GeneratedSpells.TEST_REND, husk);
-        helper.assertTrue(husk.hasEffect(GeneratedEffects.BLEEDING), "the husk is not bleeding");
-        helper.assertValueEqual(StackTicks.of(husk, GeneratedEffects.BLEEDING).size(), 1, "one stack");
+        helper.assertTrue(husk.hasEffect(GeneratedEffects.REND), "the husk is not bleeding");
+        helper.assertFalse(husk.hasEffect(GeneratedEffects.DEEP_WOUNDS), "Rend gave Deep Wounds' effect");
+        helper.assertValueEqual(StackTicks.of(husk, GeneratedEffects.REND).size(), 1, "one stack");
         helper.runAfterDelay(4, () -> assertHealth(helper, husk, HEALTH, "no tick before half a second"));
         helper.runAfterDelay(14, () -> assertHealth(helper, husk, HEALTH - 1, "the first tick, armor ignored"));
         helper.runAfterDelay(64, () -> assertHealth(helper, husk, HEALTH - 6, "6 ticks in 3 s"));
         helper.runAfterDelay(130, () -> {
             assertHealth(helper, husk, HEALTH - 12, "12 ticks of 1 in 6 s");
-            helper.assertFalse(husk.hasEffect(GeneratedEffects.BLEEDING), "the bleed ran out");
-            helper.assertValueEqual(StackTicks.of(husk, GeneratedEffects.BLEEDING).size(), 0, "no stack left");
+            helper.assertFalse(husk.hasEffect(GeneratedEffects.REND), "the bleed ran out");
+            helper.assertValueEqual(StackTicks.of(husk, GeneratedEffects.REND).size(), 0, "no stack left");
             logout(player);
             helper.succeed();
         });
     }
 
-    /** Two spells' bleeds stack on one target: 12 and 6 over the same 6 s. */
+    /** Two spells' bleeds of one effect stack on one target: 12 and 6 over the same 6 s. */
     @QaGameTest(timeoutTicks = 160)
     public static void twoSourcesStack(GameTestHelper helper) {
         ServerPlayer player = player(helper, "qa-bleed-stack", new Vec3(2.5, 1, 0.5));
         Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 2));
         cast(helper, player, GeneratedSpells.TEST_REND, husk);
         helper.runAfterDelay(1, () -> cast(helper, player, GeneratedSpells.TEST_LACERATE, husk));
-        helper.runAfterDelay(2, () -> helper.assertValueEqual(StackTicks.of(husk, GeneratedEffects.BLEEDING).size(),
+        helper.runAfterDelay(2, () -> helper.assertValueEqual(StackTicks.of(husk, GeneratedEffects.REND).size(),
                 2, "a stack per spell"));
         helper.runAfterDelay(135, () -> {
             assertHealth(helper, husk, HEALTH - 18, "12 + 6");
@@ -155,10 +195,10 @@ public final class FrozenAndBleedingGameTests {
         helper.runAfterDelay(64, () -> {
             assertHealth(helper, husk, HEALTH - 6, "6 ticks");
             cast(helper, player, GeneratedSpells.TEST_REND, husk);
-            helper.assertValueEqual(StackTicks.of(husk, GeneratedEffects.BLEEDING).size(), 1,
+            helper.assertValueEqual(StackTicks.of(husk, GeneratedEffects.REND).size(), 1,
                     "the same source refreshes its stack");
             cast(helper, other, GeneratedSpells.TEST_REND, husk);
-            helper.assertValueEqual(StackTicks.of(husk, GeneratedEffects.BLEEDING).size(), 2,
+            helper.assertValueEqual(StackTicks.of(husk, GeneratedEffects.REND).size(), 2,
                     "another caster's is a stack of its own");
         });
         helper.runAfterDelay(200, () -> {
@@ -175,11 +215,11 @@ public final class FrozenAndBleedingGameTests {
         ServerPlayer player = player(helper, "qa-bleed-clear", new Vec3(2.5, 1, 0.5));
         Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 2));
         cast(helper, player, GeneratedSpells.TEST_REND, husk);
-        husk.removeEffect(GeneratedEffects.BLEEDING);
-        helper.assertValueEqual(StackTicks.of(husk, GeneratedEffects.BLEEDING).size(), 0, "the stacks went");
+        husk.removeEffect(GeneratedEffects.REND);
+        helper.assertValueEqual(StackTicks.of(husk, GeneratedEffects.REND).size(), 0, "the stacks went");
         helper.runAfterDelay(40, () -> {
             assertHealth(helper, husk, HEALTH, "no tick after the effect was removed");
-            helper.assertValueEqual(Effects.source(husk, GeneratedEffects.BLEEDING).map(EffectSource::caster),
+            helper.assertValueEqual(Effects.source(husk, GeneratedEffects.REND).map(EffectSource::caster),
                     Optional.empty(), "and no source");
             logout(player);
             helper.succeed();

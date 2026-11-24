@@ -4,6 +4,7 @@ import io.github.matejkadlec.realmforge.spell.Spell;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.SortedMap;
@@ -21,13 +22,14 @@ import net.minecraft.resources.ResourceKey;
  *   global cooldown ends is not refused. With spell queueing, a press waits for the cast in progress to end too, and
  *   up to {@code Spells Queue Size} presses wait in order: at size 1 a new press replaces the waiting one, above 1 it
  *   waits after them (when the queue is full, the newest waiting press gives way to it). Pressing the spell being cast
- *   does nothing.</li>
+ *   does nothing. An aura's press counts toward no size (RLM-666): it never makes a waiting press give way, nor gives
+ *   way to one.</li>
  *   <li><b>A held key</b> casts its spell again and again, as its cooldown and cast time allow, at most every
  *   {@value #REPEAT_TICKS} ticks (half a second), and never cancels a cast.</li>
  *   <li><b>An aura</b> (RLM-595) is toggled by a press only, never by a held key; it is off the global cooldown, and
  *   with spell queueing its press does not wait for a cast in progress, which its toggle leaves running. Nor does it
  *   wait behind another press that does (RLM-637): with Spells Queue Size 2 or 3 it goes past the waiting presses ahead
- *   of it, which keep their places.</li>
+ *   of it, which keep their places, and a full queue keeps every one of them (RLM-666).</li>
  *   <li><b>After each send</b> the client waits {@value #AWAIT_TICKS} ticks for the server's answer (the cast, the
  *   cooldowns, a refusal) before it sends again, so it does not ask twice for the same cast.</li>
  * </ul>
@@ -93,11 +95,28 @@ public final class CastQueue {
             queue.clear();
         } else {
             queue.removeIf(press -> press.spell().equals(spell));
-            while (queue.size() >= options.size()) {
-                queue.removeLast();
+            if (!state.toggles(spell)) {
+                while (spellsWaiting(state) >= options.size()) {
+                    removeNewestSpell(state);
+                }
             }
         }
         queue.addLast(new Press(slot, spell));
+    }
+
+    /** How many waiting presses count toward Spells Queue Size: every one but an aura's (RLM-666). */
+    private long spellsWaiting(State state) {
+        return queue.stream().filter(press -> !state.toggles(press.spell())).count();
+    }
+
+    /** Drops the newest waiting press that is not an aura's, which gives way to a new spell press (RLM-666). */
+    private void removeNewestSpell(State state) {
+        for (Iterator<Press> newestFirst = queue.descendingIterator(); newestFirst.hasNext(); ) {
+            if (!state.toggles(newestFirst.next().spell())) {
+                newestFirst.remove();
+                return;
+            }
+        }
     }
 
     /**

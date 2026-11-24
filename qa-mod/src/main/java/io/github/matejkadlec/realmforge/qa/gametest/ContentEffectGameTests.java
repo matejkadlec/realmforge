@@ -1,5 +1,6 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
+import io.github.matejkadlec.realmforge.Realmforge;
 import io.github.matejkadlec.realmforge.effect.Periodic;
 import io.github.matejkadlec.realmforge.effect.StackedDamage;
 import io.github.matejkadlec.realmforge.effect.StatusEffect;
@@ -57,6 +58,11 @@ public final class ContentEffectGameTests {
                     id + " immune to");
             helper.assertValueEqual(status.onBosses().map(ContentEffectGameTests::onBosses), expected.onBosses(),
                     id + " on bosses");
+            // RLM-601: the mob effect tags of ours it is in, from the generated tag files.
+            List<String> tags = BuiltInRegistries.MOB_EFFECT.wrapAsHolder(status).tags()
+                    .map(tag -> tag.location().toString()).filter(tag -> tag.startsWith(Realmforge.MOD_ID + ":"))
+                    .sorted().toList();
+            helper.assertValueEqual(tags, expected.tags().stream().sorted().toList(), id + " tags");
             status.onBosses().ifPresent(rule -> helper.assertTrue(
                     rule.immunityEffect().value() instanceof StatusEffect immunity
                             && immunity.blocks(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(status)),

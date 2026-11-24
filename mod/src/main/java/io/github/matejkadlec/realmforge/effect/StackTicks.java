@@ -17,8 +17,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 
 /**
- * The stacks of damage over time (RLM-539, Bleeding; architecture 11.4), on the logical server: adding a caster's
- * stack, and dealing every stack's ticks while its status effect lasts.
+ * The stacks of damage over time (RLM-539, the bleeds since RLM-601; architecture 11.4), on the logical server: adding
+ * a caster's stack, and dealing every stack's ticks while its status effect lasts.
  *
  * <ul>
  *   <li>A stack's damage was fixed when it was applied: the spell's amount plus its coefficient of the caster's power,

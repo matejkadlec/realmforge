@@ -7,7 +7,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 
 /**
- * Damage over time that each caster's spell keeps as a stack of its own on a target (RLM-539, Bleeding; architecture
+ * Damage over time that each caster's spell keeps as a stack of its own on a target (RLM-539, the bleeds; architecture
  * 11.4): the spell that applies it names the damage, fixed from the caster's stats when it is applied
  * ({@link EffectStacks}), and its ticks split it evenly. Pure: JUnit covers it.
  *

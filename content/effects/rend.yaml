@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../tools/schemas/effects.schema.json
+# Rend's bleed (RLM-601, split from RLM-539's Bleeding; the Arms Warrior's Rend, RLM-543): physical damage over time,
+# a tick every half second, of the damage Rend fixed from its caster's Attack Damage then (spell/DamageOverTimeEffect).
+# Each caster's Rend keeps its own bleed on a target and a recast replaces what is left with a new one; its ticks
+# ignore armor, as bleeds do in WoW, and are never dodged or blocked. A bleed of its own beside Deep Wounds, so the
+# target shows each with its own timer (Matěj, 2026-11-03). Its icon is Rend's spell icon, as WoW shows a debuff.
+id: rend
+name: {en_us: Rend}
+category: harmful
+color: "#8A0303"
+stacks: {school: realmforge:physical, interval_seconds: 0.5, ignores_armor: true}
+tags: [realmforge:bleeds]

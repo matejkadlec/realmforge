@@ -14,7 +14,6 @@ import dev.shadowsoffire.apotheosis.socket.gem.Purity;
 import dev.shadowsoffire.apotheosis.socket.gem.bonus.GemBonus;
 import dev.shadowsoffire.apotheosis.socket.gem.bonus.MobEffectBonus;
 import dev.shadowsoffire.placebo.dynreg.DynamicHolder;
-import io.github.matejkadlec.realmforge.generated.GeneratedEffects;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Set;
@@ -172,7 +171,8 @@ final class ApotheosisBleeds {
         helper.assertTrue(husk.getHealth() < before, "the sword's hit landed");
         helper.assertTrue(husk.getActiveEffects().stream().noneMatch(effect -> effect.getEffect().is(APOTHIC_BLEEDING)),
                 "no Apothic Attributes' Bleeding on the husk");
-        helper.assertFalse(husk.hasEffect(GeneratedEffects.BLEEDING), "nor Bleeding of ours");
+        helper.assertTrue(husk.getActiveEffects().stream().noneMatch(effect -> effect.getEffect()
+                .is(FrozenAndBleedingGameTests.BLEEDS)), "nor a bleed of ours (RLM-601: Rend, Deep Wounds)");
         ApotheosisGameTests.logout(player);
         helper.succeed();
     }

@@ -212,10 +212,10 @@
       "type": "string"
     },
     "immune_to": {
-      "description": "Status effects it never takes, e.g. [realmforge:frozen, realmforge:stunned] (RLM-539): per boss, as ordinary mobs have no immunity.",
+      "description": "Status effects it never takes, e.g. [realmforge:frozen, realmforge:stunned] (RLM-539): per boss, as ordinary mobs have no immunity. A tag after # names every effect in it, e.g. #realmforge:bleeds for Rend and Deep Wounds (RLM-601).",
       "items": {
-        "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
-        "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+        "description": "A status effect, e.g. realmforge:frozen, or a status effect tag after #, e.g. #realmforge:bleeds. Validated against the ID universe.",
+        "pattern": "^#?[a-z0-9_.-]+:[a-z0-9_./-]+$",
         "type": "string"
       },
       "title": "Immune To",

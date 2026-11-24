@@ -29,7 +29,7 @@
         "chance": 1.0,
         "cooldown_ticks": 0,
         "damage_over_time": {
-          "effect": "realmforge:bleeding",
+          "effect": "realmforge:deep_wounds",
           "damage": 0.2,
           "damage_per_level": 0.2,
           "duration_ticks": 120

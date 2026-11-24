@@ -42,12 +42,12 @@ public final class GeneratedEffectExpectations {
     /**
      * Expected state of one effect: its category, particle colour (RGB), modifiers, periodic ticks, stacks,
      * whether it stuns, the chance that damage ends it (a fraction, 0 for none), the effect its holder is immune
-     * to and how it works on a boss.
+     * to, how it works on a boss and the mob effect tags it is in (RLM-601).
      */
     public record EffectExpectation(String id, String descriptionId, String category, int color,
             List<ModifierExpectation> modifiers, Optional<PeriodicExpectation> periodic,
             Optional<StacksExpectation> stacks, boolean stun, double breaksOnDamage, Optional<String> immuneTo,
-            Optional<OnBossesExpectation> onBosses) {
+            Optional<OnBossesExpectation> onBosses, List<String> tags) {
     }
 
     public static final List<EffectExpectation> EFFECTS = List.of(
@@ -62,19 +62,8 @@ public final class GeneratedEffectExpectations {
                     false,
                     0.0,
                     Optional.empty(),
-                    Optional.empty()),
-            new EffectExpectation(
-                    "realmforge:bleeding",
-                    "effect.realmforge.bleeding",
-                    "harmful",
-                    0x8A0303,
-                    List.of(),
                     Optional.empty(),
-                    Optional.of(new StacksExpectation("realmforge:physical", 10, true)),
-                    false,
-                    0.0,
-                    Optional.empty(),
-                    Optional.empty()),
+                    List.of()),
             new EffectExpectation(
                     "realmforge:burning",
                     "effect.realmforge.burning",
@@ -86,7 +75,8 @@ public final class GeneratedEffectExpectations {
                     false,
                     0.0,
                     Optional.empty(),
-                    Optional.empty()),
+                    Optional.empty(),
+                    List.of()),
             new EffectExpectation(
                     "realmforge:cracked_stone",
                     "effect.realmforge.cracked_stone",
@@ -98,7 +88,21 @@ public final class GeneratedEffectExpectations {
                     false,
                     0.0,
                     Optional.empty(),
-                    Optional.empty()),
+                    Optional.empty(),
+                    List.of()),
+            new EffectExpectation(
+                    "realmforge:deep_wounds",
+                    "effect.realmforge.deep_wounds",
+                    "harmful",
+                    0x551416,
+                    List.of(),
+                    Optional.empty(),
+                    Optional.of(new StacksExpectation("realmforge:physical", 10, true)),
+                    false,
+                    0.0,
+                    Optional.empty(),
+                    Optional.empty(),
+                    List.of("realmforge:bleeds")),
             new EffectExpectation(
                     "realmforge:frozen",
                     "effect.realmforge.frozen",
@@ -110,7 +114,8 @@ public final class GeneratedEffectExpectations {
                     false,
                     0.5,
                     Optional.empty(),
-                    Optional.of(new OnBossesExpectation(0.5, "realmforge:frozen_immunity", 200))),
+                    Optional.of(new OnBossesExpectation(0.5, "realmforge:frozen_immunity", 200)),
+                    List.of()),
             new EffectExpectation(
                     "realmforge:frozen_immunity",
                     "effect.realmforge.frozen_immunity",
@@ -122,7 +127,8 @@ public final class GeneratedEffectExpectations {
                     false,
                     0.0,
                     Optional.of("realmforge:frozen"),
-                    Optional.empty()),
+                    Optional.empty(),
+                    List.of()),
             new EffectExpectation(
                     "realmforge:ice_barrier",
                     "effect.realmforge.ice_barrier",
@@ -134,7 +140,21 @@ public final class GeneratedEffectExpectations {
                     false,
                     0.0,
                     Optional.empty(),
-                    Optional.empty()),
+                    Optional.empty(),
+                    List.of()),
+            new EffectExpectation(
+                    "realmforge:rend",
+                    "effect.realmforge.rend",
+                    "harmful",
+                    0x8A0303,
+                    List.of(),
+                    Optional.empty(),
+                    Optional.of(new StacksExpectation("realmforge:physical", 10, true)),
+                    false,
+                    0.0,
+                    Optional.empty(),
+                    Optional.empty(),
+                    List.of("realmforge:bleeds")),
             new EffectExpectation(
                     "realmforge:stun_immunity",
                     "effect.realmforge.stun_immunity",
@@ -146,7 +166,8 @@ public final class GeneratedEffectExpectations {
                     false,
                     0.0,
                     Optional.of("realmforge:stunned"),
-                    Optional.empty()),
+                    Optional.empty(),
+                    List.of()),
             new EffectExpectation(
                     "realmforge:stunned",
                     "effect.realmforge.stunned",
@@ -158,7 +179,8 @@ public final class GeneratedEffectExpectations {
                     true,
                     0.0,
                     Optional.empty(),
-                    Optional.of(new OnBossesExpectation(0.5, "realmforge:stun_immunity", 200))),
+                    Optional.of(new OnBossesExpectation(0.5, "realmforge:stun_immunity", 200)),
+                    List.of()),
             new EffectExpectation(
                     "realmforge:test_burning",
                     "effect.realmforge.test_burning",
@@ -170,7 +192,8 @@ public final class GeneratedEffectExpectations {
                     false,
                     0.0,
                     Optional.empty(),
-                    Optional.empty()),
+                    Optional.empty(),
+                    List.of()),
             new EffectExpectation(
                     "realmforge:test_regrowth",
                     "effect.realmforge.test_regrowth",
@@ -182,7 +205,8 @@ public final class GeneratedEffectExpectations {
                     false,
                     0.0,
                     Optional.empty(),
-                    Optional.empty()),
+                    Optional.empty(),
+                    List.of()),
             new EffectExpectation(
                     "realmforge:test_sapped",
                     "effect.realmforge.test_sapped",
@@ -194,7 +218,8 @@ public final class GeneratedEffectExpectations {
                     false,
                     0.0,
                     Optional.empty(),
-                    Optional.empty()));
+                    Optional.empty(),
+                    List.of()));
 
     private GeneratedEffectExpectations() {
     }

@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../tools/schemas/effects.schema.json
+# Deep Wounds' bleed (RLM-601, split from RLM-539's Bleeding; the Arms Warrior's Deep Wounds, RLM-543): physical
+# damage over time, a tick every half second, of a share of the crit that applied it. A new crit adds its share to
+# what is left and the sum ticks over a fresh 6 s, so it rolls as in WotLK and every crit's share is dealt
+# (spell/Procs). Its ticks ignore armor and are never dodged or blocked. A bleed of its own beside Rend, so the target
+# shows each with its own timer (Matěj, 2026-11-03). Its icon is Deep Wounds' spell icon, as WoW shows a debuff.
+id: deep_wounds
+name: {en_us: Deep Wounds}
+category: harmful
+color: "#551416"
+stacks: {school: realmforge:physical, interval_seconds: 0.5, ignores_armor: true}
+tags: [realmforge:bleeds]
