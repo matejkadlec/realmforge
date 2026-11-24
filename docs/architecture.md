@@ -2221,7 +2221,9 @@ show each of the four on a real cast.
   never cast at once. An aura (RLM-595) is toggled by a press only, never by a held key, is off the global cooldown on
   the client too, and with queueing its press does not wait for a cast in progress, which its toggle leaves running,
 nor for the waiting presses ahead of it, which it goes past at Spells Queue Size 2 or 3 and which keep their places
-(RLM-637; `CastQueueTest` covers an aura's press and its held key). `client/spell/SpellBarInput` sends `CastSpellPayload` (the spell, the living entity under the
+(RLM-637; `CastQueueTest` covers an aura's press and its held key). An aura's press counts toward no queue size
+(RLM-666): pressed into a full queue it drops none of the waiting presses, and a spell press into a full queue drops
+the newest waiting spell, never an aura's press. `client/spell/SpellBarInput` sends `CastSpellPayload` (the spell, the living entity under the
   crosshair within its range, `client/spell/SpellTargetPicker`, none for a direction spell, which flies where the
   crosshair points, and `replaceCast`); `spell/SpellBar` picks a targeted spell's target by aim assistance when it names
   none ([11.2](#112-casting-server-authoritative)) and casts it through `SpellCaster`, which with `replaceCast` skips

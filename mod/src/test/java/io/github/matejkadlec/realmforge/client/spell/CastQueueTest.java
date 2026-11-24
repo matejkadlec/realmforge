@@ -237,6 +237,73 @@ class CastQueueTest {
                 QUEUE_3));
     }
 
+    /**
+     * RLM-666: at Spells Queue Size 2, nova and blink fill the queue during a cast; a stance swap pressed then takes no
+     * place in it, so blink is not dropped for it: the stance goes past both, and both still cast after bolt.
+     */
+    @Test
+    void anAuraPressIntoAFullQueueOfTwoKeepsEveryWaitingSpell() {
+        Options two = new Options(true, 2);
+        state.auras.add(STANCE);
+        state.casting = Optional.of(BOLT);
+        queue.press(1, NOVA, state, two);
+        queue.press(2, BLINK, state, two);
+        queue.press(3, STANCE, state, two);
+        assertEquals(3, queue.waiting(), "the stance waits beside both spells");
+        assertEquals(Optional.of(new Send(STANCE, false)), queue.tick(0, NOTHING_HELD, state, two),
+                "and goes while bolt still casts");
+        state.casting = Optional.empty();
+        assertEquals(Optional.of(new Send(NOVA, false)), queue.tick(CastQueue.AWAIT_TICKS, NOTHING_HELD, state, two));
+        assertEquals(Optional.of(new Send(BLINK, false)), queue.tick(2 * CastQueue.AWAIT_TICKS, NOTHING_HELD, state,
+                two), "blink was not dropped for the stance");
+    }
+
+    /** RLM-666: the same at size 3, with three spells waiting. */
+    @Test
+    void anAuraPressIntoAFullQueueOfThreeKeepsEveryWaitingSpell() {
+        ResourceKey<Spell> ward = key("ward");
+        state.auras.add(STANCE);
+        state.casting = Optional.of(BOLT);
+        queue.press(1, NOVA, state, QUEUE_3);
+        queue.press(2, BLINK, state, QUEUE_3);
+        queue.press(3, ward, state, QUEUE_3);
+        queue.press(4, STANCE, state, QUEUE_3);
+        assertEquals(Optional.of(new Send(STANCE, false)), queue.tick(0, NOTHING_HELD, state, QUEUE_3));
+        state.casting = Optional.empty();
+        assertEquals(Optional.of(new Send(NOVA, false)), queue.tick(CastQueue.AWAIT_TICKS, NOTHING_HELD, state,
+                QUEUE_3));
+        assertEquals(Optional.of(new Send(BLINK, false)), queue.tick(2 * CastQueue.AWAIT_TICKS, NOTHING_HELD, state,
+                QUEUE_3));
+        assertEquals(Optional.of(new Send(ward, false)), queue.tick(3 * CastQueue.AWAIT_TICKS, NOTHING_HELD, state,
+                QUEUE_3), "ward was not dropped for the stance");
+    }
+
+    /**
+     * RLM-666: a spell press into a full queue drops the newest waiting spell, never a waiting aura press: the stance
+     * pressed while the client still waits for the server's answer keeps its place.
+     */
+    @Test
+    void aSpellPressIntoAFullQueueDropsTheNewestSpellNotAnAura() {
+        Options two = new Options(true, 2);
+        state.auras.add(STANCE);
+        queue.press(0, BOLT, state, two);
+        queue.tick(0, NOTHING_HELD, state, two);
+        state.casting = Optional.of(BOLT);
+        queue.press(1, NOVA, state, two);
+        queue.press(2, STANCE, state, two);
+        queue.press(3, BLINK, state, two);
+        queue.press(4, key("ward"), state, two);
+        assertEquals(3, queue.waiting(), "nova, the stance and ward: blink gave way to ward");
+        assertEquals(Optional.of(new Send(STANCE, false)), queue.tick(CastQueue.AWAIT_TICKS, NOTHING_HELD, state,
+                two));
+        state.casting = Optional.empty();
+        assertEquals(Optional.of(new Send(NOVA, false)), queue.tick(2 * CastQueue.AWAIT_TICKS, NOTHING_HELD, state,
+                two));
+        assertEquals(Optional.of(new Send(key("ward"), false)), queue.tick(3 * CastQueue.AWAIT_TICKS, NOTHING_HELD,
+                state, two));
+        assertEquals(0, queue.waiting());
+    }
+
     @Test
     void onlyAnAuraGoesPastAWaitingPress() {
         state.casting = Optional.of(BOLT);
