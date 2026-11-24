@@ -55,8 +55,8 @@ import net.neoforged.neoforge.event.entity.player.CriticalHitEvent;
  *   resistance added for magic), less the hit's spell penetration. The armor reduction becomes
  *   vanilla's formula on the armor the attacker's armor pierce and shred leave (a spell's hit adding its own shred),
  *   except for damage in {@code #minecraft:bypasses_armor} and the ticks of a damage over time that ignores armor
- *   (Bleeding, RLM-539). A damage over time's tick is never dodged, nor blocked by a raised weapon or a shield. The
- *   defender's magic shield joins the absorption reduction ({@link MagicShields}).</li>
+ *   (the bleeds, Rend and Deep Wounds, RLM-539, RLM-601). A damage over time's tick is never dodged, nor blocked by a
+ *   raised weapon or a shield. The defender's magic shield joins the absorption reduction ({@link MagicShields}).</li>
  *   <li>Hurt cooldown: a school hit lands through it ({@code #minecraft:bypasses_cooldown}) and leaves the defender's
  *   window as it was: it grants no invulnerability of its own, and {@code lastHurt}, which vanilla overwrites, is
  *   restored afterwards, so melee hits in an open window are still compared with the previous melee hit, not with a
@@ -405,7 +405,7 @@ public final class DamagePipeline {
             return vanilla;
         }
         if (SchoolDamageSource.tickOf(source).filter(SchoolDamageSource.Tick::ignoresArmor).isPresent()) {
-            // Bleeding's ticks (RLM-539): armor stops none of them.
+            // A bleed's ticks (RLM-539, RLM-601): armor stops none of them.
             return 0;
         }
         float damage = container.getNewDamage();

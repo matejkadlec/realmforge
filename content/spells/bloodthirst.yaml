@@ -15,7 +15,7 @@ max_level: 2
 passive:
   procs:
     - trigger: tick
-      effect: realmforge:bleeding
+      effect: realmforge:rend
       spell: realmforge:rend
       chance_percent: 10
       chance_per_level_percent: 10

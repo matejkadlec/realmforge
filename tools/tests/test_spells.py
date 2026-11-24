@@ -146,7 +146,7 @@ def test_repository_spells_are_the_class_kits_engine_tests_stoneform_and_astones
         "test_targeted_missile",
         # The boss framework's test boss hardens in its second phase (W5a, RLM-490).
         "test_titan_harden",
-        # Bleeding's (RLM-539), the windows', procs' and conditions' (RLM-540) and the melee shapes' (RLM-399).
+        # Rend's and Deep Wounds' (RLM-539, RLM-601), the windows', procs' and conditions' (RLM-540) and the melee shapes' (RLM-399).
         "test_cleave",
         "test_deep_wound",
         "test_deep_wounds",
@@ -1409,7 +1409,7 @@ BLEED = (
     "targeting: {type: realmforge:enemy, range: 5}\n"
     "cast: {type: instant}\n"
     "effects:\n"
-    "  - {type: realmforge:damage_over_time, effect: realmforge:bleeding, amount: 12, duration_seconds: 6}\n"
+    "  - {type: realmforge:damage_over_time, effect: realmforge:rend, amount: 12, duration_seconds: 6}\n"
 )
 
 CLEAVE = (
@@ -1433,19 +1433,19 @@ def test_a_damage_over_time_keeps_its_damage_in_stacks(repo: RepoPaths) -> None:
         "type": "realmforge:damage_over_time",
         "amount": 12,
         "per_level": 0,
-        "effect": "realmforge:bleeding",
+        "effect": "realmforge:rend",
         "duration_ticks": 120,
     }
 
 
 def test_a_damage_over_time_needs_an_effect_with_stacks(repo: RepoPaths) -> None:
-    spell(repo, "test_bleed", BLEED.replace("realmforge:bleeding", "realmforge:burning"))
+    spell(repo, "test_bleed", BLEED.replace("realmforge:rend", "realmforge:burning"))
     assert_problem(repo, "realmforge:burning is no effect of content/effects/ with stacks")
 
 
 def test_a_damage_over_time_lasts_whole_intervals(repo: RepoPaths) -> None:
     spell(repo, "test_bleed", BLEED.replace("duration_seconds: 6", "duration_seconds: 6.25"))
-    assert_problem(repo, "realmforge:bleeding ticks every 0.5 s")
+    assert_problem(repo, "realmforge:rend ticks every 0.5 s")
 
 
 def test_a_damage_over_time_scales_with_its_ticks_school(repo: RepoPaths) -> None:
@@ -1656,16 +1656,16 @@ def test_a_passives_proc_is_in_game_units(repo: RepoPaths) -> None:
         (
             (
                 "trigger: applies_effect\n      effect: minecraft:slowness",
-                "trigger: tick\n      effect: realmforge:bleeding\n      spell: realmforge:fireball",
+                "trigger: tick\n      effect: realmforge:rend\n      spell: realmforge:fireball",
             ),
-            "realmforge:fireball gives no damage over time of realmforge:bleeding, so it has no ticks to watch",
+            "realmforge:fireball gives no damage over time of realmforge:rend, so it has no ticks to watch",
         ),
         (
             (
                 "trigger: applies_effect\n      effect: minecraft:slowness",
-                "trigger: tick\n      effect: realmforge:bleeding\n      spell: realmforge:deep_wounds",
+                "trigger: tick\n      effect: realmforge:rend\n      spell: realmforge:deep_wounds",
             ),
-            "realmforge:deep_wounds gives no damage over time of realmforge:bleeding",
+            "realmforge:deep_wounds gives no damage over time of realmforge:rend",
         ),
     ],
 )
@@ -1675,13 +1675,13 @@ def test_invalid_procs_are_rejected(repo: RepoPaths, change: tuple[str, str], ex
 
 
 def test_a_tick_proc_watches_a_spells_damage_over_time_of_an_effect_with_stacks(repo: RepoPaths) -> None:
-    """RLM-564: the positive side of the tick rule, a passive watching Test Lacerate's Bleeding."""
+    """RLM-564: the positive side of the tick rule, a passive watching Test Lacerate's Rend."""
     spell(
         repo,
         "test_bite",
         PASSIVE_PROC.replace(
             "trigger: applies_effect\n      effect: minecraft:slowness",
-            "trigger: tick\n      effect: realmforge:bleeding\n      spell: realmforge:test_lacerate",
+            "trigger: tick\n      effect: realmforge:rend\n      spell: realmforge:test_lacerate",
         ),
     )
     data = json.loads(generate(repo)[f"{SPELL_DATA}/test_bite.json"])

@@ -58,12 +58,13 @@ def test_repository_effects_are_the_engine_tests() -> None:
     content, _ = load_and_validate(RepoPaths())
     assert {entry.model.id for entry in content.effects} == {
         "battle_shout",
-        "bleeding",
         "burning",
         "cracked_stone",
+        "deep_wounds",
         "frozen",
         "frozen_immunity",
         "ice_barrier",
+        "rend",
         "stun_immunity",
         "stunned",
         "test_burning",
@@ -197,8 +198,8 @@ def test_registrations(repo: RepoPaths) -> None:
         "AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)\n"
     ) in java
     assert (
-        "ALL = List.of(BATTLE_SHOUT, BLEEDING, BURNING, CRACKED_STONE, FROZEN, FROZEN_IMMUNITY, ICE_BARRIER, "
-        "STUN_IMMUNITY, STUNNED, TEST_BURNING, TEST_REGROWTH, TEST_SAPPED);"
+        "ALL = List.of(BATTLE_SHOUT, BURNING, CRACKED_STONE, DEEP_WOUNDS, FROZEN, FROZEN_IMMUNITY, ICE_BARRIER, "
+        "REND, STUN_IMMUNITY, STUNNED, TEST_BURNING, TEST_REGROWTH, TEST_SAPPED);"
     ) in java
 
 
@@ -232,7 +233,8 @@ def test_expectations(repo: RepoPaths) -> None:
         "                    false,\n"
         "                    0.0,\n"
         "                    Optional.empty(),\n"
-        "                    Optional.empty())"
+        "                    Optional.empty(),\n"
+        "                    List.of())"
     ) in expectations
     assert (
         'new ModifierExpectation("realmforge:spell_power", "realmforge:effect.test_sapped.realmforge.spell_power", '
@@ -276,7 +278,7 @@ def test_no_effects_still_compile(repo: RepoPaths) -> None:
     ):
         (repo.content / "spells" / f"{name}.yaml").unlink()
     titan = repo.content / "bosses" / "test_titan.yaml"
-    titan.write_text(titan.read_text().replace("immune_to: [realmforge:frozen]\n", ""))
+    titan.write_text(titan.read_text().replace('immune_to: [realmforge:frozen, "#realmforge:bleeds"]\n', ""))
     drop_class_kits(repo.content)
     for folder in ("bosses", "mobs", "kill_xp_multipliers"):
         (repo.content / folder / "astone.yaml").unlink()
@@ -284,6 +286,7 @@ def test_no_effects_still_compile(repo: RepoPaths) -> None:
     assert "ALL = List.of();" in files[REGISTRATIONS].decode()
     assert "EFFECTS = List.of();" in files[EXPECTATIONS].decode()
     assert not any(path.startswith(ICONS) for path in files)
+    assert not any("/tags/mob_effect/" in path for path in files)
 
 
 # Stacks of damage over time (RLM-539)
@@ -340,6 +343,62 @@ def test_stacks_and_a_look_are_generated(repo: RepoPaths) -> None:
     assert (
         'Optional.of(new StacksExpectation("realmforge:physical", 10, true))' in files[EXPECTATIONS].decode()
     )
+
+
+def test_rend_and_deep_wounds_are_bleeds_of_their_own() -> None:
+    """RLM-601: Bleeding split into two effects, each a bleed of the tag realmforge:bleeds."""
+    content, universe = load_and_validate(RepoPaths())
+    effects = {entry.model.id: entry.model for entry in content.effects}
+    for name in ("rend", "deep_wounds"):
+        bleed = effects[name]
+        assert bleed.tags == ["realmforge:bleeds"], name
+        assert bleed.stacks is not None and bleed.stacks.school == "realmforge:physical", name
+        assert bleed.stacks.ignores_armor and bleed.stacks.interval_seconds == 0.5, name
+    assert effects["rend"].name.en_us == "Rend"
+    assert effects["deep_wounds"].name.en_us == "Deep Wounds"
+    assert "bleeding" not in effects
+    assert universe.contains_tag("minecraft:mob_effect", "realmforge:bleeds")
+
+
+def test_an_effects_tags_are_generated_with_their_members(repo: RepoPaths) -> None:
+    stacks = "stacks: {school: realmforge:physical, interval_seconds: 0.5, ignores_armor: true}\n"
+    effect(repo, "test_gash", f'category: harmful\ncolor: "#8A0303"\n{stacks}tags: [realmforge:bleeds]\n')
+    files = generate(repo)
+    tag = json.loads(files["mod/src/generated/resources/data/realmforge/tags/mob_effect/bleeds.json"])
+    assert tag == {"values": ["realmforge:deep_wounds", "realmforge:rend", "realmforge:test_gash"]}
+    expectations = files[EXPECTATIONS].decode()
+    assert 'List.of("realmforge:bleeds"))' in expectations
+    assert "Optional<OnBossesExpectation> onBosses, List<String> tags)" in expectations
+
+
+@pytest.mark.parametrize(
+    ("fields", "expected"),
+    [
+        ({"tags": ["minecraft:bleeds"]}, "tags are ours, realmforge:<name>: minecraft:bleeds"),
+        ({"tags": ["realmforge:a", "realmforge:a"]}, "a tag is named once: realmforge:a"),
+        ({"tags": ["realmforge:bleeds"]}, "an effect of realmforge:bleeds is a bleed"),
+        (
+            {
+                "tags": ["realmforge:bleeds"],
+                "periodic": None,
+                "stacks": {"school": "realmforge:frost", "interval_seconds": 0.5, "ignores_armor": True},
+            },
+            "an effect of realmforge:bleeds is a bleed",
+        ),
+        (
+            {
+                "tags": ["realmforge:bleeds"],
+                "periodic": None,
+                "stacks": {"school": "realmforge:physical", "interval_seconds": 0.5},
+            },
+            "stacks of realmforge:physical damage with ignores_armor: true",
+        ),
+    ],
+)
+def test_invalid_tags_are_rejected(fields: dict, expected: str) -> None:
+    with pytest.raises(ValueError) as excinfo:
+        effect_model(**fields)
+    assert expected in str(excinfo.value)
 
 
 def test_the_stacks_school_must_exist(repo: RepoPaths) -> None:

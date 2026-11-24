@@ -1,5 +1,6 @@
-"""Status effects: the ``MobEffect`` registrations, icons (drawn ones from effect_icons.py, placeholders otherwise) and
-the QA mod's expectations (the names: the lang files, lang.py)."""
+"""Status effects: the ``MobEffect`` registrations, icons (drawn ones from effect_icons.py, placeholders otherwise), the
+mob effect tags they are in (``data/<ns>/tags/mob_effect/<path>.json``, RLM-601: ``realmforge:bleeds``) and the QA
+mod's expectations (the names: the lang files, lang.py)."""
 
 from __future__ import annotations
 
@@ -8,6 +9,7 @@ from pathlib import Path
 
 from realmforge_tools.art import approved
 from realmforge_tools.content import Content
+from realmforge_tools.formats.jsonfmt import dump_json
 from realmforge_tools.generate.datapack import seconds_to_ticks
 from realmforge_tools.generate.effect_icons import drawn_icon
 from realmforge_tools.generate.javagen import constant_name, header, java_file_path, string_literal
@@ -47,6 +49,14 @@ def generate(content: Content, paths: RepoPaths) -> dict[Path, bytes]:
         files[icons / f"{effect.id}.png"] = (
             drawn if drawn is not None else placeholder_effect_icon(_rgb(effect.color), effect.category)
         )
+    members: dict[str, list[str]] = {}
+    for entry in content.effects:
+        for tag in entry.model.tags:
+            members.setdefault(tag, []).append(f"{MOD_ID}:{entry.model.id}")
+    for tag, effects in members.items():
+        namespace, path = tag.split(":", 1)
+        file = paths.mod_generated / "resources" / "data" / namespace / "tags" / "mob_effect" / f"{path}.json"
+        files[file] = dump_json({"values": sorted(effects)})
     return files
 
 
@@ -197,6 +207,7 @@ def _expectation(effect: EffectDef) -> str:
         else "Optional.empty()"
     )
     immune_to = f"Optional.of({string_literal(effect.immune_to)})" if effect.immune_to else "Optional.empty()"
+    tags = ", ".join(string_literal(tag) for tag in effect.tags)
     return (
         "            new EffectExpectation(\n"
         f"                    {string_literal(f'{MOD_ID}:{effect.id}')},\n"
@@ -209,7 +220,8 @@ def _expectation(effect: EffectDef) -> str:
         f"                    {'true' if effect.stun else 'false'},\n"
         f"                    {_double((effect.breaks_on_damage_percent or 0) / 100)},\n"
         f"                    {immune_to},\n"
-        f"                    {on_bosses_expectation})"
+        f"                    {on_bosses_expectation},\n"
+        f"                    List.of({tags}))"
     )
 
 
@@ -258,12 +270,12 @@ def _expectations(content: Content) -> bytes:
         "    /**\n"
         "     * Expected state of one effect: its category, particle colour (RGB), modifiers, periodic ticks, stacks,\n"
         "     * whether it stuns, the chance that damage ends it (a fraction, 0 for none), the effect its holder is immune\n"
-        "     * to and how it works on a boss.\n"
+        "     * to, how it works on a boss and the mob effect tags it is in (RLM-601).\n"
         "     */\n"
         "    public record EffectExpectation(String id, String descriptionId, String category, int color,\n"
         "            List<ModifierExpectation> modifiers, Optional<PeriodicExpectation> periodic,\n"
         "            Optional<StacksExpectation> stacks, boolean stun, double breaksOnDamage, Optional<String> immuneTo,\n"
-        "            Optional<OnBossesExpectation> onBosses) {\n"
+        "            Optional<OnBossesExpectation> onBosses, List<String> tags) {\n"
         "    }\n"
         "\n"
         f"    public static final List<EffectExpectation> EFFECTS = {effects};\n"

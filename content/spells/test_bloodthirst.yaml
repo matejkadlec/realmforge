@@ -9,7 +9,7 @@ school: realmforge:physical
 passive:
   procs:
     - trigger: tick
-      effect: realmforge:bleeding
+      effect: realmforge:rend
       spell: realmforge:test_rend
       chance_percent: 100
       cooldown_seconds: 6

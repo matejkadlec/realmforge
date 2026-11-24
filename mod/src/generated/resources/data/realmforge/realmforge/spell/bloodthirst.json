@@ -26,7 +26,7 @@
     "procs": [
       {
         "trigger": "tick",
-        "effect": "realmforge:bleeding",
+        "effect": "realmforge:rend",
         "spell": "realmforge:rend",
         "chance": 0.1,
         "chance_per_level": 0.1,

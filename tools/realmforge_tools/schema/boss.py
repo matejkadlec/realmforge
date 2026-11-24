@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from typing import Annotated, Literal
 
-from pydantic import Field, model_validator
+from pydantic import Field, StringConstraints, model_validator
 
 from realmforge_tools.project import MOD_ID
 from realmforge_tools.schema.common import (
@@ -24,6 +24,17 @@ from realmforge_tools.schema.common import (
     UniqueResourceIds,
 )
 from realmforge_tools.schema.requirement import MAX_LEVEL
+
+# A status effect, or a status effect tag after "#" (RLM-601: #realmforge:bleeds): the game reads it as either
+# (boss/Boss's immune_to).
+EffectOrTag = Annotated[
+    str,
+    StringConstraints(pattern=r"^#?[a-z0-9_.-]+:[a-z0-9_./-]+$"),
+    Field(
+        description="A status effect, e.g. realmforge:frozen, or a status effect tag after #, e.g. "
+        "#realmforge:bleeds. Validated against the ID universe."
+    ),
+]
 
 # The trigger types of realmforge:phase_trigger_type (boss/PhaseTriggerTypes).
 HEALTH_BELOW = f"{MOD_ID}:health_below"
@@ -136,10 +147,11 @@ class BossDef(StrictModel):
         description="How long it stands, unhurt and casting nothing, when it enters a new phase, in seconds (research "
         "BM-2: 3 s); 0 for no pause. Particles round it show it.",
     )
-    immune_to: list[ResourceId] = Field(
+    immune_to: list[EffectOrTag] = Field(
         default_factory=list,
         description="Status effects it never takes, e.g. [realmforge:frozen, realmforge:stunned] (RLM-539): per boss, "
-        "as ordinary mobs have no immunity.",
+        "as ordinary mobs have no immunity. A tag after # names every effect in it, e.g. #realmforge:bleeds for Rend "
+        "and Deep Wounds (RLM-601).",
     )
     phases: list[BossPhaseDef] = Field(
         min_length=1, description="Its phases, in the order the fight goes through."

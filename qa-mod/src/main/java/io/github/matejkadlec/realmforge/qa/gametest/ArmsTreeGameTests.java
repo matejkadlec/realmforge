@@ -2,6 +2,7 @@ package io.github.matejkadlec.realmforge.qa.gametest;
 
 import io.github.matejkadlec.realmforge.character.Characters;
 import io.github.matejkadlec.realmforge.combat.DamagePipeline;
+import io.github.matejkadlec.realmforge.effect.EffectSource;
 import io.github.matejkadlec.realmforge.effect.EffectStacks;
 import io.github.matejkadlec.realmforge.effect.StackTicks;
 import io.github.matejkadlec.realmforge.generated.GeneratedEffects;
@@ -46,10 +47,12 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.PermissionSet;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -77,7 +80,7 @@ public final class ArmsTreeGameTests {
     private static final double HEALTH = SpellGameTests.HEALTH;
     private static final double TOLERANCE = 1e-3;
     private static final double ATTACK_DAMAGE = 10;
-    /** A Bleeding of 6 s ticks every half second: 12 ticks. */
+    /** A bleed of 6 s (Rend's, Deep Wounds') ticks every half second: 12 ticks. */
     private static final int BLEED_TICKS = 12;
     /** Charge's rush: 24 blocks a second is 1.2 blocks a tick. */
     private static final double CHARGE_PER_TICK = 1.2;
@@ -152,7 +155,7 @@ public final class ArmsTreeGameTests {
             Husk bled = SpellGameTests.husk(helper, new BlockPos(check[0] == 1 ? 1 : 3, 1, 2));
             bleed.applyTo(EffectContext.of(helper.getLevel(), player, rend, (int) check[0], Optional.empty()), bled,
                     SpellTarget.of(player, bled));
-            List<EffectStacks.Stack> stacks = StackTicks.of(bled, GeneratedEffects.BLEEDING);
+            List<EffectStacks.Stack> stacks = StackTicks.of(bled, GeneratedEffects.REND);
             helper.assertValueEqual(stacks.size(), 1, "Rend's bleed at rank " + (int) check[0]);
             helper.assertTrue(close(stacks.getFirst().perTick() * BLEED_TICKS, check[1]), "Rend rank "
                     + (int) check[0] + " bleeds " + check[1] + " over 6 s: " + stacks.getFirst());
@@ -592,7 +595,7 @@ public final class ArmsTreeGameTests {
         Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 4));
         assertCast(helper, player, GeneratedSpells.TEST_SURE_CRIT, husk);
         helper.assertTrue(close(HEALTH - husk.getHealth(), 10), "the crit dealt 10: " + (HEALTH - husk.getHealth()));
-        List<EffectStacks.Stack> stacks = StackTicks.of(husk, GeneratedEffects.BLEEDING);
+        List<EffectStacks.Stack> stacks = StackTicks.of(husk, GeneratedEffects.DEEP_WOUNDS);
         helper.assertValueEqual(stacks.size(), 1, "the crit made the husk bleed");
         helper.assertValueEqual(stacks.getFirst().spell(), Optional.of(GeneratedSpells.DEEP_WOUNDS.identifier()),
                 "Deep Wounds' bleed");
@@ -600,7 +603,7 @@ public final class ArmsTreeGameTests {
 
         Spells.resetCooldowns(player);
         assertCast(helper, player, GeneratedSpells.TEST_SURE_CRIT, husk);
-        stacks = StackTicks.of(husk, GeneratedEffects.BLEEDING);
+        stacks = StackTicks.of(husk, GeneratedEffects.DEEP_WOUNDS);
         helper.assertValueEqual(stacks.size(), 1, "one bleed of Deep Wounds");
         helper.assertTrue(close(stacks.getFirst().perTick() * BLEED_TICKS, 12), "6 more on the 6 left: "
                 + stacks.getFirst());
@@ -609,14 +612,158 @@ public final class ArmsTreeGameTests {
         Husk other = SpellGameTests.husk(helper, new BlockPos(4, 1, 4));
         Spells.resetCooldowns(player);
         assertCast(helper, player, GeneratedSpells.TEST_SURE_CRIT, other);
-        helper.assertTrue(close(StackTicks.of(other, GeneratedEffects.BLEEDING).getFirst().perTick() * BLEED_TICKS, 2),
+        helper.assertTrue(close(StackTicks.of(other, GeneratedEffects.DEEP_WOUNDS).getFirst().perTick() * BLEED_TICKS,
+                2),
                 "20 % of 10 at rank 1");
         logout(player);
         helper.succeed();
     }
 
     /**
-     * Bloodthirst's proc at the player's rank: a tick of Rend's Bleeding opens Overpower's window, at 10 % at rank 1
+     * RLM-601's Done when: Rend gives its target Rend's effect and nothing else, a melee crit Deep Wounds' effect and
+     * nothing else, and the two tick side by side, each with its own timer and its own total. Rend at rank 1 bleeds
+     * 8 + 90 % of 10 = 17 over 6 s; the crit 2 s later deals 10 (crits add nothing here) and Deep Wounds at rank 3
+     * bleeds 60 % of it, 6, over 6 s of its own. Once both ran out, the husk lost 17 + 10 + 6.
+     */
+    @QaGameTest(timeoutTicks = 220)
+    public static void rendAndDeepWoundsTickSideBySide(GameTestHelper helper) {
+        ServerPlayer player = fighter(helper, "qa-arms-two-bleeds", QaPlayers.PLATFORM_MIDDLE);
+        learn(helper, player, GeneratedSpells.DEEP_WOUNDS, 3);
+        Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 3));
+        rendBleed(helper, player, husk, 1);
+        helper.assertTrue(husk.hasEffect(GeneratedEffects.REND), "Rend gave Rend's effect");
+        helper.assertFalse(husk.hasEffect(GeneratedEffects.DEEP_WOUNDS), "Rend gave no Deep Wounds");
+        helper.runAfterDelay(40, () -> {
+            StatsCommands.setBase(player, GeneratedStats.CRIT_CHANCE, 1);
+            double dealt = melee(player, husk);
+            helper.assertTrue(close(dealt, ATTACK_DAMAGE), "the crit dealt 10: " + dealt);
+            EffectStacks.Stack rend = onlyStack(helper, husk, GeneratedEffects.REND, GeneratedSpells.REND,
+                    "the crit added nothing to Rend's effect");
+            EffectStacks.Stack wounds = onlyStack(helper, husk, GeneratedEffects.DEEP_WOUNDS,
+                    GeneratedSpells.DEEP_WOUNDS, "the crit gave Deep Wounds' effect");
+            helper.assertTrue(close(rend.perTick() * BLEED_TICKS, 17), "Rend's total of 17: " + rend);
+            helper.assertTrue(close(wounds.perTick() * BLEED_TICKS, 6), "Deep Wounds' total of 6: " + wounds);
+            int rendLeft = husk.getEffect(GeneratedEffects.REND).getDuration();
+            int woundsLeft = husk.getEffect(GeneratedEffects.DEEP_WOUNDS).getDuration();
+            helper.assertTrue(rendLeft == 80 && woundsLeft == 120, "their own timers, Rend's 4 s and Deep Wounds' "
+                    + "fresh 6 s: " + rendLeft + " and " + woundsLeft + " ticks");
+        });
+        helper.runAfterDelay(170, () -> {
+            assertHealth(helper, husk, HEALTH - 17 - 10 - 6, "Rend's 17, the crit's 10 and Deep Wounds' 6");
+            helper.assertFalse(husk.hasEffect(GeneratedEffects.REND) || husk.hasEffect(GeneratedEffects.DEEP_WOUNDS),
+                    "both bleeds ran out");
+            logout(player);
+            helper.succeed();
+        });
+    }
+
+    /**
+     * RLM-601: Deep Wounds rolls, as in WotLK (Matěj's example of 2026-11-03, rank 3 at 60 %): a 20 crit bleeds 12 over
+     * 6 s, 1 a tick; a second 20 crit 2 s later adds its 12 to the 8 left, and the 20 tick over a fresh 6 s. Both
+     * crits' 24 are dealt in full.
+     */
+    @QaGameTest(timeoutTicks = 220)
+    public static void deepWoundsRollsWhatIsLeftIntoAFreshSixSeconds(GameTestHelper helper) {
+        ServerPlayer player = fighter(helper, "qa-arms-wounds-roll", QaPlayers.PLATFORM_MIDDLE);
+        StatsCommands.setBase(player, Attributes.ATTACK_DAMAGE, 20);
+        StatsCommands.setBase(player, GeneratedStats.CRIT_CHANCE, 1);
+        learn(helper, player, GeneratedSpells.DEEP_WOUNDS, 3);
+        Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 3));
+        helper.assertTrue(close(melee(player, husk), 20), "the first crit dealt 20");
+        EffectStacks.Stack first = onlyStack(helper, husk, GeneratedEffects.DEEP_WOUNDS, GeneratedSpells.DEEP_WOUNDS,
+                "the first crit");
+        helper.assertTrue(close(first.perTick() * BLEED_TICKS, 12), "60 % of 20: " + first);
+        helper.runAfterDelay(40, () -> {
+            assertHealth(helper, husk, HEALTH - 20 - 4, "4 of its 12 ticks in 2 s");
+            helper.assertTrue(close(melee(player, husk), 20), "the second crit dealt 20");
+            EffectStacks.Stack rolled = onlyStack(helper, husk, GeneratedEffects.DEEP_WOUNDS,
+                    GeneratedSpells.DEEP_WOUNDS, "the second crit rolls into one bleed");
+            helper.assertTrue(close(rolled.perTick() * BLEED_TICKS, 8 + 12), "the 8 left and the new 12: " + rolled);
+            helper.assertValueEqual(rolled.remainingTicks(), 120, "over a fresh 6 s");
+            helper.assertValueEqual(husk.getEffect(GeneratedEffects.DEEP_WOUNDS).getDuration(), 120,
+                    "and its timer starts again");
+        });
+        helper.runAfterDelay(170, () -> {
+            assertHealth(helper, husk, HEALTH - 20 - 20 - 24, "two crits and both their 12, in full");
+            helper.assertFalse(husk.hasEffect(GeneratedEffects.DEEP_WOUNDS), "the bleed ran out");
+            logout(player);
+            helper.succeed();
+        });
+    }
+
+    /**
+     * RLM-601: a Rend recast replaces what is left of the caster's Rend with a new snapshot, as before the split: Rend
+     * at rank 1 bleeds 17 at 10 Attack Damage; 2 s later, at 20, the recast bleeds 8 + 90 % of 20 = 26 over a fresh
+     * 6 s, without what was left. Over both, the husk lost 4 ticks of the first and the whole second.
+     */
+    @QaGameTest(timeoutTicks = 220)
+    public static void aRendRecastReplacesWhatIsLeftWithANewSnapshot(GameTestHelper helper) {
+        ServerPlayer player = fighter(helper, "qa-arms-rend-recast", QaPlayers.PLATFORM_MIDDLE);
+        Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 3));
+        rendBleed(helper, player, husk, 1);
+        EffectStacks.Stack first = onlyStack(helper, husk, GeneratedEffects.REND, GeneratedSpells.REND, "the cast");
+        helper.runAfterDelay(40, () -> {
+            assertHealth(helper, husk, HEALTH - 4 * first.perTick(), "4 ticks of the first");
+            StatsCommands.setBase(player, Attributes.ATTACK_DAMAGE, 20);
+            rendBleed(helper, player, husk, 1);
+            EffectStacks.Stack recast = onlyStack(helper, husk, GeneratedEffects.REND, GeneratedSpells.REND,
+                    "the recast replaces the caster's own");
+            helper.assertTrue(close(recast.perTick() * BLEED_TICKS, 26), "a new snapshot at 20 Attack Damage, "
+                    + "without what was left: " + recast);
+            helper.assertValueEqual(recast.remainingTicks(), 120, "over a fresh 6 s");
+        });
+        helper.runAfterDelay(170, () -> {
+            assertHealth(helper, husk, HEALTH - 4 * first.perTick() - 26, "4 ticks of the first, then the second");
+            logout(player);
+            helper.succeed();
+        });
+    }
+
+    /**
+     * RLM-601 (decision of 2026-10-19): Rend's and Deep Wounds' ticks and a melee hit in the same tick lose nothing to
+     * the hurt cooldown. Both bleeds are applied at once, so they tick together every half second, first 10 ticks on.
+     * One husk takes the melee hit in that very tick, after the bleeds' ticks; the other a tick before, so both bleeds
+     * tick inside the window that hit opened. Each loses the full sum: 17 / 12 of Rend, 6 / 12 of Deep Wounds and 10.
+     */
+    @QaGameTest(timeoutTicks = 60)
+    public static void rendDeepWoundsAndAMeleeHitInOneTickDealTheirFullSum(GameTestHelper helper) {
+        ServerPlayer player = fighter(helper, "qa-arms-bleed-tick", QaPlayers.PLATFORM_MIDDLE);
+        Husk same = SpellGameTests.husk(helper, new BlockPos(1, 1, 3));
+        Husk before = SpellGameTests.husk(helper, new BlockPos(3, 1, 3));
+        EffectSource wounds = new EffectSource(player.getUUID(), Optional.of(GeneratedSpells.DEEP_WOUNDS.identifier()),
+                Optional.empty());
+        for (Husk husk : List.of(same, before)) {
+            rendBleed(helper, player, husk, 1);
+            helper.assertTrue(StackTicks.apply(husk, GeneratedEffects.DEEP_WOUNDS, player, wounds, 6, 120),
+                    "Deep Wounds' bleed took hold");
+        }
+        double ticks = 17.0 / BLEED_TICKS + 6.0 / BLEED_TICKS;
+        double[] health = new double[2];
+        helper.runAfterDelay(9, () -> {
+            assertHealth(helper, same, HEALTH, "no tick yet");
+            helper.assertTrue(close(melee(player, before), ATTACK_DAMAGE), "the hit a tick before");
+            health[0] = same.getHealth();
+            health[1] = before.getHealth();
+        });
+        helper.runAfterDelay(10, () -> {
+            helper.assertValueEqual(StackTicks.of(same, GeneratedEffects.REND).getFirst().remainingTicks(), 110,
+                    "Rend ticked in this tick");
+            helper.assertValueEqual(StackTicks.of(same, GeneratedEffects.DEEP_WOUNDS).getFirst().remainingTicks(), 110,
+                    "and so did Deep Wounds");
+            helper.assertTrue(before.invulnerableTime > 10, "the hit's window was still open: "
+                    + before.invulnerableTime);
+            melee(player, same);
+            helper.assertTrue(close(health[0] - same.getHealth(), ticks + ATTACK_DAMAGE), "both ticks and the hit in "
+                    + "one tick: " + (health[0] - same.getHealth()));
+            helper.assertTrue(close(health[1] - before.getHealth(), ticks), "both ticks inside the hit's window: "
+                    + (health[1] - before.getHealth()));
+            logout(player);
+            helper.succeed();
+        });
+    }
+
+    /**
+     * Bloodthirst's proc at the player's rank: a tick of Rend's bleed opens Overpower's window, at 10 % at rank 1
      * and 20 % at rank 2 (RLM-604), at most once every 6 s on each target.
      */
     @QaGameTest
@@ -628,10 +775,12 @@ public final class ArmsTreeGameTests {
             helper.assertValueEqual(procs.size(), 1, "one proc at rank " + (int) check[0]);
             Proc proc = procs.getFirst();
             helper.assertValueEqual(proc.trigger(), Proc.Trigger.TICK, "on a tick");
-            helper.assertTrue(proc.watches(Optional.of(GeneratedEffects.BLEEDING.unwrapKey().orElseThrow()
-                    .identifier()), Optional.of(GeneratedSpells.REND.identifier())), "of Rend's Bleeding");
-            helper.assertFalse(proc.watches(Optional.of(GeneratedEffects.BLEEDING.unwrapKey().orElseThrow()
-                    .identifier()), Optional.of(GeneratedSpells.DEEP_WOUNDS.identifier())), "not Deep Wounds'");
+            helper.assertTrue(proc.watches(Optional.of(effectId(GeneratedEffects.REND)),
+                    Optional.of(GeneratedSpells.REND.identifier())), "of Rend's bleed");
+            helper.assertFalse(proc.watches(Optional.of(effectId(GeneratedEffects.DEEP_WOUNDS)),
+                    Optional.of(GeneratedSpells.DEEP_WOUNDS.identifier())), "not Deep Wounds' (RLM-601)");
+            helper.assertFalse(proc.watches(Optional.of(effectId(GeneratedEffects.DEEP_WOUNDS)),
+                    Optional.of(GeneratedSpells.REND.identifier())), "nor any tick of Deep Wounds' effect");
             helper.assertTrue(close(proc.chance(), check[1]), "at " + check[1] + ": " + proc.chance());
             helper.assertValueEqual(proc.cooldownTicks(), 120, "once every 6 s");
             helper.assertValueEqual(proc.action(), new Proc.OpenWindow(GeneratedSpells.OVERPOWER),
@@ -814,6 +963,41 @@ public final class ArmsTreeGameTests {
         return player;
     }
 
+    /** Rend's bleed at {@code rank} on {@code target}, without its cut or its cost: the spell's second effect. */
+    private static void rendBleed(GameTestHelper helper, ServerPlayer player, LivingEntity target, int rank) {
+        Holder.Reference<Spell> rend = spell(helper, GeneratedSpells.REND);
+        DamageOverTimeEffect bleed = (DamageOverTimeEffect) rend.value().effects().get(1);
+        bleed.applyTo(EffectContext.of(helper.getLevel(), player, rend, rank, Optional.empty()), target,
+                SpellTarget.of(player, target));
+    }
+
+    /**
+     * A full-strength melee hit of {@code player} on {@code target}: the player's attack strength is refilled first, as
+     * {@code HurtCooldownGameTests} does. Returns the damage it dealt.
+     */
+    private static double melee(ServerPlayer player, LivingEntity target) {
+        for (int i = 0; i < 20; i++) {
+            player.doTick();
+        }
+        float before = target.getHealth();
+        player.attack(target);
+        return before - target.getHealth();
+    }
+
+    /** The one stack of {@code effect} on {@code target}, from {@code spell}; fails when it has another number. */
+    private static EffectStacks.Stack onlyStack(GameTestHelper helper, LivingEntity target, Holder<MobEffect> effect,
+            ResourceKey<Spell> spell, String what) {
+        List<EffectStacks.Stack> stacks = StackTicks.of(target, effect);
+        helper.assertValueEqual(stacks.size(), 1, what + ": one stack of " + effectId(effect));
+        helper.assertValueEqual(stacks.getFirst().spell(), Optional.of(spell.identifier()),
+                what + ": the stack's spell");
+        return stacks.getFirst();
+    }
+
+    private static Identifier effectId(Holder<MobEffect> effect) {
+        return effect.unwrapKey().orElseThrow().identifier();
+    }
+
     private static double attackDamage(LivingEntity caster) {
         return DamagePipeline.stat(caster, Attributes.ATTACK_DAMAGE);
     }
@@ -844,5 +1028,10 @@ public final class ArmsTreeGameTests {
 
     private static boolean close(double got, double want) {
         return Math.abs(got - want) <= TOLERANCE;
+    }
+
+    private static void assertHealth(GameTestHelper helper, LivingEntity entity, double expected, String what) {
+        helper.assertTrue(close(entity.getHealth(), expected), what + ": health " + expected + " expected, got "
+                + entity.getHealth());
     }
 }

@@ -258,7 +258,8 @@ Rules:
   stood: it fights only what stands inside, takes no hurt from outside, and resets when pulled out), its `bar_color`
   (vanilla's boss bar colours, `red` by default), `phase_change_seconds` (3 by default: how long it stands unhurt,
   casting nothing, when it enters a later phase) and `immune_to` (RLM-539: the status effects it never takes, boss by
-  boss, e.g. `[realmforge:frozen, realmforge:stunned]`; ordinary mobs have no immunity). Its `phases` come in order: each has an `id`, a `name` the boss bar
+  boss, e.g. `[realmforge:frozen, realmforge:stunned]`, or every effect of a tag after `#`, quoted in YAML:
+  `"#realmforge:bleeds"`, RLM-601; ordinary mobs have no immunity). Its `phases` come in order: each has an `id`, a `name` the boss bar
   shows after the boss's name (Title Case, 1 to 3 words), and every phase after the first an `enter_when`, a
   `realmforge:health_below` (`health_percent`, decreasing from phase to phase) or a `realmforge:time_in_phase`
   (`after_seconds` of fight in the phase before: a boss nobody has pulled stays in its first phase); `on_enter` names
@@ -548,13 +549,16 @@ Rules:
   attack and cast, unlike a stun; Shatter reads it (RLM-541). `breaks_on_damage_percent` is the chance that any damage
   its holder takes ends it, rolled after each hit (Frozen's 50, RLM-542). `look: ice` makes clients draw its holder covered in
   Packed Ice and shivering (Frozen, RLM-539). `stacks` (`school`, `interval_seconds`, `ignores_armor`; instead of
-  `periodic`, harmful only) makes it damage over time kept per caster's spell (Bleeding, RLM-539): the spell that applies
+  `periodic`, harmful only) makes it damage over time kept per caster's spell (Rend and Deep Wounds, RLM-539, RLM-601): the spell that applies
   it through `realmforge:damage_over_time` names the damage, fixed when applied; two spells or casters stack, the same
   spell from the same caster refreshes its stack, and its ticks are never dodged or blocked. `immune_to` names an
   effect its holder never takes while it lasts (Stun Immunity's `realmforge:stunned`, RLM-615; beneficial or neutral,
   and it needs no modifiers). `on_bosses` (`duration_percent`, `immunity`, `immunity_seconds`) makes it last that share
   on every boss and then gives the boss the `immunity`, an effect of ours whose `immune_to` names this one, for that
-  time (Stunned and Frozen: 50 % and 10 s, RLM-615). A spell applies one through `realmforge:apply_effect`, for a whole number of its intervals. The
+  time (Stunned and Frozen: 50 % and 10 s, RLM-615). `tags` puts it into mob effect tags of ours (RLM-601):
+  `realmforge:bleeds` holds every bleed, and an effect of it must have `stacks` of `realmforge:physical` with
+  `ignores_armor: true`; content and code that ask about a kind of effect name the tag (a boss's
+  `immune_to: ["#realmforge:bleeds"]`). A spell applies one through `realmforge:apply_effect`, for a whole number of its intervals. The
   `test_*` effects are engine tests, not gameplay content.
 - `spells/` holds the spells of players, mobs and bosses ([architecture 11](../docs/architecture.md#11-spells-and-status-effects)):
   a `name` and a `description` (what it does in a sentence or two, shown in its tooltip; numbers come from data

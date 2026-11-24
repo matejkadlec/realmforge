@@ -292,6 +292,9 @@ def universe_with_content(vanilla: IdUniverse, content: Content) -> IdUniverse:
     universe.tags.setdefault(DAMAGE_TYPE_REGISTRY, set()).update((PHYSICAL_TAG, MAGIC_TAG))
     # The item tags generate/items.py writes with fixed members (melee weapons, sword-like weapons).
     universe.tags.setdefault(ITEM_REGISTRY, set()).update(FIXED_ITEM_TAGS)
+    # The mob effect tags our effects are in (RLM-601: realmforge:bleeds), which generate/effects.py writes.
+    for entry in content.effects:
+        universe.tags.setdefault(MOB_EFFECT_REGISTRY, set()).update(entry.model.tags)
     for entry in content.sounds:
         for name in entry.model.events:
             universe.add(SOUND_EVENT_REGISTRY, sound_id(entry.model, name))
@@ -1961,10 +1964,12 @@ def _check_bosses(content: Content, universe: IdUniverse) -> list[Problem]:
         else:
             bodies[boss.entity] = entry.source
         for n, immune in enumerate(boss.immune_to):
-            if not universe.contains(MOB_EFFECT_REGISTRY, immune):
-                problems.append(
-                    Problem(entry.source, f"immune_to.{n}", _unknown(immune, MOB_EFFECT_REGISTRY, universe))
-                )
+            unknown = _unknown_effect_or_tag(immune, universe)
+            if unknown is not None:
+                problems.append(Problem(entry.source, f"immune_to.{n}", unknown))
+        repeated = sorted({immune for immune in boss.immune_to if boss.immune_to.count(immune) > 1})
+        if repeated:
+            problems.append(Problem(entry.source, "immune_to", f"named twice: {', '.join(repeated)}"))
         for p, phase in enumerate(boss.phases):
             casts = [(f"phases.{p}.on_enter.{n}", spell) for n, spell in enumerate(phase.on_enter)] + [
                 (f"phases.{p}.abilities.{n}.spell", ability.spell)
@@ -3888,6 +3893,25 @@ def _check_worldgen_clashes(content: Content, paths: RepoPaths) -> list[Problem]
         for file in content.worldgen
         if file.id in core.get(file.directory, set())
     ]
+
+
+def _unknown_effect_or_tag(reference: str, universe: IdUniverse) -> str | None:
+    """Why a status effect or a status effect tag (``#`` first, RLM-601) is not in the ID universe, or None when it
+    is."""
+    if not reference.startswith("#"):
+        return (
+            None
+            if universe.contains(MOB_EFFECT_REGISTRY, reference)
+            else _unknown(reference, MOB_EFFECT_REGISTRY, universe)
+        )
+    tag = reference.removeprefix("#")
+    if universe.contains_tag(MOB_EFFECT_REGISTRY, tag):
+        return None
+    message = f"unknown tag {reference!r} in registry {MOB_EFFECT_REGISTRY}"
+    close = difflib.get_close_matches(tag, universe.tags.get(MOB_EFFECT_REGISTRY, set()), n=3)
+    if close:
+        message += f" (did you mean: {', '.join('#' + match for match in close)}?)"
+    return message
 
 
 def _unknown_structure(reference: str, universe: IdUniverse) -> str | None:

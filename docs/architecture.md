@@ -1987,10 +1987,12 @@ multiplied operations; one per attribute, as `MobEffect` keeps one) and its `per
 amount per tick at the first level and an interval from 0.25 to 10 s. `generate/effects.py` writes `GeneratedEffects`
 (a `DeferredRegister<MobEffect>`, which `effect/EffectFeature` registers; NeoForge registers attributes before status
 effects, so a modifier finds its attribute, ours included), an 18 by 18 icon in `textures/mob_effect/<id>.png` (its
-approved art from `art/textures/effect/`: Frozen's and Bleeding's, RLM-588, RLM-591; or one drawn in pixel rows in
+approved art from `art/textures/effect/`: Frozen's, RLM-588, RLM-591, and Rend's and Deep Wounds', their spells' icons
+as WoW shows a debuff, RLM-601; or one drawn in pixel rows in
 `generate/effect_icons.py`: Battle Shout's and Ice Barrier's, C4; or a placeholder disc in the effect's colour with an
 arrow up or down), the name
-`effect.realmforge.<id>` and `GeneratedEffectExpectations`, which `ContentEffectGameTests` checks. Each is an
+`effect.realmforge.<id>`, the mob effect tags of its `tags` (`data/<ns>/tags/mob_effect/<path>.json`, RLM-601) and
+`GeneratedEffectExpectations`, which `ContentEffectGameTests` checks, tags included. Each is an
 `effect/StatusEffect`: vanilla's modifiers, multiplied by the amplifier + 1, and an `effect/Periodic` that ticks at the
 end of every interval since the effect was first applied (an effect of 4 s and 1 s intervals ticks 4 times, the first
 after a second; validation keeps a spell's durations whole intervals), each level adding the amount again. **It ticks at
@@ -2053,17 +2055,29 @@ and draws its model again in vanilla's Packed Ice texture (referenced where it l
 living renderer and the players'. Our GeckoLib mobs shiver (`CustomMob#isFullyFrozen` on the client) without the ice,
 whose GeckoLib layer does not compile against our render state, until the Frost visuals (RLM-544).
 
-**In code (RLM-539): stacks of damage over time.** An effect with `stacks` (`effect/StackedDamage`, Bleeding: physical,
-every 0.5 s, ignoring armor) deals no damage of its own: each caster's spell keeps a stack on the target
+**In code (RLM-539): stacks of damage over time.** An effect with `stacks` (`effect/StackedDamage`; the bleeds Rend
+and Deep Wounds: physical, every 0.5 s, ignoring armor) deals no damage of its own: each caster's spell keeps a stack on the target
 (`realmforge:effect_stacks`, `effect/EffectStacks`, saved, never synced), which `realmforge:damage_over_time`
 (`spell/DamageOverTimeEffect`) adds through `effect/StackTicks#apply`: its amount plus its coefficient of the caster's
 power, fixed when applied, split evenly over its ticks. Another spell or caster adds a stack; the same spell from the same
 caster replaces its own. The status effect shows while any stack lasts and counts the stacks down every tick; its removal
 (milk, a cleanse) or expiry forgets them. A tick is a school hit from the stack's caster (from nobody once the caster is
 gone) that carries `SchoolDamageSource.Tick` (the effect, the spell, whether it ignores armor): the damage pipeline never
-dodges it, a raised weapon or a shield never blocks it, and armor stops none of a Bleeding tick; it never crits, and it
-carries the stack's proc origin. `FrozenAndBleedingGameTests` covers a Frozen zombie that stays and still hits, an immune
-boss, Will To Survive, Bleeding's 12 ticks through armor, two stacks and a refresh.
+dodges it, a raised weapon or a shield never blocks it, and armor stops none of a bleed's tick; it never crits, and it
+carries the stack's proc origin.
+
+**In code (RLM-601): the bleeds.** Rend and Deep Wounds are two effects of their own (`realmforge:rend`,
+`realmforge:deep_wounds`; Matěj, 2026-11-03: one Bleeding for every bleed showed nobody which one ticked), so a target
+shows each with its own timer, as in WotLK. Their shared base is the stacks above, every rule of RLM-539's Bleeding
+included, and the mob effect tag `realmforge:bleeds` holds both: an effect of it must be a bleed (stacks of physical
+damage that ignore armor, `schema/effect.py`), and whatever asks whether a target bleeds reads the tag instead of
+listing effects (a boss's `immune_to: ["#realmforge:bleeds"]`), so a later bleed (a Hunter's, a Rogue's) only joins it.
+Rend's recast replaces what is left of the caster's own with a new snapshot of its Attack Damage; Deep Wounds rolls:
+a new crit adds its share to what is left (`StackTicks#remaining`, `spell/Procs`) and the sum ticks over a fresh 6 s.
+Bloodthirst watches the ticks of Rend's effect from Rend only. `FrozenAndBleedingGameTests` covers a Frozen zombie that
+stays and still hits, an immune boss (Frozen, and both bleeds through the tag), Will To Survive, Rend's 12 ticks
+through armor, two stacks and a refresh; `ArmsTreeGameTests` Rend and Deep Wounds side by side with their own timers
+and totals, Deep Wounds' roll, Rend's new snapshot and both bleeds' ticks and a melee hit in one tick.
 
 **In code (RLM-615): immunities and crowd control on bosses.** An effect with `immune_to` (`StatusEffect#blocks`;
 Stun Immunity's `realmforge:stunned`, Frozen Immunity's `realmforge:frozen`) keeps its holder from taking the effect it
@@ -2584,12 +2598,12 @@ Overpower at R3, middle, so RLM-596's earlier move of Overpower to level 18 is d
 - **Numbers** (rank 1 to the highest, AD = Attack Damage; Matěj's comments of 2026-11-03 on the Warrior design page, and
   his rebalance of that evening, RLM-604): **Charge** a rush at an enemy 3 to 10 blocks away (12 at rank 2) at 24 blocks
   a second that stuns every enemy within 1.5 blocks of the landing for 3 s, 10/20 rage, 10 s. **Rend** 5/6/7 +
-  50/60/70 % AD, then Bleeding of 8/10/12 + 90/110/130 % AD over 6 s, 20/30/40 rage, 6 s. **Overpower** 6/7/8/9/10 +
+  50/60/70 % AD, then its bleed of 8/10/12 + 90/110/130 % AD over 6 s, 20/30/40 rage, 6 s. **Overpower** 6/7/8/9/10 +
   120 to 180 % AD with +10 to 30 % crit chance (above 100 %, crit damage), for 5 s after a block, 20 rage, 4 s.
   **Victory Rush** 5/6/7 + 80/90/100 % AD and a heal of 10/15/20 % of max health, for 20 s after a kill that is not
   gray, 10 rage, no cooldown but the global one, and a cast closes the window. **Execute** below 20 % health, 10/12/14 +
   190/210/230 % AD, 10/20/30 rage and up to 30 more for 3 % more damage each, 5/10/15 rage back for a kill, no cooldown
-  but the global one. **Deep Wounds** a crit bleeds for 20/40/60 % of its damage over 6 s. **Bloodthirst** a 10/20 % chance on a tick of Rend's Bleeding to open Overpower, once every
+  but the global one. **Deep Wounds** a crit bleeds for 20/40/60 % of its damage over 6 s, rolling into what is left. **Bloodthirst** a 10/20 % chance on a tick of Rend's bleed to open Overpower, once every
   6 s on each target. Slam, Battle Shout and Two-Handed Specialization: below and [11.1](#111-model).
 - **The target** (RLM-503): about 35 damage a second before armor at level 18, against the Frost Mage's about 40, so
   both kill Astone (about 3,000 health in RLM-503's balance; 1,500 since RLM-580) in 2.5 to 3 minutes.
@@ -3189,7 +3203,8 @@ phases:
   spell visuals are C6 (RLM-29).
 - **Immunities** (RLM-539): a boss's `immune_to` lists the status effects it never takes (`MobEffectEvent.Applicable`
   refuses them, `boss/BossFeature`), boss by boss, as ordinary mobs have no stun or root immunity (Matěj, 2026-10-24).
-  The test titan is immune to Frozen; Astone to nothing.
+  An entry may name a status effect tag after `#` (RLM-601: `#realmforge:bleeds`, every bleed; `Boss#isImmuneTo`).
+  The test titan is immune to Frozen and the bleeds; Astone to nothing.
 - **Crowd control** (RLM-615; Matěj, 2026-11-04: a boss is never stun-locked or kept frozen, but Frost Nova and Ice
   Lance still count): on every boss, an effect with `on_bosses` ([11.4](#114-status-effects): Stunned and Frozen) lasts
   half as long, and when it ends, however it ends (it runs out, damage breaks a freeze), the boss gets that effect's
@@ -4891,7 +4906,7 @@ attributes up by id, so the core mod has no compile-time dependency on it:
 **Its Bleeding is not in the pack** (RLM-600; Matěj, 2026-11-03: Rend and Deep Wounds are the only bleeds, each an
 effect of its own, RLM-601). Apotheosis's Bloodletting and Devilish affixes are off and its Tyrannical gem has no bow
 bonus (below), so nothing gives `apothic_attributes:bleeding`; RLM-579's conversion of it into a stack of our Bleeding
-is gone with them. An item that rolled Bloodletting before keeps the entry in its affixes and loads without an error,
+is gone with them, and so is our Bleeding, split into Rend's and Deep Wounds' effects (RLM-601). An item that rolled Bloodletting before keeps the entry in its affixes and loads without an error,
 but Apotheosis skips an affix its registry no longer has (`AffixHelper#getAffixesImpl`), so the item shows and does
 nothing of it. `ApotheosisBleedGameTests` check every affix and gem bonus the game loads, the Tyrannical gem in a bow,
 and such a sword's hit.

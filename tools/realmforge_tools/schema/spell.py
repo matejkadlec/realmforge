@@ -356,13 +356,13 @@ class HealEffectDef(_ScaledAmount):
 
 
 class DamageOverTimeEffectDef(_ScaledAmount):
-    """Damage over time kept as the caster's own stack of a status effect with ``stacks`` (RLM-539, Bleeding): the
-    amount (plus its coefficient of the caster's power) is the damage over the whole duration, fixed from the caster's
-    stats when it is applied, and its ticks split it evenly. Another spell or caster stacks; the same spell from the
+    """Damage over time kept as the caster's own stack of a status effect with ``stacks`` (RLM-539; Rend and Deep
+    Wounds, RLM-601): the amount (plus its coefficient of the caster's power) is the damage over the whole duration,
+    fixed from the caster's stats when it is applied, and its ticks split it evenly. Another spell or caster stacks; the same spell from the
     same caster refreshes its stack."""
 
     type: Literal["realmforge:damage_over_time"]
-    effect: ResourceId = Field(description="One of our status effects with stacks, e.g. realmforge:bleeding.")
+    effect: ResourceId = Field(description="One of our status effects with stacks, e.g. realmforge:rend.")
     duration_seconds: Seconds = Field(
         description="How long it lasts at spell level 1: a whole number of the effect's intervals, at most 60."
     )
@@ -1217,7 +1217,7 @@ class ProcDamageOverTimeDef(StrictModel):
     damage over 6 s). A new proc refreshes the stack and adds what the old one had left, so every hit's share is
     dealt."""
 
-    effect: ResourceId = Field(description="One of our status effects with stacks, e.g. realmforge:bleeding.")
+    effect: ResourceId = Field(description="One of our status effects with stacks, e.g. realmforge:rend.")
     damage_percent: Annotated[float, Field(gt=0, le=1000, allow_inf_nan=False)] = Field(
         description="The share of the hit's damage dealt over the duration at rank 1, in percent."
     )

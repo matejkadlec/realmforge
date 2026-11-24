@@ -22,6 +22,12 @@ Positive = Annotated[float, Field(gt=0, allow_inf_nan=False)]
 # What a stun's modifiers bring to a halt (C4): walking and jumping.
 STUN_STOPS: tuple[str, ...] = ("minecraft:movement_speed", "minecraft:jump_strength")
 
+# The mob effect tag of every bleed (RLM-601): physical damage over time kept per caster's spell, through armor, as
+# Rend's and Deep Wounds'. Code that asks whether a target bleeds reads the tag, so a later bleed only joins it.
+BLEEDS_TAG = f"{MOD_ID}:bleeds"
+# The rules every effect of BLEEDS_TAG keeps (RLM-539): the school of its stacks' ticks, through armor.
+BLEED_SCHOOL = f"{MOD_ID}:physical"
+
 # A tick of damage or healing is a hit or a heal of its own, so a few per second at most.
 MIN_INTERVAL_SECONDS = 0.25
 MAX_INTERVAL_SECONDS = 10.0
@@ -98,7 +104,8 @@ class PeriodicDef(StrictModel):
 
 
 class StacksDef(StrictModel):
-    """Damage over time that each caster's spell keeps on a target as a stack of its own (RLM-539, Bleeding): the
+    """Damage over time that each caster's spell keeps on a target as a stack of its own (RLM-539; Rend and Deep
+    Wounds, RLM-601): the
     spell that applies it (``realmforge:damage_over_time``) names how much it deals in all, fixed from the caster's
     stats when it is applied, and its ticks split that evenly. Two spells, or two casters, stack; the same spell from
     the same caster refreshes its stack. The status effect shows while any stack lasts. Ticks never crit, are never
@@ -159,8 +166,15 @@ class EffectDef(StrictModel):
     )
     stacks: StacksDef | None = Field(
         default=None,
-        description="Damage over time kept per caster's spell (RLM-539, Bleeding): the spell that applies it through "
-        "realmforge:damage_over_time names the damage, fixed when applied. Instead of periodic.",
+        description="Damage over time kept per caster's spell (RLM-539; Rend, Deep Wounds): the spell that applies it "
+        "through realmforge:damage_over_time names the damage, fixed when applied. Instead of periodic.",
+    )
+    tags: list[ResourceId] = Field(
+        default_factory=list,
+        description=f"Mob effect tags of ours it is in, e.g. [{BLEEDS_TAG}] (RLM-601): code and content that ask "
+        f"about a kind of effect (is the target bleeding? a boss's immune_to: [#{BLEEDS_TAG}]) name the tag, so a "
+        f"new effect of that kind only joins it. Every effect of {BLEEDS_TAG} is a bleed: stacks of {BLEED_SCHOOL} "
+        "damage that ignore armor.",
     )
     look: Literal["ice"] | None = Field(
         default=None,
@@ -212,6 +226,19 @@ class EffectDef(StrictModel):
                     f"a stun stops movement: give it {', '.join(missing)} at amount_percent -100, "
                     "add_multiplied_total"
                 )
+        foreign = sorted(tag for tag in self.tags if not tag.startswith(f"{MOD_ID}:"))
+        if foreign:
+            raise ValueError(f"tags are ours, {MOD_ID}:<name>: {', '.join(foreign)}")
+        repeated_tags = sorted({tag for tag in self.tags if self.tags.count(tag) > 1})
+        if repeated_tags:
+            raise ValueError(f"a tag is named once: {', '.join(repeated_tags)}")
+        if BLEEDS_TAG in self.tags and (
+            self.stacks is None or self.stacks.school != BLEED_SCHOOL or not self.stacks.ignores_armor
+        ):
+            raise ValueError(
+                f"an effect of {BLEEDS_TAG} is a bleed (RLM-539, RLM-601): stacks of {BLEED_SCHOOL} damage with "
+                "ignores_armor: true"
+            )
         attributes = [modifier.attribute for modifier in self.modifiers]
         repeated = sorted({attribute for attribute in attributes if attributes.count(attribute) > 1})
         if repeated:

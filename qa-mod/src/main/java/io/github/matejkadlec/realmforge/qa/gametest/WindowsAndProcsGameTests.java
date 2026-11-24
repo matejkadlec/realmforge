@@ -176,18 +176,27 @@ public final class WindowsAndProcsGameTests {
         helper.succeed();
     }
 
-    /** Test Bloodthirst: a tick of Test Rend's bleed opens Test Overpower's window. */
+    /**
+     * Test Bloodthirst: a tick of Test Rend's bleed opens Test Overpower's window; neither another spell's bleed of
+     * Rend's effect (Test Lacerate) nor a bleed of Deep Wounds' effect (Test Deep Wound, RLM-601) does.
+     */
     @QaGameTest
     public static void bloodthirstOpensOverpowerOnARendTick(GameTestHelper helper) {
         ServerPlayer player = player(helper, "qa-proc-taste");
         learn(helper, player, GeneratedSpells.TEST_BLOODTHIRST);
         learn(helper, player, GeneratedSpells.TEST_OVERPOWER);
         learn(helper, player, GeneratedSpells.TEST_LACERATE);
+        learn(helper, player, GeneratedSpells.TEST_DEEP_WOUND);
         learn(helper, player, GeneratedSpells.TEST_REND);
         Husk lacerated = SpellGameTests.husk(helper, new BlockPos(1, 1, 2));
         Husk rended = SpellGameTests.husk(helper, new BlockPos(3, 1, 2));
+        Husk wounded = SpellGameTests.husk(helper, new BlockPos(2, 1, 4));
         assertCast(helper, player, GeneratedSpells.TEST_LACERATE, lacerated);
+        Spells.resetCooldowns(player);
+        assertCast(helper, player, GeneratedSpells.TEST_DEEP_WOUND, wounded);
+        helper.assertTrue(wounded.hasEffect(GeneratedEffects.DEEP_WOUNDS), "Test Deep Wound gave Deep Wounds' bleed");
         helper.runAfterDelay(14, () -> {
+            helper.assertTrue(wounded.getHealth() < SpellGameTests.HEALTH, "Deep Wounds' bleed ticked");
             helper.assertFalse(player.getData(SpellAttachments.COMBAT).isWindowOpen(GeneratedSpells.TEST_OVERPOWER,
                     helper.getLevel().getGameTime()), "another bleed's tick opened the window");
             Spells.resetCooldowns(player);
@@ -209,12 +218,12 @@ public final class WindowsAndProcsGameTests {
         learn(helper, player, GeneratedSpells.TEST_ICE_LANCE);
         Husk husk = SpellGameTests.husk(helper, new BlockPos(2, 1, 2));
         assertCast(helper, player, GeneratedSpells.TEST_ICE_LANCE, husk);
-        helper.assertValueEqual(StackTicks.of(husk, GeneratedEffects.BLEEDING).size(), 0, "no crit, no bleed");
+        helper.assertValueEqual(StackTicks.of(husk, GeneratedEffects.DEEP_WOUNDS).size(), 0, "no crit, no bleed");
         StatsCommands.setBase(player, GeneratedStats.CRIT_CHANCE, 1);
         Spells.resetCooldowns(player);
         assertCast(helper, player, GeneratedSpells.TEST_ICE_LANCE, husk);
-        helper.assertValueEqual(StackTicks.of(husk, GeneratedEffects.BLEEDING).size(), 1, "the crit made it bleed");
-        helper.assertValueEqual(StackTicks.of(husk, GeneratedEffects.BLEEDING).getFirst().spell(),
+        helper.assertValueEqual(StackTicks.of(husk, GeneratedEffects.DEEP_WOUNDS).size(), 1, "the crit made it bleed");
+        helper.assertValueEqual(StackTicks.of(husk, GeneratedEffects.DEEP_WOUNDS).getFirst().spell(),
                 Optional.of(GeneratedSpells.TEST_DEEP_WOUND.identifier()), "Test Deep Wound's bleed");
         logout(player);
         helper.succeed();

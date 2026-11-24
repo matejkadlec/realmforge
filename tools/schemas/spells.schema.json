@@ -1144,7 +1144,7 @@
     },
     "DamageOverTimeEffectDef": {
       "additionalProperties": false,
-      "description": "Damage over time kept as the caster's own stack of a status effect with ``stacks`` (RLM-539, Bleeding): the\namount (plus its coefficient of the caster's power) is the damage over the whole duration, fixed from the caster's\nstats when it is applied, and its ticks split it evenly. Another spell or caster stacks; the same spell from the\nsame caster refreshes its stack.",
+      "description": "Damage over time kept as the caster's own stack of a status effect with ``stacks`` (RLM-539; Rend and Deep\nWounds, RLM-601): the amount (plus its coefficient of the caster's power) is the damage over the whole duration,\nfixed from the caster's stats when it is applied, and its ticks split it evenly. Another spell or caster stacks; the same spell from the\nsame caster refreshes its stack.",
       "properties": {
         "amount": {
           "description": "The amount at spell level 1.",
@@ -1201,7 +1201,7 @@
           "type": "number"
         },
         "effect": {
-          "description": "One of our status effects with stacks, e.g. realmforge:bleeding.",
+          "description": "One of our status effects with stacks, e.g. realmforge:rend.",
           "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
           "title": "Effect",
           "type": "string"
@@ -2071,7 +2071,7 @@
           "type": "number"
         },
         "effect": {
-          "description": "One of our status effects with stacks, e.g. realmforge:bleeding.",
+          "description": "One of our status effects with stacks, e.g. realmforge:rend.",
           "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
           "title": "Effect",
           "type": "string"

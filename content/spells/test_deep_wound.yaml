@@ -1,5 +1,6 @@
 # yaml-language-server: $schema=../../tools/schemas/spells.schema.json
-# Engine test (RLM-540): the bleed Test Deep Wounds' proc casts, 6 physical damage over 6 s. Not gameplay content.
+# Engine test (RLM-540): the bleed Test Deep Wounds' proc casts, 6 physical damage over 6 s of the Deep Wounds effect
+# (RLM-601). Not gameplay content.
 id: test_deep_wound
 name: {en_us: Test Deep Wound}
 description: {en_us: "Makes an enemy bleed for 6 sec."}
@@ -9,6 +10,6 @@ targeting: {type: realmforge:enemy, range: 16}
 cast: {type: instant}
 effects:
   - type: realmforge:damage_over_time
-    effect: realmforge:bleeding
+    effect: realmforge:deep_wounds
     amount: 6
     duration_seconds: 6

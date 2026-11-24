@@ -33,12 +33,6 @@ public final class GeneratedEffects {
                     .modifier("minecraft:attack_damage", "realmforge:effect.battle_shout.minecraft.attack_damage", 0.05, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)
                     .modifier("minecraft:attack_speed", "realmforge:effect.battle_shout.minecraft.attack_speed", 0.1, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
 
-    /** {@code realmforge:bleeding} from {@code content/effects/bleeding.yaml}: harmful, "Bleeding". */
-    public static final DeferredHolder<MobEffect, MobEffect> BLEEDING =
-            EFFECTS.register("bleeding", () -> new StatusEffect(MobEffectCategory.HARMFUL, 0x8A0303,
-                    Optional.empty())
-                    .stacks("realmforge:physical", 10, true));
-
     /** {@code realmforge:burning} from {@code content/effects/burning.yaml}: harmful, "Burning". */
     public static final DeferredHolder<MobEffect, MobEffect> BURNING =
             EFFECTS.register("burning", () -> new StatusEffect(MobEffectCategory.HARMFUL, 0xFF7F1F,
@@ -51,6 +45,12 @@ public final class GeneratedEffects {
                     .modifier("minecraft:attack_damage", "realmforge:effect.cracked_stone.minecraft.attack_damage", 0.3, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)
                     .modifier("minecraft:movement_speed", "realmforge:effect.cracked_stone.minecraft.movement_speed", 0.25, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)
                     .modifier("minecraft:armor", "realmforge:effect.cracked_stone.minecraft.armor", -0.5, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+
+    /** {@code realmforge:deep_wounds} from {@code content/effects/deep_wounds.yaml}: harmful, "Deep Wounds". */
+    public static final DeferredHolder<MobEffect, MobEffect> DEEP_WOUNDS =
+            EFFECTS.register("deep_wounds", () -> new StatusEffect(MobEffectCategory.HARMFUL, 0x551416,
+                    Optional.empty())
+                    .stacks("realmforge:physical", 10, true));
 
     /** {@code realmforge:frozen} from {@code content/effects/frozen.yaml}: harmful, "Frozen". */
     public static final DeferredHolder<MobEffect, MobEffect> FROZEN =
@@ -73,6 +73,12 @@ public final class GeneratedEffects {
             EFFECTS.register("ice_barrier", () -> new StatusEffect(MobEffectCategory.BENEFICIAL, 0x7FD4FF,
                     Optional.empty())
                     .modifier("realmforge:magic_shield", "realmforge:effect.ice_barrier.realmforge.magic_shield", 10.0, AttributeModifier.Operation.ADD_VALUE));
+
+    /** {@code realmforge:rend} from {@code content/effects/rend.yaml}: harmful, "Rend". */
+    public static final DeferredHolder<MobEffect, MobEffect> REND =
+            EFFECTS.register("rend", () -> new StatusEffect(MobEffectCategory.HARMFUL, 0x8A0303,
+                    Optional.empty())
+                    .stacks("realmforge:physical", 10, true));
 
     /** {@code realmforge:stun_immunity} from {@code content/effects/stun_immunity.yaml}: beneficial, "Stun Immunity". */
     public static final DeferredHolder<MobEffect, MobEffect> STUN_IMMUNITY =
@@ -107,7 +113,7 @@ public final class GeneratedEffects {
                     .modifier("realmforge:spell_power", "realmforge:effect.test_sapped.realmforge.spell_power", -1.0, AttributeModifier.Operation.ADD_VALUE));
 
     /** Every effect above, in id order. */
-    public static final List<DeferredHolder<MobEffect, MobEffect>> ALL = List.of(BATTLE_SHOUT, BLEEDING, BURNING, CRACKED_STONE, FROZEN, FROZEN_IMMUNITY, ICE_BARRIER, STUN_IMMUNITY, STUNNED, TEST_BURNING, TEST_REGROWTH, TEST_SAPPED);
+    public static final List<DeferredHolder<MobEffect, MobEffect>> ALL = List.of(BATTLE_SHOUT, BURNING, CRACKED_STONE, DEEP_WOUNDS, FROZEN, FROZEN_IMMUNITY, ICE_BARRIER, REND, STUN_IMMUNITY, STUNNED, TEST_BURNING, TEST_REGROWTH, TEST_SAPPED);
 
     private GeneratedEffects() {
     }

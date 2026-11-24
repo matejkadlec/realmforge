@@ -25,7 +25,7 @@
       "amount": 6.0,
       "per_level": 0,
       "type": "realmforge:damage_over_time",
-      "effect": "realmforge:bleeding",
+      "effect": "realmforge:deep_wounds",
       "duration_ticks": 120
     }
   ]

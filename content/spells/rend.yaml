@@ -1,10 +1,10 @@
 # yaml-language-server: $schema=../../tools/schemas/spells.schema.json
 # The Arms Warrior's tree, row 2 (level 6), left (RLM-543; Matěj, 2026-10-30, "Spell Trees to Level 18", chosen for M1):
-# a cut of 5/6/7 + 50/60/70 % of Attack Damage, then Bleeding (RLM-539) of 8/10/12 + 90/110/130 % of Attack Damage over
-# 6 s, a tick every half second that ignores armor. Its ticks are what Bloodthirst watches. 20/30/40 rage (Matěj's
-# rebalance of 2026-11-03, RLM-604), a 6 s cooldown, so a Warrior who keeps it up never lets the bleed run out. It needs
-# a melee weapon (RLM-499), and its target must be in the Warrior's melee swing (melee: true, Matěj's playtest of
-# 2026-10-31). Placeholder look until RLM-545.
+# a cut of 5/6/7 + 50/60/70 % of Attack Damage, then its bleed (the Rend effect, RLM-601) of 8/10/12 + 90/110/130 % of
+# Attack Damage over 6 s, a tick every half second that ignores armor. Its ticks are what Bloodthirst watches. 20/30/40
+# rage (Matěj's rebalance of 2026-11-03, RLM-604), a 6 s cooldown, so a Warrior who keeps it up never lets the bleed run
+# out. It needs a melee weapon (RLM-499), and its target must be in the Warrior's melee swing (melee: true, Matěj's
+# playtest of 2026-10-31). Placeholder look until RLM-545.
 id: rend
 name: {en_us: Rend}
 description:
@@ -20,7 +20,7 @@ requires: [melee_weapon]
 effects:
   - {type: realmforge:damage, amount: 5, per_level: 1, attack_damage_percent: 50, attack_damage_per_level_percent: 10}
   - type: realmforge:damage_over_time
-    effect: realmforge:bleeding
+    effect: realmforge:rend
     amount: 8
     per_level: 2
     attack_damage_percent: 90

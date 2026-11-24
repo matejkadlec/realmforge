@@ -298,6 +298,41 @@ def test_a_bosses_immunities_go_into_its_data(repo: RepoPaths) -> None:
     assert data["immune_to"] == ["realmforge:frozen"]
 
 
+def test_a_bosses_immunity_may_name_an_effect_tag(repo: RepoPaths) -> None:
+    """RLM-601: #realmforge:bleeds makes a boss immune to Rend and Deep Wounds alike, and to any later bleed."""
+    body(repo)
+    fight(
+        repo,
+        text=FIGHT.replace(
+            "arena: {radius: 20}\n",
+            'arena: {radius: 20}\nimmune_to: [realmforge:frozen, "#realmforge:bleeds"]\n',
+        ),
+    )
+    data = json.loads(generate(repo)[f"{BOSS_DATA}/stone_colossus.json"])
+    assert data["immune_to"] == ["realmforge:frozen", "#realmforge:bleeds"]
+
+
+@pytest.mark.parametrize(
+    ("immune_to", "expected"),
+    [
+        (
+            '"#realmforge:bleed"',
+            "immune_to.0: unknown tag '#realmforge:bleed' in registry minecraft:mob_effect (did you "
+            "mean: #realmforge:bleeds?)",
+        ),
+        ('"#realmforge:rend"', "immune_to.0: unknown tag '#realmforge:rend'"),
+        ("[realmforge:rend, realmforge:rend]", "immune_to: named twice: realmforge:rend"),
+    ],
+)
+def test_a_bosses_immunity_names_a_known_effect_or_tag_once(
+    repo: RepoPaths, immune_to: str, expected: str
+) -> None:
+    body(repo)
+    entries = immune_to if immune_to.startswith("[") else f"[{immune_to}]"
+    fight(repo, text=FIGHT.replace("arena: {radius: 20}\n", f"arena: {{radius: 20}}\nimmune_to: {entries}\n"))
+    assert_problem(repo, expected)
+
+
 def test_a_boss_casts_no_ally_spell(repo: RepoPaths) -> None:
     body(repo)
     fight(

@@ -14,7 +14,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 
 /**
  * {@code realmforge:damage_over_time} (RLM-539; architecture 11.4): the caster's own stack of a status effect with
- * stacks (Bleeding) on the target. Its amount at the rank plus its {@link Coefficient} of the caster's power is the
+ * stacks (Rend, Deep Wounds) on the target. Its amount at the rank plus its {@link Coefficient} of the caster's power is the
  * damage over the whole duration, fixed now, and the effect's ticks split it evenly ({@code effect/StackTicks}).
  * Another spell or caster stacks; the same spell from the same caster refreshes its stack. A splash gives it at full
  * strength, as it does every effect but damage.

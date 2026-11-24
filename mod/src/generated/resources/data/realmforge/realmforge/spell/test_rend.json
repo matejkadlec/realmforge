@@ -27,7 +27,7 @@
       "attack_damage": 0.0,
       "attack_damage_per_level": 0.5,
       "type": "realmforge:damage_over_time",
-      "effect": "realmforge:bleeding",
+      "effect": "realmforge:rend",
       "duration_ticks": 120
     }
   ]
