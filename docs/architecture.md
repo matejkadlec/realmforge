@@ -675,7 +675,7 @@ would remove both bonuses.
 | passive spells (RLM-541) | `stats/CharacterStats`, from `spell`'s `StatSource` (`spell/Passives`): each known passive spell's modifiers at its rank, while its weapon condition holds | `realmforge:spell/<namespace>/<n>/<path>` for the passive spell `<namespace>:<path>` | saved, recomputed |
 | derived from primary stats | `stats/CharacterStats`, from stat rules ([8.3](#83-derived-stats-and-milestones)) | `realmforge:stat/<rule namespace>/<entry>/<rule path>`: `<entry>` is `<n>` per point, `at_<points>_<n>` per milestone; the rule's path comes last, as only it may contain slashes | saved, recomputed |
 | gear with fixed stats | vanilla, from the item's attribute modifiers ([13](#13-items-gear-and-loot)) | `realmforge:gear/<slot>/<n>` (generated: `<slot>` is `mainhand` or the armor slot); a wand's attack damage and speed use vanilla's base ids (`Item.BASE_ATTACK_DAMAGE_ID`, `BASE_ATTACK_SPEED_ID`), as vanilla's weapons, so the tooltip shows them as its base numbers | while equipped |
-| affixes and gems (M1) | vanilla slots: `ItemAttributeModifierEvent` adds them to the stack's modifiers; curio slots (rings, trinkets): Curios' own modifier API, because Curios ignores vanilla equipment modifiers in its slots (*verify* in M1) | `realmforge:affix/<affix>/<slot>/<k>/<n>`: `<k>` counts repeats of the same affix or gem on one stack (two sockets with the same gem), and curio slots use their slot id and index as `<slot>` | while equipped |
+| affixes and gems (M1) | vanilla slots: `ItemAttributeModifierEvent` adds them to the stack's modifiers; curio slots (rings, trinkets): Curios' own modifier API, because Curios ignores vanilla equipment modifiers in its slots (*verify* when Curios joins, M3 or later, RLM-625) | `realmforge:affix/<affix>/<slot>/<k>/<n>`: `<k>` counts repeats of the same affix or gem on one stack (two sockets with the same gem), and curio slots use their slot id and index as `<slot>` | while equipped |
 | netherite upgrades (RLM-566) | `item/NetheriteUpgrades`: `ItemAttributeModifierEvent` adds the bonus of the piece's archetype from the upgrade's registry entry to the stack's modifiers, in the piece's armor slot | `realmforge:netherite_upgrade/<slot>/<n>` | while equipped |
 | status effects | vanilla, `MobEffect#addAttributeModifier` | the effect's | while active |
 | mob level | `mob`, when the mob gets its level ([14.1](#141-mob-levels)): health and armor (damage multiplies each hit instead) | `realmforge:mob_level/<attribute>` (`max_health`, `armor`) | saved with the mob, reapplied from its level and the current curves when it loads |
@@ -2782,7 +2782,7 @@ proc engine at its end exists since C3a and serves passive spells.
   its five rarities (mythic shown as Legendary), affixes, gems and sockets live in its own data components and data,
   and its tables reforge, salvage and augment. There is no rarity of our own (vanilla's `Rarity` stays as it is), no
   `realmforge:affixes` component and no item level. We fit it to our systems: its stats point at ours, its data is
-  generated from `content/` (RLM-272), our wands and curio slots get loot categories of their own (RLM-273), and its
+  generated from `content/` (RLM-272), our wands get a loot category of their own (RLM-273; our curio slots' follow Curios, RLM-556), and its
   world tier follows our realms ([Apotheosis design](design/apotheosis.md)). Apotheosis takes any item whose
   `EQUIPPABLE` slot is an armor slot for armor, our robes too, so the [gear design](design/gear.md#loot-categories)
   proposes robe categories as well. Apothic Attributes' own crit and dodge are switched off
@@ -2881,8 +2881,8 @@ proc engine at its end exists since C3a and serves passive spells.
   table as Lootr's own block, so each player gets their own roll ([15.5](#155-instances)).
 - **Rewards:** quest choice rewards are pre-rolled stacks written into the quest files (ADR 0006). RNG item chests
   (M2) are items that roll a loot table when opened.
-- **Curios (M1)** supplies curio slots ([ADR 0004](decisions/0004-build-rpg-systems-in-house.md)); *verify* its
-  26.1.2 API when adding it.
+- **Curios (M3 or later, RLM-625)** supplies curio slots ([ADR 0004](decisions/0004-build-rpg-systems-in-house.md));
+  M1 and M2 ship without curios. *Verify* its 26.1.2 API when adding it.
 
 ## 14. Mobs and bosses
 

@@ -264,14 +264,14 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
 - **Sounds** (after the visuals): the sound-effect generator and audio pipeline (RLM-126), the first spells' sounds
   (RLM-445), and **A3 Sounds** (RLM-49): vanilla sounds remapped in `sounds.json`, a few new ones.
 
-### Phase 6: gear and curios
+### Phase 6: gear
 
 - **Apotheosis** ([ADR 0038](decisions/0038-apotheosis-carries-gear-rarity-affixes-gems-and-enchanting.md),
   [Apotheosis design](design/apotheosis.md)): Apotheosis, Apothic Attributes and Apothic Enchanting in the pack,
-  fitted to our combat and stats (RLM-205); its data from our YAML (RLM-272); loot categories for wands and our
-  curio slots (RLM-273); the affix set from Matěj's review (RLM-232); rarity tiers by realm, affixes per tier and
-  item type, and loot-only gear (RLM-198). Its five rarities (mythic shown as Legendary), affixes, gems and sockets
-  and its reforging, with loot by the player's world tier, not an item level. Probably also the full-pack registry
+  fitted to our combat and stats (RLM-205); its data from our YAML (RLM-272); a loot category for wands (RLM-273;
+  our curio slots' follow Curios, RLM-556); the affix set from Matěj's review (RLM-232); rarity tiers by realm,
+  affixes per tier and item type, and loot-only gear (RLM-198). Its five rarities (mythic shown as Legendary), affixes,
+  gems and sockets and its reforging, with loot by the player's world tier, not an item level. Probably also the full-pack registry
   dump for the ID universe ([ADR 0005](decisions/0005-content-pipeline-yaml-single-source-of-truth.md)), once
   content references other mods' items.
 - **Weapons and armor:** every weapon type in the seven vanilla materials (Matěj, 2026-10-15), the wands (RLM-172)
@@ -291,7 +291,7 @@ plus an ADR when it decides something. Prototype code stays only if it fits the 
 ### Pack (parallel)
 
 The M1 mods of [ADR 0044](decisions/0044-third-party-mods-by-milestone.md) (Matěj, 2026-10-18 and 2026-10-19,
-RLM-264); the gear mods come with [phase 6](#phase-6-gear-and-curios). Each goes in with packwiz, its side, the
+RLM-264); the gear mods come with [phase 6](#phase-6-gear). Each goes in with packwiz, its side, the
 [pack README](../pack/README.md) and the ADR 0013 list, and a pack boot. Controlling with Searchables is in since
 RLM-279; Lootr comes with W6 in M2 (RLM-288).
 
@@ -357,7 +357,7 @@ RLM-617); the Mage's armor and wands with textures; the character sheet with its
 quests in the game; the structures those quests need, with their mobs; the bosses those quests need; custom sounds for
 our mobs and bosses, and boss music (RLM-126).
 
-**Not in M2:** professions, mounts and, most likely, curios (RLM-625). Dungeon parties: instances are solo (decision
+**Not in M2:** professions, mounts and curios (Artifacts and Curios move to M3 or later, RLM-625). Dungeon parties: instances are solo (decision
 D8); parties come later (RLM-68). The gated ores
 (RLM-194, M4), and changes to the Nether and End apart from strongholds off
 ([ADR 0044](decisions/0044-third-party-mods-by-milestone.md)).

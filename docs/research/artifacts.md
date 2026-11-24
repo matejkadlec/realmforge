@@ -363,7 +363,8 @@ Count: 49 items, of which 6 are proposed to keep, 5 for later, and 37 off (the s
   (`data/apotheosis/curios/entities/player_charm.json` in its 9.1.0 jar), for its potion charms. That is outside this
   ticket, but our slot list will meet it when Curios joins the pack; the Breath of Deepholm is already planned as a
   "charm-slot curio" ([realms.md](../design/realms.md#the-water-realm)).
-- Curios is not in the pack yet: our slots come with the gear work, which moved from M2 to M1 on 2026-10-29.
+- Curios is not in the pack yet: our slots come with the gear work, which moved from M2 to M1 on 2026-10-29; since
+  2026-11-04 Curios comes with Artifacts in M3 or later (RLM-625).
 
 ### Our stats
 
@@ -516,5 +517,6 @@ Answered on 2026-10-30 (RLM-512): Matěj's option C (not the options table's col
 8. **The later items** (Angler's Hat, Snowshoes, Charm of Sinking, Obsidian Skull, Strider Shoes): proposed to decide
    each when its realm or the fishing profession is built.
 9. **Milestone:** gear, Artifacts included, moved from M2 to M1 on 2026-10-29 (RLM-7; the roadmap follows with
-   RLM-504). Proposed: Artifacts joins with M1's gear and Curios, and the six rewards come with the chapter 1 and 2
-   quests, which need the full-pack registry dump for their ids; any reward whose quest is M2's waits for it.
+   RLM-504). Proposed (before 2026-11-04, when Artifacts and Curios moved to M3 or later, RLM-625): Artifacts joins
+   with M1's gear and Curios, and the six rewards come with the chapter 1 and 2 quests, which need the full-pack
+   registry dump for their ids; any reward whose quest is M2's waits for it.
