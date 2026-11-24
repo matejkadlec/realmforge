@@ -121,3 +121,13 @@ def test_only_third_party_onlyin_warnings_are_allowed() -> None:
         " is no longer present, which may lead to issues if that behaviour was relied upon"
     ) + onlyin("@OnlyIn used on class io.github.matejkadlec.realmforge.client.SomeScreen")
     assert len(gametest_problems(ours + PASSED)) == 2
+
+
+def test_only_the_removed_talents_attachment_may_be_skipped() -> None:
+    line = (
+        "[24Nov2026 12:00:00.000] [Server thread/ERROR] [net.neoforged.neoforge.attachment.AttachmentHolder/]: "
+        "Encountered unknown or non-serializable data attachment KEY. Skipping.\n"
+    )
+    assert gametest_problems(line.replace("KEY", "realmforge:talents") + PASSED) == []
+    (problem,) = gametest_problems(line.replace("KEY", "realmforge:spellbook") + PASSED)
+    assert "data attachment realmforge:spellbook" in problem

@@ -95,8 +95,10 @@ public final class ArmsTreeGameTests {
      * C5 is more than a real level 18 character's 18 and skips the rules, to keep the state Astone was balanced with,
      * which has no affixes, gems or curios, and Matěj expects those to match the missing ranks (2026-11-04, RLM-503);
      * full netherite armor with Protection V and Unbreaking V, and a netherite sword with Sharpness V and Unbreaking V;
-     * the kit's shield stays for Overpower's blocks. The handoff gives it to
-     * Matěj as {@code execute as @p at @p run} and this line.
+     * the kit's shield stays for Overpower's blocks. The character must stay without a specialization, and the handoff
+     * says so (RLM-632): picking one (Choose in the spellbook) counts 26 ranks spent against the 17 points level 18
+     * earns, so the next kill or relog returns them all ({@code SpellTrees#fit}, "Your level fell") and only Slam
+     * stays, at rank 1. The handoff gives it to Matěj as {@code execute as @p at @p run} and this line.
      */
     static final String ASTONE_SETUP = "qa run qa character reset; "
             + "qa character create realmforge:human realmforge:warrior; "

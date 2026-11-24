@@ -189,7 +189,6 @@ io.github.matejkadlec.realmforge
 │                     lifesteal, overheal, health regeneration, magic shield, combat text, damage over time
 ├─ effect/            behaviour classes of our status effects
 ├─ spell/             spells, effect types, casting, cooldowns, resources, procs, spell entities
-├─ talent/            F3's talents attachment only: no talents as of v1.0.0 (12)
 ├─ item/              item behaviours, gear components, coins and their converter; affixes and gems later
 ├─ loot/              loot entries of our own, container loot by loot points, loot containers, mob coin drops
 ├─ character/         races, classes, character data, leveling, level caps, the character sheet's view
@@ -232,7 +231,7 @@ visible in one file.
 ### 4.4 Dependencies between features
 
 Dependencies point one way, and data references follow the same direction (a class names its specialization
-trees' spells, so `character` sits above `spell` and `talent`). "May use" includes whatever the used package may use.
+trees' spells, so `character` sits above `spell`). "May use" includes whatever the used package may use.
 
 | Package | May use |
 | --- | --- |
@@ -241,9 +240,9 @@ trees' spells, so `character` sits above `spell` and `talent`). "May use" includ
 | `combat` | `stats` |
 | `effect` | `combat` |
 | `spell` | `effect`, `progression` |
-| `talent`, `item` | `spell` |
+| `item` | `spell` |
 | `loot` | `item` |
-| `character` | `talent`, `progression` |
+| `character` | `spell`, `progression` |
 | `world` | `progression`, `stats` |
 | `mob` | `world`, `loot` |
 | `boss` | `mob` |
@@ -256,9 +255,9 @@ to `world`, generated status effects to `effect`) and follow that feature's row.
 
 How features cooperate without breaking the direction:
 
-- **Higher calls lower** through its public API: on level-up, `character` grants spell points and teaches class
-  spells through `spell`'s API; after a change, `spell` asks `stats` to recompute and drops its cached spell
-  modifiers.
+- **Higher calls lower** through its public API: when a player picks a specialization or spends a spell point,
+  `character` teaches the tree's spells through `spell`'s API (and takes them back when the level falls); after a
+  change, `spell` asks `stats` to recompute and drops its cached spell modifiers.
 - **Lower asks higher through provider interfaces** it defines and the higher feature implements: casting needs
   passive spells' modifiers, the spellbook needs spells granted by equipped items, and `stats` collects modifiers
   from race, class and passive spells.
@@ -356,7 +355,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | `realmforge:resource_type` | mana, rage (`spell/ResourceTypes`; C1 gave them ids and names, C3a-1 their pools, C3a-4 rage's gain and decay) | classes, spell costs |
 | `realmforge:phase_trigger_type` | health_below, time_in_phase (W5a, `boss/PhaseTriggerTypes`); adds_defeated with a spell that summons adds | bosses |
 | `realmforge:dungeon_ending_type` | boss_lair, treasury; later puzzle, wave_arena, escape, mounted_run, exploration | dungeon types |
-| `realmforge:requirement_type` | has_advancement (`core/HasAdvancement`), level_at_least (`character/LevelAtLeast`), chapter_completed (`progression/ChapterCompleted`), all W2a; class_is later. A requirement may say what a player who does not meet it reads (`Requirement#unmetHint`: a level's "Requires level 6.", RLM-306) | unlocks: dimensions (W2a), dungeons, items, talents |
+| `realmforge:requirement_type` | has_advancement (`core/HasAdvancement`), level_at_least (`character/LevelAtLeast`), chapter_completed (`progression/ChapterCompleted`), all W2a; class_is later. A requirement may say what a player who does not meet it reads (`Requirement#unmetHint`: a level's "Requires level 6.", RLM-306) | unlocks: dimensions (W2a), dungeons, items |
 | `realmforge:affix_type` (M1) | attribute, on_hit, on_kill | affixes |
 
 ### 5.4 Using registry entries in Java
@@ -397,7 +396,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | `content/` | Generated | Loaded as |
 | --- | --- | --- |
 | `items/` (exists), `stats/` (exists: attributes, [8.1](#81-the-attribute-set)), `blocks/` (exists: blocks with their items, loot tables, mining tags and recipes; a block's kind picks its class, below), `effects/` (exists: status effects, [11.4](#114-status-effects)), `mobs/` (exists: entity types of an archetype with their attributes, loot tables, tags and placeholder GeckoLib models, [14.2](#142-custom-mobs)), `sounds/` (exists: our sound events `realmforge:<category>.<subject>.<name>` playing vanilla sounds by reference with their own pitch and volume, [ADR 0007](decisions/0007-asset-pipeline.md); `GeneratedSounds` belongs to `core`), `particles/` (exists: our particle types, greyscale frames that a spawn's colour tints, with how they move; `GeneratedParticles` belongs to `spell`, [11.3](#113-spell-entities)) | `Generated*.java` registrations; models, blockstates, textures (placeholders until art exists), lang, `sounds.json`; QA expectations | static registries |
-| `races/`, `classes/`, `spells/`, `spell_looks/`, `spell_models/`, `spell_trajectories/`, `spell_schools/`, `talents/`, `stat_rules/`, `curves/`, `chapters/`, `dimensions/`, `realms/`, `bosses/`, `dungeons/`, `netherite_upgrades/` | `data/realmforge/realmforge/<registry>/<id>.json`, lang, `ResourceKey` constants where needed, QA expectations | datapack registries |
+| `races/`, `classes/`, `spells/`, `spell_looks/`, `spell_models/`, `spell_trajectories/`, `spell_schools/`, `stat_rules/`, `curves/`, `chapters/`, `dimensions/`, `realms/`, `bosses/`, `dungeons/`, `netherite_upgrades/` | `data/realmforge/realmforge/<registry>/<id>.json`, lang, `ResourceKey` constants where needed, QA expectations | datapack registries |
 | `spell_looks/` (also), `particles/` (also) | a look's placeholder material `assets/realmforge/textures/spell/material/<look>.png` (16 x 16 noise in the look's colours, until its art exists); a particle's sprite set `assets/realmforge/particles/<id>.json` and its frames `textures/particle/<id>_<n>.png` (`generate/spell_visuals.py`) | textures; the particle atlas |
 | `spell_schools/` (also) | `data/realmforge/damage_type/<school>.json` (death messages `death.attack.realmforge.<school>`), the tag entries in `#minecraft:bypasses_cooldown` and, for magic schools, `#minecraft:bypasses_armor` and `#realmforge:is_magic`, for physical ones `#neoforge:is_physical` ([9.1](#91-damage-pipeline)); the school's power and resistance are stats in `content/stats/` that it names | vanilla damage types, tags |
 | `dungeons/` (also) | the entry carries its pool's rooms resolved (template, size, role, weight, and the connectors read from the templates' jigsaw blocks; `generate/dungeons.py`), so the planner needs no template, each room's container loot table and its set-piece spots, and the type's set pieces ([15.4](#154-rooms)); a biome per type, `worldgen/biome/dungeon_<id>.json`, named like it (`generate/instance_biomes.py`, [15.5](#155-instances)) | the planner ([15.3](#153-generation-pure-first-then-minecraft)); the builder's loot containers and set pieces |
@@ -526,7 +525,6 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
 | `realmforge:spellbook` | `spell` | players | known spells and their levels, the spell bar's layout: its eight slots and the racial slot beside it (C3b), and the aura spells that are on (RLM-595) | owner |
 | `realmforge:combat` | `spell` | players and mobs that cast | resource pools (mana, rage), cooldowns, current cast (transient), whether a cast set Better Combat's disable tag | owner, throttled (players; clients never read a mob's copy) |
 | `realmforge:effect_sources` | `effect` | living entities | who applied each status effect a spell gave the holder: the caster's UUID, the spell's id, the proc origin ([11.4](#114-status-effects), C3c) | not synced (the server reads it) |
-| `realmforge:talents` | `talent` | players | allocated ranks per tree, unspent points (F3; unused, as no talents are planned, [12](#12-talents)) | owner |
 | `realmforge:night_vision` | `world` | players | whether Night Vision is switched on (on by default) | not synced (the effect itself is) |
 | `realmforge:visited_realms` | `world` | players | the ids of the realms the player has arrived in, so the arrival shows a realm's flavour line once (W2b); copied on death | not synced |
 | `realmforge:instance` | `dungeon` | players | the run's plot, the return point (spike 3) and the game mode to give back when entering switched it to Adventure (W4c) | not synced |
@@ -553,7 +551,7 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
   player every synced attachment on it without asking the predicate (`ServerEntity#sendPairingData` →
   `AttachmentSync.syncInitialEntityAttachments`). The sync handler's `write` is not told the recipient, so no
   handler can filter that first sync either. Other players' clients therefore hold a snapshot of the owner-only
-  attachments (`spellbook`, `combat`, `talents`) that later updates never refresh. Two rules follow:
+  attachments (`spellbook`, `combat`) that later updates never refresh. Two rules follow:
   - a synced attachment holds nothing that other players' clients must not see; such data stays unsynced and
     reaches its owner through a payload;
   - client code reads owner-only attachments only from the local player, never from another player's entity.
@@ -567,17 +565,18 @@ Player and entity data lives in NeoForge data attachments, one per rate of chang
 - Computed values (attribute modifiers, spell modifiers) are derived from these attachments and the registries,
   never treated as a source of truth ([8.2](#82-where-modifiers-come-from)).
 - **In code (F3):** each owner package declares its attachments in a `<Feature>Attachments` class
-  (`stats/StatsAttachments`, `character/CharacterAttachments`, `spell/SpellAttachments`,
-  `talent/TalentAttachments`), registered from its `<Name>Feature`. The values are `stats/EntityLevel`,
-  `character/CharacterData`, `spell/Spellbook`, `spell/CombatState` and `talent/TalentAllocation`; owner-only data
-  syncs with `core/Attachments#toOwner`. Talent trees are named by `Identifier`, as their registry does not exist
-  (no talents as of v1.0.0, [12](#12-talents)); races and classes are `ResourceKey`s since C1, and spells since
-  C3a-1, which save the same string, so F3's saves stay readable. `CombatState` keeps one pool per resource type
-  (`resources`, by the type's id), absent until the type's pool first fills
-  ([11.5](#115-resources-cooldowns-modifiers)). Leveling (C2,
-  [10.2](#102-leveling)) caches the level cap there for players with a character, and stat points (RLM-196) save the
-  points spent on each primary stat by the stat's id; the unspent points are derived, never saved. Every saved field is
-  optional with a default, so an empty save reads as the default value.
+  (`stats/StatsAttachments`, `character/CharacterAttachments`, `spell/SpellAttachments`), registered from its
+  `<Name>Feature`. The values are `stats/EntityLevel`, `character/CharacterData`, `spell/Spellbook` and
+  `spell/CombatState`; owner-only data syncs with `core/Attachments#toOwner`. Races and classes are `ResourceKey`s
+  since C1, and spells since C3a-1, which save the same string, so F3's saves stay readable. F3's `realmforge:talents`
+  attachment is gone (RLM-628: no talents as of v1.0.0, [12](#12-talents)). A save from before that still loads:
+  NeoForge skips its unknown key with one ERROR line ("Encountered unknown or non-serializable data attachment"), reads
+  the other attachments, and the next save leaves it out (`PlayerStateGameTests#aSaveWithTheRemovedTalentsLoads`).
+  `CombatState` keeps one pool per resource type (`resources`, by the type's id), absent until the type's pool first
+  fills ([11.5](#115-resources-cooldowns-modifiers)). Leveling (C2, [10.2](#102-leveling)) caches the level cap there
+  for players with a character, and stat points (RLM-196) save the points spent on each primary stat by the stat's id;
+  the unspent points are derived, never saved. Every saved field is optional with a default, so an empty save reads as
+  the default value.
 - `level` is copied on death, and NeoForge copies the same attachments when a mob converts (a zombie drowns,
   `LivingConversionEvent.Post`), so the converted mob keeps its level, and `mob` gives it that level's scaling
   ([14.1](#141-mob-levels)).
@@ -676,7 +675,7 @@ would remove both bonuses.
 | passive spells (RLM-541) | `stats/CharacterStats`, from `spell`'s `StatSource` (`spell/Passives`): each known passive spell's modifiers at its rank, while its weapon condition holds | `realmforge:spell/<namespace>/<n>/<path>` for the passive spell `<namespace>:<path>` | saved, recomputed |
 | derived from primary stats | `stats/CharacterStats`, from stat rules ([8.3](#83-derived-stats-and-milestones)) | `realmforge:stat/<rule namespace>/<entry>/<rule path>`: `<entry>` is `<n>` per point, `at_<points>_<n>` per milestone; the rule's path comes last, as only it may contain slashes | saved, recomputed |
 | gear with fixed stats | vanilla, from the item's attribute modifiers ([13](#13-items-gear-and-loot)) | `realmforge:gear/<slot>/<n>` (generated: `<slot>` is `mainhand` or the armor slot); a wand's attack damage and speed use vanilla's base ids (`Item.BASE_ATTACK_DAMAGE_ID`, `BASE_ATTACK_SPEED_ID`), as vanilla's weapons, so the tooltip shows them as its base numbers | while equipped |
-| affixes and gems (M1) | vanilla slots: `ItemAttributeModifierEvent` adds them to the stack's modifiers; curio slots (rings, trinkets): Curios' own modifier API, because Curios ignores vanilla equipment modifiers in its slots (*verify* in M1) | `realmforge:affix/<affix>/<slot>/<k>/<n>`: `<k>` counts repeats of the same affix or gem on one stack (two sockets with the same gem), and curio slots use their slot id and index as `<slot>` | while equipped |
+| affixes and gems (M1) | vanilla slots: `ItemAttributeModifierEvent` adds them to the stack's modifiers; curio slots (rings, trinkets): Curios' own modifier API, because Curios ignores vanilla equipment modifiers in its slots (*verify* when Curios joins, M3 or later, RLM-625) | `realmforge:affix/<affix>/<slot>/<k>/<n>`: `<k>` counts repeats of the same affix or gem on one stack (two sockets with the same gem), and curio slots use their slot id and index as `<slot>` | while equipped |
 | netherite upgrades (RLM-566) | `item/NetheriteUpgrades`: `ItemAttributeModifierEvent` adds the bonus of the piece's archetype from the upgrade's registry entry to the stack's modifiers, in the piece's armor slot | `realmforge:netherite_upgrade/<slot>/<n>` | while equipped |
 | status effects | vanilla, `MobEffect#addAttributeModifier` | the effect's | while active |
 | mob level | `mob`, when the mob gets its level ([14.1](#141-mob-levels)): health and armor (damage multiplies each hit instead) | `realmforge:mob_level/<attribute>` (`max_health`, `armor`) | saved with the mob, reapplied from its level and the current curves when it loads |
@@ -1277,7 +1276,8 @@ the playtest covers it.
   is full, as `/give` does), with the player's first character only (`realmforge:starting_kit`, so a character
   created after `/qa character reset` brings none, Matěj, 2026-10-30). `Characters` is the public API (`exists`, `mainClass`). The client opens
   `client/screen/CharacterCreationScreen` once a new player entity has existed for a second without a character (so
-  the synced attachment can arrive first), and closes it when the character arrives. Esc opens the pause menu
+  the synced attachment can arrive first), and when the character arrives it gives way to the spellbook's Spell Tree
+  tab, where the player picks a specialization (C5, RLM-333). Esc opens the pause menu
   instead, so the player can still change options or quit, and back in the game creation opens again. It pauses
   singleplayer like a menu (the server still handles payloads while paused). Its view model is
   `CharacterCreationView`. M1 has one race, Human, and decision D1's classes, Warrior (rage) and Mage (mana)
@@ -1381,7 +1381,7 @@ the playtest covers it.
     (vanilla's title packets), plays the challenge fanfare to the player alone, bursts totem particles that everyone
     nearby sees, says in chat how many stat points are unspent and which key opens the sheet (a keybind component),
     and fires `realmforge:level_reached`. A level-up that reaches the cap says in chat which chapter raises it.
-    Spell points work the same way ([10.1](#101-races-and-classes)); talent points wait with talents (RLM-28). A login
+    Spell points work the same way ([10.1](#101-races-and-classes)). A login
     updates the level quietly and leaves the stat recompute to the player's first tick
     ([8.2](#82-where-modifiers-come-from), RLM-202); every other update (kills, rewards, commands, chapters) recomputes
     at once.
@@ -1534,7 +1534,7 @@ during the cast and an impact sound of its own, from the parts of the spell visu
   A heal may add a share of the healed entity's max health and heal the caster instead of the target (`on_caster`,
   Victory Rush).
 
-A player knows a spell through their specialization's tree (C5), race, talents (`grant_spell`) or items (an item
+A player knows a spell through their specialization's tree (C5), race or items (an item
 component lists spells granted while equipped or on use): the vision's "some from the race or class, some from items".
 
 ### 11.2 Casting (server-authoritative)
@@ -2626,8 +2626,9 @@ RLM-54), as C4 made it.
 **No talents as of v1.0.0** (Matěj, 2026-11-03, RLM-28, RLM-586): they could be added later, but they are not
 planned. They were postponed indefinitely on 2026-10-16 ([ADR 0044](decisions/0044-third-party-mods-by-milestone.md));
 each class's spells form specialization spell trees with ranks and passive spells instead (C5, RLM-333; RLM-218,
-[10.1](#101-races-and-classes)). The `talent` package holds only F3's `talents` attachment. The design below is kept
-for reference, should talents ever come; the proc engine at its end exists since C3a and serves passive spells.
+[10.1](#101-races-and-classes)). No code of talents exists: RLM-628 removed F3's unused `talent` package and its
+`talents` attachment ([7](#7-player-state)). The design below is kept for reference, should talents ever come; the
+proc engine at its end exists since C3a and serves passive spells.
 
 - **Model:** one `realmforge:talent_tree` entry per tree with its grid size and nodes: id, column, row, icon, max
   rank, prerequisites (another node at some rank; points spent in the tree for each tier) and typed effects per
@@ -2782,7 +2783,7 @@ for reference, should talents ever come; the proc engine at its end exists since
   its five rarities (mythic shown as Legendary), affixes, gems and sockets live in its own data components and data,
   and its tables reforge, salvage and augment. There is no rarity of our own (vanilla's `Rarity` stays as it is), no
   `realmforge:affixes` component and no item level. We fit it to our systems: its stats point at ours, its data is
-  generated from `content/` (RLM-272), our wands and curio slots get loot categories of their own (RLM-273), and its
+  generated from `content/` (RLM-272), our wands get a loot category of their own (RLM-273; our curio slots' follow Curios, RLM-556), and its
   world tier follows our realms ([Apotheosis design](design/apotheosis.md)). Apotheosis takes any item whose
   `EQUIPPABLE` slot is an armor slot for armor, our robes too, so the [gear design](design/gear.md#loot-categories)
   proposes robe categories as well. Apothic Attributes' own crit and dodge are switched off
@@ -2881,8 +2882,8 @@ for reference, should talents ever come; the proc engine at its end exists since
   table as Lootr's own block, so each player gets their own roll ([15.5](#155-instances)).
 - **Rewards:** quest choice rewards are pre-rolled stacks written into the quest files (ADR 0006). RNG item chests
   (M2) are items that roll a loot table when opened.
-- **Curios (M1)** supplies curio slots ([ADR 0004](decisions/0004-build-rpg-systems-in-house.md)); *verify* its
-  26.1.2 API when adding it.
+- **Curios (M3 or later, RLM-625)** supplies curio slots ([ADR 0004](decisions/0004-build-rpg-systems-in-house.md));
+  M1 and M2 ship without curios. *Verify* its 26.1.2 API when adding it.
 
 ## 14. Mobs and bosses
 
@@ -4444,7 +4445,7 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   `client/screen/SpellbookScreen`), `PickSpecialization` and `SpendSpellPoint` (exist:
   `character/net/PickSpecializationPayload` and `SpendSpellPointPayload`, sent by `client/screen/SpellTreeTab`),
   `HighlightTarget` (exists: `spell/net/HighlightTargetPayload`, the Highlight Spell
-  Target going on or off, sent by `client/spell/TargetCircle`), `CancelCast`, `LearnTalent`, `ToggleNightVision` (exists:
+  Target going on or off, sent by `client/spell/TargetCircle`), `CancelCast`, `ToggleNightVision` (exists:
   `world/net/ToggleNightVisionPayload`, sent by `client/input/NightVisionKey`).
 - Server → client: `CastStarted` and `CastEnded` (exist: `spell/net/CastStartedPayload` and `CastEndedPayload`, kept by
   `client/spell/ClientCasts`, the local player's end also shown by `client/hud/CastBarHud`; a `CastStarted` marked
@@ -4588,7 +4589,7 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   - Character creation (`client/screen/CharacterCreationScreen`, C1) draws `character/CharacterCreationView`: the
     races on the left and the classes the chosen race allows on the right, as vanilla buttons with a gold outline on
     the chosen one, each with its description and what it gives ("+5 Strength"); a class also its resource and
-    starting kit. It opens and closes by itself ([10.1](#101-races-and-classes)).
+    starting kit. It opens by itself and gives way to the spellbook's Spell Tree tab ([10.1](#101-races-and-classes)).
   - The spell bar with the resource bar under it and the cast bar (`client/hud/SpellBarHud`, `ResourceBarHud`,
     `CastBarHud`) and the spellbook (`client/screen/SpellbookScreen`, P by default), C3b, with the spell bar's place
     and size and its drag mode (`SpellBarPositionScreen`, RLM-404): [11.6](#116-client-side). The spellbook's gear
@@ -5153,7 +5154,15 @@ that agents can read. So far:
   the cast in progress, set a resource pool, end every cooldown, and print the known spells, the pools, the running
   cooldowns, the cast in progress and how the last cast-time or channelled spell ended
   ([11.2](#112-casting-server-authoritative)); `/qa spell bar <slot> [<spell>]` (C3b) puts a known spell into a spell
-  bar slot (1 to 8, 9 the racial slot) or empties it;
+  bar slot (1 to 8, 9 the racial slot) or empties it. `learn` skips the spell trees' rules, so on a character with a
+  specialization a rank above the spell points the level earns, or in a row the level has not opened, lasts only until
+  the next kill or relog: `SpellTrees#fit` then returns every point, only the tree's first spell stays at rank 1, and
+  chat says "Your level fell" ([10.1](#101-races-and-classes)). A setup line that learns a bigger build (the Astone
+  check's) keeps the character without a specialization, and its handoff says not to pick one (RLM-632);
+- `/qa spec show|pick <specialization>|spend <spell>|reset` (C5, RLM-333): a character's specialization and spell
+  points, through the spell trees window's rules: show the specialization, the level and the points earned, spent and
+  unspent, pick a specialization of the class (its first spell free at rank 1), spend a point on a spell of the tree,
+  or return every point (the Scroll of Respec's effect until it exists, RLM-226);
 - `/qa resource <mana|rage> autofill <true|false>` (C4's playtest, Matěj, 2026-10-30): keeps the player's pool full
   every tick, so rage needs no hits on the dummy; saved with the player (`realmforge_qa:resource_autofill`);
 - `/qa inventory clear` (the same): empties the 27 main inventory slots and keeps the hotbar, the armor and the

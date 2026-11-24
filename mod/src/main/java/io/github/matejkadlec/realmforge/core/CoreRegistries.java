@@ -19,7 +19,7 @@ public final class CoreRegistries {
 
     /**
      * The registry behind {@link #REQUIREMENT_TYPE}, filled from Java at game start. Synced, so a synced registry may
-     * hold requirements (a talent's, later).
+     * hold requirements.
      */
     public static final Registry<MapCodec<? extends Requirement>> REQUIREMENT_TYPES =
             new RegistryBuilder<>(REQUIREMENT_TYPE).sync(true).create();

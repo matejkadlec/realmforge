@@ -13,8 +13,8 @@ import net.minecraft.world.effect.MobEffect;
  * A proc (architecture 12): when its holder hits, crits, kills, is hit, gives an enemy a status effect or deals a tick of
  * damage over time, it may cast a spell, apply a status effect, open a spell's window or make the entity hit bleed for
  * a share of the hit (RLM-543), then waits out its internal
- * cooldown (research SP-15), on its holder or on each target. Items, talents (postponed, RLM-28) and passive spells
- * (RLM-540: Frostbite, Bloodthirst, Deep Wounds) give procs through a {@link Procs.Source}; {@link Procs} runs them.
+ * cooldown (research SP-15), on its holder or on each target. Passive spells (RLM-540: Frostbite, Bloodthirst, Deep
+ * Wounds), and items later, give procs through a {@link Procs.Source}; {@link Procs} runs them.
  *
  * @param id names the proc: its internal cooldown and the proc origin its spell's hits carry
  * @param trigger what makes it fire

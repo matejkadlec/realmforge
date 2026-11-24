@@ -8,8 +8,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * What a player needs for something: entering a dimension so far, later a dungeon, an item or a talent (architecture
- * 5.3). An entry of the type registry {@code realmforge:requirement_type}, selected by its {@code type}:
+ * What a player needs for something: entering a dimension so far, later a dungeon or an item (architecture 5.3). An entry of the type registry {@code realmforge:requirement_type}, selected by its {@code type}:
  * {@code has_advancement} here in {@code core}, {@code level_at_least} in {@code character} and
  * {@code chapter_completed} in {@code progression}, each registered by the feature that knows the fact. The pipeline
  * knows the same types ({@code tools/realmforge_tools/schema/requirement.py}).

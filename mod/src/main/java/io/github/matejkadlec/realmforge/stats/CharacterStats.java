@@ -32,7 +32,7 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
  *   transient and arrive only with that tick ({@code LivingEntity#detectEquipmentUpdates}), so an earlier recompute
  *   would read lower stats than the saved modifiers were computed with;</li>
  *   <li>at the end of a tick in which the player's equipment or effects changed, or {@link #markDirty} was called
- *   (level, talents);</li>
+ *   (level, spells);</li>
  *   <li>every {@value #CHECK_INTERVAL} ticks, when a primary stat or the player's level differs from the value the
  *   last recompute used (curios, other mods, commands such as {@code /qa level}).</li>
  * </ul>

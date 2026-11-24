@@ -1,4 +1,4 @@
-"""Requirements: what a player needs to enter a dimension, and later a dungeon, an item or a talent (architecture 5.3).
+"""Requirements: what a player needs to enter a dimension, and later a dungeon or an item (architecture 5.3).
 
 Each requirement is an entry of the type registry ``realmforge:requirement_type``, selected by its ``type``. The
 game knows the same types: ``core/HasAdvancement``, ``character/LevelAtLeast`` and ``progression/ChapterCompleted``.

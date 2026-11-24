@@ -14,7 +14,7 @@ import net.minecraft.world.entity.LivingEntity;
 
 /**
  * Who applied a status effect, and with what (architecture 11.4): plain ids, because {@code effect} sits below
- * {@code spell}. Dispels and talents read it ({@link Effects#source}), and the ticks of damage and healing over time
+ * {@code spell}. Dispels read it ({@link Effects#source}), and the ticks of damage and healing over time
  * take the caster's stats and carry the proc origin ({@link EffectTicks}).
  *
  * @param caster the entity that applied it

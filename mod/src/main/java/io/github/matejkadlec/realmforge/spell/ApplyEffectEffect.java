@@ -15,7 +15,7 @@ import net.minecraft.world.entity.LivingEntity;
 /**
  * {@code realmforge:apply_effect}: gives the target a status effect, from the caster (architecture 11.4): one of ours
  * from {@code content/effects/} (C3c, RLM-26) or a vanilla one. It remembers the caster, the spell and the proc that
- * cast it, if any ({@code effect/EffectSource}), for dispels, talents and the ticks of damage and healing over time.
+ * cast it, if any ({@code effect/EffectSource}), for dispels and the ticks of damage and healing over time.
  * Combat effects keep their own short time scale (research SP-8), so at most a minute. A rank may make it last longer
  * and grow stronger (C4: Frostbolt's Slowness I becomes Slowness II at rank 5).
  *

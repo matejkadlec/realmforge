@@ -12,7 +12,7 @@ import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
 
 /**
  * The effect feature's public API (architecture 4.3, 11.4): applying a status effect with its source, and reading the
- * source back for dispels, talents and the ticks of damage and healing over time.
+ * source back for dispels and the ticks of damage and healing over time.
  *
  * <p>The latest application decides: an effect a spell applies through {@link #apply} remembers its caster and spell,
  * and the same effect applied any other way (a potion, a command, vanilla) forgets them, unless that application

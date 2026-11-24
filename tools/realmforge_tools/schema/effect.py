@@ -3,7 +3,7 @@
 ``MobEffect`` is a static registry, so each effect becomes a generated registration of ``effect/StatusEffect``: its
 attribute modifiers, and damage or healing at every interval while it lasts. Spells apply it through
 ``realmforge:apply_effect``, which remembers who applied it and with which spell (``effect/EffectSources``), for
-dispels and talents.
+dispels and its ticks.
 """
 
 from __future__ import annotations
