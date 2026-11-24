@@ -11,7 +11,7 @@ import net.minecraft.world.entity.player.Player;
 /**
  * The public API of {@code character} for other features (architecture 4.3). Every system that reads a player's race
  * or class goes through it and handles a player without a character (architecture 10.1): until the character exists,
- * gameplay payloads (casting, the spell bar, talents) are refused and no character XP is awarded. Leveling (architecture
+ * gameplay payloads (casting, the spell bar, the spell tree) are refused and no character XP is awarded. Leveling (architecture
  * 10.2) adds the level, character XP and its rewards.
  */
 public final class Characters {

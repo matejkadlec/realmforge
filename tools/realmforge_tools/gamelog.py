@@ -114,6 +114,12 @@ GAMETEST_ALLOWED_ERRORS: tuple[tuple[str, str], ...] = (
         "stays an error",
     ),
     (
+        r"^net\.neoforged\.neoforge\.attachment\.AttachmentHolder: Encountered unknown or non-serializable data "
+        r"attachment realmforge:talents\. Skipping\.$",
+        "PlayerStateGameTests.aSaveWithTheRemovedTalentsLoads loads a save from before RLM-628 removed the talents"
+        " attachment, and NeoForge skips the unknown key with this line; any other unknown attachment stays an error",
+    ),
+    (
         r"^snownee\.jade\.Jade: Failed to collect shearable blocks$",
         "the GameTest server loads the pack's server-side mods (RLM-279), and Jade 26.1.10 hits this on every dedicated"
         " server, as packboot.ALLOWED_ERRORS records",

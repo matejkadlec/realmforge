@@ -8,7 +8,6 @@ import io.github.matejkadlec.realmforge.character.CharacterAttachments;
 import io.github.matejkadlec.realmforge.spell.SpellAttachments;
 import io.github.matejkadlec.realmforge.stats.CharacterStats;
 import io.github.matejkadlec.realmforge.stats.StatsAttachments;
-import io.github.matejkadlec.realmforge.talent.TalentAttachments;
 import java.util.List;
 import java.util.function.Supplier;
 import net.minecraft.commands.CommandSourceStack;
@@ -23,8 +22,8 @@ import net.neoforged.neoforge.attachment.AttachmentType;
 /**
  * {@code /qa state show|reset [<entity>]}: the player state attachments (architecture 7) of a player or mob, yourself
  * by default. {@code show} prints each attachment the entity has, and names the ones it has none of yet (they read
- * as their defaults). {@code reset} removes them all, which syncs to clients: no character, spells or talents, a
- * fresh combat state and level 1.
+ * as their defaults). {@code reset} removes them all, which syncs to clients: no character or spells, a fresh combat
+ * state and level 1.
  */
 public final class StateCommands {
     /** Every attachment {@code show} and {@code reset} cover, in the order of architecture 7. */
@@ -33,8 +32,7 @@ public final class StateCommands {
             new Entry("character", CharacterAttachments.CHARACTER),
             new Entry("starting_kit", CharacterAttachments.STARTING_KIT),
             new Entry("spellbook", SpellAttachments.SPELLBOOK),
-            new Entry("combat", SpellAttachments.COMBAT),
-            new Entry("talents", TalentAttachments.TALENTS));
+            new Entry("combat", SpellAttachments.COMBAT));
 
     private static final SimpleCommandExceptionType NOT_LIVING =
             new SimpleCommandExceptionType(Component.literal("Only players and mobs have player state attachments"));

@@ -16,7 +16,6 @@ import io.github.matejkadlec.realmforge.network.RealmforgeNetwork;
 import io.github.matejkadlec.realmforge.progression.ProgressionFeature;
 import io.github.matejkadlec.realmforge.spell.SpellFeature;
 import io.github.matejkadlec.realmforge.stats.StatsFeature;
-import io.github.matejkadlec.realmforge.talent.TalentFeature;
 import io.github.matejkadlec.realmforge.world.WorldFeature;
 import net.minecraft.resources.Identifier;
 import net.neoforged.bus.api.IEventBus;
@@ -41,7 +40,6 @@ public final class Realmforge {
         CombatFeature.register(modBus, container);
         EffectFeature.register(modBus);
         SpellFeature.register(modBus);
-        TalentFeature.register(modBus);
         ItemFeature.register(modBus);
         LootFeature.register(modBus);
         CharacterFeature.register(modBus);

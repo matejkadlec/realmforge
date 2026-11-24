@@ -44,7 +44,7 @@ import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
  * <p>Internal cooldowns are transient, by holder and proc id, with weak keys. Logical server only.
  */
 public final class Procs {
-    /** Gives a holder its procs: items and talents (postponed, RLM-28) fill it, the QA mod adds one for its tests. */
+    /** Gives a holder its procs: passive spells fill it (items later), the QA mod adds one for its tests. */
     @FunctionalInterface
     public interface Source {
         List<Proc> procs(LivingEntity holder);

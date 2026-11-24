@@ -17,8 +17,6 @@ import io.github.matejkadlec.realmforge.spell.SpellRegistries;
 import io.github.matejkadlec.realmforge.spell.Spellbook;
 import io.github.matejkadlec.realmforge.stats.EntityLevel;
 import io.github.matejkadlec.realmforge.stats.StatsAttachments;
-import io.github.matejkadlec.realmforge.talent.TalentAllocation;
-import io.github.matejkadlec.realmforge.talent.TalentAttachments;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -39,6 +37,7 @@ import net.minecraft.world.entity.monster.zombie.Drowned;
 import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
+import net.neoforged.neoforge.attachment.AttachmentHolder;
 import net.neoforged.neoforge.event.EventHooks;
 
 /**
@@ -67,8 +66,8 @@ public final class PlayerStateGameTests {
             GeneratedLevelingExpectations.LEVELS.get(PLAYER_LEVEL.value() - 1).toReach(), Optional.of(FIRST_CAP));
     private static final Spellbook SPELLBOOK = new Spellbook(Map.of(FIREBOLT, 2, FROSTBOLT, 1),
             Map.of(0, FIREBOLT, 1, FROSTBOLT));
-    private static final TalentAllocation TALENTS = new TalentAllocation(
-            Map.of(Realmforge.id("mage_fire"), Map.of("improved_firebolt", 3)), 2);
+    /** The key of F3's talents attachment, which RLM-628 removed (no talents as of v1.0.0, RLM-28). */
+    private static final String REMOVED_TALENTS = "realmforge:talents";
 
     private PlayerStateGameTests() {
     }
@@ -122,7 +121,6 @@ public final class PlayerStateGameTests {
         helper.assertFalse(player.getData(CharacterAttachments.CHARACTER).exists(), "a new player has no character");
         helper.assertValueEqual(player.getData(SpellAttachments.SPELLBOOK), Spellbook.EMPTY, "spellbook");
         helper.assertValueEqual(player.getData(SpellAttachments.COMBAT), new CombatState(), "combat");
-        helper.assertValueEqual(player.getData(TalentAttachments.TALENTS), TalentAllocation.NONE, "talents");
         server.getPlayerList().remove(player);
         helper.succeed();
     }
@@ -164,6 +162,31 @@ public final class PlayerStateGameTests {
     }
 
     /**
+     * A save from before RLM-628 still loads: it holds the removed {@code realmforge:talents} attachment, which NeoForge
+     * skips with one ERROR line ({@code AttachmentHolder#deserializeAttachments}, allowed for this test alone in
+     * {@code rf gametest-log}) while it reads the entity's other attachments, and the next save leaves it out. A
+     * player's save loads through the same {@code Entity#load}.
+     */
+    @QaGameTest
+    public static void aSaveWithTheRemovedTalentsLoads(GameTestHelper helper) {
+        Zombie zombie = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, new BlockPos(2, 1, 2));
+        zombie.setData(StatsAttachments.LEVEL, LEVEL);
+        CompoundTag saved = save(helper, zombie);
+        CompoundTag attachments = saved.getCompound(AttachmentHolder.ATTACHMENTS_NBT_KEY).orElseThrow();
+        attachments.put(REMOVED_TALENTS, oldTalents());
+
+        ProblemReporter.Collector problems = new ProblemReporter.Collector();
+        Zombie loaded = EntityType.ZOMBIE.create(helper.getLevel(), EntitySpawnReason.LOAD);
+        helper.assertTrue(loaded != null, "a zombie can be created");
+        loaded.load(TagValueInput.create(problems, helper.getLevel().registryAccess(), saved));
+        helper.assertTrue(problems.isEmpty(), "problems loading the old save: " + problems.getReport());
+        helper.assertValueEqual(loaded.getData(StatsAttachments.LEVEL), LEVEL, "the level next to the old talents");
+        helper.assertFalse(save(helper, loaded).getCompoundOrEmpty(AttachmentHolder.ATTACHMENTS_NBT_KEY)
+                .contains(REMOVED_TALENTS), "the next save leaves the removed talents out");
+        helper.succeed();
+    }
+
+    /**
      * A converting mob keeps its level: NeoForge copies copy-on-death attachments on {@code LivingConversionEvent}.
      * The conversion is the one vanilla's {@code Zombie#convertToZombieType} makes when a zombie drowns, without its
      * attribute rolls. {@code MobLevelGameTests} checks that the converted mob's scaling follows the copied level.
@@ -179,13 +202,34 @@ public final class PlayerStateGameTests {
         helper.succeed();
     }
 
+    private static CompoundTag save(GameTestHelper helper, Entity entity) {
+        ProblemReporter.Collector problems = new ProblemReporter.Collector();
+        TagValueOutput output = TagValueOutput.createWithContext(problems, helper.getLevel().registryAccess());
+        entity.saveWithoutId(output);
+        helper.assertTrue(problems.isEmpty(), "problems saving " + entity + ": " + problems.getReport());
+        return output.buildResult();
+    }
+
+    /** The talents attachment as F3 saved it: {@code {value: {ranks: {tree: {node: rank}}, unspent_points: n}}}. */
+    private static CompoundTag oldTalents() {
+        CompoundTag nodes = new CompoundTag();
+        nodes.putInt("improved_firebolt", 3);
+        CompoundTag ranks = new CompoundTag();
+        ranks.put("realmforge:mage_fire", nodes);
+        CompoundTag value = new CompoundTag();
+        value.put("ranks", ranks);
+        value.putInt("unspent_points", 2);
+        CompoundTag attachment = new CompoundTag();
+        attachment.put("value", value);
+        return attachment;
+    }
+
     private static void fill(LivingEntity entity) {
         entity.setData(StatsAttachments.LEVEL, PLAYER_LEVEL);
         entity.setData(CharacterAttachments.CHARACTER, CHARACTER);
         entity.setData(CharacterAttachments.STARTING_KIT, true);
         entity.setData(SpellAttachments.SPELLBOOK, SPELLBOOK);
         entity.setData(SpellAttachments.COMBAT, combat(true));
-        entity.setData(TalentAttachments.TALENTS, TALENTS);
     }
 
     private static void assertFilled(GameTestHelper helper, LivingEntity entity, Spellbook spellbook, String when) {
@@ -195,7 +239,6 @@ public final class PlayerStateGameTests {
         helper.assertValueEqual(entity.getData(SpellAttachments.SPELLBOOK), spellbook, "spellbook " + when);
         helper.assertValueEqual(entity.getData(SpellAttachments.COMBAT), combat(false),
                 "combat state (resource pools and cooldowns, no cast) " + when);
-        helper.assertValueEqual(entity.getData(TalentAttachments.TALENTS), TALENTS, "talents " + when);
     }
 
     private static CombatState combat(boolean casting) {

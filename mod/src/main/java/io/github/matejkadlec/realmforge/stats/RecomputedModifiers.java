@@ -12,10 +12,10 @@ import net.minecraft.world.entity.ai.attributes.AttributeMap;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 
 /**
- * Saved-but-recomputed attribute modifiers (architecture 8.2). A source (stat rules now; race, class and talents
- * later) owns the modifier ids its predicate accepts and rewrites that whole set from its data on every recompute.
- * The modifiers are permanent, so the entity saves them and they are back before its health loads; a recompute
- * touches only what changed and removes the owned ids it no longer produces.
+ * Saved-but-recomputed attribute modifiers (architecture 8.2). A source (the stat rules, race and class, spent stat
+ * points, passive spells) owns the modifier ids its predicate accepts and rewrites that whole set from its data on
+ * every recompute. The modifiers are permanent, so the entity saves them and they are back before its health loads; a
+ * recompute touches only what changed and removes the owned ids it no longer produces.
  */
 public final class RecomputedModifiers {
     private RecomputedModifiers() {
