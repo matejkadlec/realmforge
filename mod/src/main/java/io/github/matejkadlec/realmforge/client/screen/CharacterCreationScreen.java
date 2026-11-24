@@ -27,9 +27,10 @@ import net.neoforged.neoforge.common.NeoForge;
  * creating a character closes it for good: Esc opens the pause menu instead, so the player can still change options
  * or quit, and back in the game the screen opens again. It draws {@link CharacterCreationView}: the races on the left,
  * the classes the chosen race allows on the right, each with its description and what it gives; a class also its
- * resource and starting kit. Create Character sends {@link CreateCharacterPayload}, and the screen closes once the
- * server's character attachment arrives. In singleplayer it pauses the game, as a menu does; the server still handles
- * the request while paused.
+ * resource and starting kit. Create Character sends {@link CreateCharacterPayload}, and once the server's character
+ * attachment arrives the screen gives way to the spellbook's Spell Tree tab, where the player picks a specialization
+ * (C5, RLM-333). In singleplayer it pauses the game, as a menu does; the server still handles the request while
+ * paused.
  */
 public final class CharacterCreationScreen extends Screen {
     private static final int COLUMN_WIDTH = 180;

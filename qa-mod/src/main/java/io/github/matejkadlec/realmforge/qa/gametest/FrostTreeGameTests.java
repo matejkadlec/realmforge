@@ -84,8 +84,10 @@ public final class FrostTreeGameTests {
      * Shatter and Frost Nova 3, Cone of Cold 2, Ice Barrier and Blizzard 1), and the Netherite caster set and wand at
      * level V. Since C5 a real level 18 character has 18 ranks; this line skips the rules to keep the state Astone was
      * balanced with, which has no affixes, gems or curios, and Matěj expects those to match the missing ranks
-     * (2026-11-04, RLM-503). The handoff gives it to Matěj as
-     * {@code execute as @p at @p run} and this line.
+     * (2026-11-04, RLM-503). The character must stay without a specialization, and the handoff says so (RLM-632):
+     * picking one (Choose in the spellbook) counts 25 ranks spent against the 17 points level 18 earns, so the next
+     * kill or relog returns them all ({@code SpellTrees#fit}, "Your level fell") and only Frostbolt stays, at rank 1.
+     * The handoff gives it to Matěj as {@code execute as @p at @p run} and this line.
      */
     static final String ASTONE_SETUP = "qa run qa stats reset; qa character reset; "
             + "qa character create realmforge:human realmforge:mage; "

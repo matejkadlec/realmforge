@@ -15,9 +15,10 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
  * Creates a player's character from {@code CreateCharacterPayload(race, class)} (architecture 10.1). The client's screen
  * only offers valid choices, but the server checks every request again: the player has no character yet, the race and
  * the class exist, and the race allows the class. Then it sets the {@code character} attachment, brings the level and
- * level cap up to date ({@link Leveling}), teaches the class's first spells and the racial spell with a chat line each
- * ({@link RacialSpells}, C4), recomputes the stats (race and class modifiers), refills health to the new maximum and
- * gives the class's starting kit with the player's first character only ({@link CharacterAttachments#STARTING_KIT}).
+ * level cap up to date ({@link Leveling}), teaches the racial spell with a chat line ({@link RacialSpells}, C4),
+ * reminds the player to pick a specialization, whose first spell is the class's first spell ({@link SpellTrees}, C5),
+ * recomputes the stats (race and class modifiers), refills health to the new maximum and gives the class's starting
+ * kit with the player's first character only ({@link CharacterAttachments#STARTING_KIT}).
  */
 public final class CharacterCreation {
     private CharacterCreation() {

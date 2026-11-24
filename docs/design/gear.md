@@ -348,6 +348,12 @@ names any gear to take off before the line runs.
 | --- | --- | --- | --- | --- | --- | --- |
 | Astone, Undervault's final boss | 18 | full netherite armor and a netherite sword | the Netherite set (cap, robes, pants, sandals) and the Netherite Wand | level V for every enchantment, Protection and Unbreaking included: Apothic Enchanting raises vanilla's maximum levels (RLM-552) | Rare, every socket filled with a Flawed gem | Matěj, 2026-10-30: "full netherite, enchantments at about level V, rare gems"; gems have purities, not rarities, so "rare gems" reads as Rare pieces with Flawed gems until a playtest says otherwise. RLM-534's target: such a player deals about 50 per spell to her, before her 10 % Spell Resistance (RLM-616) |
 
+**Astone's setup lines keep the character without a specialization** (RLM-632). `ASTONE_SETUP` in
+`FrostTreeGameTests` and `ArmsTreeGameTests` learns the tree at 26 or 27 ranks, the build Astone was balanced with,
+while a level 18 character earns 17 spell points besides the free first spell. Every handoff that uses the line tells
+Matěj not to pick a specialization (Choose in the spellbook): with one picked, the next kill or relog returns every
+point (`SpellTrees#fit`, "Your level fell"), and only the first spell stays, at rank 1, in the middle of the check.
+
 ## What follows from it
 
 These tickets carry the approved design:

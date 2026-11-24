@@ -14,8 +14,8 @@ public final class CharacterAttachments {
             DeferredRegister.create(NeoForgeRegistries.Keys.ATTACHMENT_TYPES, Realmforge.MOD_ID);
 
     /**
-     * {@code realmforge:character}: a player's race, classes, character XP and cached level cap. Small and nothing
-     * secret, so it is synced to the player and everyone tracking them. Copied on death.
+     * {@code realmforge:character}: a player's race, class and specialization, character XP, cached level cap and spent
+     * stat points. Small and nothing secret, so it is synced to the player and everyone tracking them. Copied on death.
      */
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<CharacterData>> CHARACTER =
             ATTACHMENTS.register("character", () -> AttachmentType.builder(() -> CharacterData.NONE)

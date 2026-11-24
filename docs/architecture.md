@@ -255,9 +255,9 @@ to `world`, generated status effects to `effect`) and follow that feature's row.
 
 How features cooperate without breaking the direction:
 
-- **Higher calls lower** through its public API: on level-up, `character` grants spell points and teaches class
-  spells through `spell`'s API; after a change, `spell` asks `stats` to recompute and drops its cached spell
-  modifiers.
+- **Higher calls lower** through its public API: when a player picks a specialization or spends a spell point,
+  `character` teaches the tree's spells through `spell`'s API (and takes them back when the level falls); after a
+  change, `spell` asks `stats` to recompute and drops its cached spell modifiers.
 - **Lower asks higher through provider interfaces** it defines and the higher feature implements: casting needs
   passive spells' modifiers, the spellbook needs spells granted by equipped items, and `stats` collects modifiers
   from race, class and passive spells.
@@ -1276,7 +1276,8 @@ the playtest covers it.
   is full, as `/give` does), with the player's first character only (`realmforge:starting_kit`, so a character
   created after `/qa character reset` brings none, Matěj, 2026-10-30). `Characters` is the public API (`exists`, `mainClass`). The client opens
   `client/screen/CharacterCreationScreen` once a new player entity has existed for a second without a character (so
-  the synced attachment can arrive first), and closes it when the character arrives. Esc opens the pause menu
+  the synced attachment can arrive first), and when the character arrives it gives way to the spellbook's Spell Tree
+  tab, where the player picks a specialization (C5, RLM-333). Esc opens the pause menu
   instead, so the player can still change options or quit, and back in the game creation opens again. It pauses
   singleplayer like a menu (the server still handles payloads while paused). Its view model is
   `CharacterCreationView`. M1 has one race, Human, and decision D1's classes, Warrior (rage) and Mage (mana)
@@ -4588,7 +4589,7 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
   - Character creation (`client/screen/CharacterCreationScreen`, C1) draws `character/CharacterCreationView`: the
     races on the left and the classes the chosen race allows on the right, as vanilla buttons with a gold outline on
     the chosen one, each with its description and what it gives ("+5 Strength"); a class also its resource and
-    starting kit. It opens and closes by itself ([10.1](#101-races-and-classes)).
+    starting kit. It opens by itself and gives way to the spellbook's Spell Tree tab ([10.1](#101-races-and-classes)).
   - The spell bar with the resource bar under it and the cast bar (`client/hud/SpellBarHud`, `ResourceBarHud`,
     `CastBarHud`) and the spellbook (`client/screen/SpellbookScreen`, P by default), C3b, with the spell bar's place
     and size and its drag mode (`SpellBarPositionScreen`, RLM-404): [11.6](#116-client-side). The spellbook's gear
@@ -5153,7 +5154,15 @@ that agents can read. So far:
   the cast in progress, set a resource pool, end every cooldown, and print the known spells, the pools, the running
   cooldowns, the cast in progress and how the last cast-time or channelled spell ended
   ([11.2](#112-casting-server-authoritative)); `/qa spell bar <slot> [<spell>]` (C3b) puts a known spell into a spell
-  bar slot (1 to 8, 9 the racial slot) or empties it;
+  bar slot (1 to 8, 9 the racial slot) or empties it. `learn` skips the spell trees' rules, so on a character with a
+  specialization a rank above the spell points the level earns, or in a row the level has not opened, lasts only until
+  the next kill or relog: `SpellTrees#fit` then returns every point, only the tree's first spell stays at rank 1, and
+  chat says "Your level fell" ([10.1](#101-races-and-classes)). A setup line that learns a bigger build (the Astone
+  check's) keeps the character without a specialization, and its handoff says not to pick one (RLM-632);
+- `/qa spec show|pick <specialization>|spend <spell>|reset` (C5, RLM-333): a character's specialization and spell
+  points, through the spell trees window's rules: show the specialization, the level and the points earned, spent and
+  unspent, pick a specialization of the class (its first spell free at rank 1), spend a point on a spell of the tree,
+  or return every point (the Scroll of Respec's effect until it exists, RLM-226);
 - `/qa resource <mana|rage> autofill <true|false>` (C4's playtest, Matěj, 2026-10-30): keeps the player's pool full
   every tick, so rage needs no hits on the dummy; saved with the player (`realmforge_qa:resource_autofill`);
 - `/qa inventory clear` (the same): empties the 27 main inventory slots and keeps the hotbar, the armor and the
