@@ -52,7 +52,13 @@ from realmforge_tools.schema.apotheosis import (
 )
 from realmforge_tools.schema.block import ITEMLESS_KINDS, REALM_PORTAL_KINDS, SINGLE_BLOCK_KINDS
 from realmforge_tools.schema.chapter import advancement_id as chapter_advancement
-from realmforge_tools.schema.character import STARTING_BREAD, CharacterModifierDef
+from realmforge_tools.schema.character import (
+    STARTING_BREAD,
+    CharacterModifierDef,
+    SpecializationDef,
+    open_rows,
+    row_points,
+)
 from realmforge_tools.schema.coin import COIN_DROP, coin_chain, split
 from realmforge_tools.schema.container_loot import TIERS as CONTAINER_LOOT_TIERS
 from realmforge_tools.schema.container_loot import CoinsOptionDef, ItemOptionDef
@@ -2281,9 +2287,11 @@ def _check_racials(
 
 def _check_class_spells(entry: Entry, spells: dict[str, SpellDef], content: Content) -> list[Problem]:
     """A specialization's tree holds our player spells that cost the class's resource (or nothing), its free first
-    spell is an active one, and it opens at most 4 x N active spells by the last level of chapter N (decision D4:
-    chapter 1 allows 4 spells, chapter 2 eight; passive spells are never on the bar, so they do not count: Matěj,
-    2026-10-30, RLM-333, "rows 1-2 hold 4 actives, within D4's 4 x N spells for chapter 1")."""
+    spell is an active one, and every row can open: the rows above it hold at least the points it needs, less the free
+    first rank (Matěj, 2026-11-04, RLM-631). The points of the last level of chapter N open at most 4 x N active spells
+    (decision D4: chapter 1's 9 points open rows 1 and 2, which allow 4 spells, chapter 2's 17 open rows 1 to 4, which
+    allow eight; passive spells are never on the bar, so they do not count: Matěj, 2026-10-30, RLM-333, "rows 1-2 hold
+    4 actives, within D4's 4 x N spells for chapter 1")."""
     problems: list[Problem] = []
     player_class = entry.model
     for s, specialization in enumerate(player_class.specializations):
@@ -2328,12 +2336,14 @@ def _check_class_spells(entry: Entry, spells: dict[str, SpellDef], content: Cont
                     f"{specialization.first_spell} is passive: a class starts with a spell it can cast (decision D4)",
                 )
             )
+        problems += _check_tree_rows(entry, where, specialization, spells)
         for chapter in sorted((entry.model for entry in content.chapters), key=lambda chapter: chapter.order):
+            points = chapter.level_cap - 1
+            rows = open_rows(points)
             known = sum(
                 1
                 for taught in specialization.spells
-                if taught.level <= chapter.level_cap
-                and not (taught.spell in spells and spells[taught.spell].is_passive)
+                if taught.row <= rows and not (taught.spell in spells and spells[taught.spell].is_passive)
             )
             allowed = 4 * chapter.order
             if known > allowed:
@@ -2342,9 +2352,34 @@ def _check_class_spells(entry: Entry, spells: dict[str, SpellDef], content: Cont
                         entry.source,
                         f"{where}.spells",
                         f"{known} active spells by level {chapter.level_cap}, the end of chapter {chapter.order}, "
-                        f"which allows {allowed} (decision D4: 4 x N)",
+                        f"whose {points} points open rows 1 to {rows}; it allows {allowed} (decision D4: 4 x N)",
                     )
                 )
+    return problems
+
+
+def _check_tree_rows(
+    entry: Entry, where: str, specialization: SpecializationDef, spells: dict[str, SpellDef]
+) -> list[Problem]:
+    """Every row of a tree can open: the rows above it hold at least the points it needs, counted by their spells'
+    highest ranks less the first spell's free rank (Matěj, 2026-11-04, RLM-631: "the rows above a row must hold at
+    least its threshold in ranks, or the row can never open"). A spell that does not exist counts no rank; its own
+    problem says so."""
+    problems: list[Problem] = []
+    ranks = specialization.row_ranks({spell: definition.max_level for spell, definition in spells.items()})
+    for row in sorted(ranks):
+        needed = row_points(row)
+        above = sum(count for earlier, count in ranks.items() if earlier < row)
+        spendable = max(0, above - 1) if specialization.first_spell is not None else above
+        if spendable < needed:
+            problems.append(
+                Problem(
+                    entry.source,
+                    f"{where}.spells",
+                    f"row {row} opens after {needed} points spent in the tree, and the rows above it hold only "
+                    f"{spendable} ranks to spend (the first spell's free rank aside), so it never opens",
+                )
+            )
     return problems
 
 

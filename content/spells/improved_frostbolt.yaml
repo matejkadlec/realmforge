@@ -1,8 +1,8 @@
 # yaml-language-server: $schema=../../tools/schemas/spells.schema.json
-# The Frost Mage's tree, row 1 (level 1), left (Matěj, 2026-10-30, "Spell Trees to Level 18", chosen for M1; RLM-541,
-# RLM-542): Frostbolt deals 5/10/15 % more damage, added to its hit's (1 + Frost Power + passives) layer, its splash's
-# too. Frostbolt's splash (RLM-399) already slows every enemy it damages, so rank 3's extra widens the splash from 1 to
-# 1.5 blocks instead (Matěj, 2026-10-31: "hits harder and chills wider").
+# The Frost Mage's tree, row 4 (after 15 points), left (Matěj, 2026-10-30, "Spell Trees to Level 18", chosen for M1;
+# RLM-541, RLM-542): Frostbolt deals 5/10/15 % more damage, added to its hit's (1 + Frost Power + passives) layer, its
+# splash's too. Frostbolt's splash (RLM-399) already slows every enemy it damages, so rank 3's extra widens the splash
+# from 1 to 1.5 blocks instead (Matěj, 2026-10-31: "hits harder and chills wider").
 id: improved_frostbolt
 name: {en_us: Improved Frostbolt}
 description:

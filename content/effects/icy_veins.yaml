@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../tools/schemas/effects.schema.json
+# The Frost Mage's Icy Veins (RLM-597; Matěj, 2026-11-03): +10 % Spell Power at Icy Veins I, 15 % at II and 20 % at III
+# (the spell's ranks 1 to 3). It multiplies the Mage's whole Spell Power, gear, Intellect and other bonuses included,
+# so it is a multiplied total, as a status effect's share may be (architecture 8.2).
+id: icy_veins
+name: {en_us: Icy Veins}
+category: beneficial
+color: "#4FA8E8"
+modifiers:
+  - attribute: realmforge:spell_power
+    operation: add_multiplied_total
+    amount_percent: 10
+    per_amplifier_percent: 5

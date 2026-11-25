@@ -82,16 +82,18 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   creates a character (C1): the Human race and the Warrior and Mage classes, with their stats and starting kits,
   and their specialization spell trees (C5, RLM-333): the spellbook (P) has a Spell Tree and a Spell Bar tab, a player
   picks a specialization there, which gives its first spell free, and spends points (1 per level from level 2) on any
-  rank of a row their level has opened (rows at 1, 6, 12, 18; an arrow may need another spell), so 18 ranks at level 18;
+  rank of a row the points spent in the tree have opened (rows after 0, 5, 10 and 15 points, the free rank aside,
+  RLM-631; a spell's arrows may each need another spell, above it or beside it), so 18 ranks at level 18;
   the character attachment stores one class and the specialization, and the ranks are the only record of the points;
-  each class's M1 tree (C4, RLM-27): the Warrior's, the Arms Warrior's "Bloodletter" tree (RLM-543: Slam, Charge,
-  Deep Wounds; Rend, Battle Shout, Two-Handed
-  Specialization; Bloodthirst, Overpower, Victory Rush; Execute, Battle Stance), with a charge a player's own client runs, which stops
+  each class's M1 tree (C4, RLM-27) in Matěj's layout of 2026-11-04 (RLM-631): the Warrior's, the Arms Warrior's
+  "Bloodletter" tree (RLM-543: Slam, Victory Rush; Charge, Rend, Deep Wounds; Battle Stance, Overpower, Bloodthirst,
+  which needs Overpower and Rend; Battle Shout, Execute, Two-Handed Specialization), with a charge a player's own client runs, which stops
   a block from its target on the near side, stuns round that point and hops a block back, a target distance by rank, a
   heal of a share of max health, a refund for a kill, a crit's bleed and Execute lit while the current target is low, and
   no bleed from Apotheosis (RLM-600: Bloodletting and Devilish off, no Tyrannical bow bonus);
-  and the Mage's, the Frost Mage's "Shatter" tree (RLM-542: Improved Frostbolt, Frostbolt, Cone of Cold; Ice Lance,
-  Frost Nova, Frostbite; Shatter, Ice Barrier; Blizzard), with a cone along the look, Ice Lance's × 2 to × 4 against
+  and the Mage's, the Frost Mage's "Shatter" tree (RLM-542: Frostbolt, Cone of Cold; Shatter, which needs Frost Nova,
+  Frost Nova, Ice Barrier; Frostbite, Ice Lance; Improved Frostbolt, Blizzard, Icy Veins, a Spell Power self-buff,
+  RLM-597), with a cone along the look, Ice Lance's × 2 to × 4 against
   Frozen and Frostbite's freeze on a Slowness; the first spells of rank 5, and the Human's Will To Survive in the
   racial slot and Sword Specialization (its line reads "+10% Damage With Sword-like Weapons" on the character sheet and
   an indented "+10% Damage" in the weapon's tooltip, RLM-563); melee spells need a melee weapon in the main hand and

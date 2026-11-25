@@ -7,6 +7,7 @@ import io.github.matejkadlec.realmforge.character.KitItem;
 import io.github.matejkadlec.realmforge.character.PlayerClass;
 import io.github.matejkadlec.realmforge.character.RacialPassive;
 import io.github.matejkadlec.realmforge.character.Race;
+import io.github.matejkadlec.realmforge.character.SpellPoints;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedClassExpectations;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedClassExpectations.ClassExpectation;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedClassExpectations.Rage;
@@ -105,14 +106,17 @@ public final class ContentCharacterGameTests {
                     + " " + specialization.name() + " " + specialization.description() + " "
                     + specialization.firstSpell().map(Holder::getRegisteredName) + " "
                     + specialization.spells().stream().map(taught -> taught.spell().getRegisteredName() + " at "
-                    + taught.level() + " in " + taught.column() + " after "
-                    + taught.requires().map(Holder::getRegisteredName)).toList()).toList(),
+                    + taught.row() + " in " + taught.column() + " after "
+                    + taught.requires().stream().map(Holder::getRegisteredName).toList()).toList()).toList(),
                     expected.specializations().stream().map(specialization -> specialization.id() + " "
                     + specialization.nameKey() + " " + specialization.descriptionKey() + " "
                     + specialization.firstSpell() + " " + specialization.spells().stream().map(taught -> taught.spell()
-                    + " at " + taught.level() + " in " + taught.column() + " after " + taught.requires()).toList())
+                    + " at " + taught.row() + " in " + taught.column() + " after " + taught.requires()).toList())
                     .toList(), expected.id() + " specializations");
         }
+        // The pipeline's TREE_ROW_POINTS checks that every row can open; the game opens rows by SpellPoints's.
+        helper.assertValueEqual(SpellPoints.POINTS_PER_ROW, GeneratedClassExpectations.ROW_POINTS,
+                "the points that open a tree's next row");
         helper.succeed();
     }
 

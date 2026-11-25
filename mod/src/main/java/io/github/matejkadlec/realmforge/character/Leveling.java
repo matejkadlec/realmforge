@@ -193,7 +193,7 @@ public final class Leveling {
             ProgressionTriggers.LEVEL_REACHED.get().trigger(player, level);
             if (announce && change.leveledUp()) {
                 celebrate(player, level);
-                SpellTrees.announceLevelUp(player, oldLevel, level);
+                SpellTrees.announceLevelUp(player);
                 int unspent = StatPoints.unspent(player);
                 if (unspent > 0) {
                     player.sendSystemMessage(Component.translatable(GeneratedTexts.MESSAGE_STAT_POINTS_UNSPENT, unspent,

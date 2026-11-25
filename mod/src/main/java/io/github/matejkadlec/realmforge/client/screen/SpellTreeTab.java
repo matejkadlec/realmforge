@@ -135,7 +135,7 @@ final class SpellTreeTab {
                     x + width / 2, y + HEADER + 8, HINT);
             return;
         }
-        tree.cells().forEach(cell -> drawArrow(graphics, view, tree, cell, x, y));
+        tree.cells().forEach(cell -> drawArrows(graphics, view, tree, cell, x, y));
         tree.cells().forEach(cell -> drawCell(graphics, view, cell, x, y, mouseX, mouseY));
         if (showsButton(view, tree)) {
             boolean hovered = onButton(index, view, left, bottom, mouseX, mouseY);
@@ -178,24 +178,48 @@ final class SpellTreeTab {
     }
 
     /**
-     * The arrow from the spell it needs: from under that spell, across if the columns differ, down to this spell, with
-     * its head on top of it. Lit once the player knows the spell it comes from.
+     * An arrow from each spell it needs (RLM-631: a spell may need several). From a row above: from under that spell,
+     * across if the columns differ, down to this spell, with its head on top of it. From beside it in the same row:
+     * straight across the gap between the two, its head at this spell's side. Lit once the player knows the spell it
+     * comes from.
      */
-    private void drawArrow(GuiGraphicsExtractor graphics, SpellTreeView view, Tree tree, Cell cell, int cardX,
+    private void drawArrows(GuiGraphicsExtractor graphics, SpellTreeView view, Tree tree, Cell cell, int cardX,
             int cardY) {
-        cell.requires().flatMap(required -> tree.cells().stream()
-                .filter(other -> other.spell().is(required.unwrapKey().orElseThrow())).findFirst()).ifPresent(from -> {
-                    int color = from.rank() > 0 ? ARROW : ARROW_LOCKED;
-                    int fromX = cellX(view, from, cardX) + CELL / 2;
-                    int toX = cellX(view, cell, cardX) + CELL / 2;
-                    int startY = rowY(from.row(), cardY) + CELL;
-                    int endY = rowY(cell.row(), cardY);
-                    graphics.fill(fromX, startY, fromX + 1, startY + 1, color);
-                    graphics.fill(Math.min(fromX, toX), startY + 1, Math.max(fromX, toX) + 1, startY + 2, color);
-                    graphics.fill(toX, startY + 1, toX + 1, endY, color);
-                    graphics.fill(toX - 2, endY - 3, toX + 3, endY - 2, color);
-                    graphics.fill(toX - 1, endY - 2, toX + 2, endY - 1, color);
-                });
+        for (Holder<Spell> required : cell.requires()) {
+            tree.cells().stream().filter(other -> other.spell().is(required.unwrapKey().orElseThrow())).findFirst()
+                    .ifPresent(from -> {
+                        int color = from.rank() > 0 ? ARROW : ARROW_LOCKED;
+                        if (from.row() == cell.row()) {
+                            drawSideArrow(graphics, cellX(view, from, cardX), cellX(view, cell, cardX),
+                                    rowY(cell.row(), cardY) + CELL / 2, color);
+                        } else {
+                            drawDownArrow(graphics, cellX(view, from, cardX) + CELL / 2,
+                                    cellX(view, cell, cardX) + CELL / 2, rowY(from.row(), cardY) + CELL,
+                                    rowY(cell.row(), cardY), color);
+                        }
+                    });
+        }
+    }
+
+    private static void drawDownArrow(GuiGraphicsExtractor graphics, int fromX, int toX, int startY, int endY,
+            int color) {
+        graphics.fill(fromX, startY, fromX + 1, startY + 1, color);
+        graphics.fill(Math.min(fromX, toX), startY + 1, Math.max(fromX, toX) + 1, startY + 2, color);
+        graphics.fill(toX, startY + 1, toX + 1, endY, color);
+        graphics.fill(toX - 2, endY - 3, toX + 3, endY - 2, color);
+        graphics.fill(toX - 1, endY - 2, toX + 2, endY - 1, color);
+    }
+
+    /** Across the gap from the cell at {@code fromLeft} to the one at {@code toLeft}, at height {@code y}. */
+    private static void drawSideArrow(GuiGraphicsExtractor graphics, int fromLeft, int toLeft, int y, int color) {
+        boolean right = toLeft > fromLeft;
+        int start = right ? fromLeft + CELL : fromLeft;
+        int end = right ? toLeft : toLeft + CELL;
+        graphics.fill(Math.min(start, end), y, Math.max(start, end), y + 1, color);
+        int tip = right ? end - 1 : end;
+        int back = right ? -1 : 1;
+        graphics.fill(tip + back, y - 1, tip + back + 1, y + 2, color);
+        graphics.fill(tip + 2 * back, y - 2, tip + 2 * back + 1, y + 3, color);
     }
 
     private void tooltip(GuiGraphicsExtractor graphics, LocalPlayer player, SpellTreeView view, int left, int top,
@@ -203,12 +227,13 @@ final class SpellTreeTab {
         Optional<Cell> hovered = cellAt(view, left, top, mouseX, mouseY);
         if (hovered.isPresent()) {
             Cell cell = hovered.get();
+            Tree tree = view.trees().stream().filter(entry -> entry.cells().contains(cell)).findFirst().orElseThrow();
             Spell spell = cell.spell().value();
             ResourceKey<Spell> key = cell.spell().unwrapKey().orElseThrow();
             List<Component> lines = new ArrayList<>(SpellTooltip.lines(spell,
                     Math.clamp(cell.rank(), 1, spell.maxLevel()), SpellText.statsOf(player),
                     SpellText.schoolsOf(player.registryAccess()), Passives.damageBonus(player, key)));
-            lines.add(stateLine(cell));
+            lines.add(stateLine(tree, cell));
             SpellTooltips.show(graphics, font, key, spell, lines, mouseX, mouseY);
             return;
         }
@@ -224,17 +249,17 @@ final class SpellTreeTab {
     }
 
     /** The tooltip's last line: what a click does, or why it does nothing. */
-    private static Component stateLine(Cell cell) {
+    private static Component stateLine(Tree tree, Cell cell) {
         return switch (cell.state()) {
             case LEARNABLE -> Component.translatable(GeneratedTexts.GUI_SPELL_TREE_SPEND)
                     .withStyle(ChatFormatting.GREEN);
             case MAX_RANK -> Component.translatable(GeneratedTexts.GUI_SPELL_TREE_MAX_RANK)
                     .withStyle(ChatFormatting.GOLD);
-            case NEEDS_LEVEL -> Component.translatable(GeneratedTexts.GUI_SPELL_TREE_NEEDS_LEVEL, cell.level())
+            case ROW_CLOSED -> Component.translatable(GeneratedTexts.GUI_SPELL_TREE_NEEDS_POINTS, cell.rowPoints(),
+                    Component.translatable(tree.specialization().name()), tree.spent())
                     .withStyle(ChatFormatting.RED);
-            case NEEDS_SPELL -> Component.translatable(GeneratedTexts.GUI_SPELL_TREE_NEEDS_SPELL, cell.requires()
-                    .map(Holder::value).map(spell -> Component.translatable(spell.name()))
-                    .orElse(Component.empty())).withStyle(ChatFormatting.RED);
+            case NEEDS_SPELL -> Component.translatable(GeneratedTexts.GUI_SPELL_TREE_NEEDS_SPELL, names(cell.missing()))
+                    .withStyle(ChatFormatting.RED);
             case NO_POINTS -> Component.translatable(GeneratedTexts.GUI_SPELL_TREE_NO_POINTS)
                     .withStyle(ChatFormatting.GRAY);
             case NEEDS_PICK -> Component.translatable(GeneratedTexts.GUI_SPELL_TREE_NEEDS_PICK)
@@ -244,6 +269,16 @@ final class SpellTreeTab {
             case OTHER_TREE -> Component.translatable(GeneratedTexts.GUI_SPELL_TREE_OTHER_TREE)
                     .withStyle(ChatFormatting.GRAY);
         };
+    }
+
+    /** The spells' names as one: "Rend", "Rend and Overpower", "Charge and Rend and Overpower". */
+    private static Component names(List<Holder<Spell>> spells) {
+        Component joined = Component.empty();
+        for (int index = 0; index < spells.size(); index++) {
+            Component name = Component.translatable(spells.get(index).value().name());
+            joined = index == 0 ? name : Component.translatable(GeneratedTexts.GUI_SPELL_TREE_AND, joined, name);
+        }
+        return joined;
     }
 
     private Optional<Cell> cellAt(SpellTreeView view, int left, int top, double mouseX, double mouseY) {

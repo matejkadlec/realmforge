@@ -248,18 +248,25 @@ def test_the_frost_tree_stands_in_its_rows() -> None:
     frost = next(entry for entry in mage.specializations if entry.id == "frost")
     assert frost.first_spell == "realmforge:frostbolt"
     assert [
-        (taught.spell.removeprefix("realmforge:"), taught.level, taught.column) for taught in frost.spells
+        (taught.spell.removeprefix("realmforge:"), taught.row, taught.column) for taught in frost.spells
     ] == [
-        ("improved_frostbolt", 1, 1),
+        # Matěj's layout of 2026-11-04 (RLM-631), Icy Veins at row 4, right (RLM-597).
         ("frostbolt", 1, 2),
         ("cone_of_cold", 1, 3),
-        ("ice_lance", 6, 1),
-        ("frost_nova", 6, 2),
-        ("frostbite", 6, 3),
-        ("shatter", 12, 1),
-        ("ice_barrier", 12, 2),
-        ("blizzard", 18, 1),
+        ("shatter", 2, 1),
+        ("frost_nova", 2, 2),
+        ("ice_barrier", 2, 3),
+        ("frostbite", 3, 1),
+        ("ice_lance", 3, 2),
+        ("improved_frostbolt", 4, 1),
+        ("blizzard", 4, 2),
+        ("icy_veins", 4, 3),
     ]
+    assert {taught.spell: taught.requires for taught in frost.spells if taught.requires} == {
+        "realmforge:shatter": ["realmforge:frost_nova"]
+    }
+    highest = {f"realmforge:{entry.model.id}": entry.model.max_level for entry in content.spells}
+    assert sum(highest[taught.spell] for taught in frost.spells) == 34
     assert [entry.id for entry in mage.specializations if not entry.spells] == ["fire", "arcane"]
     ranks = {entry.model.id: entry.model.max_level for entry in content.spells}
     assert {
@@ -274,31 +281,35 @@ def test_the_frost_tree_stands_in_its_rows() -> None:
         "shatter": 3,
         "ice_barrier": 3,
         "blizzard": 3,
+        "icy_veins": 3,
     }
 
 
 def test_passive_spells_do_not_count_against_d4(repo: RepoPaths) -> None:
     mage = repo.content / "classes" / "mage.yaml"
     text = mage.read_text()
-    frostbite = "{spell: realmforge:frostbite, level: 6, column: 3}"
-    # A passive in row 2's third place keeps chapter 1 at 4 actives, whichever passive it is.
+    frostbite = "{spell: realmforge:frostbite, row: 3, column: 1}"
+    shatter = "{spell: realmforge:shatter, row: 2, column: 1, requires: [realmforge:frost_nova]}"
+    # Another passive in row 2's left place keeps chapter 1's rows 1 and 2 at 4 actives, whichever passive it is.
     mage.write_text(
-        text.replace(frostbite, "{spell: realmforge:shatter, level: 6, column: 3}").replace(
-            "{spell: realmforge:shatter, level: 12, column: 1}",
-            "{spell: realmforge:frostbite, level: 12, column: 1}",
+        text.replace(shatter, "{spell: realmforge:frostbite, row: 2, column: 1}").replace(
+            frostbite, "{spell: realmforge:shatter, row: 3, column: 1, requires: [realmforge:frost_nova]}"
         ),
         encoding="utf-8",
     )
     load_and_validate(repo)
     # An active spell in that place makes 5.
     mage.write_text(
-        text.replace(frostbite, "{spell: realmforge:ice_barrier, level: 6, column: 3}").replace(
-            "{spell: realmforge:ice_barrier, level: 12, column: 2}",
-            "{spell: realmforge:frostbite, level: 12, column: 2}",
+        text.replace(shatter, "{spell: realmforge:ice_lance, row: 2, column: 1}").replace(
+            "{spell: realmforge:ice_lance, row: 3, column: 2}",
+            "{spell: realmforge:shatter, row: 3, column: 2}",
         ),
         encoding="utf-8",
     )
-    assert_problem(repo, "5 active spells by level 10, the end of chapter 1, which allows 4")
+    assert_problem(
+        repo,
+        "5 active spells by level 10, the end of chapter 1, whose 9 points open rows 1 to 2; it allows 4",
+    )
 
 
 # Frozen breaks on damage (Matěj's playtest of 2026-11-01)

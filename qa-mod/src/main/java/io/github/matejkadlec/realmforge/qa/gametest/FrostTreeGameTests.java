@@ -26,6 +26,7 @@ import io.github.matejkadlec.realmforge.spell.SpellAim;
 import io.github.matejkadlec.realmforge.spell.SpellAttachments;
 import io.github.matejkadlec.realmforge.spell.SpellCaster;
 import io.github.matejkadlec.realmforge.spell.SpellEffect;
+import io.github.matejkadlec.realmforge.spell.SpellScaling;
 import io.github.matejkadlec.realmforge.spell.SpellTarget;
 import io.github.matejkadlec.realmforge.spell.SpellText;
 import io.github.matejkadlec.realmforge.spell.SpellTooltip;
@@ -101,7 +102,32 @@ public final class FrostTreeGameTests {
             + "give @s realmforge:netherite_pants" + LEVEL_V + "; give @s realmforge:netherite_sandals" + LEVEL_V + "; "
             + "give @s realmforge:netherite_wand[enchantments={\"minecraft:unbreaking\":5}]";
 
+    /**
+     * The deferred playtest's Icy Veins line (RLM-597): every stat back to its default, a new level 18 Human Mage who
+     * picks no specialization (with one, {@code SpellTrees#fit} would return a rank the tree's rules did not give) and
+     * knows Icy Veins at rank 1, on the spell bar.
+     */
+    static final String ICY_VEINS_SETUP = "qa run qa stats reset; qa character reset; "
+            + "qa character create realmforge:human realmforge:mage; "
+            + "advancement grant @s only realmforge:chapter/chapter_1; qa level 18; qa spell learn realmforge:icy_veins";
+
     private FrostTreeGameTests() {
+    }
+
+    /** {@link #ICY_VEINS_SETUP} reaches its state. */
+    @QaGameTest
+    public static void theIcyVeinsSetupLineReachesItsState(GameTestHelper helper) {
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-frost-icy-veins-line");
+        player.connection.markClientLoaded();
+        CommandSourceStack source = player.createCommandSourceStack().withPermission(PermissionSet.ALL_PERMISSIONS);
+        helper.getLevel().getServer().getCommands().performPrefixedCommand(source, ICY_VEINS_SETUP);
+        helper.assertValueEqual(Characters.level(player), 18, "a level 18 Mage");
+        helper.assertValueEqual(Characters.data(player).specialization(), Optional.empty(), "with no specialization");
+        Spellbook book = player.getData(SpellAttachments.SPELLBOOK);
+        helper.assertValueEqual(book.level(GeneratedSpells.ICY_VEINS), Optional.of(1), "Icy Veins at rank 1");
+        helper.assertTrue(book.barSlotOf(GeneratedSpells.ICY_VEINS) >= 0, "on the spell bar");
+        logout(player);
+        helper.succeed();
     }
 
     /**
@@ -180,6 +206,60 @@ public final class FrostTreeGameTests {
             logout(player);
             helper.succeed();
         });
+    }
+
+    /**
+     * RLM-597: Icy Veins costs 20, 30 and 40 mana by rank on a 3 minute cooldown at every rank. Rank 1 raises a Mage's
+     * 10 Spell Power by 10 % for 10 s and rank 3 by 20 % for 20 s; a cast starts the cooldown, less the Mage's Cooldown
+     * Reduction, and a second cast refreshes the buff instead of stacking it.
+     */
+    @QaGameTest
+    public static void icyVeinsRaisesSpellPowerByItsRank(GameTestHelper helper) {
+        Spell veins = spell(helper, GeneratedSpells.ICY_VEINS).value();
+        helper.assertValueEqual(veins.maxLevel(), 3, "three ranks");
+        helper.assertTrue(close(veins.costAt(1), 20) && close(veins.costAt(2), 30) && close(veins.costAt(3), 40),
+                "20, 30 and 40 mana: " + veins.costAt(1) + ", " + veins.costAt(2) + ", " + veins.costAt(3));
+        helper.assertValueEqual(List.of(veins.cooldownTicksAt(1), veins.cooldownTicksAt(3)), List.of(3600, 3600),
+                "3 minutes at every rank");
+        ServerPlayer player = mage(helper, "qa-frost-icy-veins", QaPlayers.PLATFORM_MIDDLE);
+        StatsCommands.setBase(player, GeneratedStats.MANA_REGENERATION, 0);
+        StatsCommands.setBase(player, GeneratedStats.COOLDOWN_REDUCTION, 0.2);
+        Resources.set(player, ResourceTypes.MANA, 100);
+        List<String> lines = tooltip(helper, player, veins, 1);
+        helper.assertValueEqual(lines.subList(lines.size() - 3, lines.size()), List.of(
+                "Fills your veins with ice that raises your Spell Power by 10% for 10 sec.", "Next rank:",
+                "Fills your veins with ice that raises your Spell Power by 15% for 15 sec."),
+                "the tooltip's rank and the next");
+
+        learn(helper, player, GeneratedSpells.ICY_VEINS, 1);
+        long now = helper.getLevel().getGameTime();
+        assertCast(helper, player, GeneratedSpells.ICY_VEINS, SpellAim.at((LivingEntity) null));
+        helper.assertTrue(close(Resources.amount(player, ResourceTypes.MANA), 80), "rank 1 costs 20 mana");
+        MobEffectInstance first = player.getEffect(GeneratedEffects.ICY_VEINS);
+        helper.assertTrue(first != null && first.getDuration() == 200, "rank 1 lasts 10 s: " + first);
+        helper.assertTrue(close(spellPower(player), 11), "+10 % of 10 Spell Power: " + spellPower(player));
+        int cooldown = SpellScaling.cooldownTicks(3600, DamagePipeline.stat(player, GeneratedStats.COOLDOWN_REDUCTION));
+        helper.assertTrue(cooldown <= 2880, "the Mage's Cooldown Reduction is at least the 20 % set: " + cooldown);
+        helper.assertValueEqual(Optional.ofNullable(player.getData(SpellAttachments.COMBAT).cooldowns()
+                .get(GeneratedSpells.ICY_VEINS)), Optional.of(now + cooldown), "3 minutes less Cooldown Reduction");
+
+        player.removeEffect(GeneratedEffects.ICY_VEINS);
+        Spells.resetCooldowns(player);
+        learn(helper, player, GeneratedSpells.ICY_VEINS, 3);
+        Resources.set(player, ResourceTypes.MANA, 100);
+        assertCast(helper, player, GeneratedSpells.ICY_VEINS, SpellAim.at((LivingEntity) null));
+        helper.assertTrue(close(Resources.amount(player, ResourceTypes.MANA), 60), "rank 3 costs 40 mana");
+        MobEffectInstance top = player.getEffect(GeneratedEffects.ICY_VEINS);
+        helper.assertTrue(top != null && top.getDuration() == 400, "rank 3 lasts 20 s: " + top);
+        helper.assertTrue(close(spellPower(player), 12), "+20 % of 10 Spell Power: " + spellPower(player));
+
+        Spells.resetCooldowns(player);
+        assertCast(helper, player, GeneratedSpells.ICY_VEINS, SpellAim.at((LivingEntity) null));
+        helper.assertTrue(close(spellPower(player), 12), "a second cast does not stack: " + spellPower(player));
+        MobEffectInstance again = player.getEffect(GeneratedEffects.ICY_VEINS);
+        helper.assertTrue(again != null && again.getDuration() == 400, "and lasts 20 s again: " + again);
+        logout(player);
+        helper.succeed();
     }
 
     /** Ice Lance deals × 2 at rank 1 and × 4 at rank 5 against a Frozen target (RLM-572), its plain damage otherwise. */

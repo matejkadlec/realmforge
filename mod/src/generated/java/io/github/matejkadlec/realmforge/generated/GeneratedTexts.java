@@ -281,6 +281,9 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.spell_tree} from {@code content/texts/gui.yaml}: "Spell Tree" */
     public static final String GUI_SPELL_TREE = "gui.realmforge.spell_tree";
 
+    /** {@code gui.realmforge.spell_tree_and} from {@code content/texts/gui.yaml}: "%1$s and %2$s" */
+    public static final String GUI_SPELL_TREE_AND = "gui.realmforge.spell_tree_and";
+
     /** {@code gui.realmforge.spell_tree_choose} from {@code content/texts/gui.yaml}: "Choose" */
     public static final String GUI_SPELL_TREE_CHOOSE = "gui.realmforge.spell_tree_choose";
 
@@ -293,11 +296,11 @@ public final class GeneratedTexts {
     /** {@code gui.realmforge.spell_tree_max_rank} from {@code content/texts/gui.yaml}: "Highest rank reached." */
     public static final String GUI_SPELL_TREE_MAX_RANK = "gui.realmforge.spell_tree_max_rank";
 
-    /** {@code gui.realmforge.spell_tree_needs_level} from {@code content/texts/gui.yaml}: "Opens at level %1$s." */
-    public static final String GUI_SPELL_TREE_NEEDS_LEVEL = "gui.realmforge.spell_tree_needs_level";
-
     /** {@code gui.realmforge.spell_tree_needs_pick} from {@code content/texts/gui.yaml}: "Choose this specialization to learn it." */
     public static final String GUI_SPELL_TREE_NEEDS_PICK = "gui.realmforge.spell_tree_needs_pick";
+
+    /** {@code gui.realmforge.spell_tree_needs_points} from {@code content/texts/gui.yaml}: "Opens after %1$s points spent in %2$s (%3$s so far)." */
+    public static final String GUI_SPELL_TREE_NEEDS_POINTS = "gui.realmforge.spell_tree_needs_points";
 
     /** {@code gui.realmforge.spell_tree_needs_spell} from {@code content/texts/gui.yaml}: "Learn %1$s first." */
     public static final String GUI_SPELL_TREE_NEEDS_SPELL = "gui.realmforge.spell_tree_needs_spell";
@@ -571,6 +574,9 @@ public final class GeneratedTexts {
 
     /** {@code message.realmforge.spell_points_returned} from {@code content/texts/message.yaml}: "Your level fell, so your spell points are unspent again. Unspent spell points: %1$s." */
     public static final String MESSAGE_SPELL_POINTS_RETURNED = "message.realmforge.spell_points_returned";
+
+    /** {@code message.realmforge.spell_points_tree_changed} from {@code content/texts/message.yaml}: "Your spell tree has changed, so your spell points are unspent again. Unspent spell points: %1$s." */
+    public static final String MESSAGE_SPELL_POINTS_TREE_CHANGED = "message.realmforge.spell_points_tree_changed";
 
     /** {@code message.realmforge.spell_points_unspent} from {@code content/texts/message.yaml}: "Unspent spell points: %1$s. Press %2$s to spend them in your spellbook." */
     public static final String MESSAGE_SPELL_POINTS_UNSPENT = "message.realmforge.spell_points_unspent";

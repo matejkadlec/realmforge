@@ -10,6 +10,7 @@ from realmforge_tools.generate.datapack import translation_key
 from realmforge_tools.generate.javagen import header, java_file_path, string_literal
 from realmforge_tools.project import MOD_ID, QA_JAVA_PACKAGE, RepoPaths
 from realmforge_tools.schema.character import (
+    TREE_ROW_POINTS,
     CharacterModifierDef,
     RaceDef,
     RageDef,
@@ -152,8 +153,7 @@ def _optional(value: str | None) -> str:
 
 def _specialization(class_id: str, n: int, specialization: SpecializationDef) -> str:
     spells = ", ".join(
-        f"new TreeSpell({string_literal(taught.spell)}, {taught.level}, {taught.column}, "
-        f"{_optional(taught.requires)})"
+        f"new TreeSpell({string_literal(taught.spell)}, {taught.row}, {taught.column}, {_strings(taught.requires)})"
         for taught in specialization.spells
     )
     return (
@@ -202,9 +202,12 @@ def _classes(content: Content) -> bytes:
         "    public record KitItem(String item, int count) {\n"
         "    }\n"
         "\n"
-        "    /** A spell of a specialization's tree: its row's level, its column, and the spell its arrow needs. */\n"
-        "    public record TreeSpell(String spell, int level, int column, Optional<String> requires) {\n"
+        "    /** A spell of a specialization's tree: its row and column, from 1, and the spells its arrows need. */\n"
+        "    public record TreeSpell(String spell, int row, int column, List<String> requires) {\n"
         "    }\n"
+        "\n"
+        "    /** A tree's row opens after this many points per row above it are spent in the tree (RLM-631). */\n"
+        f"    public static final int ROW_POINTS = {TREE_ROW_POINTS};\n"
         "\n"
         "    /** A specialization: id, texts, free first spell and tree; no spells means it comes later. */\n"
         "    public record Specialization(String id, String nameKey, String descriptionKey,\n"

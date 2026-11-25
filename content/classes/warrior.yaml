@@ -1,11 +1,11 @@
 # yaml-language-server: $schema=../../tools/schemas/classes.schema.json
 # The M1 melee class (decision D1, RLM-51): strength and vitality. The stats stay the same at every level: each level
 # gives a stat point to spend instead, and the class keeps these as its starting identity until Matěj decides on them
-# (2026-10-15, RLM-196). M1's tree is the Arms Warrior's "Bloodletter" (RLM-543; Matěj, 2026-10-30, RLM-333), a new row
-# every 6 levels; four active spells by the end of chapter 1 (D4: 4 x N, passives aside), and Battle Stance, the Arms
-# stance, an aura (RLM-596). Picking the specialization
-# gives Slam free at rank 1, and every other rank costs a spell point (C5, Matěj, 2026-11-04). Fury and Protection come
-# with their trees in M3 (RLM-218), and Reckless Strike and Shield Bash with them.
+# (2026-10-15, RLM-196). M1's tree is the Arms Warrior's "Bloodletter" (RLM-543), 32 ranks in Matěj's layout of
+# 2026-11-04 (RLM-631): a row opens after 5 points per row above it are spent in the tree, so chapter 1's 9 points open
+# rows 1 and 2, four active spells (D4: 4 x N, passives aside), and Battle Stance, the Arms stance, is an aura (RLM-596).
+# Picking the specialization gives Slam free at rank 1, and every other rank costs a spell point (C5, Matěj,
+# 2026-11-04). Fury and Protection come with their trees in M3 (RLM-218), and Reckless Strike and Shield Bash with them.
 id: warrior
 name:
   en_us: Warrior
@@ -41,18 +41,18 @@ specializations:
     description: {en_us: "Cut deep, let the wounds bleed, and finish what you start."}
     first_spell: realmforge:slam
     spells:
-      - {spell: realmforge:charge, level: 1, column: 1}
-      - {spell: realmforge:slam, level: 1, column: 2}
-      - {spell: realmforge:deep_wounds, level: 1, column: 3}
-      - {spell: realmforge:rend, level: 6, column: 1}
-      - {spell: realmforge:battle_shout, level: 6, column: 2}
-      - {spell: realmforge:two_handed_weapon_specialization, level: 6, column: 3}
-      - {spell: realmforge:bloodthirst, level: 12, column: 1, requires: realmforge:rend}
-      - {spell: realmforge:overpower, level: 12, column: 2}
-      - {spell: realmforge:victory_rush, level: 12, column: 3}
-      - {spell: realmforge:execute, level: 18, column: 1}
-      # RLM-596: the free place until RLM-631's layout puts Battle Stance at R3, left (Matěj, 2026-11-04).
-      - {spell: realmforge:battle_stance, level: 18, column: 2}
+      - {spell: realmforge:slam, row: 1, column: 2}
+      - {spell: realmforge:victory_rush, row: 1, column: 3}
+      - {spell: realmforge:charge, row: 2, column: 1}
+      - {spell: realmforge:rend, row: 2, column: 2}
+      - {spell: realmforge:deep_wounds, row: 2, column: 3}
+      - {spell: realmforge:battle_stance, row: 3, column: 1}
+      - {spell: realmforge:overpower, row: 3, column: 2}
+      # It procs on Rend's ticks and opens Overpower's window, so it needs a point in each (Matěj, 2026-11-04).
+      - {spell: realmforge:bloodthirst, row: 3, column: 3, requires: [realmforge:overpower, realmforge:rend]}
+      - {spell: realmforge:battle_shout, row: 4, column: 1}
+      - {spell: realmforge:execute, row: 4, column: 2}
+      - {spell: realmforge:two_handed_weapon_specialization, row: 4, column: 3}
   - id: fury
     name: {en_us: Fury}
     description: {en_us: "Swing fast and hard, and let your rage carry you."}

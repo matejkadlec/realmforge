@@ -2,9 +2,10 @@
 # The M1 caster (decision D1, RLM-51): intellect. A caster starts with 100 Max Mana and 5 Mana Regeneration, 5 mana a
 # second (Matěj, 2026-10-14); it starts with the Stone Wand (RLM-172) and the Apprentice's set (RLM-197). The stats stay
 # the same at every level: each level gives a stat point to spend instead, and the class keeps these as its starting
-# identity until Matěj decides on them (2026-10-15, RLM-196). M1's tree is the Frost Mage's "Shatter" (RLM-542; Matěj,
-# 2026-10-30, RLM-333), a new row every 6 levels; four active spells by the end of chapter 1 (D4: 4 x N, passives
-# aside). Picking the specialization gives Frostbolt free at rank 1, and every other rank costs a spell point (C5,
+# identity until Matěj decides on them (2026-10-15, RLM-196). M1's tree is the Frost Mage's "Shatter" (RLM-542), 34
+# ranks in Matěj's layout of 2026-11-04 (RLM-631): a row opens after 5 points per row above it are spent in the tree, so
+# chapter 1's 9 points open rows 1 and 2, four active spells (D4: 4 x N, passives aside), and Icy Veins joins row 4
+# (RLM-597). Picking the specialization gives Frostbolt free at rank 1, and every other rank costs a spell point (C5,
 # Matěj, 2026-11-04). Fire and Arcane come with their trees in M3 (RLM-218), and Fireball and Arcane Missiles with them.
 # The Mage never heals: it survives through shields and utility (Matěj, 2026-10-22).
 id: mage
@@ -33,15 +34,17 @@ specializations:
     description: {en_us: "Slow your enemies, freeze them, then break them."}
     first_spell: realmforge:frostbolt
     spells:
-      - {spell: realmforge:improved_frostbolt, level: 1, column: 1}
-      - {spell: realmforge:frostbolt, level: 1, column: 2}
-      - {spell: realmforge:cone_of_cold, level: 1, column: 3}
-      - {spell: realmforge:ice_lance, level: 6, column: 1}
-      - {spell: realmforge:frost_nova, level: 6, column: 2}
-      - {spell: realmforge:frostbite, level: 6, column: 3}
-      - {spell: realmforge:shatter, level: 12, column: 1}
-      - {spell: realmforge:ice_barrier, level: 12, column: 2}
-      - {spell: realmforge:blizzard, level: 18, column: 1}
+      - {spell: realmforge:frostbolt, row: 1, column: 2}
+      - {spell: realmforge:cone_of_cold, row: 1, column: 3}
+      # It opens only once Frost Nova has a point (Matěj, 2026-11-04, RLM-631).
+      - {spell: realmforge:shatter, row: 2, column: 1, requires: [realmforge:frost_nova]}
+      - {spell: realmforge:frost_nova, row: 2, column: 2}
+      - {spell: realmforge:ice_barrier, row: 2, column: 3}
+      - {spell: realmforge:frostbite, row: 3, column: 1}
+      - {spell: realmforge:ice_lance, row: 3, column: 2}
+      - {spell: realmforge:improved_frostbolt, row: 4, column: 1}
+      - {spell: realmforge:blizzard, row: 4, column: 2}
+      - {spell: realmforge:icy_veins, row: 4, column: 3}
   - id: fire
     name: {en_us: Fire}
     description: {en_us: "Set your enemies alight and let the flames do the work."}

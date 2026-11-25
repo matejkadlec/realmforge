@@ -440,49 +440,86 @@ def test_class_spells_are_players_spells_that_exist(repo: RepoPaths) -> None:
 
 
 def test_a_chapter_allows_four_spells_a_chapter(repo: RepoPaths) -> None:
+    # Chapter 1's cap, level 10, is 9 points: rows 1 and 2 open (RLM-631), which hold 4 actives and Deep Wounds.
     warrior = repo.content / "classes" / "warrior.yaml"
+    text = warrior.read_text()
     warrior.write_text(
-        warrior.read_text().replace(
-            "realmforge:deep_wounds, level: 1, column: 3", "realmforge:will_to_survive, level: 1, column: 3"
+        text.replace(
+            "realmforge:deep_wounds, row: 2, column: 3", "realmforge:will_to_survive, row: 2, column: 3"
         )
     )
-    assert_problem(repo, "5 active spells by level 10, the end of chapter 1, which allows 4")
+    assert_problem(
+        repo,
+        "5 active spells by level 10, the end of chapter 1, whose 9 points open rows 1 to 2; it allows 4",
+    )
+    # Row 3 opens only after 10 points, so an active spell there counts for chapter 2.
+    warrior.write_text(
+        text.replace(
+            "realmforge:bloodthirst, row: 3, column: 3, requires: [realmforge:overpower, realmforge:rend]",
+            "realmforge:will_to_survive, row: 3, column: 3",
+        )
+    )
+    assert_problem(
+        repo,
+        "9 active spells by level 18, the end of chapter 2, whose 17 points open rows 1 to 4; it allows 8",
+    )
 
 
 @pytest.mark.parametrize(
     ("spells", "expected"),
     [
-        ("      - {spell: realmforge:slam, level: 6, column: 1}\n", "must be in the tree's level 1 row"),
+        ("      - {spell: realmforge:slam, row: 2, column: 1}\n", "must be in the tree's first row"),
         (
-            "      - {spell: realmforge:slam, level: 1, column: 1}\n"
-            "      - {spell: realmforge:slam, level: 6, column: 1}\n",
+            "      - {spell: realmforge:slam, row: 1, column: 1}\n"
+            "      - {spell: realmforge:slam, row: 2, column: 1}\n",
             "a tree holds each spell once",
         ),
         (
-            "      - {spell: realmforge:slam, level: 1, column: 1}\n"
-            "      - {spell: realmforge:rend, level: 1, column: 1}\n",
+            "      - {spell: realmforge:slam, row: 1, column: 1}\n"
+            "      - {spell: realmforge:rend, row: 1, column: 1}\n",
             "two spells share a place",
         ),
         (
-            "      - {spell: realmforge:slam, level: 1, column: 1}\n"
-            "      - {spell: realmforge:rend, level: 5, column: 1}\n",
-            "a row opens at level 1 or every 6 levels, not 5",
+            "      - {spell: realmforge:slam, row: 1, column: 1}\n"
+            "      - {spell: realmforge:rend, row: 13, column: 1}\n",
+            "row",
         ),
         (
-            "      - {spell: realmforge:slam, level: 1, column: 1}\n"
-            "      - {spell: realmforge:rend, level: 6, column: 4}\n",
+            "      - {spell: realmforge:slam, row: 1, column: 1}\n"
+            "      - {spell: realmforge:rend, row: 1, column: 4}\n",
             "column",
         ),
         (
-            "      - {spell: realmforge:slam, level: 1, column: 1}\n"
-            "      - {spell: realmforge:rend, level: 6, column: 1, requires: realmforge:charge}\n",
+            "      - {spell: realmforge:slam, row: 1, column: 1}\n"
+            "      - {spell: realmforge:rend, row: 1, column: 2, level: 6}\n",
+            "Extra inputs are not permitted",
+        ),
+        (
+            "      - {spell: realmforge:slam, row: 1, column: 1}\n"
+            "      - {spell: realmforge:rend, row: 1, column: 2, requires: [realmforge:charge]}\n",
             "requires realmforge:charge, which is not in this tree",
         ),
         (
-            "      - {spell: realmforge:slam, level: 1, column: 1}\n"
-            "      - {spell: realmforge:rend, level: 6, column: 1, requires: realmforge:charge}\n"
-            "      - {spell: realmforge:charge, level: 6, column: 2}\n",
-            "requires realmforge:charge, which is not in an earlier row",
+            "      - {spell: realmforge:slam, row: 1, column: 1}\n"
+            "      - {spell: realmforge:rend, row: 1, column: 2, requires: [realmforge:charge]}\n"
+            "      - {spell: realmforge:charge, row: 2, column: 1}\n",
+            "requires realmforge:charge, which is in a later row",
+        ),
+        (
+            "      - {spell: realmforge:slam, row: 1, column: 1, requires: [realmforge:slam]}\n",
+            "realmforge:slam requires itself",
+        ),
+        (
+            "      - {spell: realmforge:slam, row: 1, column: 1}\n"
+            "      - {spell: realmforge:rend, row: 1, column: 2, requires: [realmforge:charge]}\n"
+            "      - {spell: realmforge:charge, row: 1, column: 3, requires: [realmforge:rend]}\n",
+            "the arrows run in a circle, so none of them can be learned: realmforge:rend -> realmforge:charge -> "
+            "realmforge:rend",
+        ),
+        (
+            "      - {spell: realmforge:slam, row: 1, column: 1}\n"
+            "      - {spell: realmforge:rend, row: 1, column: 2, requires: [realmforge:slam, realmforge:slam]}\n",
+            "requires",
         ),
     ],
 )
@@ -491,10 +528,60 @@ def test_a_tree_stands_in_rows_and_columns(repo: RepoPaths, spells: str, expecte
     assert_problem(repo, expected)
 
 
+def test_an_arrow_may_come_from_beside_and_a_spell_may_need_several(repo: RepoPaths) -> None:
+    """RLM-631: Shatter needs Frost Nova beside it, Bloodthirst both Overpower and Rend."""
+    _swap_tree(
+        repo,
+        "      - {spell: realmforge:slam, row: 1, column: 1}\n"
+        "      - {spell: realmforge:victory_rush, row: 1, column: 2}\n"
+        "      - {spell: realmforge:charge, row: 1, column: 3, requires: [realmforge:victory_rush]}\n"
+        "      - {spell: realmforge:rend, row: 2, column: 1, requires: [realmforge:charge, realmforge:slam]}\n",
+    )
+    content, _ = load_and_validate(repo)
+    tree = next(entry.model for entry in content.classes if entry.model.id == "warrior").specializations[0]
+    assert [taught.requires for taught in tree.spells] == [
+        [],
+        [],
+        ["realmforge:victory_rush"],
+        ["realmforge:charge", "realmforge:slam"],
+    ]
+
+
+def test_every_row_must_be_able_to_open(repo: RepoPaths) -> None:
+    """RLM-631: the rows above a row hold at least its points, the first spell's free rank aside: Slam's 5 ranks and
+    Victory Rush's 3 are 7 points to spend in row 1, enough for row 2 (5) but not for row 3 (10)."""
+    _swap_tree(
+        repo,
+        "      - {spell: realmforge:slam, row: 1, column: 1}\n"
+        "      - {spell: realmforge:victory_rush, row: 1, column: 2}\n"
+        "      - {spell: realmforge:rend, row: 3, column: 1}\n",
+    )
+    assert_problem(
+        repo,
+        "row 3 opens after 10 points spent in the tree, and the rows above it hold only 7 ranks to spend (the first "
+        "spell's free rank aside), so it never opens",
+    )
+    _swap_tree(
+        repo,
+        "      - {spell: realmforge:slam, row: 1, column: 1}\n"
+        "      - {spell: realmforge:victory_rush, row: 1, column: 2}\n"
+        "      - {spell: realmforge:rend, row: 2, column: 1}\n",
+    )
+    load_and_validate(repo)
+    # Slam alone holds 4 to spend, one short of row 2.
+    _swap_tree(
+        repo,
+        "      - {spell: realmforge:slam, row: 1, column: 1}\n      - {spell: realmforge:rend, row: 2, column: 1}\n",
+    )
+    assert_problem(
+        repo, "row 2 opens after 5 points spent in the tree, and the rows above it hold only 4 ranks"
+    )
+
+
 def test_a_tree_needs_its_first_spell(repo: RepoPaths) -> None:
     _swap_tree(
         repo,
-        "      - {spell: realmforge:rend, level: 1, column: 1}\n",
+        "      - {spell: realmforge:rend, row: 1, column: 1}\n",
         TREE.replace("    first_spell: realmforge:slam\n", ""),
     )
     assert_problem(repo, "every class starts with one spell (decision D4): set first_spell")
@@ -503,7 +590,7 @@ def test_a_tree_needs_its_first_spell(repo: RepoPaths) -> None:
 def test_a_first_spell_is_one_to_cast(repo: RepoPaths) -> None:
     _swap_tree(
         repo,
-        "      - {spell: realmforge:deep_wounds, level: 1, column: 1}\n",
+        "      - {spell: realmforge:deep_wounds, row: 1, column: 1}\n",
         TREE.replace("realmforge:slam", "realmforge:deep_wounds"),
     )
     assert_problem(repo, "realmforge:deep_wounds is passive: a class starts with a spell it can cast")
@@ -568,12 +655,12 @@ def test_class_spells_and_racials_reach_the_data_and_expectations() -> None:
     assert arms["id"] == "arms"
     assert arms["name"] == "class.realmforge.warrior.specializations.0.name"
     assert arms["first_spell"] == "realmforge:slam"
-    assert arms["spells"][1] == {"spell": "realmforge:slam", "level": 1, "column": 2}
-    assert arms["spells"][6] == {
+    assert arms["spells"][0] == {"spell": "realmforge:slam", "row": 1, "column": 2, "requires": []}
+    assert arms["spells"][7] == {
         "spell": "realmforge:bloodthirst",
-        "level": 12,
-        "column": 1,
-        "requires": "realmforge:rend",
+        "row": 3,
+        "column": 3,
+        "requires": ["realmforge:overpower", "realmforge:rend"],
     }
     assert warrior["specializations"][1] == {
         "id": "fury",
@@ -602,8 +689,12 @@ def test_class_spells_and_racials_reach_the_data_and_expectations() -> None:
     )
     assert lang["race.realmforge.human.racial_passive.tooltip_description"] == "+{bonus}% Damage"
     classes = files[f"{QA}/GeneratedClassExpectations.java"].decode()
-    assert 'new TreeSpell("realmforge:frostbolt", 1, 2, Optional.empty())' in classes
-    assert 'new TreeSpell("realmforge:bloodthirst", 12, 1, Optional.of("realmforge:rend"))' in classes
+    assert 'new TreeSpell("realmforge:frostbolt", 1, 2, List.of())' in classes
+    assert (
+        'new TreeSpell("realmforge:bloodthirst", 3, 3, List.of("realmforge:overpower", "realmforge:rend"))'
+        in classes
+    )
+    assert "public static final int ROW_POINTS = 5;" in classes
     assert 'new Specialization("frost", "class.realmforge.mage.specializations.0.name"' in classes
 
 

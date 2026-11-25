@@ -19,7 +19,8 @@ import net.minecraft.world.entity.player.Player;
  * Specializations and their spell trees (C5, RLM-333, architecture 10.1). A new character knows only their race's
  * spell. They pick a specialization in the spellbook's Spell Tree tab, which teaches the tree's first spell free at
  * rank 1, and then spend a point per rank ({@link SpellPoints}); every request comes through a payload and is checked
- * here. The reads use synced data, so the client's window shows the same.
+ * here. A row opens by the points spent in the tree (RLM-631). The reads use synced data, so the client's window shows
+ * the same.
  */
 public final class SpellTrees {
     /** What a request to pick a specialization led to. Only {@link #PICKED} changes anything. */
@@ -51,6 +52,10 @@ public final class SpellTrees {
     static int spent(Specialization tree, Map<ResourceKey<Spell>, Integer> known) {
         List<ResourceKey<Spell>> spells = tree.spells().stream().map(TreeSpell::key).toList();
         return SpellPoints.spent(known, spells, tree.firstSpellKey());
+    }
+
+    private static List<SpellPoints.Place> places(Specialization tree) {
+        return tree.spells().stream().map(TreeSpell::place).toList();
     }
 
     /** The ranks the player knows in their tree, the free one included: none before they pick. */
@@ -103,12 +108,25 @@ public final class SpellTrees {
         return result;
     }
 
-    /** Spends a point on the next rank of {@code spell} if the rules allow it; returns what happened. */
+    /**
+     * Spends a point on the next rank of {@code spell} if the rules allow it, with a line when that point opens a new
+     * row; returns what happened.
+     */
     public static SpellPoints.Result spend(ServerPlayer player, ResourceKey<Spell> spell) {
         SpellPoints.Result result = check(player, spell);
         if (result == SpellPoints.Result.SPENT) {
+            int before = spent(player);
             Spells.get(player.registryAccess(), spell).ifPresent(reference -> Spells.learn(player, reference,
                     Spells.knownLevel(player, spell).orElse(0) + 1));
+            int after = spent(player);
+            boolean opened = chosen(player).filter(tree -> tree.spells().stream().anyMatch(taught -> {
+                int needed = SpellPoints.rowPoints(taught.row());
+                return needed > before && needed <= after;
+            })).isPresent();
+            if (opened) {
+                player.sendSystemMessage(Component.translatable(GeneratedTexts.MESSAGE_SPELL_TREE_ROW_OPEN)
+                        .withStyle(ChatFormatting.YELLOW));
+            }
         } else {
             Realmforge.LOGGER.debug("Refused {}'s spell point for {}: {}", player.getPlainTextName(),
                     spell.identifier(), result);
@@ -126,10 +144,10 @@ public final class SpellTrees {
         if (taught.isEmpty()) {
             return SpellPoints.Result.NOT_IN_TREE;
         }
-        boolean requirementMet = taught.get().requires().flatMap(Holder::unwrapKey)
-                .map(required -> Spells.knownLevel(player, required).isPresent()).orElse(true);
-        return SpellPoints.check(Characters.level(player), unspent(player), Spells.knownLevel(player, spell).orElse(0),
-                taught.get().spell().value().maxLevel(), taught.get().level(), requirementMet);
+        Map<ResourceKey<Spell>, Integer> known = player.getData(SpellAttachments.SPELLBOOK).spells();
+        return SpellPoints.check(spent(tree.get(), known), unspent(player), known.getOrDefault(spell, 0),
+                taught.get().spell().value().maxLevel(), taught.get().row(),
+                SpellPoints.requirementsMet(known, taught.get().place()));
     }
 
     /**
@@ -154,35 +172,29 @@ public final class SpellTrees {
     }
 
     /**
-     * Returns every spent point, with a message, when the player's level no longer pays for them or no longer opens a
-     * spell's row (a command lowered it, a chapter was revoked), as stat points do. Returns whether they came back.
+     * Returns every spent point, with a message, as stat points do, when the player's level no longer pays for them (a
+     * command lowered it, a chapter was revoked), or when the ranks they know no longer follow their tree's rules: a
+     * spell in a row the points above it no longer open, or without a spell its arrows need (the tree's layout changed
+     * under the character, RLM-631). Returns whether they came back.
      */
     static boolean fit(ServerPlayer player) {
         Optional<Specialization> tree = chosen(player);
         if (tree.isEmpty()) {
             return false;
         }
-        int level = Characters.level(player);
-        boolean aboveItsRow = tree.get().spells().stream().anyMatch(taught -> taught.level() > level
-                && Spells.knownLevel(player, taught.key()).isPresent());
-        if (spent(player) <= SpellPoints.earned(level) && !aboveItsRow) {
+        boolean levelFell = spent(player) > SpellPoints.earned(Characters.level(player));
+        if (!levelFell && SpellPoints.followsTheRules(player.getData(SpellAttachments.SPELLBOOK).spells(),
+                places(tree.get()), tree.get().firstSpellKey())) {
             return false;
         }
         reset(player);
-        player.sendSystemMessage(Component.translatable(GeneratedTexts.MESSAGE_SPELL_POINTS_RETURNED, unspent(player))
-                .withStyle(ChatFormatting.YELLOW));
+        player.sendSystemMessage(Component.translatable(levelFell ? GeneratedTexts.MESSAGE_SPELL_POINTS_RETURNED
+                : GeneratedTexts.MESSAGE_SPELL_POINTS_TREE_CHANGED, unspent(player)).withStyle(ChatFormatting.YELLOW));
         return true;
     }
 
-    /**
-     * After a level-up from {@code oldLevel}, which may jump several levels: a line for a row that opened, and one for
-     * the points to spend.
-     */
-    static void announceLevelUp(ServerPlayer player, int oldLevel, int level) {
-        chosen(player).filter(tree -> tree.spells().stream()
-                        .anyMatch(taught -> taught.level() > oldLevel && taught.level() <= level))
-                .ifPresent(tree -> player.sendSystemMessage(Component.translatable(
-                        GeneratedTexts.MESSAGE_SPELL_TREE_ROW_OPEN).withStyle(ChatFormatting.YELLOW)));
+    /** After a level-up: a line for the points to spend, or one saying where to pick a specialization. */
+    static void announceLevelUp(ServerPlayer player) {
         if (Characters.data(player).specialization().isEmpty()) {
             remindToPick(player);
             return;
