@@ -1,0 +1,23 @@
+{
+  "gem": "apotheosis:overworld/earth",
+  "bonuses": [
+    {
+      "type": "apotheosis:enchantment",
+      "enchantment": "minecraft:protection",
+      "gem_class": {
+        "key": "realmforge.robe_core",
+        "types": [
+          "realmforge:robe_chest",
+          "realmforge:robe_legs"
+        ]
+      },
+      "mode": "existing",
+      "values": {
+        "flawed": 1,
+        "normal": 2,
+        "flawless": 3,
+        "perfect": 4
+      }
+    }
+  ]
+}

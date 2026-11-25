@@ -1,0 +1,41 @@
+{
+  "gem": "apotheosis:core/splendor",
+  "bonuses": [
+    {
+      "type": "apotheosis:attribute",
+      "attribute": "apothic_attributes:experience_gained",
+      "gem_class": "realmforge:wand",
+      "operation": "add_multiplied_base",
+      "values": {
+        "cracked": 0.075,
+        "chipped": 0.15,
+        "flawed": 0.225,
+        "normal": 0.3,
+        "flawless": 0.4,
+        "perfect": 0.6
+      }
+    },
+    {
+      "type": "apotheosis:attribute",
+      "attribute": "minecraft:luck",
+      "gem_class": {
+        "key": "realmforge.robes",
+        "types": [
+          "realmforge:robe_head",
+          "realmforge:robe_chest",
+          "realmforge:robe_legs",
+          "realmforge:robe_feet"
+        ]
+      },
+      "operation": "add_value",
+      "values": {
+        "cracked": 0.5,
+        "chipped": 1.25,
+        "flawed": 2.0,
+        "normal": 2.25,
+        "flawless": 3.5,
+        "perfect": 5.0
+      }
+    }
+  ]
+}

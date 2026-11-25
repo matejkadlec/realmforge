@@ -1,0 +1,56 @@
+{
+  "gem": "apotheosis:the_nether/molten_breach",
+  "bonuses": [
+    {
+      "type": "apotheosis:attribute",
+      "attribute": "realmforge:spell_penetration",
+      "gem_class": "realmforge:wand",
+      "operation": "add_value",
+      "values": {
+        "flawed": 0.15,
+        "normal": 0.2,
+        "flawless": 0.25,
+        "perfect": 0.3
+      }
+    },
+    {
+      "type": "apotheosis:attribute",
+      "attribute": "minecraft:scale",
+      "gem_class": "realmforge:robe_legs",
+      "operation": "add_value",
+      "values": {
+        "flawed": 0.075,
+        "normal": 0.125,
+        "flawless": 0.15,
+        "perfect": 0.25
+      }
+    },
+    {
+      "type": "apotheosis:multi_attribute",
+      "desc": "bonus.apotheosis:multi_attr.desc.and",
+      "gem_class": "realmforge:robe_chest",
+      "modifiers": [
+        {
+          "attribute": "realmforge:spell_power",
+          "operation": "add_multiplied_base",
+          "values": {
+            "flawed": 0.05,
+            "normal": 0.1,
+            "flawless": 0.125,
+            "perfect": 0.175
+          }
+        },
+        {
+          "attribute": "apothic_attributes:healing_received",
+          "operation": "add_multiplied_total",
+          "values": {
+            "flawed": -0.05,
+            "normal": -0.15,
+            "flawless": -0.25,
+            "perfect": -0.35
+          }
+        }
+      ]
+    }
+  ]
+}

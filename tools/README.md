@@ -89,7 +89,9 @@ a NeoForge upgrade updates the pin there too (`test_packboot.py` fails until it 
 server stops). Vanilla data is different: a broken loot table, recipe, advancement or tag is logged and skipped, so
 the GameTests still pass. `uv run rf gametest-log` (CI's gradle job, after the GameTests) therefore reads
 `run/gametest/logs/latest.log` and fails on every ERROR or FATAL line that `GAMETEST_ALLOWED_ERRORS` in `gamelog.py`
-does not explain, on loot table validation warnings, and on a log without the "All N required tests passed" line.
+does not explain, on loot table validation warnings, on Apotheosis's warning for an extra gem bonus it refused
+(`APOTHEOSIS_FAILING_WARNINGS`, which `rf pack-boot` fails on too, RLM-547), and on a log without the "All N required
+tests passed" line.
 `--log` checks another file.
 
 ## Rooms

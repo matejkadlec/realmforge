@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_gem_bonuses.schema.json
+# Mageslayer's robe bonus (Matěj, 2026-10-30, RLM-536, RLM-548): its helmet's heal from magic damage on the robe head
+# (vanilla's magic only: our schools are out of #c:is_magic, RLM-549). No wand bonus. It drops nowhere until RLM-550.
+id: mageslayer
+gem: apotheosis:the_end/mageslayer
+bonuses:
+  - gem_class: realmforge:robe_head
+    like: apotheosis:helmet

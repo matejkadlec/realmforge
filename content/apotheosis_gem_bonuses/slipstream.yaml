@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_gem_bonuses.schema.json
+# Slipstream's extra bonuses (Matěj, 2026-10-30, RLM-536): on a wand Mana Regeneration per second (RLM-547); on the robe
+# feet its boots' Dodge Chance, and a new head bonus for helmets and the robe head, half its boots' Dodge Chance, so a
+# caster, whose wand locks shields, has a second Dodge slot (RLM-548).
+id: slipstream
+gem: apotheosis:core/slipstream
+bonuses:
+  - gem_class: realmforge:wand
+    attribute: realmforge:mana_regeneration
+    operation: add_value
+    values: {cracked: 1, chipped: 1.5, flawed: 2, normal: 2.5, flawless: 3.5, perfect: 5}
+  - gem_class: realmforge:robe_feet
+    like: apotheosis:boots
+  - gem_class: {key: head, types: [apotheosis:helmet, realmforge:robe_head]}
+    attribute: realmforge:dodge_chance
+    operation: add_value
+    values: {cracked: 0.0125, chipped: 0.025, flawed: 0.0375, normal: 0.05, flawless: 0.0625, perfect: 0.075}

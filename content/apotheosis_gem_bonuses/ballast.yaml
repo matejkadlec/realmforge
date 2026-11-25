@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_gem_bonuses.schema.json
+# Ballast's extra bonuses (Matěj, 2026-10-30, RLM-536): on a wand flat Spell Power, as a sword's Attack Damage (RLM-547);
+# on the robe chest and legs its armor's Knockback Resistance (RLM-548).
+id: ballast
+gem: apotheosis:core/ballast
+bonuses:
+  - gem_class: realmforge:wand
+    attribute: realmforge:spell_power
+    operation: add_value
+    values: {cracked: 1, chipped: 2, flawed: 3.5, normal: 5, flawless: 7, perfect: 10}
+  - gem_class: {key: robe_core, types: [realmforge:robe_chest, realmforge:robe_legs]}
+    like: apotheosis:chestplate

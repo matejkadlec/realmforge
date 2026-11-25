@@ -1,0 +1,53 @@
+{
+  "gem": "apotheosis:core/lunar",
+  "bonuses": [
+    {
+      "type": "apotheosis:attribute",
+      "attribute": "realmforge:frost_power",
+      "gem_class": "realmforge:wand",
+      "operation": "add_value",
+      "values": {
+        "cracked": 0.05,
+        "chipped": 0.1,
+        "flawed": 0.15,
+        "normal": 0.225,
+        "flawless": 0.3,
+        "perfect": 0.4
+      }
+    },
+    {
+      "type": "apotheosis:attribute",
+      "attribute": "minecraft:gravity",
+      "gem_class": {
+        "key": "realmforge.robe_core",
+        "types": [
+          "realmforge:robe_chest",
+          "realmforge:robe_legs"
+        ]
+      },
+      "operation": "add_multiplied_total",
+      "values": {
+        "cracked": -0.1,
+        "chipped": -0.25,
+        "flawed": -0.45,
+        "normal": -0.65,
+        "flawless": -0.85,
+        "perfect": -1.04
+      }
+    },
+    {
+      "type": "apotheosis:attribute",
+      "attribute": "neoforge:swim_speed",
+      "gem_class": "realmforge:robe_feet",
+      "operation": "add_multiplied_base",
+      "values": {
+        "cracked": 0.1,
+        "chipped": 0.2,
+        "flawed": 0.3,
+        "normal": 0.45,
+        "flawless": 0.6,
+        "perfect": 0.8
+      }
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_gem_bonuses.schema.json
+# Royalty's robe bonus (Matěj, 2026-10-30, RLM-536, RLM-548): its helmet's all-stats on the robe head, with the caster
+# stats that content/apotheosis_gems/royalty.yaml adds to it. No wand bonus, so it fits no wand.
+id: royalty
+gem: apotheosis:overworld/royalty
+bonuses:
+  - gem_class: realmforge:robe_head
+    like: apotheosis:helmet

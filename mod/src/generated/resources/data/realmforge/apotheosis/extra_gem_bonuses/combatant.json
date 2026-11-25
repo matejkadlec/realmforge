@@ -1,0 +1,38 @@
+{
+  "gem": "apotheosis:core/combatant",
+  "bonuses": [
+    {
+      "type": "apotheosis:attribute",
+      "attribute": "realmforge:spell_power",
+      "gem_class": "realmforge:wand",
+      "operation": "add_multiplied_base",
+      "values": {
+        "cracked": 0.05,
+        "chipped": 0.1,
+        "flawed": 0.15,
+        "normal": 0.2,
+        "flawless": 0.25,
+        "perfect": 0.3
+      }
+    },
+    {
+      "type": "apotheosis:damage_reduction",
+      "damage_type": "physical",
+      "gem_class": {
+        "key": "realmforge.robe_core",
+        "types": [
+          "realmforge:robe_chest",
+          "realmforge:robe_legs"
+        ]
+      },
+      "values": {
+        "cracked": 0.05,
+        "chipped": 0.075,
+        "flawed": 0.125,
+        "normal": 0.175,
+        "flawless": 0.225,
+        "perfect": 0.275
+      }
+    }
+  ]
+}

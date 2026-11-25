@@ -1,0 +1,57 @@
+{
+  "gem": "apotheosis:overworld/royalty",
+  "bonuses": [
+    {
+      "type": "apotheosis:all_stats",
+      "attributes": [
+        "minecraft:max_health",
+        "minecraft:knockback_resistance",
+        "minecraft:movement_speed",
+        "minecraft:attack_damage",
+        "minecraft:attack_knockback",
+        "minecraft:attack_speed",
+        "minecraft:armor",
+        "minecraft:armor_toughness",
+        "minecraft:luck",
+        "minecraft:step_height",
+        "minecraft:block_interaction_range",
+        "minecraft:entity_interaction_range",
+        "realmforge:armor_pierce",
+        "realmforge:armor_shred",
+        "apothic_attributes:arrow_damage",
+        "apothic_attributes:arrow_velocity",
+        "apothic_attributes:cold_damage",
+        "realmforge:crit_chance",
+        "realmforge:crit_damage",
+        "apothic_attributes:current_hp_damage",
+        "realmforge:dodge_chance",
+        "apothic_attributes:experience_gained",
+        "apothic_attributes:fire_damage",
+        "apothic_attributes:ghost_health",
+        "apothic_attributes:healing_received",
+        "realmforge:lifesteal",
+        "minecraft:block_break_speed",
+        "realmforge:overheal",
+        "neoforge:swim_speed",
+        "realmforge:spell_power",
+        "realmforge:magic_shield",
+        "realmforge:max_mana",
+        "realmforge:mana_regeneration",
+        "realmforge:spell_penetration",
+        "realmforge:cast_time_reduction",
+        "realmforge:cooldown_reduction",
+        "realmforge:fire_power",
+        "realmforge:frost_power",
+        "realmforge:arcane_power"
+      ],
+      "gem_class": "realmforge:robe_head",
+      "operation": "add_multiplied_total",
+      "values": {
+        "flawed": 0.05,
+        "normal": 0.075,
+        "flawless": 0.1,
+        "perfect": 0.15
+      }
+    }
+  ]
+}

@@ -20,7 +20,7 @@ import net.minecraft.util.RandomSource;
  *   the crit roll, then × (1 − the defender's resistance). Spell Power is no multiplier: since scaling system C
  *   (RLM-534) a spell adds its coefficient of the caster's Spell Power to the damage before the hit. The resistance: the resistance to the school, plus spell resistance for a magic school, at
  *   most 75 % together ({@link #RESISTANCE_CAP}), less the hit's spell penetration share of it
- *   ({@link #penetrated}; C4).</li>
+ *   ({@link #penetrated}; C4): the attacker's Spell Penetration plus the spell's own ({@link #penetration}, RLM-535).</li>
  *   <li><b>Damage type resistances</b> (RLM-233): every one whose damage type tag the hit is in (physical,
  *   projectile, explosion, fall) blocks its share, each at most 75 %; several multiply, and their whole stops at 75 %
  *   ({@link #damageTypeResistance}). On a school hit they multiply with its school resistance.</li>
@@ -166,6 +166,16 @@ public final class DamageCalculator {
     public static double resistance(double schoolResistance, double spellResistance, boolean magic) {
         double sum = Math.max(0, schoolResistance) + (magic ? Math.max(0, spellResistance) : 0);
         return Math.min(RESISTANCE_CAP, sum);
+    }
+
+    /**
+     * A magic hit's spell penetration (RLM-535): the attacker's Spell Penetration stat plus the spell's own
+     * ({@link HitBonus#penetration}, Arcane Missiles), at most all of the resistance. The stat's cap, 50 %, is its
+     * attribute's maximum ({@code content/stats/spell_penetration.yaml}), so it never passes that here; a spell's own
+     * share adds on top. A negative share counts as 0.
+     */
+    public static double penetration(double stat, double spell) {
+        return Math.min(1, Math.max(0, stat) + Math.max(0, spell));
     }
 
     /**

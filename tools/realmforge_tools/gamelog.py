@@ -132,12 +132,23 @@ GAMETEST_ALLOWED_ERRORS: tuple[tuple[str, str], ...] = (
     ),
 )
 
+# WARN lines of Apotheosis that mean our data did not load as written, in the GameTest log and in a pack boot alike.
+APOTHEOSIS_FAILING_WARNINGS: tuple[tuple[str, str], ...] = (
+    (
+        r"^apotheosis: (Failed to apply extra gem bonus for class |Exception while applying ExtraGemBonus )",
+        "Apotheosis refused an extra gem bonus of ours (content/apotheosis_gem_bonuses/, RLM-547), for a category its "
+        "gem already covers, and the gem goes without it; validation refuses such an overlap, so this means the "
+        "fitted gem and Apotheosis's own disagree",
+    ),
+)
+
 # WARN lines that are data errors: vanilla reports these only as warnings, but they mean broken content.
 GAMETEST_FAILING_WARNINGS: tuple[tuple[str, str], ...] = (
     (
         r"^net\.minecraft\.server\.ReloadableServerRegistries: Found loot table element validation problem",
         "a loot table that names a missing table, item or function loads, but drops nothing where the name is",
     ),
+    *APOTHEOSIS_FAILING_WARNINGS,
 )
 
 _TESTS_PASSED = re.compile(r"All \d+ required tests passed")

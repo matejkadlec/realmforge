@@ -58,6 +58,17 @@ class AttributeCapsTest {
         assertEquals(1.0, AttributeCaps.max(NeoForgeMod.CREATIVE_FLIGHT), "a boolean attribute");
     }
 
+    /**
+     * RLM-535's cap: Spell Penetration stops at 50 % (content/stats/spell_penetration.yaml), so Breach and a Perfect
+     * Verdant Ruin in one wand (30 % and 50 %) give 50 %.
+     */
+    @Test
+    void spellPenetrationStopsAtHalf() {
+        assertEquals(0.5, AttributeCaps.max(GeneratedStats.SPELL_PENETRATION));
+        assertEquals(0.5, GeneratedStats.SPELL_PENETRATION.value().sanitizeValue(0.8));
+        assertEquals(0.3, GeneratedStats.SPELL_PENETRATION.value().sanitizeValue(0.3));
+    }
+
     @Test
     void raiseNeverLowersACapAnotherModRaisedFurther() {
         RangedAttribute armor = (RangedAttribute) Attributes.ARMOR.value();

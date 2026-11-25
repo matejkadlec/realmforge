@@ -1,0 +1,70 @@
+{
+  "gem": "apotheosis:overworld/verdant_ruin",
+  "bonuses": [
+    {
+      "type": "apotheosis:multi_attribute",
+      "desc": "bonus.apotheosis:multi_attr.desc.and",
+      "gem_class": "realmforge:wand",
+      "modifiers": [
+        {
+          "attribute": "realmforge:spell_penetration",
+          "operation": "add_value",
+          "values": {
+            "flawed": 0.2,
+            "normal": 0.3,
+            "flawless": 0.4,
+            "perfect": 0.5
+          }
+        },
+        {
+          "attribute": "realmforge:magic_shield",
+          "operation": "add_multiplied_base",
+          "values": {
+            "flawed": -0.05,
+            "normal": -0.1,
+            "flawless": -0.15,
+            "perfect": -0.2
+          }
+        }
+      ]
+    },
+    {
+      "type": "apotheosis:damage_reduction",
+      "damage_type": "magic",
+      "gem_class": "realmforge:robe_chest",
+      "values": {
+        "flawed": 0.125,
+        "normal": 0.15,
+        "flawless": 0.175,
+        "perfect": 0.2
+      }
+    },
+    {
+      "type": "apotheosis:multi_attribute",
+      "desc": "bonus.apotheosis:multi_attr.desc.and",
+      "gem_class": "realmforge:robe_feet",
+      "modifiers": [
+        {
+          "attribute": "minecraft:knockback_resistance",
+          "operation": "add_multiplied_total",
+          "values": {
+            "flawed": 0.05,
+            "normal": 0.1,
+            "flawless": 0.15,
+            "perfect": 0.2
+          }
+        },
+        {
+          "attribute": "minecraft:attack_knockback",
+          "operation": "add_multiplied_total",
+          "values": {
+            "flawed": -0.075,
+            "normal": -0.1,
+            "flawless": -0.125,
+            "perfect": -0.15
+          }
+        }
+      ]
+    }
+  ]
+}

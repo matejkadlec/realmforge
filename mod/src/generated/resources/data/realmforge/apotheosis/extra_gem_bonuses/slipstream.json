@@ -1,0 +1,53 @@
+{
+  "gem": "apotheosis:core/slipstream",
+  "bonuses": [
+    {
+      "type": "apotheosis:attribute",
+      "attribute": "realmforge:mana_regeneration",
+      "gem_class": "realmforge:wand",
+      "operation": "add_value",
+      "values": {
+        "cracked": 1.0,
+        "chipped": 1.5,
+        "flawed": 2.0,
+        "normal": 2.5,
+        "flawless": 3.5,
+        "perfect": 5.0
+      }
+    },
+    {
+      "type": "apotheosis:attribute",
+      "attribute": "realmforge:dodge_chance",
+      "gem_class": "realmforge:robe_feet",
+      "operation": "add_value",
+      "values": {
+        "cracked": 0.025,
+        "chipped": 0.05,
+        "flawed": 0.075,
+        "normal": 0.1,
+        "flawless": 0.125,
+        "perfect": 0.15
+      }
+    },
+    {
+      "type": "apotheosis:attribute",
+      "attribute": "realmforge:dodge_chance",
+      "gem_class": {
+        "key": "realmforge.head",
+        "types": [
+          "apotheosis:helmet",
+          "realmforge:robe_head"
+        ]
+      },
+      "operation": "add_value",
+      "values": {
+        "cracked": 0.0125,
+        "chipped": 0.025,
+        "flawed": 0.0375,
+        "normal": 0.05,
+        "flawless": 0.0625,
+        "perfect": 0.075
+      }
+    }
+  ]
+}

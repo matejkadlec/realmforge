@@ -1,0 +1,14 @@
+{
+  "gem": "apotheosis:the_end/mageslayer",
+  "bonuses": [
+    {
+      "type": "apotheosis:mageslayer",
+      "gem_class": "realmforge:robe_head",
+      "values": {
+        "normal": 0.15,
+        "flawless": 0.225,
+        "perfect": 0.35
+      }
+    }
+  ]
+}

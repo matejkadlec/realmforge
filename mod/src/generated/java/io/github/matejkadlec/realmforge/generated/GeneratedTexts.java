@@ -92,6 +92,18 @@ public final class GeneratedTexts {
     /** {@code entity.realmforge.spell_projectile} from {@code content/texts/entity.yaml}: "Spell Projectile" */
     public static final String ENTITY_SPELL_PROJECTILE = "entity.realmforge.spell_projectile";
 
+    /** {@code gem_class.realmforge.head} from {@code content/texts/gem_class.yaml}: "Helmets and Caster Caps" */
+    public static final String GEM_CLASS_HEAD = "gem_class.realmforge.head";
+
+    /** {@code gem_class.realmforge.robe_core} from {@code content/texts/gem_class.yaml}: "Caster Robes and Pants" */
+    public static final String GEM_CLASS_ROBE_CORE = "gem_class.realmforge.robe_core";
+
+    /** {@code gem_class.realmforge.robe_lower} from {@code content/texts/gem_class.yaml}: "Caster Pants and Sandals" */
+    public static final String GEM_CLASS_ROBE_LOWER = "gem_class.realmforge.robe_lower";
+
+    /** {@code gem_class.realmforge.robes} from {@code content/texts/gem_class.yaml}: "Caster Garb" */
+    public static final String GEM_CLASS_ROBES = "gem_class.realmforge.robes";
+
     /** {@code gui.realmforge.auto_shoot} from {@code content/texts/gui.yaml}: "Auto Shoot" */
     public static final String GUI_AUTO_SHOOT = "gui.realmforge.auto_shoot";
 
@@ -808,6 +820,9 @@ public final class GeneratedTexts {
 
     /** {@code stat_tooltip.realmforge.resistance_projectile} from {@code content/texts/stat_tooltip.yaml}: "How much less damage you take from arrows, tridents and other projectiles, from Physical and Projectile Resistance and your protection enchantments together. Armor is not counted." */
     public static final String STAT_TOOLTIP_RESISTANCE_PROJECTILE = "stat_tooltip.realmforge.resistance_projectile";
+
+    /** {@code stat_tooltip.realmforge.spell_penetration} from {@code content/texts/stat_tooltip.yaml}: "Your magic spells ignore this share of the resistances of mobs and bosses. At most 50%." */
+    public static final String STAT_TOOLTIP_SPELL_PENETRATION = "stat_tooltip.realmforge.spell_penetration";
 
     /** {@code stat_tooltip.realmforge.spell_power} from {@code content/texts/stat_tooltip.yaml}: "Adds to the damage and healing of your magic spells. Each spell adds its own share of it." */
     public static final String STAT_TOOLTIP_SPELL_POWER = "stat_tooltip.realmforge.spell_power";

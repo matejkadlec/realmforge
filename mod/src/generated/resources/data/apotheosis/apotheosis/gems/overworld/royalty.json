@@ -56,7 +56,17 @@
         "realmforge:lifesteal",
         "minecraft:block_break_speed",
         "realmforge:overheal",
-        "neoforge:swim_speed"
+        "neoforge:swim_speed",
+        "realmforge:spell_power",
+        "realmforge:magic_shield",
+        "realmforge:max_mana",
+        "realmforge:mana_regeneration",
+        "realmforge:spell_penetration",
+        "realmforge:cast_time_reduction",
+        "realmforge:cooldown_reduction",
+        "realmforge:fire_power",
+        "realmforge:frost_power",
+        "realmforge:arcane_power"
       ],
       "gem_class": "apotheosis:helmet",
       "operation": "add_multiplied_total",

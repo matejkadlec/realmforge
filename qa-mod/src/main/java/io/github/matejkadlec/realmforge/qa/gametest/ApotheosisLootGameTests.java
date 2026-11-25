@@ -106,10 +106,13 @@ public final class ApotheosisLootGameTests {
         ApotheosisLoot.aRobeIsARobeNotArmor(helper);
     }
 
-    /** Done when of RLM-546: a Guardian gem, armor bonuses only, cannot be socketed into a robe. */
+    /**
+     * RLM-546, then RLM-548: a Guardian gem fits a robe only through its robe bonus: the robe chest and legs, never the
+     * cap or sandals.
+     */
     @QaGameTest
-    public static void aGuardianGemFitsNoRobe(GameTestHelper helper) {
-        ApotheosisLoot.aGuardianGemFitsNoRobe(helper);
+    public static void aGuardianGemFitsOnlyTheRobesItHasABonusFor(GameTestHelper helper) {
+        ApotheosisLoot.aGuardianGemFitsOnlyTheRobesItHasABonusFor(helper);
     }
 
     /** RLM-546: a wand rolled at every rarity gets the rarity and no affix, without an empty slot's error. */

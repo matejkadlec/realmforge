@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_gem_bonuses.schema.json
+# Blood Lord's robe bonuses (Matěj, 2026-10-30, RLM-536, RLM-548), from Flawed as it drops: its chestplate's Healing
+# Received on the robe chest, and on the robe head its helmet's bonus with Attack Damage in percent swapped for Spell
+# Power in percent of its points, the less max health as on the helmet. No wand bonus.
+id: blood_lord
+gem: apotheosis:the_nether/blood_lord
+bonuses:
+  - gem_class: realmforge:robe_chest
+    like: apotheosis:chestplate
+  - gem_class: realmforge:robe_head
+    modifiers:
+      - attribute: realmforge:spell_power
+        operation: add_multiplied_base
+        values: {flawed: 0.25, normal: 0.35, flawless: 0.45, perfect: 0.6}
+      - attribute: minecraft:max_health
+        operation: add_multiplied_total
+        values: {flawed: -0.3, normal: -0.4, flawless: -0.5, perfect: -0.65}

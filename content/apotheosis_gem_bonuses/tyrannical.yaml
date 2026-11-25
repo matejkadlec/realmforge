@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_gem_bonuses.schema.json
+# Tyrannical's extra bonuses (Matěj, 2026-10-30, RLM-536): on a wand Arcane Power (RLM-547); on the robe chest and legs
+# its armor's Armor Toughness swapped for Magic Shield, its smaller numbers point for point, and on the robe feet its
+# boots' max health and less lifesteal (RLM-548). Its own bonuses are content/apotheosis_gems/tyrannical.yaml's.
+id: tyrannical
+gem: apotheosis:core/tyrannical
+bonuses:
+  - gem_class: realmforge:wand
+    attribute: realmforge:arcane_power
+    operation: add_value
+    values: {cracked: 0.05, chipped: 0.1, flawed: 0.15, normal: 0.225, flawless: 0.3, perfect: 0.4}
+  - gem_class: {key: robe_core, types: [realmforge:robe_chest, realmforge:robe_legs]}
+    attribute: realmforge:magic_shield
+    operation: add_value
+    values: {cracked: 0.5, chipped: 1, flawed: 2, normal: 3, flawless: 4, perfect: 6}
+  - gem_class: realmforge:robe_feet
+    like: apotheosis:boots

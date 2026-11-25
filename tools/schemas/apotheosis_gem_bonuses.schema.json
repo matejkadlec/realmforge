@@ -1,0 +1,247 @@
+{
+  "$defs": {
+    "ExtraGemBonusDef": {
+      "additionalProperties": false,
+      "description": "One bonus a gem gets for a gem class it has no bonus for, in one of three shapes: a stat (``attribute``,\n``operation``, ``values``: Apotheosis's ``attribute`` bonus), several stats at once (``modifiers``: its\n``multi_attribute`` bonus), or a copy of the gem's own bonus for another loot category (``like``), as Apotheosis\nships it with our stat remaps applied, e.g. a robe's bonus as the armor's, so it stays in step with Apotheosis\nupdates. A gem fits an item only if it has a bonus for the item's category.",
+      "properties": {
+        "attribute": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The stat it adds, e.g. realmforge:spell_power.",
+          "title": "Attribute"
+        },
+        "desc": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "With modifiers: how the tooltip joins them, one of Apotheosis's texts (default bonus.apotheosis:multi_attr.desc.and, \"%s and %s\").",
+          "title": "Desc"
+        },
+        "gem_class": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/GemClassDef"
+            }
+          ],
+          "description": "The loot categories it is for: one, e.g. realmforge:wand (named in tooltips by its loot category's plural, \"Wands\"), or a gem class of ours over several, {key, types}.",
+          "title": "Gem Class"
+        },
+        "like": {
+          "anyOf": [
+            {
+              "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Copies the gem's own bonus for this loot category, e.g. apotheosis:chestplate, for this gem class. Alone, without attribute or modifiers.",
+          "title": "Like"
+        },
+        "modifiers": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/GemModifierDef"
+              },
+              "minItems": 2,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Several stats at once, each with its operation and values.",
+          "title": "Modifiers"
+        },
+        "operation": {
+          "anyOf": [
+            {
+              "enum": [
+                "add_value",
+                "add_multiplied_base",
+                "add_multiplied_total"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "With attribute: add_value for flat points and for a share of ours; add_multiplied_base for a percent on points (architecture 8.2).",
+          "title": "Operation"
+        },
+        "values": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "description": "Purity -> the amount, e.g. {cracked: 1, chipped: 2, ...}: one for every purity the gem drops at, from its min_purity up. A share is a fraction: 5 % is 0.05.",
+              "minProperties": 1,
+              "propertyNames": {
+                "enum": [
+                  "cracked",
+                  "chipped",
+                  "flawed",
+                  "normal",
+                  "flawless",
+                  "perfect"
+                ]
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Values"
+        }
+      },
+      "required": [
+        "gem_class"
+      ],
+      "title": "ExtraGemBonusDef",
+      "type": "object"
+    },
+    "GemClassDef": {
+      "additionalProperties": false,
+      "description": "A gem class of ours over several loot categories, e.g. the robe chest and legs as Apotheosis's ``core_armor``\ncovers the chestplate and the leggings. One category is written as the category instead: Apotheosis would sync a\none-category class without its key (``GEM_CLASS_TEXTS``).",
+      "properties": {
+        "key": {
+          "description": "The gem class's name in tooltips, gem_class.realmforge.<key> in content/texts/gem_class.yaml.",
+          "maxLength": 48,
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "title": "Key",
+          "type": "string"
+        },
+        "types": {
+          "description": "The loot categories it covers, at least two, e.g. [realmforge:robe_chest, realmforge:robe_legs]. For one, write gem_class: <the category>.",
+          "items": {
+            "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+            "type": "string"
+          },
+          "minItems": 2,
+          "title": "Types",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "key",
+        "types"
+      ],
+      "title": "GemClassDef",
+      "type": "object"
+    },
+    "GemModifierDef": {
+      "additionalProperties": false,
+      "description": "One stat of a multi-attribute bonus.",
+      "properties": {
+        "attribute": {
+          "description": "The stat, e.g. realmforge:spell_penetration.",
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "title": "Attribute",
+          "type": "string"
+        },
+        "operation": {
+          "description": "add_value for flat points and for a share of ours; add_multiplied_base for a percent on points (architecture 8.2).",
+          "enum": [
+            "add_value",
+            "add_multiplied_base",
+            "add_multiplied_total"
+          ],
+          "title": "Operation",
+          "type": "string"
+        },
+        "values": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "description": "Purity -> the amount, e.g. {cracked: 1, chipped: 2, ...}: one for every purity the gem drops at, from its min_purity up. A share is a fraction: 5 % is 0.05.",
+          "minProperties": 1,
+          "propertyNames": {
+            "enum": [
+              "cracked",
+              "chipped",
+              "flawed",
+              "normal",
+              "flawless",
+              "perfect"
+            ]
+          },
+          "title": "Values",
+          "type": "object"
+        }
+      },
+      "required": [
+        "attribute",
+        "operation",
+        "values"
+      ],
+      "title": "GemModifierDef",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A gem's extra bonuses (RLM-547): bonuses for gem classes it has none for, through Apotheosis's own\n``extra_gem_bonuses`` (``ExtraGemBonusRegistry``), which adds them to the gem when it loads instead of replacing\nits file (decision G3, Matěj, 2026-10-30). One file per gem. The wand bonuses (``realmforge:wand``), the robes'\n(RLM-548) and Slipstream's helmet are the first. Only attribute bonuses of our own: Apotheosis's special ones (on\nhit, on being hurt) fire on melee hits, arrows and being hurt, never on a spell, but a ``like`` copy brings\nwhatever the gem's own bonus is, as on armor.",
+  "properties": {
+    "bonuses": {
+      "description": "Its new bonuses, each for loot categories the gem and the other bonuses here do not cover.",
+      "items": {
+        "$ref": "#/$defs/ExtraGemBonusDef"
+      },
+      "minItems": 1,
+      "title": "Bonuses",
+      "type": "array"
+    },
+    "gem": {
+      "description": "The gem, e.g. apotheosis:core/ballast.",
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_]+(/[a-z0-9_]+)*$",
+      "title": "Gem",
+      "type": "string"
+    },
+    "id": {
+      "description": "Lowercase snake_case id; becomes realmforge:<id>. Must equal the file name.",
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "gem",
+    "bonuses"
+  ],
+  "title": "ApotheosisGemBonusesDef",
+  "type": "object"
+}

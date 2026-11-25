@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_gem_bonuses.schema.json
+# Solar's extra bonuses (Matěj, 2026-10-30, RLM-536): on a wand Fire Power (RLM-547); on the robe chest and legs its
+# armor's higher gravity, on the robe feet its boots' Step Height (RLM-548).
+id: solar
+gem: apotheosis:core/solar
+bonuses:
+  - gem_class: realmforge:wand
+    attribute: realmforge:fire_power
+    operation: add_value
+    values: {cracked: 0.05, chipped: 0.1, flawed: 0.15, normal: 0.225, flawless: 0.3, perfect: 0.4}
+  - gem_class: {key: robe_core, types: [realmforge:robe_chest, realmforge:robe_legs]}
+    like: apotheosis:chestplate
+  - gem_class: realmforge:robe_feet
+    like: apotheosis:boots

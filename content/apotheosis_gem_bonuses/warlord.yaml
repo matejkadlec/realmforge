@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_gem_bonuses.schema.json
+# Warlord's extra bonuses (Matěj, 2026-10-30, RLM-536): on a wand its weapons' crit damage (ours after the remap, which
+# makes Apothic Attributes' share of 1.5 an add_value of 1.5 times it, RLM-547); on the robe chest its chestplate's max
+# health in percent, kept as on armor (RLM-511, question 5; RLM-565), and on the robe head its helmet's Attack Damage in
+# percent swapped for Spell Power in percent of its points (RLM-548).
+id: warlord
+gem: apotheosis:core/warlord
+bonuses:
+  - gem_class: realmforge:wand
+    like: apotheosis:melee_weapon
+  - gem_class: realmforge:robe_chest
+    like: apotheosis:chestplate
+  - gem_class: realmforge:robe_head
+    attribute: realmforge:spell_power
+    operation: add_multiplied_base
+    values: {cracked: 0.05, chipped: 0.1, flawed: 0.125, normal: 0.15, flawless: 0.175, perfect: 0.225}

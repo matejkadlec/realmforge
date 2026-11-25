@@ -15,8 +15,9 @@
    ticks. The client runs under Xvfb when ``xvfb-run`` exists. Each side boots twice when the pack has optional mods:
    with them, which packwiz-installer's command line always installs, and without them, the default choice for
    players (pack/README.md). Without optional mods the one boot covers both.
-5. Fail on a non-zero exit, a missing self-test report, a crash report, a mod jar of ours that was not loaded, or an
-   ERROR or FATAL line in ``logs/latest.log`` that the side's allowlist does not cover. A game that keeps running
+5. Fail on a non-zero exit, a missing self-test report, a crash report, a mod jar of ours that was not loaded, an
+   ERROR or FATAL line in ``logs/latest.log`` that the side's allowlist does not cover, or a WARN line of Apotheosis
+   that refused our data (``gamelog.APOTHEOSIS_FAILING_WARNINGS``: an extra gem bonus, RLM-547). A game that keeps running
    after a fatal error (the client then waits on FML's error screen) is stopped instead of waiting for the timeout.
 """
 
@@ -40,7 +41,7 @@ from dataclasses import dataclass, field
 from functools import partial
 from pathlib import Path
 
-from realmforge_tools.gamelog import parse_log, unexpected_errors
+from realmforge_tools.gamelog import APOTHEOSIS_FAILING_WARNINGS, matching, parse_log, unexpected_errors
 from realmforge_tools.project import RepoPaths
 
 NEOFORGE_VERSION = "26.1.2.116"
@@ -175,7 +176,13 @@ def boot_problems(outcome: BootOutcome, allowed: tuple[tuple[str, str], ...]) ->
     for name in outcome.client_mod_jar_names:
         if f"(jar(mods/{name}))" not in outcome.log:
             problems.append(f"the mod jar {name} was not loaded")
-    problems += [entry.describe() for entry in unexpected_errors(parse_log(outcome.log), allowed)]
+    entries = parse_log(outcome.log)
+    failing = {
+        entry.line_number
+        for entry in unexpected_errors(entries, allowed)
+        + matching(entries, "WARN", APOTHEOSIS_FAILING_WARNINGS)
+    }
+    problems += [entry.describe() for entry in entries if entry.line_number in failing]
     return problems
 
 

@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_gem_bonuses.schema.json
+# Combatant's extra bonuses (Matěj, 2026-10-30, RLM-536): on a wand Spell Power in percent of its points (RLM-547); on
+# the robe chest and legs its armor's physical damage reduction (RLM-548).
+id: combatant
+gem: apotheosis:core/combatant
+bonuses:
+  - gem_class: realmforge:wand
+    attribute: realmforge:spell_power
+    operation: add_multiplied_base
+    values: {cracked: 0.05, chipped: 0.1, flawed: 0.15, normal: 0.2, flawless: 0.25, perfect: 0.3}
+  - gem_class: {key: robe_core, types: [realmforge:robe_chest, realmforge:robe_legs]}
+    like: apotheosis:chestplate

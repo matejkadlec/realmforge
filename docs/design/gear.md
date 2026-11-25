@@ -313,10 +313,54 @@ builds them):
 
 - **Apotheosis's gems are the socket gems,** and Ruby, Sapphire and Topaz are not sockets (task 4).
 - **Our categories get gem bonuses:** each gem that fits a caster or a curio gets a bonus for `realmforge:wand`,
-  the robe categories and the curio categories (Apotheosis's `extra_gem_bonuses`), with our stats: the wand bonuses in
-  RLM-547 (Matěj's picks on RLM-536, 2026-10-30), the robes' in RLM-548 (the armor gems' bonuses with swaps: Armor and
-  Toughness to Magic Shield, Attack Damage % to Spell Power %), the curios' with RLM-556. Curios take attribute bonuses
-  only.
+  the robe categories and the curio categories (Apotheosis's `extra_gem_bonuses`, `content/apotheosis_gem_bonuses/`),
+  with our stats; a gem fits an item only with a bonus for its category. The curios' come with RLM-556, attribute
+  bonuses only.
+- **Wands** (built, RLM-547; Matěj's picks on RLM-536, 2026-10-30), Cracked → Perfect, in the main hand:
+
+  | Gem | Wand bonus |
+  | --- | --- |
+  | Ballast | Spell Power +1 / 2 / 3.5 / 5 / 7 / 10 (flat, as a sword's Attack Damage) |
+  | Brawler's | Cast Time Reduction +5 / 7.5 / 10 / 12.5 / 15 / 20 % |
+  | Breach | Spell Penetration +5 / 10 / 15 / 20 / 25 / 30 % |
+  | Combatant | Spell Power +5 / 10 / 15 / 20 / 25 / 30 % (of its points) |
+  | Lightning | Cooldown Reduction +5 / 7.5 / 10 / 12.5 / 15 / 20 % |
+  | Lunar, Solar, Tyrannical | Frost, Fire and Arcane Power +5 / 10 / 15 / 22.5 / 30 / 40 % |
+  | Samurai, Warlord, Splendor | as on its weapons: Crit Chance +5 / 15 / 25 / 35 / 40 / 50 %, Crit Damage +15 / 30 / 52.5 / 67.5 / 82.5 / 105 %, Experience Gained +7.5 / 15 / 22.5 / 30 / 40 / 60 % (of base) |
+  | Slipstream | Mana Regeneration +1 / 1.5 / 2 / 2.5 / 3.5 / 5 per second |
+  | Verdant Ruin (from Flawed) | Spell Penetration +20 / 30 / 40 / 50 % and Magic Shield −5 / −10 / −15 / −20 % (of its points) |
+  | Molten Breach (from Flawed) | Spell Penetration +15 / 20 / 25 / 30 % |
+
+  No wand bonus, so they fit no wand: Guardian (no Magic Shield on wands), Earth (until the wand enchantments, RLM-538,
+  RLM-606), Royalty, Blood Lord, Inferno and Mageslayer. Endersurge fits everything already. Spell Penetration stops at
+  its 50 % cap (RLM-535), which Breach and Verdant Ruin together pass and a Perfect Verdant Ruin reaches alone: Matěj's
+  numbers stand, the cap is his playtest's call.
+- **Robes** (built, RLM-548; decision G2): every armor gem bonus on the robe piece of the same slot, copied from
+  Apotheosis's (so an Apotheosis update keeps them in step), with these swaps, Cracked → Perfect:
+
+  | Gem | Robe pieces | Bonus |
+  | --- | --- | --- |
+  | Guardian | chest, legs | Magic Shield +0.5 / 1 / 2.5 / 4 / 6 / 8 (its Armor, point for point) |
+  | Tyrannical | chest, legs | Magic Shield +0.5 / 1 / 2 / 3 / 4 / 6 (its Armor Toughness) |
+  | Samurai | legs, feet | Magic Shield +10 / 15 / 17.5 / 22.5 / 27.5 / 35 % (of its points) and Movement Speed −2.5 / −5 / −7.5 / −10 / −12.5 / −15 % |
+  | Warlord | head | Spell Power +5 / 10 / 12.5 / 15 / 17.5 / 22.5 % (of its points) |
+  | Blood Lord (from Flawed) | head | Spell Power +25 / 35 / 45 / 60 % (of its points) and max health −30 / −40 / −50 / −65 % |
+  | Inferno (from Flawed) | head | Fire Power +10 / 20 / 30 / 40 % |
+  | Molten Breach (from Flawed) | chest | Spell Power +5 / 10 / 12.5 / 17.5 % (of its points) and Healing Received −5 / −15 / −25 / −35 % |
+
+  The rest as on armor: Ballast's Knockback Resistance, Brawler's max health, Combatant's physical reduction, Earth's
+  Protection levels, Lunar's and Solar's gravity on the chest and legs; Lightning's Movement Speed on the legs and feet;
+  Lunar's Swim Speed, Slipstream's Dodge Chance, Solar's Step Height, Tyrannical's max health and less lifesteal and
+  Verdant Ruin's Knockback Resistance on the feet; Samurai's Arrow Velocity, Royalty's all-stats and Mageslayer's magic
+  heal on the head; Warlord's max health %, Blood Lord's Healing Received, Inferno's Berserker's Fury and Verdant Ruin's
+  magic reduction on the chest; Molten Breach's Size on the legs; Splendor's Luck on all four. Max health stays as on
+  armor (RLM-511, question 5; RLM-565). Verdant Ruin's and Mageslayer's magic reductions act on vanilla's magic only:
+  our schools are out of `#c:is_magic` (RLM-549).
+- **Slipstream on the head** (RLM-548): Dodge Chance +1.25 / 2.5 / 3.75 / 5 / 6.25 / 7.5 %, half its boots', on a
+  helmet and the robe head alike, so a caster, whose wand locks shields, has a second Dodge slot.
+- **Royalty's all-stats** (RLM-548), on a helmet and the robe head: also Spell Power, Magic Shield, Max Mana, Mana
+  Regeneration, Spell Penetration, Cast Time Reduction, Cooldown Reduction and the three schools' powers, every one by
+  its +5 / 7.5 / 10 / 15 % of the total; never Spell Resistance or a school's resistance, mob-only stats (RLM-233).
 - **The End's gems never drop, the Nether's only until M4:** Endersurge and Mageslayer name `minecraft:the_end` in
   their `constraints.dimensions`, and the End is unreachable without strongholds
   ([ADR 0044](../decisions/0044-third-party-mods-by-milestone.md)). Blood Lord, Inferno and Molten Breach name
@@ -367,8 +411,8 @@ These tickets carry the approved design:
 - **RLM-557** (built): the pipeline for affixes of our own (`content/apotheosis_new_affixes/`) and the robe affixes (the
   table above).
 - **RLM-562:** the wand affixes (stats, effects on spell hit, abilities), a stun ability for every weapon, and Hexed.
-- **RLM-547** and **RLM-548:** the gem bonuses for wands and robes; **RLM-556:** the curio categories, their affixes,
-  sockets and gem bonuses.
+- **RLM-547** and **RLM-548:** the gem bonuses for wands and robes (built, [Gems](#gems)); **RLM-556:** the curio
+  categories, their affixes, sockets and gem bonuses.
 - **RLM-550:** the Nether's and the End's gems drop in Ashfire and Unmade Isles, once those realms exist.
 - **RLM-565** (checked): max health from gear survives a login (Apotheosis's own fix), a respawn and leaving the End.
 - **RLM-566:** the netherite upgrades (Ruby, Sapphire, Topaz).

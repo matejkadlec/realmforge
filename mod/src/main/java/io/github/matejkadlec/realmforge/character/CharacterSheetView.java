@@ -245,12 +245,13 @@ public record CharacterSheetView(Component title, CharacterTab character, List<S
     private static final List<Entry> CRITICAL = List.of(entry(GeneratedStats.CRIT_CHANCE),
             entry(GeneratedStats.CRIT_DAMAGE));
     /**
-     * Mana first, then what shapes a spell (Matěj, 2026-10-14); the schools' powers follow from data. RLM-535's Spell
-     * Penetration goes right after Spell Power.
+     * Mana first, then what shapes a spell (Matěj, 2026-10-14); the schools' powers follow from data. Spell Penetration
+     * goes right after Spell Power (Matěj, 2026-10-31, RLM-535).
      */
     private static final List<Entry> MAGIC = List.of(entry(GeneratedStats.MAX_MANA),
             entry(GeneratedStats.MANA_REGENERATION), entry(GeneratedStats.SPELL_POWER),
-            entry(GeneratedStats.CAST_TIME_REDUCTION), entry(GeneratedStats.COOLDOWN_REDUCTION));
+            entry(GeneratedStats.SPELL_PENETRATION), entry(GeneratedStats.CAST_TIME_REDUCTION),
+            entry(GeneratedStats.COOLDOWN_REDUCTION));
     private static final List<Entry> MITIGATION = List.of(entry(Attributes.ARMOR), entry(Attributes.ARMOR_TOUGHNESS),
             entry(GeneratedStats.MAGIC_SHIELD), entry(GeneratedStats.DODGE_CHANCE),
             entry(Attributes.KNOCKBACK_RESISTANCE));

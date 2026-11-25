@@ -52,7 +52,8 @@ import net.neoforged.neoforge.event.entity.player.CriticalHitEvent;
  *   crits on its shooter's crit chance and deals 1 + crit damage. A school hit gets the school's power and its spell's
  *   passives ({@link HitBonus}; the caster's Spell Power is already in a spell's damage, RLM-534), a crit roll (by the
  *   spell's {@link CritRule} when a {@link SchoolDamageSource} brings one) and the defender's resistance (spell
- *   resistance added for magic), less the hit's spell penetration. The armor reduction becomes
+ *   resistance added for magic), less the hit's spell penetration (the attacker's Spell Penetration on a magic hit,
+ *   RLM-535, plus the spell's own). The armor reduction becomes
  *   vanilla's formula on the armor the attacker's armor pierce and shred leave (a spell's hit adding its own shred),
  *   except for damage in {@code #minecraft:bypasses_armor} and the ticks of a damage over time that ignores armor
  *   (the bleeds, Rend and Deep Wounds, RLM-539, RLM-601). A damage over time's tick is never dodged, nor blocked by a
@@ -377,8 +378,12 @@ public final class DamagePipeline {
                         school.power().map(power -> stat(living, power)).orElse(0.0) + bonus.damage())
                 : new DamageCalculator.Attacker(0, 0, bonus.damage());
         double schoolResistance = school.resistance().map(stat -> stat(defender, stat)).orElse(0.0);
+        // The caster's Spell Penetration counts for magic hits only (RLM-535); a physical hit is untouched.
+        double statPenetration = school.magic() && source.getEntity() instanceof LivingEntity living
+                ? stat(living, GeneratedStats.SPELL_PENETRATION) : 0;
         double resistance = DamageCalculator.penetrated(DamageCalculator.resistance(schoolResistance,
-                stat(defender, GeneratedStats.SPELL_RESISTANCE), school.magic()), bonus.penetration());
+                stat(defender, GeneratedStats.SPELL_RESISTANCE), school.magic()),
+                DamageCalculator.penetration(statPenetration, bonus.penetration()));
         DamageCalculator.CritRoll roll = source.getEntity() instanceof LivingEntity living
                 ? CritCounters.roller(living, CritCounters.Kind.SPELL, level.getRandom())
                 : DamageCalculator.CritRoll.plain(level.getRandom());

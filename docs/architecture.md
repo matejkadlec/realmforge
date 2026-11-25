@@ -387,8 +387,9 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 5. **Runtime:** when a world loads, a decoding error in one of our datapack registries stops the GameTest server
    and fails CI. Vanilla data (loot tables, recipes, advancements, tags) is different: a broken file is logged
    (`Couldn't parse element`, `Parsing error loading recipe`, ...) and skipped. So CI also fails on those log lines
-   (`uv run rf gametest-log` after the GameTests: every ERROR or FATAL line outside a reasoned allowlist, and loot
-   table validation warnings; `tools/realmforge_tools/gamelog.py`), and GameTests check that every generated id
+   (`uv run rf gametest-log` after the GameTests: every ERROR or FATAL line outside a reasoned allowlist, loot table
+   validation warnings, and Apotheosis's warning for an extra gem bonus it refused; `tools/realmforge_tools/gamelog.py`),
+   and GameTests check that every generated id
    resolves and matches the generated expectations.
 
 ### 6.2 What each content type becomes
@@ -412,6 +413,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | `art/textures/<kind>/<id>.png` (not content: the approved art, the cleaned texture of the candidate picked in the gallery; A1, RLM-642, [ADR 0007](decisions/0007-asset-pipeline.md), [art/README.md](../art/README.md)) | in place of the generated placeholder: an item's texture (`item`; or, named in `art/textures/variants.yaml`, another item's texture recoloured ramp by ramp, ADR 0007's variants scripted from one base, `art/variants.py`, RLM-505: three of the four caster sets' icons), a status effect's icon (`effect`, a 16 x 16 one centred on vanilla's 18 x 18), a spell's icon as the GUI sprite `textures/gui/sprites/spell/<id>.png` with `GeneratedSpellIcons`, the list of the spells that have one (`spell`), the tiles a generator composes a GUI texture of (`gui`: the spellbook's book, `generate/spellbook.py`), the cloth and trim tiles of an armor look (`armor`, `armor_trim`), from which `generate/worn_armor.py` composes the look's two worn textures on vanilla's 64 x 32 humanoid armor layout (RLM-505: a cap, robes, pants and sandals, shaded down the palette's ramps), and a block's tile (`block`, RLM-301: a `simple` block's texture, and for the Gatewright Bricks the one tile every look of the realm portal's frame is made from, `art/frame_looks.py`, `generate/portal_frame.py`); re-encoded by our own encoder, so the bytes are the same on every machine (`art/approved.py`). Validation refuses a file that names no content or that `rf art clean` did not write (its size, half-transparent pixels, colours outside the palette) | assets |
 | `art/sounds/<subject>/<name>.ogg` (not content: our sound files, each a pick from the sound store converted to mono OGG Vorbis by `rf sound pick`, with its source in `art/sounds/sources.yaml`; RLM-126, [ADR 0079](decisions/0079-our-sounds-come-from-elevenlabs-through-its-api-and-ship-as-committed-mono-ogg.md), [art/README.md](../art/README.md#sound-pipeline)) | copied byte for byte to `assets/realmforge/sounds/<subject>/<name>.ogg`, never encoded by `rf gen`; a sound event of `content/sounds/` plays it with `file: <subject>/<name>`. Validation refuses a file that is not mono Vorbis, has no source or that no event plays, and an event that names a missing file (`sound/art.py`) | assets |
 | `apotheosis_new_affixes/` (exists, RLM-557) | an affix of our own at `data/realmforge/apotheosis/affixes/<id>.json`, its name and suffix in lang (`affix.realmforge:<id>`, `.suffix`) ([19.4](#194-optional-integrations)) | Apotheosis's affix registry, which reads every namespace |
+| `apotheosis_gem_bonuses/` (exists, RLM-547) | a gem's extra bonuses at `data/realmforge/apotheosis/extra_gem_bonuses/<id>.json`, their gem classes' names in lang (`gem_class.realmforge.<key>`, from `texts/gem_class.yaml`) ([19.4](#194-optional-integrations)) | Apotheosis's extra gem bonus registry, which reads every namespace and adds each to its gem as the gems load |
 | `apotheosis_affixes/` (exists, RLM-271), `apotheosis_gems/`, `apotheosis_tier_augments/`, `apotheosis_rarities/`, `apotheosis_stat_remaps/` (exist, RLM-272), `apotheosis_rarity_overrides/` (exists, RLM-232) | each Apotheosis entry they change, from its snapshot, at Apotheosis's own path `data/apotheosis/apotheosis/<kind>/<path>.json`, and Apotheosis's MIT `LICENSE` with our `NOTICE` in `META-INF/third_party/apotheosis/` ([19.4](#194-optional-integrations)) | Apotheosis's affix, gem, tier augment, rarity and rarity override registries |
 | `enchantments/` (exists, RLM-537) | `data/realmforge/enchantment/<id>.json`, the vanilla enchantment tags it joins, its highest level with Apothic Enchanting (`data/apothic_enchanting/data_maps/enchantment/enchantment_info.json`), `#realmforge:protections` and `#minecraft:exclusive_set/armor` without Fire, Blast and Projectile Protection, `GeneratedEnchantments` keys, lang ([13](#13-items-gear-and-loot)) | vanilla's enchantment registry (datapack) |
 | `recipe_removals/` (exists, RLM-272) | `data/<namespace>/recipe/<path>.json` per recipe, a file NeoForge skips (`neoforge:never`) | reloadable vanilla data |
@@ -871,8 +873,11 @@ and the magic shield (RLM-160): `combat/DamagePipeline` on NeoForge's damage eve
      chance, its own multiplier; Matěj, 2026-10-15), then the defender's resistance: × (1 −
      resistance), through `setAmount`. The resistance is the defender's resistance to the school, plus its spell
      resistance when the school is magic, at most 75 % together (`DamageCalculator.RESISTANCE_CAP`, research BM-18);
-     a physical school hit meets no spell resistance. A spell's damage effect may carry spell penetration (C4,
-     Arcane Missiles): the hit ignores that share of the capped resistance (`DamageCalculator#penetrated`).
+     a physical school hit meets no spell resistance. A magic hit ignores its spell penetration's share of the capped
+     resistance (`DamageCalculator#penetrated`): the attacker's Spell Penetration (`realmforge:spell_penetration`, at
+     most 50 %; Matěj, 2026-10-30, RLM-535) plus the spell penetration its spell's damage effect may carry (C4, Arcane
+     Missiles), at most 100 % together (`DamageCalculator#penetration`). A physical hit meets its whole resistance.
+     Players have no resistances (mob-only stats, RLM-233), so it only ever cuts a mob's or a boss's.
      **Spell Power is no multiplier here** (scaling system C, Matěj, 2026-10-30, RLM-534): a spell adds its
      coefficient of the caster's Spell Power to its damage before the hit ([11.1](#111-model)), so a raw school hit
      (`/damage`, a trap) gets none. The hit's passives are the share its caster's passive spells add to it (RLM-541:
@@ -4567,8 +4572,8 @@ Cast bars and cooldowns are drawn from a start time and a duration, so they need
       Damage, Draw Speed and Arrow Velocity while it is loaded: melee and ranged together, as a Warrior uses a bow and
       a Hunter a melee weapon) with Critical Hits under it
       (crit chance and damage, for melee hits, fully drawn shots and spells alike), and Magic (max mana, mana
-      regeneration, spell power, cast time and cooldown reduction, then each school's power in the school's colour;
-      RLM-535's Spell Penetration after spell power).
+      regeneration, spell power, Spell Penetration (RLM-535), cast time and cooldown reduction, then each school's
+      power in the school's colour).
     - **Defense**: Mitigation (armor, armor toughness, magic shield, dodge, knockback resistance) with Health under it
       (max health, health regeneration, Apothic Attributes' Healing Received, lifesteal, overheal), and Resistances: a
       row per
@@ -4956,6 +4961,39 @@ NeoForge stacks the mods' data packs in that order, so a file of ours replaces t
   `StepFunction`, or a fixed number, which is what a range of no width must be: its constructor refuses zero steps).
   Apotheosis names an affix by `affix.<id>` before an item's name and `affix.<id>.suffix` after it (`Affix#getName`), so
   both go into our lang. The `basic_effect` and `ability` kinds need Java (RLM-562).
+- **Gem bonuses for wands and robes** (RLM-547, RLM-548; Matěj's picks on RLM-536, 2026-10-30, decisions G2 and G3,
+  [gear design](design/gear.md#gems)): a gem fits an item only with a bonus for the item's loot category
+  (`GemInstance#isValid`), so until these no gem fit a wand or a robe. `apotheosis_gem_bonuses/` writes Apotheosis's
+  own extra gem bonuses, `data/realmforge/apotheosis/extra_gem_bonuses/<id>.json` (`ExtraGemBonusRegistry`: the gem and
+  a list of bonuses in its gem format), which `GemRegistry#onReload` appends to each gem after loading it, so no gem
+  file of Apotheosis's is replaced. Both registries sync to clients through their codecs (Placebo's
+  `RegistrySerializer.synced`), and a remote client appends them too; an integrated client shares the server's
+  gems. A bonus for a category the gem already covers would fail with only a
+  warning (`Gem#validateBonus`: "categories overlap"), so validation refuses one, against the fitted gem, and the
+  GameTest log and the pack boot fail on that warning (`gamelog.APOTHEOSIS_FAILING_WARNINGS`). **Gem class names:** a gem's tooltip
+  names each bonus's class by `gem_class.<key>`, and the sync's codec writes a class of one loot category as the
+  category alone (`GemClass#toEither`), so a client of a dedicated server rebuilds its key from the category's path. A
+  bonus for one category is therefore written as the category (`"gem_class": "realmforge:wand"`), keyed `wand` on
+  every side, and the pipeline names it `gem_class.wand` by the loot category's plural ("Wands",
+  `texts/loot_category.yaml`); one of Apotheosis's categories is named by its lang. A class of several categories keeps
+  its key: ours are written as `{"key": "realmforge.<key>", "types": [...]}`, named by the texts
+  `gem_class.realmforge.<key>` (`texts/gem_class.yaml`). `ApotheosisGemGameTests` run every loaded extra bonus's class
+  through that codec and find its name in the game's language; RLM-672 looks at the tooltip on a dedicated server's
+  client. A `like` bonus is a copy of the fitted gem's own bonus for another
+  category with our gem class, which keeps the robes' bonuses the armor's through Apotheosis updates and the stat
+  remaps, and gives a wand the "as its weapons" ones (Samurai's crit chance, Warlord's crit damage, Splendor's
+  Experience Gained). A gem bonus's modifiers apply in the category's slots (`LootCategory#getSlots`): a wand's in the
+  main hand, a robe's in its armor slot. The wand bonuses: 14 gems, spell stats in place of a weapon's (Ballast's flat
+  Spell Power, Combatant's Spell Power %, Breach's, Verdant Ruin's and Molten Breach's Spell Penetration, Brawler's Cast
+  Time Reduction, Lightning's Cooldown Reduction, Slipstream's Mana Regeneration, the schools' powers from Lunar, Solar
+  and Tyrannical); Guardian, Earth, Royalty, Blood Lord, Inferno and Mageslayer have none, so they fit no wand, and
+  Endersurge fits everything already. The robes take every armor bonus, copied, with Matěj's swaps (Armor and
+  Toughness to Magic Shield, Toughness % to Magic Shield %, Attack Damage % to Spell Power %, Inferno's fire damage to
+  Fire Power); max health stays as on armor (RLM-511, RLM-565). Slipstream gets a head bonus for helmets and the robe
+  head (half its boots' Dodge Chance), and Royalty's helmet all-stats (through `apotheosis_gems/`) and its robe head
+  copy add our caster stats, never a resistance (mob-only stats, RLM-233). Only attribute bonuses are new: Apotheosis's
+  special bonuses fire on melee hits, arrows and being hurt, never on a spell; a robe's copy of one (Mageslayer's heal,
+  Verdant Ruin's magic reduction) acts as on armor.
 - **Removed recipes** come from `content/recipe_removals/`: a file at the recipe's own path with the `neoforge:never`
   condition, which NeoForge's recipe loader skips. Apotheosis's potion charms are the first (its crafting recipe and
   Apothic Enchanting's infusion; Matěj dislikes them by design, RLM-205). Apotheosis's client still marks a potion
@@ -5032,11 +5070,14 @@ value) and Magical stays Epic, about a quarter of Rare swords carry one ability,
 rolls at every rarity at Haven and Pinnacle (the GameTest log then holds no `AffixLootRule` error) with no ability on a
 helmet or a Rare boot and at most one basic effect on a helmet or shears, no tier caps max Eterna, every wand is
 `realmforge:wand` with no affix to roll and rolls every rarity at Haven and Pinnacle with no affix and no error, every
-robe piece is its slot's robe category and no armor (a Guardian gem fits no robe), what can roll on each piece is the
+robe piece is its slot's robe category and no armor (a Guardian gem fits only the robe chest and legs, through its robe
+bonus), what can roll on each piece is the
 gear design's list, exactly, and robes rolled at every rarity at Haven and Pinnacle fill their stat slots from it with no
 armor affix and no error, while a worn robe's Sorcerous, Fiery and Warded add their stat, and held ones nothing.
 `ApotheosisGemGameTests` (through `ApotheosisGems`) socket gems into a player's chestplate against our school hits
-([9.1](#91-damage-pipeline)).
+([9.1](#91-damage-pipeline)), and our extra bonuses into a wand (a Ballast's Spell Power and no Attack Damage, a
+Samurai's crit chance, an Earth gem and a Guardian refused), a robe (a Guardian's Magic Shield and no Armor, a
+Warlord's Spell Power %) and a helmet and a robe head (Slipstream's Dodge Chance, Royalty's all-stats on Spell Power).
 - **Area mining** (RLM-559): Apotheosis's Radial and Super-Massive (`RadialUtil#breakExtraBlocks`) break the blocks
   around the one a player breaks through `ServerPlayerGameMode#destroyBlock`, so each posts `BreakBlockEvent` and
   meets Adventure mode, and an instance's protection refuses them ([15.5](#155-instances)). Vanilla checks

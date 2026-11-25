@@ -1,0 +1,39 @@
+{
+  "gem": "apotheosis:core/lightning",
+  "bonuses": [
+    {
+      "type": "apotheosis:attribute",
+      "attribute": "realmforge:cooldown_reduction",
+      "gem_class": "realmforge:wand",
+      "operation": "add_value",
+      "values": {
+        "cracked": 0.05,
+        "chipped": 0.075,
+        "flawed": 0.1,
+        "normal": 0.125,
+        "flawless": 0.15,
+        "perfect": 0.2
+      }
+    },
+    {
+      "type": "apotheosis:attribute",
+      "attribute": "minecraft:movement_speed",
+      "gem_class": {
+        "key": "realmforge.robe_lower",
+        "types": [
+          "realmforge:robe_legs",
+          "realmforge:robe_feet"
+        ]
+      },
+      "operation": "add_multiplied_total",
+      "values": {
+        "cracked": 0.1,
+        "chipped": 0.225,
+        "flawed": 0.375,
+        "normal": 0.45,
+        "flawless": 0.55,
+        "perfect": 0.7
+      }
+    }
+  ]
+}
