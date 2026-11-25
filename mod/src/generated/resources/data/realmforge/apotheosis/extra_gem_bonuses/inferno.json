@@ -1,0 +1,38 @@
+{
+  "gem": "apotheosis:the_nether/inferno",
+  "bonuses": [
+    {
+      "type": "apotheosis:enchantment",
+      "enchantment": "apothic_enchanting:berserkers_fury",
+      "gem_class": {
+        "key": "realmforge.robe_chest",
+        "types": [
+          "realmforge:robe_chest"
+        ]
+      },
+      "values": {
+        "flawed": 1,
+        "normal": 1,
+        "flawless": 2,
+        "perfect": 2
+      }
+    },
+    {
+      "type": "apotheosis:attribute",
+      "attribute": "realmforge:fire_power",
+      "gem_class": {
+        "key": "realmforge.robe_head",
+        "types": [
+          "realmforge:robe_head"
+        ]
+      },
+      "operation": "add_value",
+      "values": {
+        "flawed": 0.1,
+        "normal": 0.2,
+        "flawless": 0.3,
+        "perfect": 0.4
+      }
+    }
+  ]
+}

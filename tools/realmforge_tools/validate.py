@@ -40,6 +40,7 @@ from realmforge_tools.rooms.walk import walk_problems
 from realmforge_tools.schema import CONTENT_TYPES, DATAPACK_TYPES, WORLDGEN_DIR
 from realmforge_tools.schema.apotheosis import (
     CURIOS_LOOT_CATEGORIES,
+    GEM_CLASS_TEXTS,
     LOOT_CATEGORIES,
     OUR_LOOT_CATEGORIES,
     RARITIES,
@@ -3670,6 +3671,7 @@ def _check_apotheosis(content: Content, universe: IdUniverse, paths: RepoPaths) 
         problems += _check_replaced_fields(entry, snapshot, attributes)
     stats = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.stats}
     problems += _check_new_affixes(content, stats)
+    problems += _check_gem_bonuses(content, attributes, stats)
     for entry in content.apotheosis_affixes:
         target = entry.model.to_attribute
         if target is None:
@@ -3784,6 +3786,67 @@ def _check_new_affixes(content: Content, stats: dict[str, StatDef]) -> list[Prob
     return problems
 
 
+def _check_gem_bonuses(content: Content, attributes: set[str], stats: dict[str, StatDef]) -> list[Problem]:
+    """A gem's extra bonuses of our own (RLM-547) name stats that exist, a stat of ours as architecture 8.2 counts it
+    (``add_value`` for flat points and for a share, ``add_multiplied_base`` for a percent on points; a share's values
+    are fractions), and every gem class has its name in ``content/texts/gem_class.yaml``. A ``like`` copy is
+    Apotheosis's own bonus, which ``fit`` checks."""
+    problems: list[Problem] = []
+    names = {
+        name for entry in content.texts if entry.model.id == GEM_CLASS_TEXTS for name in entry.model.texts
+    }
+    for entry in content.apotheosis_gem_bonuses:
+        for n, bonus in enumerate(entry.model.bonuses):
+            location = f"bonuses.{n}"
+            if bonus.class_key not in names:
+                problems.append(
+                    Problem(
+                        entry.source,
+                        f"{location}.gem_class",
+                        f"gem class {bonus.class_key} has no name: {bonus.class_key} in "
+                        f"content/texts/{GEM_CLASS_TEXTS}.yaml (gem tooltips read "
+                        f"gem_class.{MOD_ID}.{bonus.class_key})",
+                    )
+                )
+            for m, modifier in enumerate(bonus.modifier_list):
+                where = f"{location}.modifiers.{m}" if bonus.modifiers is not None else location
+                if modifier.attribute not in attributes:
+                    problems.append(
+                        Problem(
+                            entry.source, f"{where}.attribute", f"unknown attribute {modifier.attribute!r}"
+                        )
+                    )
+                    continue
+                stat = stats.get(modifier.attribute)
+                if stat is None:
+                    continue
+                if modifier.operation == "add_multiplied_total" or (
+                    stat.percent and modifier.operation != "add_value"
+                ):
+                    kind = "a share: a percent of it is an add_value" if stat.percent else "points"
+                    problems.append(
+                        Problem(
+                            entry.source,
+                            f"{where}.operation",
+                            f"{modifier.attribute} is {kind} (architecture 8.2): add_value"
+                            + ("" if stat.percent else ", or add_multiplied_base for a percent")
+                            + f", not {modifier.operation}",
+                        )
+                    )
+                if stat.percent and modifier.operation == "add_value":
+                    highest = max(abs(value) for value in modifier.values.values())
+                    if highest > 1:
+                        problems.append(
+                            Problem(
+                                entry.source,
+                                f"{where}.values",
+                                f"{modifier.attribute} is a share, so its values are fractions: 5 % is 0.05, not "
+                                f"{highest:g}",
+                            )
+                        )
+    return problems
+
+
 def _snapshot_attributes(snapshot: Snapshot) -> set[str]:
     """Every attribute Apotheosis's own data names: Apothic Attributes' are not in the ID universe."""
     found: set[str] = set()
@@ -3861,7 +3924,32 @@ def _check_replaced_fields(
                     )
         elif name == "attribute" and isinstance(value, str) and value not in attributes:
             problems.append(Problem(entry.source, location, f"unknown attribute {value!r}"))
+        elif name == "bonuses" and model.KIND == "gems":
+            # A gem's bonuses name their stats inside: an attribute bonus's attribute, a multi-attribute bonus's
+            # modifiers' and an all-stats bonus's list (Royalty's caster stats, RLM-548).
+            problems += [
+                Problem(entry.source, f"{location}{where}", f"unknown attribute {attribute!r}")
+                for where, attribute in _named_attributes(value)
+                if attribute not in attributes
+            ]
     return problems
+
+
+def _named_attributes(value: object, path: str = "") -> list[tuple[str, str]]:
+    """Every (path, attribute) a piece of Apotheosis data names in an ``attribute`` or ``attributes`` field."""
+    found: list[tuple[str, str]] = []
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if key == "attribute" and isinstance(item, str):
+                found.append((f"{path}.{key}", item))
+            elif key == "attributes" and isinstance(item, list):
+                found += [(f"{path}.{key}.{n}", str(a)) for n, a in enumerate(item)]
+            else:
+                found += _named_attributes(item, f"{path}.{key}")
+    elif isinstance(value, list):
+        for n, item in enumerate(value):
+            found += _named_attributes(item, f"{path}.{n}")
+    return found
 
 
 def _core_mod_worldgen(paths: RepoPaths) -> dict[str, set[str]]:

@@ -1,0 +1,63 @@
+{
+  "gem": "apotheosis:core/solar",
+  "bonuses": [
+    {
+      "type": "apotheosis:attribute",
+      "attribute": "realmforge:fire_power",
+      "gem_class": {
+        "key": "realmforge.wand",
+        "types": [
+          "realmforge:wand"
+        ]
+      },
+      "operation": "add_value",
+      "values": {
+        "cracked": 0.05,
+        "chipped": 0.1,
+        "flawed": 0.15,
+        "normal": 0.225,
+        "flawless": 0.3,
+        "perfect": 0.4
+      }
+    },
+    {
+      "type": "apotheosis:attribute",
+      "attribute": "minecraft:gravity",
+      "gem_class": {
+        "key": "realmforge.robe_core",
+        "types": [
+          "realmforge:robe_chest",
+          "realmforge:robe_legs"
+        ]
+      },
+      "operation": "add_multiplied_total",
+      "values": {
+        "cracked": 0.1,
+        "chipped": 0.25,
+        "flawed": 0.45,
+        "normal": 0.65,
+        "flawless": 0.85,
+        "perfect": 1.04
+      }
+    },
+    {
+      "type": "apotheosis:attribute",
+      "attribute": "minecraft:step_height",
+      "gem_class": {
+        "key": "realmforge.robe_feet",
+        "types": [
+          "realmforge:robe_feet"
+        ]
+      },
+      "operation": "add_value",
+      "values": {
+        "cracked": 0.25,
+        "chipped": 0.5,
+        "flawed": 1.0,
+        "normal": 1.5,
+        "flawless": 2.0,
+        "perfect": 3.0
+      }
+    }
+  ]
+}

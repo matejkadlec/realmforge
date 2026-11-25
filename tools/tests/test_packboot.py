@@ -71,6 +71,16 @@ def test_error_and_fatal_lines_fail_a_boot_with_their_trace() -> None:
     )
 
 
+def test_an_extra_gem_bonus_apotheosis_refused_fails_a_boot() -> None:
+    """RLM-547: the pack boot loads our extra gem bonuses with no Apotheosis warning; other warnings still pass."""
+    refused = CLEAN_LOG + (
+        "[11Oct2026 21:20:57.000] [Server thread/WARN] [apotheosis/]: Failed to apply extra gem bonus for class "
+        "realmforge.wand to gem apotheosis:core/ballast.\n"
+    )
+    (problem,) = boot_problems(_outcome(log=refused), ())
+    assert problem.startswith("latest.log:6: [WARN] apotheosis: Failed to apply extra gem bonus")
+
+
 def test_allowlisted_errors_pass() -> None:
     allowed = (
         (r"^net\.minecraft\.server\.packs\.resources\.\w+: Couldn't parse data file realmforge:", "test"),

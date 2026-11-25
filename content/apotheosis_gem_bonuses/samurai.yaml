@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_gem_bonuses.schema.json
+# Samurai's extra bonuses (Matěj, 2026-10-30, RLM-536): on a wand the Crit Chance of its weapons (our crit, remapped,
+# RLM-547); on the robe head its helmet's Arrow Velocity, and on the robe legs and feet its armor's bonus with Armor
+# Toughness in percent swapped for Magic Shield in percent of its points, the Movement Speed as on armor (RLM-548).
+id: samurai
+gem: apotheosis:core/samurai
+bonuses:
+  - gem_class: realmforge:wand
+    like: apotheosis:melee_weapon
+  - gem_class: realmforge:robe_head
+    like: apotheosis:helmet
+  - gem_class: {key: robe_lower, types: [realmforge:robe_legs, realmforge:robe_feet]}
+    modifiers:
+      - attribute: realmforge:magic_shield
+        operation: add_multiplied_base
+        values: {cracked: 0.1, chipped: 0.15, flawed: 0.175, normal: 0.225, flawless: 0.275, perfect: 0.35}
+      - attribute: minecraft:movement_speed
+        operation: add_multiplied_total
+        values: {cracked: -0.025, chipped: -0.05, flawed: -0.075, normal: -0.1, flawless: -0.125, perfect: -0.15}

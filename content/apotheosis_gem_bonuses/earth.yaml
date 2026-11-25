@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_gem_bonuses.schema.json
+# Earth's robe bonus (Matěj, 2026-10-30, RLM-536, RLM-548): its armor's Protection levels on the robe chest and legs. No
+# wand bonus until the wand enchantments exist (RLM-538, RLM-606), so it fits no wand.
+id: earth
+gem: apotheosis:overworld/earth
+bonuses:
+  - gem_class: {key: robe_core, types: [realmforge:robe_chest, realmforge:robe_legs]}
+    like: apotheosis:chestplate

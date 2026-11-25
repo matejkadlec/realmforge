@@ -798,11 +798,13 @@ def test_no_stats_or_rules_still_compile(repo: RepoPaths) -> None:
     # Spell schools name their power and resistance stats, and races, classes, effects and gear their modifiers' stats,
     # so they go too, and with the schools the spells and effects that name them, and the mobs and bosses that cast them;
     # netherite upgrades name their bonuses' stats.
-    # Apotheosis's stat remaps name the stats that replace Apothic Attributes', and our own affixes the stats they add.
+    # Apotheosis's stat remaps name the stats that replace Apothic Attributes', our own affixes the stats they add, and
+    # our extra gem bonuses theirs (RLM-547).
     for folder in (
         "stats",
         "apotheosis_stat_remaps",
         "apotheosis_new_affixes",
+        "apotheosis_gem_bonuses",
         "stat_rules",
         "spell_schools",
         "spells",
@@ -822,8 +824,9 @@ def test_no_stats_or_rules_still_compile(repo: RepoPaths) -> None:
     for file in (repo.content / "apotheosis_affixes").glob("*.yaml"):
         if "\nto_attribute:" in file.read_text(encoding="utf-8"):
             file.unlink()
-    # Astone's kill XP rank names her body.
+    # Astone's kill XP rank names her body, and Royalty's all-stats our caster stats (RLM-548).
     (repo.content / "kill_xp_multipliers" / "astone.yaml").unlink()
+    (repo.content / "apotheosis_gems" / "royalty.yaml").unlink()
     files = generate(repo)
     assert "ALL = List.of();" in files[STATS_JAVA].decode()
     expectations = files[EXPECTATIONS].decode()

@@ -2,7 +2,9 @@
 change in ``content/apotheosis_<kind>/``, the stat remaps of ``content/apotheosis_stat_remaps/``) and every rarity
 override of ``content/apotheosis_rarity_overrides/`` -> ``data/<namespace>/apotheosis/<kind>/<path>.json``, which
 replaces Apotheosis's own file at that path; every affix of ours in ``content/apotheosis_new_affixes/`` ->
-``data/realmforge/apotheosis/affixes/<id>.json``, with its name and suffix in our lang; every recipe
+``data/realmforge/apotheosis/affixes/<id>.json``, with its name and suffix in our lang; every gem's extra bonuses in
+``content/apotheosis_gem_bonuses/`` -> ``data/realmforge/apotheosis/extra_gem_bonuses/<id>.json`` (their gem classes'
+names are texts, ``content/texts/gem_class.yaml``); every recipe
 ``content/recipe_removals/`` names ->
 ``data/<namespace>/recipe/<path>.json``, a file NeoForge skips; and, with them, Apotheosis's MIT ``LICENSE`` and our
 ``NOTICE`` -> ``META-INF/third_party/apotheosis/`` (``realmforge_tools/apotheosis.py``, architecture 19.4, RLM-524)."""

@@ -1,0 +1,24 @@
+{
+  "gem": "apotheosis:core/breach",
+  "bonuses": [
+    {
+      "type": "apotheosis:attribute",
+      "attribute": "realmforge:spell_penetration",
+      "gem_class": {
+        "key": "realmforge.wand",
+        "types": [
+          "realmforge:wand"
+        ]
+      },
+      "operation": "add_value",
+      "values": {
+        "cracked": 0.05,
+        "chipped": 0.1,
+        "flawed": 0.15,
+        "normal": 0.2,
+        "flawless": 0.25,
+        "perfect": 0.3
+      }
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "gem": "apotheosis:core/brawlers",
+  "bonuses": [
+    {
+      "type": "apotheosis:attribute",
+      "attribute": "realmforge:cast_time_reduction",
+      "gem_class": {
+        "key": "realmforge.wand",
+        "types": [
+          "realmforge:wand"
+        ]
+      },
+      "operation": "add_value",
+      "values": {
+        "cracked": 0.05,
+        "chipped": 0.075,
+        "flawed": 0.1,
+        "normal": 0.125,
+        "flawless": 0.15,
+        "perfect": 0.2
+      }
+    },
+    {
+      "type": "apotheosis:attribute",
+      "attribute": "minecraft:max_health",
+      "gem_class": {
+        "key": "realmforge.robe_core",
+        "types": [
+          "realmforge:robe_chest",
+          "realmforge:robe_legs"
+        ]
+      },
+      "operation": "add_value",
+      "values": {
+        "cracked": 1.0,
+        "chipped": 2.0,
+        "flawed": 4.0,
+        "normal": 6.0,
+        "flawless": 8.0,
+        "perfect": 12.0
+      }
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_gem_bonuses.schema.json
+# Molten Breach's extra bonuses (Matěj, 2026-10-30, RLM-536), from Flawed as it drops: on a wand Spell Penetration
+# (RLM-547); on the robe legs its leggings' Size, and on the robe chest its chestplate's bonus with Attack Damage in
+# percent swapped for Spell Power in percent of its points, the less Healing Received as on the chestplate (RLM-548).
+id: molten_breach
+gem: apotheosis:the_nether/molten_breach
+bonuses:
+  - gem_class: realmforge:wand
+    attribute: realmforge:spell_penetration
+    operation: add_value
+    values: {flawed: 0.15, normal: 0.2, flawless: 0.25, perfect: 0.3}
+  - gem_class: realmforge:robe_legs
+    like: apotheosis:leggings
+  - gem_class: realmforge:robe_chest
+    modifiers:
+      - attribute: realmforge:spell_power
+        operation: add_multiplied_base
+        values: {flawed: 0.05, normal: 0.1, flawless: 0.125, perfect: 0.175}
+      - attribute: apothic_attributes:healing_received
+        operation: add_multiplied_total
+        values: {flawed: -0.05, normal: -0.15, flawless: -0.25, perfect: -0.35}

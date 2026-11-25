@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_gem_bonuses.schema.json
+# Inferno's robe bonuses (Matěj, 2026-10-30, RLM-536, RLM-548), from Flawed as it drops: its chestplate's Berserker's
+# Fury levels on the robe chest, and on the robe head Fire Power in place of its helmet's fire damage, at Matěj's
+# adjusted values. No wand bonus.
+id: inferno
+gem: apotheosis:the_nether/inferno
+bonuses:
+  - gem_class: realmforge:robe_chest
+    like: apotheosis:chestplate
+  - gem_class: realmforge:robe_head
+    attribute: realmforge:fire_power
+    operation: add_value
+    values: {flawed: 0.1, normal: 0.2, flawless: 0.3, perfect: 0.4}

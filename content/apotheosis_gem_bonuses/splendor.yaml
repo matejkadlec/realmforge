@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_gem_bonuses.schema.json
+# Splendor's extra bonuses (Matěj, 2026-10-30, RLM-536): on a wand its weapons' Experience Gained, Apothic Attributes'
+# vanilla XP (RLM-547); on every robe piece its armor's Luck (RLM-548).
+id: splendor
+gem: apotheosis:core/splendor
+bonuses:
+  - gem_class: realmforge:wand
+    like: apotheosis:melee_weapon
+  - gem_class: {key: robes, types: [realmforge:robe_head, realmforge:robe_chest, realmforge:robe_legs, realmforge:robe_feet]}
+    like: apotheosis:helmet

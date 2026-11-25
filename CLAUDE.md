@@ -128,6 +128,12 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   (RLM-566, `content/netherite_upgrades/`): a Ruby, Sapphire or Topaz Upgrade (eight gems around a diamond) gives
   offense, defense or utility by the piece's archetype (melee: vanilla's netherite armor; caster: the Netherite robes)
   while worn, through a data component of ours that names the upgrade's registry entry.
+  Apotheosis's gems fit wands and robes (RLM-547, RLM-548): `content/apotheosis_gem_bonuses/` writes Apotheosis's
+  extra gem bonuses, spell stats on a wand (14 gems: Ballast's Spell Power, Breach's Spell Penetration, …) and the
+  armor bonuses on the robe pieces with Matěj's swaps (Armor to Magic Shield, Attack Damage % to Spell Power %), copied
+  from the fitted gem (`like`); Slipstream gives a helmet and the robe head Dodge Chance and Royalty's all-stats our
+  caster stats. Magic hits ignore the caster's Spell Penetration share of a target's resistances (RLM-535, at most
+  50 %, on top of a spell's own), on the sheet's Magic column.
   The four coins exist (RLM-284, ADR 0072): Copper, Silver, Gold and Platinum Coin from an item's `coin` in YAML, each
   100 of the coin below; using a coin merges every full hundred in the inventory into the next coin, sneaking while
   using it breaks one, and change that does not fit drops at the player's feet. A hostile mob a player killed drops

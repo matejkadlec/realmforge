@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_gem_bonuses.schema.json
+# Guardian's robe bonus (Matěj, 2026-10-30, RLM-536, RLM-548): its armor's Armor becomes Magic Shield point for point on
+# the robe chest and legs. No wand bonus (Matěj: no Magic Shield on wands), so it fits no wand.
+id: guardian
+gem: apotheosis:core/guardian
+bonuses:
+  - gem_class: {key: robe_core, types: [realmforge:robe_chest, realmforge:robe_legs]}
+    attribute: realmforge:magic_shield
+    operation: add_value
+    values: {cracked: 0.5, chipped: 1, flawed: 2.5, normal: 4, flawless: 6, perfect: 8}

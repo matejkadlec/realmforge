@@ -12,6 +12,8 @@ from the snapshot of Apotheosis's own data (``tools/id_universe/apotheosis-<vers
   entry switched off (``disabled``) or with some of its top-level fields replaced (``replace``), in Apotheosis's own
   format;
 - ``content/apotheosis_new_affixes/``: an affix of our own, a new entry at ``data/realmforge/apotheosis/affixes/``;
+- ``content/apotheosis_gem_bonuses/``: a gem's bonuses for categories it has none for (wands, robes), Apotheosis's own
+  extra gem bonuses at ``data/realmforge/apotheosis/extra_gem_bonuses/``, which add to the gem without replacing it;
 - ``content/recipe_removals/``: recipes that no longer exist, Apotheosis's or vanilla's.
 
 ``realmforge_tools/apotheosis.py`` applies them; names and units are Apotheosis 9.1.0's. The constants below list what
@@ -249,6 +251,173 @@ class ApotheosisNewAffixDef(StrictModel):
         if unknown:
             raise ValueError(f"unknown rarities {', '.join(unknown)}; Apotheosis has {', '.join(RARITIES)}")
         return self
+
+
+# Apotheosis 9.1.0's gem purities, lowest first (``Purity``): a gem drops at its ``min_purity`` and above.
+PURITIES = ("cracked", "chipped", "flawed", "normal", "flawless", "perfect")
+Purity = Literal["cracked", "chipped", "flawed", "normal", "flawless", "perfect"]
+# Minecraft's attribute modifier operations, as Apotheosis's bonuses name them.
+AttributeOperation = Literal["add_value", "add_multiplied_base", "add_multiplied_total"]
+# The descriptions Apotheosis 9.1.0 has for a multi-attribute bonus (its lang, ``bonus.apotheosis:multi_attr.desc.*``),
+# by how many modifiers each names: "%s and %s", "%s and %s, but %s", "%s, but %s and %s".
+MULTI_ATTRIBUTE_DESCS: dict[str, int] = {
+    "bonus.apotheosis:multi_attr.desc.and": 2,
+    "bonus.apotheosis:multi_attr.desc.and_but": 3,
+    "bonus.apotheosis:multi_attr.desc.but_and": 3,
+}
+# The text group that names our gem classes: a gem's tooltip reads ``gem_class.<key>``, and ours are written with the
+# key ``realmforge.<key>``, so their names are ``gem_class.realmforge.<key>`` (content/texts/gem_class.yaml).
+GEM_CLASS_TEXTS = "gem_class"
+
+GemClassKey = Annotated[
+    str,
+    StringConstraints(pattern=r"^[a-z][a-z0-9_]*$", max_length=48),
+    Field(
+        description="The gem class's name in tooltips, gem_class.realmforge.<key> in content/texts/gem_class.yaml."
+    ),
+]
+PurityValues = Annotated[
+    dict[Purity, Annotated[float, Field(allow_inf_nan=False)]],
+    Field(
+        min_length=1,
+        description=(
+            "Purity -> the amount, e.g. {cracked: 1, chipped: 2, ...}: one for every purity the gem drops at, from its "
+            "min_purity up. A share is a fraction: 5 % is 0.05."
+        ),
+    ),
+]
+
+
+class GemClassDef(StrictModel):
+    """A gem class of ours over several loot categories, e.g. the robe chest and legs as Apotheosis's ``core_armor``
+    covers the chestplate and the leggings."""
+
+    key: GemClassKey
+    types: Annotated[UniqueResourceIds, Field(min_length=1)] = Field(
+        description="The loot categories it covers, e.g. [realmforge:robe_chest, realmforge:robe_legs]."
+    )
+
+
+class GemModifierDef(StrictModel):
+    """One stat of a multi-attribute bonus."""
+
+    attribute: ResourceId = Field(description="The stat, e.g. realmforge:spell_penetration.")
+    operation: AttributeOperation = Field(
+        description=(
+            "add_value for flat points and for a share of ours; add_multiplied_base for a percent on points "
+            "(architecture 8.2)."
+        )
+    )
+    values: PurityValues
+
+
+class ExtraGemBonusDef(StrictModel):
+    """One bonus a gem gets for a gem class it has no bonus for, in one of three shapes: a stat (``attribute``,
+    ``operation``, ``values``: Apotheosis's ``attribute`` bonus), several stats at once (``modifiers``: its
+    ``multi_attribute`` bonus), or a copy of the gem's own bonus for another loot category (``like``), as Apotheosis
+    ships it with our stat remaps applied, e.g. a robe's bonus as the armor's, so it stays in step with Apotheosis
+    updates. A gem fits an item only if it has a bonus for the item's category."""
+
+    gem_class: ResourceId | GemClassDef = Field(
+        description=(
+            "The loot categories it is for: one, e.g. realmforge:wand (named in tooltips by its path: wand), or a gem "
+            "class of ours over several, {key, types}."
+        )
+    )
+    like: ResourceId | None = Field(
+        default=None,
+        description=(
+            "Copies the gem's own bonus for this loot category, e.g. apotheosis:chestplate, for this gem class. Alone, "
+            "without attribute or modifiers."
+        ),
+    )
+    attribute: ResourceId | None = Field(
+        default=None, description="The stat it adds, e.g. realmforge:spell_power."
+    )
+    operation: AttributeOperation | None = Field(
+        default=None,
+        description=(
+            "With attribute: add_value for flat points and for a share of ours; add_multiplied_base for a percent on "
+            "points (architecture 8.2)."
+        ),
+    )
+    values: PurityValues | None = None
+    modifiers: Annotated[list[GemModifierDef], Field(min_length=2)] | None = Field(
+        default=None, description="Several stats at once, each with its operation and values."
+    )
+    desc: str | None = Field(
+        default=None,
+        description=(
+            "With modifiers: how the tooltip joins them, one of Apotheosis's texts (default "
+            'bonus.apotheosis:multi_attr.desc.and, "%s and %s").'
+        ),
+    )
+
+    @model_validator(mode="after")
+    def _one_shape(self) -> ExtraGemBonusDef:
+        single = (self.attribute, self.operation, self.values)
+        if self.like is not None:
+            if any(part is not None for part in (*single, self.modifiers, self.desc)):
+                raise ValueError("like copies a whole bonus: give it alone, without attribute or modifiers")
+        elif self.modifiers is not None:
+            if any(part is not None for part in single):
+                raise ValueError("modifiers name their own attributes: drop attribute, operation and values")
+            count = MULTI_ATTRIBUTE_DESCS.get(self.multi_attribute_desc)
+            if count is None:
+                raise ValueError(
+                    f"unknown desc {self.desc!r}; Apotheosis has {', '.join(MULTI_ATTRIBUTE_DESCS)}"
+                )
+            if count != len(self.modifiers):
+                raise ValueError(
+                    f"{self.multi_attribute_desc} joins {count} modifiers, not {len(self.modifiers)}"
+                )
+        elif any(part is None for part in single):
+            raise ValueError("give attribute, operation and values, or modifiers, or like")
+        elif self.desc is not None:
+            raise ValueError("desc joins a bonus's modifiers: a single attribute has none")
+        return self
+
+    @property
+    def multi_attribute_desc(self) -> str:
+        return self.desc or "bonus.apotheosis:multi_attr.desc.and"
+
+    @property
+    def categories(self) -> tuple[str, ...]:
+        """The loot categories it covers."""
+        if isinstance(self.gem_class, GemClassDef):
+            return tuple(self.gem_class.types)
+        return (self.gem_class,)
+
+    @property
+    def class_key(self) -> str:
+        """Its gem class's key: the one given, or the loot category's path."""
+        if isinstance(self.gem_class, GemClassDef):
+            return self.gem_class.key
+        return self.gem_class.split(":", 1)[1]
+
+    @property
+    def modifier_list(self) -> list[GemModifierDef]:
+        """Its stats: the one of an attribute bonus, the modifiers of a multi-attribute one, none for a copy."""
+        if self.modifiers is not None:
+            return list(self.modifiers)
+        if self.attribute is not None and self.operation is not None and self.values is not None:
+            return [GemModifierDef(attribute=self.attribute, operation=self.operation, values=self.values)]
+        return []
+
+
+class ApotheosisGemBonusesDef(StrictModel):
+    """A gem's extra bonuses (RLM-547): bonuses for gem classes it has none for, through Apotheosis's own
+    ``extra_gem_bonuses`` (``ExtraGemBonusRegistry``), which adds them to the gem when it loads instead of replacing
+    its file (decision G3, Matěj, 2026-10-30). One file per gem. The wand bonuses (``realmforge:wand``), the robes'
+    (RLM-548) and Slipstream's helmet are the first. Only attribute bonuses of our own: Apotheosis's special ones (on
+    hit, on being hurt) fire on melee hits, arrows and being hurt, never on a spell, but a ``like`` copy brings
+    whatever the gem's own bonus is, as on armor."""
+
+    id: ContentId
+    gem: ApotheosisEntryId = Field(description="The gem, e.g. apotheosis:core/ballast.")
+    bonuses: Annotated[list[ExtraGemBonusDef], Field(min_length=1)] = Field(
+        description="Its new bonuses, each for loot categories the gem and the other bonuses here do not cover."
+    )
 
 
 # The kinds of affix slot a rarity's rules hold (Apotheosis's AffixType).

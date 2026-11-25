@@ -46,6 +46,16 @@ def test_loot_validation_warning_fails() -> None:
     assert "[WARN] net.minecraft.server.ReloadableServerRegistries: Found loot table element" in problem
 
 
+def test_an_extra_gem_bonus_apotheosis_refused_fails() -> None:
+    """RLM-547: Apotheosis only warns when it refuses an extra gem bonus of ours, and the gem goes without it."""
+    refused = (
+        "[12Oct2026 09:50:02.000] [Server thread/WARN] [apotheosis/]: Failed to apply extra gem bonus for class "
+        "realmforge.wand to gem apotheosis:core/ballast.\n"
+    )
+    (problem,) = gametest_problems(refused + PASSED)
+    assert "[WARN] apotheosis: Failed to apply extra gem bonus for class realmforge.wand" in problem
+
+
 def test_problems_come_in_log_order() -> None:
     problems = gametest_problems(LOOT_WARNING + BROKEN_RECIPE + PASSED)
     assert [p.split(":")[1] for p in problems] == ["1", "2"]

@@ -29,6 +29,7 @@ from realmforge_tools.schema import (
     CONTENT_TYPES,
     WORLDGEN_DIR,
     ApotheosisAffixDef,
+    ApotheosisGemBonusesDef,
     ApotheosisGemDef,
     ApotheosisNewAffixDef,
     ApotheosisRarityDef,
@@ -230,6 +231,7 @@ class Content:
     apotheosis_affixes: tuple[Entry[ApotheosisAffixDef], ...]
     apotheosis_new_affixes: tuple[Entry[ApotheosisNewAffixDef], ...]
     apotheosis_gems: tuple[Entry[ApotheosisGemDef], ...]
+    apotheosis_gem_bonuses: tuple[Entry[ApotheosisGemBonusesDef], ...]
     apotheosis_tier_augments: tuple[Entry[ApotheosisTierAugmentDef], ...]
     apotheosis_rarities: tuple[Entry[ApotheosisRarityDef], ...]
     apotheosis_rarity_overrides: tuple[Entry[ApotheosisRarityOverrideDef], ...]
@@ -352,6 +354,7 @@ def load_content(
         apotheosis_affixes=by_id(loaded["apotheosis_affixes"]),
         apotheosis_new_affixes=by_id(loaded["apotheosis_new_affixes"]),
         apotheosis_gems=by_id(loaded["apotheosis_gems"]),
+        apotheosis_gem_bonuses=by_id(loaded["apotheosis_gem_bonuses"]),
         apotheosis_tier_augments=by_id(loaded["apotheosis_tier_augments"]),
         apotheosis_rarities=by_id(loaded["apotheosis_rarities"]),
         apotheosis_rarity_overrides=by_id(loaded["apotheosis_rarity_overrides"]),

@@ -1,0 +1,25 @@
+{
+  "gem": "apotheosis:core/guardian",
+  "bonuses": [
+    {
+      "type": "apotheosis:attribute",
+      "attribute": "realmforge:magic_shield",
+      "gem_class": {
+        "key": "realmforge.robe_core",
+        "types": [
+          "realmforge:robe_chest",
+          "realmforge:robe_legs"
+        ]
+      },
+      "operation": "add_value",
+      "values": {
+        "cracked": 0.5,
+        "chipped": 1.0,
+        "flawed": 2.5,
+        "normal": 4.0,
+        "flawless": 6.0,
+        "perfect": 8.0
+      }
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "gem": "apotheosis:the_nether/blood_lord",
+  "bonuses": [
+    {
+      "type": "apotheosis:attribute",
+      "attribute": "apothic_attributes:healing_received",
+      "gem_class": {
+        "key": "realmforge.robe_chest",
+        "types": [
+          "realmforge:robe_chest"
+        ]
+      },
+      "operation": "add_multiplied_base",
+      "values": {
+        "flawed": 0.2,
+        "normal": 0.3,
+        "flawless": 0.4,
+        "perfect": 0.5
+      }
+    },
+    {
+      "type": "apotheosis:multi_attribute",
+      "desc": "bonus.apotheosis:multi_attr.desc.and",
+      "gem_class": {
+        "key": "realmforge.robe_head",
+        "types": [
+          "realmforge:robe_head"
+        ]
+      },
+      "modifiers": [
+        {
+          "attribute": "realmforge:spell_power",
+          "operation": "add_multiplied_base",
+          "values": {
+            "flawed": 0.25,
+            "normal": 0.35,
+            "flawless": 0.45,
+            "perfect": 0.6
+          }
+        },
+        {
+          "attribute": "minecraft:max_health",
+          "operation": "add_multiplied_total",
+          "values": {
+            "flawed": -0.3,
+            "normal": -0.4,
+            "flawless": -0.5,
+            "perfect": -0.65
+          }
+        }
+      ]
+    }
+  ]
+}

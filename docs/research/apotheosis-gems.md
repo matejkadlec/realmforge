@@ -16,8 +16,8 @@ Magic Shield and Mana Regeneration are not there at all, and Dodge Chance comes 
 shield and Royalty's all-stats. Our data remaps Apothic Attributes' stats to ours (crit, dodge, pierce, shred,
 lifesteal, overheal, cooldown reduction) and switches protection pierce and shred off. When the review began, Apotheosis
 filed our wands as melee weapons and our robes as armor, so a wand took Ballast's attack damage and a robe Guardian's
-armor; RLM-273 and RLM-546 gave both categories of their own, and until the extra bonuses land (RLM-547, RLM-548) no gem
-fits a wand or a robe. Matěj's decision gives 14 gems a wand bonus, the robes the armor bonuses with swaps to caster
+armor; RLM-273 and RLM-546 gave both categories of their own, and the extra bonuses (RLM-547, RLM-548, built since) let
+the gems fit them. Matěj's decision gives 14 gems a wand bonus, the robes the armor bonuses with swaps to caster
 stats, and no gem any spell or school resistance.
 
 ## Matěj's decision (2026-10-30)
@@ -356,8 +356,9 @@ Drops: the Nether (until M4 removes it, then Ashfire, RLM-550), Ascent to Pinnac
    crit chance; and every item with an armor slot is armor, so a robe took Guardian's armor and Tyrannical's toughness
    against the caster rule of no armor. **Fixed:** RLM-273 registered `realmforge:wand` before `melee_weapon`, and
    RLM-546 the four robe categories, filled through the data map
-   ([architecture 13](../architecture.md#13-items-gear-and-loot)). Until RLM-547 and RLM-548 add their bonuses, no gem
-   fits a wand or a robe at all.
+   ([architecture 13](../architecture.md#13-items-gear-and-loot)), and RLM-547 and RLM-548 gave the gems their wand and
+   robe bonuses (`content/apotheosis_gem_bonuses/`, [architecture 19.4](../architecture.md#194-optional-integrations)):
+   before them no gem fit a wand or a robe at all.
 2. **The two End gems never drop; the three Nether gems drop in the Nether until M4.** Endersurge and Mageslayer name
    `minecraft:the_end` in their `constraints.dimensions`, and the End is unreachable: vanilla strongholds are off from
    M1, so no End portal generates ([ADR 0044](../decisions/0044-third-party-mods-by-milestone.md)). Blood Lord, Inferno

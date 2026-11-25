@@ -8,8 +8,10 @@
 2. ``fit`` applies ``content/``'s changes to that snapshot: first an entry's own change (switched off, or fields
    replaced), then the stat remaps, then the rarity overrides, which read the fitted rarities. Every entry that
    changed becomes a file at Apotheosis's own path; a switched-off one becomes a file NeoForge skips
-   (``neoforge:never``), which Placebo, Apotheosis's data loader, logs at trace level only. ``validate.py`` reports
-   ``fit``'s problems, ``generate/apotheosis.py`` writes its files.
+   (``neoforge:never``), which Placebo, Apotheosis's data loader, logs at trace level only. A gem's extra bonuses
+   (``content/apotheosis_gem_bonuses/``) read the fitted gem: which categories it covers, its lowest purity and the
+   bonuses a ``like`` copies. ``validate.py`` reports ``fit``'s problems, ``generate/apotheosis.py`` writes its
+   files.
 
 Apotheosis is MIT-licensed (its code and the data its generators write; the jar's metadata keeps its assets, none of
 which we copy, All Rights Reserved). MIT's one condition is that its notice goes with every copy, so ``rf gen`` writes
@@ -39,17 +41,22 @@ from realmforge_tools.schema.apotheosis import (
     CURIOS_LOOT_CATEGORIES,
     LOOT_CATEGORIES,
     OUR_LOOT_CATEGORIES,
+    PURITIES,
     RARITIES,
     AffixValueRange,
     ApotheosisAffixDef,
     ApotheosisEntryDef,
+    ApotheosisGemBonusesDef,
     ApotheosisNewAffixDef,
     ApotheosisRarityOverrideDef,
     ApotheosisStatRemapDef,
+    ExtraGemBonusDef,
 )
 
 # The snapshot's kinds: Apotheosis's folders below data/<namespace>/apotheosis/.
 RARITY_OVERRIDE = "rarity_override"
+# Apotheosis's folder of extra gem bonuses (ExtraGemBonusRegistry), which the snapshot does not hold: the jar has none.
+EXTRA_GEM_BONUSES = "extra_gem_bonuses"
 KINDS = ("affixes", "gems", "tier_augments", "rarities", RARITY_OVERRIDE)
 # The kinds whose entries grant attributes, and so meet the stat remaps.
 REMAPPED_KINDS = ("affixes", "gems", "tier_augments")
@@ -257,6 +264,14 @@ def fit(content: Content, snapshot: Snapshot) -> Fitted:
                             f"{kind} {id_} names {where[1]} at {where[0]}, where no stat remap applies",
                         )
                     )
+    extra: dict[str, dict[str, Any]] = {}
+    gems_with_extras: dict[str, str] = {}
+    for entry in content.apotheosis_gem_bonuses:
+        data = _extra_gem_bonuses(
+            entry, snapshot, changed, remaps, granted, gems_with_extras, fitted.problems
+        )
+        if data is not None:
+            extra[extra_bonus_path(entry.model)] = data
     for source, entry in remaps.items():
         if source not in granted:
             fitted.problems.append(
@@ -268,11 +283,232 @@ def fit(content: Content, snapshot: Snapshot) -> Fitted:
         fitted.files[data_path(kind, id_)] = data
     for entry in content.apotheosis_new_affixes:
         fitted.files[data_path("affixes", new_affix_id(entry.model))] = _new_affix(entry.model)
+    fitted.files.update(extra)
     for entry in content.apotheosis_rarity_overrides:
         override = _rarity_override(entry, snapshot, changed, fitted)
         if override is not None:
             fitted.files[override_path(override["category"])] = override
     return fitted
+
+
+def extra_bonus_path(model: ApotheosisGemBonusesDef) -> str:
+    """A gem's extra bonuses below ``data/``: ``realmforge/apotheosis/extra_gem_bonuses/<id>.json``. Placebo's loader
+    reads that folder in every namespace, so the file adds to the gem and replaces nothing of Apotheosis's."""
+    return f"{MOD_ID}/apotheosis/{EXTRA_GEM_BONUSES}/{model.id}.json"
+
+
+def gem_class_json(bonus: ExtraGemBonusDef) -> dict[str, Any]:
+    """An extra bonus's gem class in Apotheosis's explicit form, keyed ``realmforge.<key>``, so a gem's tooltip names
+    it by our text ``gem_class.realmforge.<key>`` (``GEM_CLASS_TEXTS``)."""
+    return {"key": f"{MOD_ID}.{bonus.class_key}", "types": list(bonus.categories)}
+
+
+def gem_class_categories(gem_class: Any) -> set[str] | None:
+    """The loot categories an Apotheosis gem class covers: a category's id, or ``{key, types}`` with a list of ids;
+    None for every category (``neoforge:any``, Endersurge's "anything")."""
+    if isinstance(gem_class, str):
+        return {gem_class}
+    if not isinstance(gem_class, dict):
+        return set()
+    types = gem_class.get("types")
+    if isinstance(types, str):
+        return {types}
+    if isinstance(types, list):
+        return {str(category) for category in types}
+    if isinstance(types, dict) and types.get("type") == "neoforge:any":
+        return None
+    return set()
+
+
+def _gem_class_name(gem_class: Any) -> str:
+    if isinstance(gem_class, dict):
+        return str(gem_class.get("key"))
+    return str(gem_class)
+
+
+def _extra_gem_bonuses(
+    entry: Entry[ApotheosisGemBonusesDef],
+    snapshot: Snapshot,
+    changed: dict[tuple[str, str], dict[str, Any]],
+    remaps: dict[str, Entry[ApotheosisStatRemapDef]],
+    granted: set[str],
+    seen: dict[str, str],
+    problems: list[Problem],
+) -> dict[str, Any] | None:
+    """A gem's extra bonuses as Apotheosis reads them (``ExtraGemBonus#CODEC``: the gem and its bonuses), against the
+    fitted gem: a bonus may name no loot category the gem already covers (Apotheosis would log a warning and skip it,
+    ``Gem#validateBonus``), needs a value for every purity the gem drops at, and grants a remapped stat as ours; a
+    ``like`` copies the fitted gem's bonus for that category. None when the entry cannot be fitted."""
+    model = entry.model
+    original = snapshot.entry("gems", model.gem)
+    if original is None:
+        problems.append(Problem(entry.source, "gem", _unknown_entry("gems", model.gem, snapshot)))
+        return None
+    if model.gem in seen:
+        problems.append(
+            Problem(entry.source, "gem", f"{model.gem} already has its extra bonuses in {seen[model.gem]}")
+        )
+        return None
+    seen[model.gem] = entry.source
+    gem = changed.get(("gems", model.gem), original)
+    if gem is DISABLED:
+        problems.append(
+            Problem(entry.source, "gem", f"{model.gem} is switched off: it has no bonuses to add to")
+        )
+        return None
+    own: list[dict[str, Any]] = gem.get("bonuses", [])
+    purities = PURITIES[PURITIES.index(gem.get("min_purity", PURITIES[0])) :]
+    taken: dict[str, str] = {}
+    everything: str | None = None
+    for bonus in own:
+        covered = gem_class_categories(bonus.get("gem_class"))
+        if covered is None:
+            everything = _gem_class_name(bonus.get("gem_class"))
+            continue
+        for category in covered:
+            taken.setdefault(category, f"its own bonus for {_gem_class_name(bonus.get('gem_class'))}")
+    bonuses: list[dict[str, Any]] = []
+    for n, bonus in enumerate(model.bonuses):
+        location = f"bonuses.{n}"
+        if not _extra_categories_fit(entry, location, bonus, taken, everything, problems):
+            continue
+        for category in bonus.categories:
+            taken[category] = f"bonuses.{n}"
+        if bonus.like is not None:
+            copied = next((own_bonus for own_bonus in own if _covers(own_bonus, bonus.like)), None)
+            if copied is None:
+                problems.append(
+                    Problem(
+                        entry.source, f"{location}.like", f"{model.gem} has no bonus for {bonus.like} to copy"
+                    )
+                )
+                continue
+            data = copy.deepcopy(copied)
+            data["gem_class"] = gem_class_json(bonus)
+            bonuses.append(data)
+            continue
+        for m, modifier in enumerate(bonus.modifier_list):
+            where = (
+                f"{location}.modifiers.{m}.values" if bonus.modifiers is not None else f"{location}.values"
+            )
+            missing = [purity for purity in purities if purity not in modifier.values]
+            below = [purity for purity in PURITIES if purity in modifier.values and purity not in purities]
+            if below:
+                problems.append(
+                    Problem(
+                        entry.source,
+                        where,
+                        f"{model.gem} drops from {purities[0]} only: drop {', '.join(below)}",
+                    )
+                )
+            if missing:
+                problems.append(
+                    Problem(
+                        entry.source,
+                        where,
+                        f"a value for every purity {model.gem} drops at, from {purities[0]} up: "
+                        f"{', '.join(missing)} missing",
+                    )
+                )
+        remapped = _remap_bonus(_extra_bonus_json(bonus), remaps, granted, problems)
+        if remapped is None:
+            problems.append(
+                Problem(
+                    entry.source,
+                    location,
+                    "it names a stat that content/apotheosis_stat_remaps/ switches off",
+                )
+            )
+            continue
+        bonuses.append(remapped)
+    return {"gem": model.gem, "bonuses": bonuses}
+
+
+def _extra_categories_fit(
+    entry: Entry[ApotheosisGemBonusesDef],
+    location: str,
+    bonus: ExtraGemBonusDef,
+    taken: dict[str, str],
+    everything: str | None,
+    problems: list[Problem],
+) -> bool:
+    """Whether every loot category an extra bonus names exists and is free on the gem."""
+    gem = entry.model.gem
+    fits = True
+    for category in bonus.categories:
+        if category in CURIOS_LOOT_CATEGORIES:
+            problems.append(
+                Problem(
+                    entry.source,
+                    f"{location}.gem_class",
+                    f"{category} exists only with Curios, which the pack lacks",
+                )
+            )
+            fits = False
+        elif category not in LOOT_CATEGORIES and category not in OUR_LOOT_CATEGORIES:
+            problems.append(
+                Problem(
+                    entry.source,
+                    f"{location}.gem_class",
+                    f"unknown loot category {category!r}; Apotheosis has {', '.join(LOOT_CATEGORIES)}, and we have "
+                    f"{', '.join(OUR_LOOT_CATEGORIES)}",
+                )
+            )
+            fits = False
+        elif everything is not None:
+            problems.append(
+                Problem(
+                    entry.source,
+                    f"{location}.gem_class",
+                    f"{gem}'s own bonus for {everything} covers every category already: Apotheosis would log a "
+                    "warning and skip this one",
+                )
+            )
+            fits = False
+        elif category in taken:
+            problems.append(
+                Problem(
+                    entry.source,
+                    f"{location}.gem_class",
+                    f"{gem} already has a bonus for {category} ({taken[category]}): Apotheosis would log a warning "
+                    "and skip this one",
+                )
+            )
+            fits = False
+    return fits
+
+
+def _covers(bonus: dict[str, Any], category: str) -> bool:
+    covered = gem_class_categories(bonus.get("gem_class"))
+    return covered is None or category in covered
+
+
+def _extra_bonus_json(bonus: ExtraGemBonusDef) -> dict[str, Any]:
+    """An extra bonus of ours in Apotheosis's own format, its values lowest purity first: an ``attribute`` bonus, or a
+    ``multi_attribute`` one for several stats."""
+
+    def values(by_purity: dict[str, float]) -> dict[str, float]:
+        return {purity: by_purity[purity] for purity in PURITIES if purity in by_purity}
+
+    gem_class = gem_class_json(bonus)
+    if bonus.modifiers is not None:
+        return {
+            "type": MULTI_ATTRIBUTE,
+            "desc": bonus.multi_attribute_desc,
+            "gem_class": gem_class,
+            "modifiers": [
+                {"attribute": m.attribute, "operation": m.operation, "values": values(m.values)}
+                for m in bonus.modifiers
+            ],
+        }
+    (only,) = bonus.modifier_list
+    return {
+        "type": ATTRIBUTE,
+        "attribute": only.attribute,
+        "gem_class": gem_class,
+        "operation": only.operation,
+        "values": values(only.values),
+    }
 
 
 def _switched_off_exclusions(

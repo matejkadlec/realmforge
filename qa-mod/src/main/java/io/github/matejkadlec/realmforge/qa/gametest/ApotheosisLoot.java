@@ -300,16 +300,27 @@ final class ApotheosisLoot {
     }
 
     /**
-     * Done when of RLM-546: a gem with armor bonuses only (Guardian) has no bonus for a robe category, so it cannot be
-     * socketed into a robe until the robe gem bonuses exist (RLM-548); a chestplate still takes it.
+     * RLM-546, then RLM-548: a robe takes a gem only through a bonus for its own robe category, which Apotheosis's
+     * armor bonuses never are. Guardian's armor bonus is the chestplate's and the leggings', and its robe bonus
+     * (content/apotheosis_gem_bonuses/guardian.yaml) the robe chest's and legs', so it fits Netherite Robes and Pants
+     * and a chestplate, and no robe cap or sandals.
      */
-    static void aGuardianGemFitsNoRobe(GameTestHelper helper) {
+    static void aGuardianGemFitsOnlyTheRobesItHasABonusFor(GameTestHelper helper) {
         ItemStack guardian = ApotheosisGems.gem("core/guardian").toStack(Purity.PERFECT);
-        ItemStack robes = new ItemStack(GeneratedItems.NETHERITE_ROBES.get());
-        SocketHelper.setSockets(robes, 1);
+        for (var item : List.of(GeneratedItems.NETHERITE_ROBES, GeneratedItems.NETHERITE_PANTS)) {
+            ItemStack robe = new ItemStack(item.get());
+            SocketHelper.setSockets(robe, 1);
+            helper.assertTrue(SocketHelper.canSocketGemInItem(robe, guardian),
+                    "Guardian fits " + robe.getHoverName().getString());
+        }
+        for (var item : List.of(GeneratedItems.NETHERITE_CAP, GeneratedItems.NETHERITE_SANDALS)) {
+            ItemStack robe = new ItemStack(item.get());
+            SocketHelper.setSockets(robe, 1);
+            helper.assertFalse(SocketHelper.canSocketGemInItem(robe, guardian),
+                    "Guardian does not fit " + robe.getHoverName().getString());
+        }
         ItemStack chestplate = new ItemStack(Items.NETHERITE_CHESTPLATE);
         SocketHelper.setSockets(chestplate, 1);
-        helper.assertFalse(SocketHelper.canSocketGemInItem(robes, guardian), "Guardian does not fit Netherite Robes");
         helper.assertTrue(SocketHelper.canSocketGemInItem(chestplate, guardian),
                 "Guardian fits a netherite chestplate");
         helper.succeed();

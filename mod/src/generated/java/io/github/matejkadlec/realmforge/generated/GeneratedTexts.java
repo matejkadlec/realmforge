@@ -92,6 +92,33 @@ public final class GeneratedTexts {
     /** {@code entity.realmforge.spell_projectile} from {@code content/texts/entity.yaml}: "Spell Projectile" */
     public static final String ENTITY_SPELL_PROJECTILE = "entity.realmforge.spell_projectile";
 
+    /** {@code gem_class.realmforge.head} from {@code content/texts/gem_class.yaml}: "Helmets and Caster Caps" */
+    public static final String GEM_CLASS_HEAD = "gem_class.realmforge.head";
+
+    /** {@code gem_class.realmforge.robe_chest} from {@code content/texts/gem_class.yaml}: "Caster Robes" */
+    public static final String GEM_CLASS_ROBE_CHEST = "gem_class.realmforge.robe_chest";
+
+    /** {@code gem_class.realmforge.robe_core} from {@code content/texts/gem_class.yaml}: "Caster Robes and Pants" */
+    public static final String GEM_CLASS_ROBE_CORE = "gem_class.realmforge.robe_core";
+
+    /** {@code gem_class.realmforge.robe_feet} from {@code content/texts/gem_class.yaml}: "Caster Sandals" */
+    public static final String GEM_CLASS_ROBE_FEET = "gem_class.realmforge.robe_feet";
+
+    /** {@code gem_class.realmforge.robe_head} from {@code content/texts/gem_class.yaml}: "Caster Caps" */
+    public static final String GEM_CLASS_ROBE_HEAD = "gem_class.realmforge.robe_head";
+
+    /** {@code gem_class.realmforge.robe_legs} from {@code content/texts/gem_class.yaml}: "Caster Pants" */
+    public static final String GEM_CLASS_ROBE_LEGS = "gem_class.realmforge.robe_legs";
+
+    /** {@code gem_class.realmforge.robe_lower} from {@code content/texts/gem_class.yaml}: "Caster Pants and Sandals" */
+    public static final String GEM_CLASS_ROBE_LOWER = "gem_class.realmforge.robe_lower";
+
+    /** {@code gem_class.realmforge.robes} from {@code content/texts/gem_class.yaml}: "Caster Garb" */
+    public static final String GEM_CLASS_ROBES = "gem_class.realmforge.robes";
+
+    /** {@code gem_class.realmforge.wand} from {@code content/texts/gem_class.yaml}: "Wands" */
+    public static final String GEM_CLASS_WAND = "gem_class.realmforge.wand";
+
     /** {@code gui.realmforge.auto_shoot} from {@code content/texts/gui.yaml}: "Auto Shoot" */
     public static final String GUI_AUTO_SHOOT = "gui.realmforge.auto_shoot";
 

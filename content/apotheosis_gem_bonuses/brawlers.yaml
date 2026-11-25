@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../tools/schemas/apotheosis_gem_bonuses.schema.json
+# Brawler's extra bonuses (Matěj, 2026-10-30, RLM-536): on a wand Cast Time Reduction (RLM-547); on the robe chest and
+# legs its armor's max health, kept as on armor (RLM-511, question 5: no remap to Vitality; RLM-565) (RLM-548).
+id: brawlers
+gem: apotheosis:core/brawlers
+bonuses:
+  - gem_class: realmforge:wand
+    attribute: realmforge:cast_time_reduction
+    operation: add_value
+    values: {cracked: 0.05, chipped: 0.075, flawed: 0.1, normal: 0.125, flawless: 0.15, perfect: 0.2}
+  - gem_class: {key: robe_core, types: [realmforge:robe_chest, realmforge:robe_legs]}
+    like: apotheosis:chestplate

@@ -20,6 +20,7 @@ from realmforge_tools.schema.apotheosis import (
     RARITIES,
     ROBE_LOOT_CATEGORIES,
     ApotheosisAffixDef,
+    ApotheosisGemBonusesDef,
     ApotheosisNewAffixDef,
     ApotheosisRarityDef,
     ApotheosisRarityOverrideDef,
@@ -1230,4 +1231,381 @@ def test_a_new_affix_names_a_category() -> None:
                 "categories": [],
                 "values": {"apotheosis:rare": 1},
             }
+        )
+
+
+# Extra gem bonuses (content/apotheosis_gem_bonuses/, RLM-547, RLM-548)
+
+EXTRA_BONUSES = DATA + "realmforge/apotheosis/extra_gem_bonuses/"
+# Matěj's wand gems (RLM-536, 2026-10-30) and the ones without a wand bonus, so they fit no wand.
+WAND_GEMS = {
+    "ballast",
+    "brawlers",
+    "breach",
+    "combatant",
+    "lightning",
+    "lunar",
+    "samurai",
+    "slipstream",
+    "solar",
+    "splendor",
+    "tyrannical",
+    "warlord",
+    "verdant_ruin",
+    "molten_breach",
+}
+NO_WAND_GEMS = {"guardian", "earth", "royalty", "blood_lord", "inferno", "mageslayer"}
+
+
+def extra_bonuses(files: dict[str, bytes], gem: str) -> list[dict]:
+    return generated_json(files, EXTRA_BONUSES + gem + ".json")["bonuses"]
+
+
+def bonus_for(bonuses: list[dict], category: str) -> dict | None:
+    return next((b for b in bonuses if category in b["gem_class"]["types"]), None)
+
+
+def gem_bonuses(repo: RepoPaths, file: str, body: str) -> None:
+    write(repo.content / "apotheosis_gem_bonuses" / f"{file}.yaml", f"id: {file}\n" + body)
+
+
+def test_rf_gen_writes_a_file_of_extra_bonuses_per_gem(files: dict[str, bytes]) -> None:
+    extra = sorted(path.removeprefix(EXTRA_BONUSES) for path in files if path.startswith(EXTRA_BONUSES))
+    assert extra == sorted(f"{gem}.json" for gem in WAND_GEMS | NO_WAND_GEMS)
+    ballast = generated_json(files, EXTRA_BONUSES + "ballast.json")
+    assert ballast["gem"] == "apotheosis:core/ballast"
+    assert ballast["bonuses"][0] == {
+        "type": "apotheosis:attribute",
+        "attribute": "realmforge:spell_power",
+        "gem_class": {"key": "realmforge.wand", "types": ["realmforge:wand"]},
+        "operation": "add_value",
+        "values": {
+            "cracked": 1.0,
+            "chipped": 2.0,
+            "flawed": 3.5,
+            "normal": 5.0,
+            "flawless": 7.0,
+            "perfect": 10.0,
+        },
+    }
+
+
+def test_exactly_matej_s_wand_gems_fit_a_wand(files: dict[str, bytes]) -> None:
+    for gem in WAND_GEMS:
+        assert bonus_for(extra_bonuses(files, gem), "realmforge:wand") is not None, gem
+    for gem in NO_WAND_GEMS:
+        assert bonus_for(extra_bonuses(files, gem), "realmforge:wand") is None, gem
+
+
+@pytest.mark.parametrize(
+    ("gem", "attribute", "operation", "perfect"),
+    [
+        ("brawlers", "realmforge:cast_time_reduction", "add_value", 0.2),
+        ("breach", "realmforge:spell_penetration", "add_value", 0.3),
+        ("combatant", "realmforge:spell_power", "add_multiplied_base", 0.3),
+        ("lightning", "realmforge:cooldown_reduction", "add_value", 0.2),
+        ("lunar", "realmforge:frost_power", "add_value", 0.4),
+        ("slipstream", "realmforge:mana_regeneration", "add_value", 5.0),
+        ("solar", "realmforge:fire_power", "add_value", 0.4),
+        ("tyrannical", "realmforge:arcane_power", "add_value", 0.4),
+        ("molten_breach", "realmforge:spell_penetration", "add_value", 0.3),
+        # "As its weapons": copies of the melee bonus, with the stat remaps applied.
+        ("samurai", "realmforge:crit_chance", "add_value", 0.5),
+        ("warlord", "realmforge:crit_damage", "add_value", 1.05),
+        ("splendor", "apothic_attributes:experience_gained", "add_multiplied_base", 0.6),
+    ],
+)
+def test_the_wand_bonuses_are_matej_s(
+    files: dict[str, bytes], gem: str, attribute: str, operation: str, perfect: float
+) -> None:
+    bonus = bonus_for(extra_bonuses(files, gem), "realmforge:wand")
+    assert bonus is not None
+    assert (bonus["attribute"], bonus["operation"]) == (attribute, operation)
+    assert bonus["values"]["perfect"] == pytest.approx(perfect)
+
+
+def test_verdant_ruin_s_wand_bonus_starts_at_flawed(files: dict[str, bytes]) -> None:
+    bonus = bonus_for(extra_bonuses(files, "verdant_ruin"), "realmforge:wand")
+    assert bonus is not None and bonus["type"] == "apotheosis:multi_attribute"
+    penetration, shield = bonus["modifiers"]
+    assert penetration["attribute"] == "realmforge:spell_penetration"
+    assert penetration["values"] == {"flawed": 0.2, "normal": 0.3, "flawless": 0.4, "perfect": 0.5}
+    assert (shield["attribute"], shield["operation"]) == ("realmforge:magic_shield", "add_multiplied_base")
+    assert shield["values"]["perfect"] == -0.2
+
+
+def test_robes_take_the_armor_bonus_or_its_swap(files: dict[str, bytes]) -> None:
+    snapshot = load_snapshot(RepoPaths())
+    ballast = bonus_for(extra_bonuses(files, "ballast"), "realmforge:robe_chest")
+    own = bonus_for_class(
+        snapshot.entry("gems", "apotheosis:core/ballast")["bonuses"], "apotheosis:chestplate"
+    )
+    assert ballast == {
+        **own,
+        "gem_class": {
+            "key": "realmforge.robe_core",
+            "types": ["realmforge:robe_chest", "realmforge:robe_legs"],
+        },
+    }
+    guardian = bonus_for(extra_bonuses(files, "guardian"), "realmforge:robe_legs")
+    assert (guardian["attribute"], guardian["operation"]) == ("realmforge:magic_shield", "add_value")
+    assert guardian["values"]["perfect"] == 8.0
+    slipstream = extra_bonuses(files, "slipstream")
+    head = bonus_for(slipstream, "apotheosis:helmet")
+    assert head is not None and head is bonus_for(slipstream, "realmforge:robe_head"), (
+        "one bonus for both heads"
+    )
+    assert (head["attribute"], head["values"]["perfect"]) == ("realmforge:dodge_chance", 0.075)
+    # The copies are of the fitted gem: Tyrannical's boots keep our lifesteal, not Apothic Attributes'.
+    feet = bonus_for(extra_bonuses(files, "tyrannical"), "realmforge:robe_feet")
+    assert [m["attribute"] for m in feet["modifiers"]] == ["minecraft:max_health", "realmforge:lifesteal"]
+
+
+def bonus_for_class(bonuses: list[dict], category: str) -> dict:
+    for bonus in bonuses:
+        gem_class = bonus["gem_class"]
+        types = [gem_class] if isinstance(gem_class, str) else gem_class["types"]
+        if category in types:
+            return bonus
+    raise AssertionError(category)
+
+
+def test_royalty_s_all_stats_raise_our_caster_stats_on_helmets_and_robe_heads(
+    files: dict[str, bytes],
+) -> None:
+    caster = {
+        "realmforge:spell_power",
+        "realmforge:magic_shield",
+        "realmforge:max_mana",
+        "realmforge:mana_regeneration",
+        "realmforge:spell_penetration",
+        "realmforge:cast_time_reduction",
+        "realmforge:cooldown_reduction",
+        "realmforge:fire_power",
+        "realmforge:frost_power",
+        "realmforge:arcane_power",
+    }
+    helmet = bonus_for_class(
+        generated_json(files, GEMS + "overworld/royalty.json")["bonuses"], "apotheosis:helmet"
+    )
+    robe = bonus_for(extra_bonuses(files, "royalty"), "realmforge:robe_head")
+    for bonus in (helmet, robe):
+        assert bonus["type"] == "apotheosis:all_stats"
+        assert caster <= set(bonus["attributes"])
+        assert not {
+            a for a in bonus["attributes"] if a.startswith("realmforge:") and a.endswith("_resistance")
+        }
+        assert "apothic_attributes:prot_shred" not in bonus["attributes"]
+    assert robe["attributes"] == helmet["attributes"]
+
+
+@pytest.mark.parametrize(
+    ("file", "body", "message"),
+    [
+        (
+            "ballast",
+            "gem: apotheosis:core/ballast\nbonuses:\n  - gem_class: apotheosis:melee_weapon\n"
+            "    attribute: realmforge:spell_power\n    operation: add_value\n"
+            "    values: {cracked: 1, chipped: 2, flawed: 3, normal: 4, flawless: 5, perfect: 6}\n",
+            "already has a bonus for apotheosis:melee_weapon",
+        ),
+        (
+            "ballast",
+            "gem: apotheosis:core/ballast\nbonuses:\n  - gem_class: realmforge:wand\n"
+            "    attribute: realmforge:spell_power\n    operation: add_value\n"
+            "    values: {cracked: 1, chipped: 2, flawed: 3, normal: 4, flawless: 5}\n",
+            "perfect missing",
+        ),
+        (
+            "earth",
+            "gem: apotheosis:overworld/earth\nbonuses:\n  - gem_class: realmforge:wand\n"
+            "    attribute: realmforge:spell_power\n    operation: add_value\n"
+            "    values: {cracked: 1, chipped: 2, flawed: 3, normal: 4, flawless: 5, perfect: 6}\n",
+            "drops from flawed only: drop cracked, chipped",
+        ),
+        (
+            "ballast",
+            "gem: apotheosis:core/ballast\nbonuses:\n  - gem_class: realmforge:wand\n"
+            "    attribute: realmforge:no_such_stat\n    operation: add_value\n"
+            "    values: {cracked: 1, chipped: 2, flawed: 3, normal: 4, flawless: 5, perfect: 6}\n",
+            "unknown attribute 'realmforge:no_such_stat'",
+        ),
+        (
+            "ballast",
+            "gem: apotheosis:core/ballast\nbonuses:\n  - gem_class: realmforge:wand\n"
+            "    attribute: realmforge:spell_power\n    operation: add_multiplied_total\n"
+            "    values: {cracked: 1, chipped: 2, flawed: 3, normal: 4, flawless: 5, perfect: 6}\n",
+            "not add_multiplied_total",
+        ),
+        (
+            "breach",
+            "gem: apotheosis:core/breach\nbonuses:\n  - gem_class: realmforge:wand\n"
+            "    attribute: realmforge:spell_penetration\n    operation: add_multiplied_base\n"
+            "    values: {cracked: 0.1, chipped: 0.1, flawed: 0.1, normal: 0.1, flawless: 0.1, perfect: 0.1}\n",
+            "a percent of it is an add_value",
+        ),
+        (
+            "breach",
+            "gem: apotheosis:core/breach\nbonuses:\n  - gem_class: realmforge:wand\n"
+            "    attribute: realmforge:spell_penetration\n    operation: add_value\n"
+            "    values: {cracked: 5, chipped: 10, flawed: 15, normal: 20, flawless: 25, perfect: 30}\n",
+            "its values are fractions",
+        ),
+        (
+            "ballast",
+            "gem: apotheosis:core/ballast\nbonuses:\n  - gem_class: realmforge:wand\n    like: apotheosis:bow\n",
+            "has no bonus for apotheosis:bow to copy",
+        ),
+        (
+            "ballast",
+            "gem: apotheosis:core/ballast\nbonuses:\n  - gem_class: realmforge:wand\n    like: apotheosis:melee_weapon\n"
+            "  - gem_class: {key: wand_and_bow, types: [realmforge:wand, apotheosis:bow]}\n"
+            "    like: apotheosis:melee_weapon\n",
+            "already has a bonus for realmforge:wand (bonuses.0)",
+        ),
+        (
+            "ballast",
+            "gem: apotheosis:core/ballast\nbonuses:\n  - gem_class: {key: staff, types: [realmforge:staff]}\n"
+            "    like: apotheosis:melee_weapon\n",
+            "unknown loot category 'realmforge:staff'",
+        ),
+        (
+            "ballast",
+            "gem: apotheosis:core/ballast\nbonuses:\n  - gem_class: apotheosis:charm\n    like: apotheosis:melee_weapon\n",
+            "exists only with Curios",
+        ),
+        (
+            "ballast",
+            "gem: apotheosis:core/ballast\nbonuses:\n  - gem_class: {key: nameless, types: [apotheosis:bow]}\n"
+            "    like: apotheosis:melee_weapon\n",
+            "gem class nameless has no name",
+        ),
+        (
+            "endersurge",
+            "gem: apotheosis:the_end/endersurge\nbonuses:\n  - gem_class: realmforge:wand\n"
+            "    attribute: realmforge:spell_power\n    operation: add_value\n    values: {flawless: 1, perfect: 2}\n",
+            "covers every category already",
+        ),
+        (
+            "second_ballast",
+            "gem: apotheosis:core/ballast\nbonuses:\n  - gem_class: apotheosis:bow\n    like: apotheosis:melee_weapon\n",
+            "already has its extra bonuses in",
+        ),
+        (
+            "ballast",
+            "gem: apotheosis:core/no_such_gem\nbonuses:\n  - gem_class: realmforge:wand\n    like: apotheosis:melee_weapon\n",
+            "has no gems entry apotheosis:core/no_such_gem",
+        ),
+    ],
+)
+def test_extra_gem_bonuses_are_checked(repo: RepoPaths, file: str, body: str, message: str) -> None:
+    gem_bonuses(repo, file, body)
+    assert_problem(repo, message)
+
+
+def test_a_gem_s_replaced_bonuses_name_stats_that_exist(repo: RepoPaths) -> None:
+    """RLM-548: Royalty's all-stats list, inside its replaced bonuses, names only attributes that exist."""
+    royalty = repo.content / "apotheosis_gems" / "royalty.yaml"
+    royalty.write_text(
+        royalty.read_text(encoding="utf-8").replace("realmforge:arcane_power", "realmforge:shadow_power"),
+        encoding="utf-8",
+    )
+    assert_problem(repo, "replace.bonuses.0.attributes.40: unknown attribute 'realmforge:shadow_power'")
+
+
+def test_an_extra_bonus_grants_a_remapped_stat_as_ours(repo: RepoPaths) -> None:
+    gem_bonuses(
+        repo,
+        "ballast",
+        "gem: apotheosis:core/ballast\nbonuses:\n  - gem_class: realmforge:wand\n"
+        "    attribute: apothic_attributes:crit_damage\n    operation: add_multiplied_base\n"
+        "    values: {cracked: 0.1, chipped: 0.2, flawed: 0.3, normal: 0.4, flawless: 0.5, perfect: 0.6}\n",
+    )
+    (bonus,) = extra_bonuses(generated(repo), "ballast")
+    assert (bonus["attribute"], bonus["operation"]) == ("realmforge:crit_damage", "add_value")
+    assert bonus["values"]["perfect"] == pytest.approx(0.9)
+
+
+def test_an_extra_bonus_of_a_switched_off_stat_is_refused(repo: RepoPaths) -> None:
+    gem_bonuses(
+        repo,
+        "ballast",
+        "gem: apotheosis:core/ballast\nbonuses:\n  - gem_class: realmforge:wand\n"
+        "    attribute: apothic_attributes:prot_pierce\n    operation: add_value\n"
+        "    values: {cracked: 1, chipped: 2, flawed: 3, normal: 4, flawless: 5, perfect: 6}\n",
+    )
+    assert_problem(repo, "switches off")
+
+
+@pytest.mark.parametrize(
+    ("bonus", "message"),
+    [
+        (
+            {
+                "gem_class": "realmforge:wand",
+                "like": "apotheosis:helmet",
+                "attribute": "realmforge:spell_power",
+            },
+            "alone",
+        ),
+        (
+            {"gem_class": "realmforge:wand", "attribute": "realmforge:spell_power", "values": {"cracked": 1}},
+            "give attribute",
+        ),
+        ({"gem_class": "realmforge:wand"}, "give attribute, operation and values, or modifiers, or like"),
+        (
+            {
+                "gem_class": "realmforge:wand",
+                "modifiers": [
+                    {
+                        "attribute": "realmforge:spell_power",
+                        "operation": "add_value",
+                        "values": {"cracked": 1},
+                    },
+                    {"attribute": "realmforge:max_mana", "operation": "add_value", "values": {"cracked": 1}},
+                ],
+                "desc": "bonus.apotheosis:multi_attr.desc.and_but",
+            },
+            "joins 3 modifiers, not 2",
+        ),
+        (
+            {
+                "gem_class": "realmforge:wand",
+                "modifiers": [
+                    {
+                        "attribute": "realmforge:spell_power",
+                        "operation": "add_value",
+                        "values": {"cracked": 1},
+                    },
+                    {"attribute": "realmforge:max_mana", "operation": "add_value", "values": {"cracked": 1}},
+                ],
+                "desc": "bonus.apotheosis:multi_attr.desc.or",
+            },
+            "unknown desc",
+        ),
+        (
+            {
+                "gem_class": "realmforge:wand",
+                "attribute": "realmforge:spell_power",
+                "operation": "add_value",
+                "values": {"cracked": 1},
+                "desc": "bonus.apotheosis:multi_attr.desc.and",
+            },
+            "a single attribute has none",
+        ),
+        (
+            {
+                "gem_class": "realmforge:wand",
+                "attribute": "realmforge:spell_power",
+                "operation": "add_value",
+                "values": {"pristine": 1},
+            },
+            "Input should be 'cracked'",
+        ),
+    ],
+)
+def test_an_extra_bonus_has_one_shape(bonus: dict, message: str) -> None:
+    with pytest.raises(ValidationError, match=message):
+        ApotheosisGemBonusesDef.model_validate(
+            {"id": "test", "gem": "apotheosis:core/ballast", "bonuses": [bonus]}
         )
