@@ -1943,7 +1943,7 @@ the `release` and `channel` animations (RLM-641, [11.2](#112-casting-server-auth
     art from `art/textures/material/<look>.png` (`art/approved.py`, [art/README.md](../art/README.md)), or a
     placeholder that `rf gen` writes until it has one, soft patches in the look's colours on a lattice that wraps
     round the tile (`generate/textures.py`). No look has art yet: the three materials wait for the texture
-    generator (RLM-440's deferred ticket names the ticket that makes them).
+    generator (RLM-679).
 - **A model** (`realmforge:spell_model`, `spell/SpellModel`, `content/spell_models/`) is a projectile's shape: its
   `shape`, its `scale` (its width as a share of the hitbox) and how it turns in flight (`tumble`, or `forward` along
   the flight with a spin). Its shape is the `orb`, three crossed slabs (`client/render/SpellOrbs`, a model layer of

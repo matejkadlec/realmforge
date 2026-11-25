@@ -174,7 +174,7 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   names in its `visuals` and on its projectile; a projectile is drawn with its look's material, as the orb or as a
   GeckoLib model of cubes from `art/models/spell/` (RLM-440 to RLM-442: Frostbolt's ice chunk, Fireball's round fire
   ball and Arcane Missiles' crystal, each written by a script; the looks' materials are placeholders until their art,
-  `art/textures/material/`), flies its trajectory (only straight), trails its look's particles and bursts into them
+  `art/textures/material/`, RLM-679), flies its trajectory (only straight), trails its look's particles and bursts into them
   where it hits, from one entity event (a look's trail, burst and swirl are each up to three emitters with colours of
   their own: frost's shards and snow, fire's embers, flames and black smoke, arcane's motes, sparkles and a ring); while a cast time runs, the model grows cube by cube in the caster's hands in a swirl of the look's
   particles, for players (at one size in first and third person) and mobs alike, fades when the cast is interrupted

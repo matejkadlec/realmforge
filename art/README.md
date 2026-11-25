@@ -44,7 +44,7 @@ Texture pipeline ([ADR 0007](../docs/decisions/0007-asset-pipeline.md),
    | `armor` | `art/textures/armor/<look>.png`, 16 x 16, tileable | the cloth of an armor look (an item's `gear.look`): the pipeline composes the look's two worn textures from it (`generate/worn_armor.py`, below); a look without one keeps its woven placeholder |
    | `armor_trim` | `art/textures/armor_trim/<look>.png`, 16 x 16, tileable | the look's trim, for the bands of its worn textures; it needs the cloth, and a look without one has its bands in darker cloth |
    | `block` | `art/textures/block/<block id>.png`, 16 x 16, tileable | the tile of a block whose kind takes one: a `simple` block's texture on every side, and for the Gatewright Bricks the tile every look of the realm portal's frame is made from (below); a block without one keeps its speckled placeholder |
-   | `material` | `art/textures/material/<look id>.png`, 16 x 16, tileable | a spell look's material (`content/spell_looks/`): the one tile every model of the look is drawn with, each face a patch of it (RLM-440, ADR 0073); a look without one keeps its placeholder, soft patches in the look's colours. None has art yet |
+   | `material` | `art/textures/material/<look id>.png`, 16 x 16, tileable | a spell look's material (`content/spell_looks/`): the one tile every model of the look is drawn with, each face a patch of it (RLM-440, ADR 0073); a look without one keeps its placeholder, soft patches in the look's colours. None has art yet (RLM-679) |
 
    `uv run rf validate` refuses a file there that names no content, has another size, or that the cleanup step did
    not write (half-transparent pixels, colours outside the palette). A texture touched up by hand must still be in
