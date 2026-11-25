@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=../../tools/schemas/particles.schema.json
+# A ring (RLM-442): a circle that widens from the middle of a hit and breaks up, half a block across at its widest. One
+# of them marks where an arcane missile burst (a burst emitter with spread 0 leaves it still there).
+id: ring
+frames:
+  - - "........"
+    - "........"
+    - "...ff..."
+    - "..f..f.."
+    - "..f..f.."
+    - "...ff..."
+    - "........"
+    - "........"
+  - - "........"
+    - "..ffff.."
+    - ".f....f."
+    - ".f....f."
+    - ".f....f."
+    - ".f....f."
+    - "..ffff.."
+    - "........"
+  - - "..bbbb.."
+    - ".b....b."
+    - "b......b"
+    - "b......b"
+    - "b......b"
+    - "b......b"
+    - ".b....b."
+    - "..bbbb.."
+  - - "..6..6.."
+    - ".6....6."
+    - "6......."
+    - ".......6"
+    - "6......."
+    - ".......6"
+    - ".6....6."
+    - "..6..6.."
+lifetime_ticks: [6, 8]
+size: 0.25
+friction: 1.0

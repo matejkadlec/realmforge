@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=../../tools/schemas/particles.schema.json
+# A flame (RLM-441): a tongue of fire that rises and shrinks to nothing. Fire's trail and burst, between its embers.
+id: flame
+frames:
+  - - "...b...."
+    - "..bfb..."
+    - "..bffb.."
+    - ".bffffb."
+    - ".bffffb."
+    - ".bffffb."
+    - "..bffb.."
+    - "...bb..."
+  - - "........"
+    - "...b...."
+    - "..bfb..."
+    - "..bffb.."
+    - "..bffb.."
+    - "..bffb.."
+    - "...bb..."
+    - "........"
+  - - "........"
+    - "........"
+    - "...b...."
+    - "..bfb..."
+    - "..bfb..."
+    - "...b...."
+    - "........"
+    - "........"
+lifetime_ticks: [6, 11]
+size: 0.11
+gravity: -0.2
+friction: 0.9

@@ -15,7 +15,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from realmforge_tools.art.palette import Palette
+from realmforge_tools.art.palette import Palette, PaletteError, only
 from realmforge_tools.art.texture import CleanReport, Image, TextureError, clean
 from realmforge_tools.formats.png import PngError, decode_rgba
 from realmforge_tools.yamlio import YamlLoadError, load_yaml
@@ -47,6 +47,11 @@ class SubjectInfo(_Strict):
         default=None,
         gt=0,
         description="This subject's texture width when it is not the gallery's (a 64 x 64 GUI tile among icons).",
+    )
+    ramps: tuple[str, ...] = Field(
+        default=(),
+        description="The palette ramps this subject is cleaned into, when it must stay inside a range (the frost "
+        "material: [rime]); as `rf art clean --ramp`. Without them, the whole palette.",
     )
 
 
@@ -84,11 +89,15 @@ def collect(directory: Path, palette: Palette, size: int) -> tuple[GalleryInfo, 
         candidates: list[Candidate] = []
         meta = info.subjects.get(subject_dir.name)
         subject_size = meta.size if meta is not None and meta.size is not None else size
+        try:
+            subject_palette = only(palette, meta.ramps) if meta is not None and meta.ramps else palette
+        except PaletteError as e:
+            raise GalleryError(f"{directory / GALLERY_FILE}: subjects.{subject_dir.name}.ramps: {e}") from e
         for png in sorted(subject_dir.glob("*.png"), key=lambda p: _rank(p.stem, info.candidates)):
             try:
                 width, height, pixels = decode_rgba(png.read_bytes())
                 raw = Image(width, height, tuple(pixels))
-                cleaned, report = clean(raw, palette, subject_size)
+                cleaned, report = clean(raw, subject_palette, subject_size)
             except (PngError, TextureError) as e:
                 raise GalleryError(f"{png}: {e}") from e
             candidates.append(Candidate(png.stem, raw, cleaned, report))

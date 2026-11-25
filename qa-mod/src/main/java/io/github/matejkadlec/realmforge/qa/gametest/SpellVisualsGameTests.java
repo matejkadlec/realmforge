@@ -14,6 +14,7 @@ import io.github.matejkadlec.realmforge.generated.GeneratedSpells;
 import io.github.matejkadlec.realmforge.qa.combat.SoundLog;
 import io.github.matejkadlec.realmforge.qa.combat.TrainingDummy;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedSpellVisualsExpectations;
+import io.github.matejkadlec.realmforge.qa.generated.GeneratedSpellVisualsExpectations.EmitterExpectation;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedSpellVisualsExpectations.LookExpectation;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedSpellVisualsExpectations.ModelExpectation;
 import io.github.matejkadlec.realmforge.qa.generated.GeneratedSpellVisualsExpectations.ParticleExpectation;
@@ -35,6 +36,7 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Stream;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
@@ -82,28 +84,23 @@ public final class SpellVisualsGameTests {
             String id = expected.id();
             helper.assertValueEqual(look.colors().stream().map(SpellVisualsGameTests::hex).toList(),
                     expected.colors(), id + " colours");
-            helper.assertValueEqual(look.trail().map(trail -> trail.particle().toString()),
-                    expected.trailParticle(), id + " trail particle");
-            // Floats against the expectations' doubles: compared as floats, so 1.2 equals 1.2.
-            helper.assertValueEqual(look.trail().map(SpellLook.Trail::perBlock).orElse(0.0F),
-                    (float) expected.trailPerBlock(), id + " trail per block");
-            helper.assertValueEqual(look.burst().map(burst -> burst.particle().toString()),
-                    expected.burstParticle(), id + " burst particle");
-            helper.assertValueEqual(look.burst().map(SpellLook.Burst::count).orElse(0), expected.burstCount(),
-                    id + " burst count");
-            helper.assertValueEqual(look.swirl().map(swirl -> swirl.particle().toString()),
-                    expected.swirlParticle(), id + " swirl particle");
-            helper.assertValueEqual(look.swirl().map(SpellLook.Swirl::perTick).orElse(0.0F),
-                    (float) expected.swirlPerTick(), id + " swirl per tick");
+            // Rates are floats in the game and doubles in the expectations: compared as floats, so 1.2 equals 1.2.
+            helper.assertValueEqual(look.trail().stream().map(trail -> emitter(trail.particle(), trail.perBlock(), 1,
+                    trail.colors())).toList(), floats(expected.trail()), id + " trail");
+            helper.assertValueEqual(look.burst().stream().map(burst -> emitter(burst.particle(), burst.count(),
+                    burst.spread(), burst.colors())).toList(), floats(expected.burst()), id + " burst");
+            helper.assertValueEqual(look.swirl().stream().map(swirl -> emitter(swirl.particle(), swirl.perTick(), 1,
+                    swirl.colors())).toList(), floats(expected.swirl()), id + " swirl");
             helper.assertValueEqual(look.light().getSerializedName(), expected.light(), id + " light");
             helper.assertValueEqual(look.impactSound().map(Identifier::toString), expected.impactSound(),
                     id + " impact sound");
             look.impactSound().ifPresent(sound -> helper.assertTrue(
                     BuiltInRegistries.SOUND_EVENT.containsKey(sound), id + ": no sound event " + sound));
-            for (Optional<Identifier> particle : List.of(look.trail().map(SpellLook.Trail::particle),
-                    look.burst().map(SpellLook.Burst::particle), look.swirl().map(SpellLook.Swirl::particle))) {
-                particle.ifPresent(type -> helper.assertTrue(TintedParticles.of(type, -1).isPresent(),
-                        id + ": " + type + " is not one of our particles"));
+            for (Identifier particle : Stream.of(look.trail().stream().map(SpellLook.Trail::particle),
+                    look.burst().stream().map(SpellLook.Burst::particle),
+                    look.swirl().stream().map(SpellLook.Swirl::particle)).flatMap(types -> types).toList()) {
+                helper.assertTrue(TintedParticles.of(particle, -1).isPresent(),
+                        id + ": " + particle + " is not one of our particles");
             }
         }
 
@@ -365,6 +362,20 @@ public final class SpellVisualsGameTests {
     /** {@code color} (ARGB) as the content writes it: {@code #RRGGBB}. */
     private static String hex(int color) {
         return String.format(Locale.ROOT, "#%06X", color & 0xFFFFFF);
+    }
+
+    /** An emitter of a look as the tests compare it: its rate and spread as floats, its own colours as written. */
+    private record Emitter(String particle, float rate, float spread, List<String> colors) {
+    }
+
+    private static Emitter emitter(Identifier particle, float rate, float spread, Optional<List<Integer>> colors) {
+        return new Emitter(particle.toString(), rate, spread,
+                colors.orElse(List.of()).stream().map(SpellVisualsGameTests::hex).toList());
+    }
+
+    private static List<Emitter> floats(List<EmitterExpectation> expected) {
+        return expected.stream().map(emitter -> new Emitter(emitter.particle(), (float) emitter.rate(),
+                (float) emitter.spread(), emitter.colors())).toList();
     }
 
     /** A stone wall across the 5 x 5 platform at {@code z}, 4 blocks high. */

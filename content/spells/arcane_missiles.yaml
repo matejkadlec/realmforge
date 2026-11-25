@@ -22,7 +22,7 @@ effects:
   - type: realmforge:projectile
     speed: 35
     size: 0.4
-    model: realmforge:orb
+    model: realmforge:crystal
     splash: {radius: 1, damage_percent: 50}
     effects:
       - type: realmforge:damage

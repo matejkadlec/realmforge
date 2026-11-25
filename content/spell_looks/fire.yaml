@@ -1,12 +1,24 @@
 # yaml-language-server: $schema=../../tools/schemas/spell_looks.schema.json
-# The fire look (RLM-639, docs/design/spell-visuals.md): Matěj's school colours, orange and black (RLM-29,
-# 2026-10-21): embers behind the ball and where it bursts, flecks swirling in while it forms. Its models are drawn at full
-# brightness (Matěj: "Fireball lights its surroundings"; the light on the blocks round it waits for dynamic lights,
-# ADR 0075). The sound is vanilla's until the spell sounds (RLM-445).
+# The fire look (RLM-639, RLM-441, docs/design/spell-visuals.md): Matěj's school colours, orange and black (RLM-29,
+# 2026-10-21). Its colours run from a flame's yellow through orange to coal black; its emitters take one end each:
+# - behind the ball, embers and a tongue of flame in the oranges, and black smoke;
+# - where it hits, it bursts into embers and flames, and a cloud of black smoke;
+# - while it forms, flecks swirl in (no embers and no smoke: they hide the ball growing in the hands, and smoke
+#   would hang in front of the caster's own eyes).
+# Its models are drawn at full brightness (Matěj: "Fireball lights its surroundings"); the light on the blocks round
+# it waits for dynamic lights in the pack (ADR 0075, RLM-326). Its material is art/textures/material/fire.png once it
+# has art (art/README.md). Its impact sound is vanilla's; Fireball names its own (RLM-445).
 id: fire
 colors: ["#FFD27F", "#FFB347", "#FF9A1F", "#FF7F1F", "#E85D04", "#B23A05", "#5C1F0A", "#1F1410"]
-trail: {particle: realmforge:ember, per_block: 3}
-burst: {particle: realmforge:ember, count: 20}
-swirl: {particle: realmforge:fleck, per_tick: 6}
+trail:
+  - {particle: realmforge:ember, per_block: 1.5, colors: ["#FFD27F", "#FFB347", "#FF9A1F", "#FF7F1F", "#E85D04"]}
+  - {particle: realmforge:flame, per_block: 0.5, colors: ["#FFB347", "#FF9A1F", "#FF7F1F", "#E85D04"]}
+  - {particle: realmforge:smoke, per_block: 1, colors: ["#3A2A24", "#2A1C18", "#1F1410"]}
+burst:
+  - {particle: realmforge:ember, count: 10, colors: ["#FFD27F", "#FFB347", "#FF9A1F", "#FF7F1F", "#E85D04"]}
+  - {particle: realmforge:flame, count: 6, colors: ["#FFB347", "#FF9A1F", "#FF7F1F", "#E85D04"]}
+  - {particle: realmforge:smoke, count: 8, colors: ["#3A2A24", "#2A1C18", "#1F1410"]}
+swirl:
+  - {particle: realmforge:fleck, per_tick: 6, colors: ["#FFD27F", "#FFB347", "#FF9A1F", "#FF7F1F", "#E85D04"]}
 light: emit
 impact_sound: minecraft:entity.generic.extinguish_fire

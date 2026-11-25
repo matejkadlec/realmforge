@@ -1,8 +1,9 @@
 """The spell visuals kit (RLM-439, ADR 0073, architecture 11.3): the reusable parts a spell's look is combined from.
 
 - ``content/spell_looks/<id>.yaml``: an element's look (frost, fire, arcane, stone): its colours, the particles its
-  projectiles trail and burst into and that swirl round a forming one, its light and its impact sound. Its material,
-  the one tileable 16 x 16 texture every model of the look is drawn with, is ``textures/spell/material/<id>.png``.
+  projectiles trail and burst into and that swirl round a forming one (each a few emitters, RLM-440), its light and
+  its impact sound. Its material, the one tileable 16 x 16 texture every model of the look is drawn with, is
+  ``textures/spell/material/<id>.png``: the art in ``art/textures/material/<id>.png``, or a placeholder until then.
 - ``content/spell_models/<id>.yaml``: a projectile's shape: the ``orb``, the placeholder, or ``cubes``, a GeckoLib
   model whose source is ``art/models/spell/<id>.geo.json`` (RLM-640, ``art/spell_models.py``).
 - ``content/spell_trajectories/<id>.yaml``: how a projectile flies. Only ``straight`` (ADR 0052); the registry keeps
@@ -24,12 +25,15 @@ from realmforge_tools.schema.spell_school import HexColor
 
 # A look's palette: Matěj's frost range holds 12 to 16 colours (2026-10-29).
 MAX_LOOK_COLORS = 16
+# A trail, a burst or a swirl is a few emitters (RLM-440): frost shatters into shards and a puff of snow, fire trails
+# embers and black smoke. At most 3 each, which share the budget below.
+MAX_EMITTERS = 3
 # The particle budget of the design (docs/design/spell-visuals.md): a trail spawns at most 3 a block flown, an impact
-# bursts into at most 24 at once.
+# bursts into at most 24 at once, all their emitters together.
 MAX_TRAIL_PER_BLOCK = 3
 MAX_BURST_COUNT = 24
 # The same budget: a forming swirl spawns at most 8 a tick and keeps at most 80 alive per caster, so the longest life
-# of its particle times its rate stays within that.
+# of each emitter's particle times its rate, summed, stays within that.
 MAX_SWIRL_PER_TICK = 8
 MAX_SWIRL_ALIVE = 80
 # A particle's frames are 8 x 8 pixels, as vanilla's are.
@@ -45,41 +49,64 @@ MAX_SPIN_DEGREES_PER_SECOND = 1440
 ParticleRow = Annotated[str, StringConstraints(pattern=r"^[.1-9a-f]{8}$")]
 
 
-class TrailDef(StrictModel):
-    """The particles a projectile of the look leaves behind as it flies, spawned by its clients."""
+class EmitterDef(StrictModel):
+    """What every emitter of a look says: which particle, and in which colours."""
 
     particle: ResourceId = Field(
         description="One of our particles, e.g. realmforge:mote (content/particles/)."
     )
+    colors: list[HexColor] | None = Field(
+        default=None,
+        min_length=1,
+        max_length=MAX_LOOK_COLORS,
+        description="The colours its particles take instead of the look's, \"#RRGGBB\": fire's smoke is black, its "
+        "embers orange. Without them, the look's colours.",
+    )
+
+    @model_validator(mode="after")
+    def _distinct_colors(self) -> EmitterDef:
+        if self.colors is not None and len(set(self.colors)) != len(self.colors):
+            raise ValueError("colors: each colour once")
+        return self
+
+
+class TrailDef(EmitterDef):
+    """Particles a projectile of the look leaves behind as it flies, spawned by its clients."""
+
     per_block: float = Field(
         gt=0,
         le=MAX_TRAIL_PER_BLOCK,
         allow_inf_nan=False,
-        description="How many a block flown, at most 3.",
+        description="How many a block flown; a trail's emitters together at most 3.",
     )
 
 
-class BurstDef(StrictModel):
-    """The particles a projectile of the look bursts into where it hits, spread over its splash."""
+class BurstDef(EmitterDef):
+    """Particles a projectile of the look bursts into where it hits, spread over its splash."""
 
-    particle: ResourceId = Field(
-        description="One of our particles, e.g. realmforge:shard (content/particles/)."
+    count: int = Field(
+        ge=1, le=MAX_BURST_COUNT, description="How many at once; a burst's emitters together at most 24."
     )
-    count: int = Field(ge=1, le=MAX_BURST_COUNT, description="How many at once, at most 24.")
-
-
-class SwirlDef(StrictModel):
-    """The particles that swirl in toward a projectile of the look while it forms in a caster's hands, spawned by
-    the clients; a ``hands`` forming shows them alone."""
-
-    particle: ResourceId = Field(
-        description="One of our particles, e.g. realmforge:mote (content/particles/)."
+    spread: float = Field(
+        default=1.0,
+        ge=0,
+        le=1,
+        allow_inf_nan=False,
+        description="How far from the middle of the hit they appear and how fast they fly out, as a share of the "
+        "burst's own: 1 fills it, 0 leaves them still at its middle (a ring that widens where a missile hit).",
     )
+
+
+class SwirlDef(EmitterDef):
+    """Particles that swirl in toward a projectile of the look while it forms in a caster's hands, spawned by the
+    clients; a ``hands`` forming shows them alone."""
+
     per_tick: float = Field(
         gt=0,
         le=MAX_SWIRL_PER_TICK,
         allow_inf_nan=False,
-        description="How many a tick while the cast runs, at most 8; times its particle's longest life, at most 80.",
+        description="How many a tick while the cast runs; a swirl's emitters together at most 8, and each one's rate "
+        "times its particle's longest life, summed, at most 80.",
     )
 
 
@@ -93,14 +120,22 @@ class SpellLookDef(StrictModel):
         description='Its colours, lightest first, "#RRGGBB": each particle takes one at random, and its placeholder '
         "material is noise in them. At most 16.",
     )
-    trail: TrailDef | None = Field(default=None, description="What its projectiles leave behind in flight.")
-    burst: BurstDef | None = Field(
-        default=None, description="What its projectiles burst into where they hit."
+    trail: list[TrailDef] = Field(
+        default_factory=list,
+        max_length=MAX_EMITTERS,
+        description="What its projectiles leave behind in flight: at most 3 emitters.",
     )
-    swirl: SwirlDef | None = Field(
-        default=None,
+    burst: list[BurstDef] = Field(
+        default_factory=list,
+        max_length=MAX_EMITTERS,
+        description="What its projectiles burst into where they hit: at most 3 emitters.",
+    )
+    swirl: list[SwirlDef] = Field(
+        default_factory=list,
+        max_length=MAX_EMITTERS,
         description="What swirls in toward its projectile while it forms in a caster's hands (the storm of a grow or "
-        "storm forming, and all a hands forming shows).",
+        "storm forming, and all a hands forming shows): at most 3 emitters. The first one's particle also sparks at "
+        "the growing edge of a model that forms cube by cube.",
     )
     light: Literal["world", "glow", "emit"] = Field(
         default="world",
@@ -118,6 +153,23 @@ class SpellLookDef(StrictModel):
     def _distinct_colors(self) -> SpellLookDef:
         if len(set(self.colors)) != len(self.colors):
             raise ValueError("colors: each colour once")
+        return self
+
+    @model_validator(mode="after")
+    def _emitters_share_the_budget(self) -> SpellLookDef:
+        per_block = sum(emitter.per_block for emitter in self.trail)
+        if per_block > MAX_TRAIL_PER_BLOCK:
+            raise ValueError(
+                f"trail: {per_block:g} a block flown; its emitters together at most {MAX_TRAIL_PER_BLOCK}"
+            )
+        count = sum(emitter.count for emitter in self.burst)
+        if count > MAX_BURST_COUNT:
+            raise ValueError(f"burst: {count} at once; its emitters together at most {MAX_BURST_COUNT}")
+        per_tick = sum(emitter.per_tick for emitter in self.swirl)
+        if per_tick > MAX_SWIRL_PER_TICK:
+            raise ValueError(
+                f"swirl: {per_tick:g} a tick; its emitters together at most {MAX_SWIRL_PER_TICK}"
+            )
         return self
 
 

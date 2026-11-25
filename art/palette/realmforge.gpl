@@ -82,6 +82,21 @@ Columns: 8
  88 160 226	frost 5
 140 204 244	frost 6
 200 236 252	frost 7
+# rime: the frost material's range, Matěj's of 2026-10-29 (RLM-463, RLM-440): #6ABCE2 (darkest) through #8DCFEC to
+# #B8E2F4 (lightest), the frost look's twelve colours. A ramp of its own, so `frost` keeps its numbers (the robes'
+# recolours read it). Clean the material into it alone: `uv run rf art clean --ramp rime`.
+106 188 226	rime 1
+113 192 228	rime 2
+120 196 230	rime 3
+127 199 232	rime 4
+134 203 234	rime 5
+141 207 236	rime 6
+148 210 237	rime 7
+155 213 239	rime 8
+162 216 240	rime 9
+170 220 241	rime 10
+177 223 243	rime 11
+184 226 244	rime 12
  25  35  63	slate 1
  38  51  90	slate 2
  54  70 112	slate 3

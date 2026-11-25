@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../../tools/schemas/particles.schema.json
+# A flake (RLM-440): a snowflake that drifts down and melts away. Frost's puff of snow: behind the ice chunk and where
+# it shatters.
+id: flake
+frames:
+  - - "...f...."
+    - ".b.f.b.."
+    - "..bfb..."
+    - "fffffff."
+    - "..bfb..."
+    - ".b.f.b.."
+    - "...f...."
+    - "........"
+  - - "........"
+    - "...f...."
+    - "..bfb..."
+    - ".fffff.."
+    - "..bfb..."
+    - "...f...."
+    - "........"
+    - "........"
+  - - "........"
+    - "........"
+    - "...b...."
+    - "..bfb..."
+    - "...b...."
+    - "........"
+    - "........"
+    - "........"
+lifetime_ticks: [10, 18]
+size: 0.06
+gravity: 0.08
+friction: 0.9

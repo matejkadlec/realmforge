@@ -81,6 +81,8 @@ public final class SpellProjectile extends Projectile implements IEntityWithComp
      * block, so a wide splash fills as fast as a small puff sprays.
      */
     private static final double BURST_SPEED = 0.12;
+    /** How far off a block's face a burst's particles appear, in blocks, so none starts inside the block. */
+    private static final double BURST_OFF_FACE = 0.05;
     /**
      * A trail starts once the projectile has flown this many ticks: a bolt leaves from its caster's eyes, and a
      * particle spawned there would fill the caster's own screen in first person.
@@ -119,8 +121,8 @@ public final class SpellProjectile extends Projectile implements IEntityWithComp
     private float burstRadius = MIN_BURST_RADIUS;
     /** How many ticks it flies before it fizzles; 0 for no lifetime. */
     private int lifetimeTicks;
-    /** What is left of the trail particle its client has not spawned yet: less than one. */
-    private float trailRemainder;
+    /** What is left of each trail emitter's particle its client has not spawned yet: less than one. */
+    private final float[] trailRemainders = new float[SpellLook.MAX_EMITTERS];
     /** The enemy it homes in on, on the server; none for a straight flight. */
     @Nullable
     private LivingEntity homing;
@@ -288,8 +290,8 @@ public final class SpellProjectile extends Projectile implements IEntityWithComp
     }
 
     /**
-     * Its trail behind the step it just flew, on its client: its look's particles spread along the step, each in one
-     * of the look's colours, or a spark for a spell without a look.
+     * Its trail, on its client: the particles of its look's emitters spread along the step before the one it just
+     * flew, behind where it is drawn, each in one of its emitter's colours; or a spark for a spell without a look.
      */
     private void trail(Vec3 step) {
         double middle = getY() + getBbHeight() / 2;
@@ -298,20 +300,25 @@ public final class SpellProjectile extends Projectile implements IEntityWithComp
             return;
         }
         SpellLook element = look.get().value();
-        if (element.trail().isEmpty() || flownTicks <= TRAIL_AFTER_TICKS) {
+        if (flownTicks <= TRAIL_AFTER_TICKS) {
             return;
         }
-        SpellLook.Trail emitter = element.trail().get();
-        trailRemainder += (float) (emitter.perBlock() * step.length());
         double jitter = getBbWidth() / 4;
-        while (trailRemainder >= 1) {
-            trailRemainder--;
-            double back = random.nextDouble();
-            TintedParticles.of(emitter.particle(), element.color(random)).ifPresent(particle -> level().addParticle(
-                    particle, getX() - step.x * back + random.triangle(0, jitter),
-                    middle - step.y * back + random.triangle(0, jitter),
-                    getZ() - step.z * back + random.triangle(0, jitter), random.triangle(0, TRAIL_DRIFT),
-                    random.triangle(0, TRAIL_DRIFT), random.triangle(0, TRAIL_DRIFT)));
+        for (int index = 0; index < Math.min(element.trail().size(), trailRemainders.length); index++) {
+            SpellLook.Trail emitter = element.trail().get(index);
+            trailRemainders[index] += (float) (emitter.perBlock() * step.length());
+            while (trailRemainders[index] >= 1) {
+                trailRemainders[index]--;
+                // Along the step before the one it just flew: its client draws it between its last two positions,
+                // so a particle on the newest step would hang in front of the model (RLM-440's screenshots).
+                double back = 1 + random.nextDouble();
+                TintedParticles.of(emitter.particle(), element.color(random, emitter.colors()))
+                        .ifPresent(particle -> level().addParticle(particle,
+                                getX() - step.x * back + random.triangle(0, jitter),
+                                middle - step.y * back + random.triangle(0, jitter),
+                                getZ() - step.z * back + random.triangle(0, jitter), random.triangle(0, TRAIL_DRIFT),
+                                random.triangle(0, TRAIL_DRIFT), random.triangle(0, TRAIL_DRIFT)));
+            }
         }
     }
 
@@ -324,14 +331,16 @@ public final class SpellProjectile extends Projectile implements IEntityWithComp
     @Override
     public void handleEntityEvent(byte id) {
         if (id == EVENT_HIT_ENTITY || id == EVENT_HIT_BLOCK) {
-            look.flatMap(element -> element.value().burst()).ifPresent(burst -> burst(burst, id == EVENT_HIT_BLOCK));
+            look.ifPresent(element -> burst(element.value(), id == EVENT_HIT_BLOCK));
         } else {
             super.handleEntityEvent(id);
         }
     }
 
-    private void burst(SpellLook.Burst burst, boolean onBlock) {
-        SpellLook element = look.orElseThrow().value();
+    private void burst(SpellLook element, boolean onBlock) {
+        if (element.burst().isEmpty()) {
+            return;
+        }
         Vec3 middle = position().add(0, getBbHeight() / 2, 0);
         Vec3 step = getDeltaMovement();
         Vec3 from = middle.subtract(step);
@@ -358,16 +367,22 @@ public final class SpellProjectile extends Projectile implements IEntityWithComp
                 radius += hit.getEntity().getBbWidth() / 2;
             }
         }
-        for (int n = 0; n < burst.count(); n++) {
-            Vec3 out = new Vec3(random.triangle(0, 1), random.triangle(0, 1), random.triangle(0, 1));
-            Vec3 at = centre.add(out.scale(radius / 2));
-            // Off a block's face, never into it: what flies into the block turns back out.
-            Vec3 speed = out.scale(BURST_SPEED * Math.max(1, radius));
-            double into = speed.dot(off);
-            Vec3 away = into < 0 ? speed.subtract(off.scale(2 * into)) : speed;
-            Vec3 velocity = away.add(off.scale(BURST_SPEED / 2));
-            TintedParticles.of(burst.particle(), element.color(random)).ifPresent(particle -> level()
-                    .addParticle(particle, at.x, at.y, at.z, velocity.x, velocity.y, velocity.z));
+        for (SpellLook.Burst burst : element.burst()) {
+            for (int n = 0; n < burst.count(); n++) {
+                // An emitter's spread scales where its particles appear and how fast they fly: at 0 they stay still
+                // at the middle of the hit, just off a block's face.
+                Vec3 out = new Vec3(random.triangle(0, 1), random.triangle(0, 1), random.triangle(0, 1))
+                        .scale(burst.spread());
+                Vec3 at = centre.add(out.scale(radius / 2)).add(off.scale(BURST_OFF_FACE));
+                // Off a block's face, never into it: what flies into the block turns back out.
+                Vec3 speed = out.scale(BURST_SPEED * Math.max(1, radius));
+                double into = speed.dot(off);
+                Vec3 away = into < 0 ? speed.subtract(off.scale(2 * into)) : speed;
+                Vec3 velocity = away.add(off.scale(BURST_SPEED / 2 * burst.spread()));
+                TintedParticles.of(burst.particle(), element.color(random, burst.colors())).ifPresent(
+                        particle -> level().addParticle(particle, at.x, at.y, at.z, velocity.x, velocity.y,
+                                velocity.z));
+            }
         }
     }
 

@@ -9,11 +9,20 @@ from pathlib import Path
 import pytest
 
 from realmforge_tools.art import gallery
-from realmforge_tools.art.palette import DEFAULT_PALETTE, Palette, PaletteColor, PaletteError, load_gpl
+from realmforge_tools.art.palette import (
+    DEFAULT_PALETTE,
+    Palette,
+    PaletteColor,
+    PaletteError,
+    load_gpl,
+    only,
+    ramps,
+)
 from realmforge_tools.art.texture import TRANSPARENT, Image, TextureError, clean
 from realmforge_tools.cli import main
 from realmforge_tools.formats.png import PNG_SIGNATURE, PngError, decode_rgba, encode_rgba
-from realmforge_tools.project import REPO_ROOT
+from realmforge_tools.project import REPO_ROOT, RepoPaths
+from realmforge_tools.validate import load_and_validate
 
 RED = (200, 30, 30, 255)
 BLUE = (30, 40, 200, 255)
@@ -365,3 +374,75 @@ def test_cli_reports_a_file_that_is_not_a_png(tmp_path: Path, capsys: pytest.Cap
     source.write_bytes(b"not an image")
     assert main(["art", "clean", str(source), str(tmp_path / "y.png")]) == 1
     assert "not a PNG file" in capsys.readouterr().err
+
+
+# --- Ramps (RLM-440: the frost material stays inside Matěj's range) ----------------------------------------------
+
+
+def test_the_rime_ramp_is_matejs_frost_range_and_leaves_frost_alone() -> None:
+    project = load_gpl(REPO_ROOT / DEFAULT_PALETTE)
+    by_ramp = ramps(project)
+    rime = [color.hex.upper() for color in by_ramp["rime"]]
+    # Matěj, 2026-10-29 (RLM-463): #B8E2F4 (lightest) through #8DCFEC to #6ABCE2 (darkest), 12 to 16 colours.
+    assert 12 <= len(rime) <= 16
+    assert (rime[0], rime[-1]) == ("#6ABCE2", "#B8E2F4"), "a ramp runs dark to light"
+    assert "#8DCFEC" in rime
+    # The frost look's colours are the same twelve, lightest first.
+    content, _ = load_and_validate(RepoPaths())
+    frost = next(entry.model for entry in content.spell_looks if entry.model.id == "frost")
+    assert list(reversed(frost.colors)) == rime
+    # A ramp of its own: frost keeps its seven colours, which the robes' recolours read (art/textures/variants.yaml).
+    assert [color.name for color in by_ramp["frost"]] == [f"frost {n}" for n in range(1, 8)]
+
+
+def test_only_keeps_the_named_ramps_and_refuses_an_unknown_one() -> None:
+    palette = Palette(
+        "test",
+        (
+            PaletteColor("black", (0, 0, 0)),
+            PaletteColor("sea 1", (0, 0, 120)),
+            PaletteColor("sea 2", (0, 0, 240)),
+            PaletteColor("moss 1", (0, 120, 0)),
+        ),
+    )
+    sea = only(palette, ["sea"])
+    assert [color.name for color in sea.colors] == ["sea 1", "sea 2"]
+    # A red pixel is nearest to black in the whole palette, and snaps into the ramp when only the ramp is there.
+    assert palette.nearest((40, 0, 0)).name == "black"
+    assert sea.nearest((40, 0, 0)).name == "sea 1"
+    assert [color.name for color in only(palette, ["moss", "sea"]).colors] == ["sea 1", "sea 2", "moss 1"]
+    with pytest.raises(PaletteError, match=r"has no ramp 'lava' \(its ramps: moss, sea\)"):
+        only(palette, ["sea", "lava"])
+
+
+def test_cli_cleans_a_texture_into_one_ramp(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    root = _candidates(tmp_path)
+    palette = _write(tmp_path, "GIMP Palette\n200 30 30 red\n30 40 200 sea 1\n60 80 240 sea 2\n")
+    target = tmp_path / "out" / "clean.png"
+    source = str(root / "a_block" / "y.png")
+    assert main(["art", "clean", source, str(target), "--palette", str(palette)]) == 0
+    assert decode_rgba(target.read_bytes()) == (16, 16, [RED] * 256)
+    assert main(["art", "clean", source, str(target), "--palette", str(palette), "--ramp", "sea"]) == 0
+    assert set(decode_rgba(target.read_bytes())[2]) <= {(30, 40, 200, 255), (60, 80, 240, 255)}
+    capsys.readouterr()
+    assert main(["art", "clean", source, str(target), "--palette", str(palette), "--ramp", "lava"]) == 1
+    assert "has no ramp 'lava'" in capsys.readouterr().err
+
+
+def test_gallery_cleans_a_subject_into_its_ramps(tmp_path: Path) -> None:
+    root = _candidates(tmp_path)
+    palette = load_gpl(_write(tmp_path, "GIMP Palette\n200 30 30 red\n30 40 200 sea 1\n60 80 240 sea 2\n"))
+    (root / "gallery.yaml").write_text(
+        "subjects:\n  a_block: {title: Block, ramps: [sea]}\n", encoding="utf-8"
+    )
+    _, subjects = gallery.collect(root, palette, 16)
+    by_name = {subject.name: subject for subject in subjects}
+    for candidate in by_name["a_block"].candidates:
+        assert {pixel[:3] for pixel in candidate.cleaned.pixels} <= {(30, 40, 200), (60, 80, 240)}
+    # A subject without ramps is cleaned into the whole palette, as before.
+    assert (200, 30, 30) in {pixel[:3] for pixel in by_name["b_item"].candidates[0].cleaned.pixels}
+    (root / "gallery.yaml").write_text(
+        "subjects:\n  a_block: {title: Block, ramps: [lava]}\n", encoding="utf-8"
+    )
+    with pytest.raises(gallery.GalleryError, match=r"subjects\.a_block\.ramps: .*has no ramp 'lava'"):
+        gallery.collect(root, palette, 16)

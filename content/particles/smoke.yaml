@@ -1,0 +1,42 @@
+# yaml-language-server: $schema=../../tools/schemas/particles.schema.json
+# Smoke (RLM-441): a wisp that swells, drifts up and thins out, lit by the world as smoke is. Fire's emitters tint it
+# black (Matěj's school colours, RLM-29: fire is orange and black): behind the ball, and where it bursts.
+id: smoke
+frames:
+  - - "........"
+    - "........"
+    - "...bb..."
+    - "..bffb.."
+    - "..bffb.."
+    - "...bb..."
+    - "........"
+    - "........"
+  - - "........"
+    - "..bbb..."
+    - ".bfffb.."
+    - ".bffffb."
+    - ".bffffb."
+    - "..bfffb."
+    - "...bbb.."
+    - "........"
+  - - "..bb.bb."
+    - ".bffbffb"
+    - "bffffffb"
+    - "bfffffb."
+    - ".bfffffb"
+    - "bffffffb"
+    - ".bfbffb."
+    - "..b.bb.."
+  - - "..b..b.."
+    - ".b.fb.b."
+    - "b.f..f.b"
+    - ".f.b.f.."
+    - "b..f..b."
+    - ".bf..f.b"
+    - "..b.b.b."
+    - ".b...b.."
+lifetime_ticks: [12, 22]
+size: 0.13
+gravity: -0.06
+friction: 0.9
+glows: false

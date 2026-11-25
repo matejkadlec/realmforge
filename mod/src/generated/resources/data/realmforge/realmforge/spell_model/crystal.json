@@ -1,0 +1,6 @@
+{
+  "shape": "cubes",
+  "scale": 0.45,
+  "orientation": "forward",
+  "spin_degrees_per_second": 360.0
+}

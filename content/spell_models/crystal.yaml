@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../tools/schemas/spell_models.schema.json
+# The crystal (RLM-442, Matěj, 2026-10-29): shaped like the ice chunk, but straighter and more cut. 15 cubes: a
+# six-sided shaft with a long point in front and a short one behind, and two small crystals growing from its side. It
+# spins about its flight once a second. Arcane Missiles fires three of them. Its source is
+# art/models/spell/crystal.geo.json, written by a script. At 0.45 of a missile's 0.4 blocks it is 0.18 blocks across
+# and about 0.4 long.
+id: crystal
+shape: cubes
+scale: 0.45
+orientation: forward
+spin_degrees_per_second: 360

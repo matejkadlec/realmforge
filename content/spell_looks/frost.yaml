@@ -1,13 +1,24 @@
 # yaml-language-server: $schema=../../tools/schemas/spell_looks.schema.json
-# The frost look (RLM-639, docs/design/spell-visuals.md): Matěj's frost range of 2026-10-29, #B8E2F4 (lightest)
-# through #8DCFEC to #6ABCE2 (darkest), 12 colours inside it. Frostbolt, Ice Lance and every later frost spell share
-# it: motes behind the bolt, shards where it shatters, flecks swirling in while it forms, and a slight glow (Matěj:
-# "Frostbolt may glow a little", RLM-640). The sound is vanilla's until the spell sounds (RLM-445).
+# The frost look (RLM-639, RLM-440, docs/design/spell-visuals.md): Matěj's frost range of 2026-10-29, #B8E2F4
+# (lightest) through #8DCFEC to #6ABCE2 (darkest), 12 colours inside it. Frostbolt, Ice Lance and every later frost
+# spell share it:
+# - behind the bolt, motes that appear and are gone at once, and a little snow;
+# - where it hits, it shatters into shards and a puff of snow;
+# - while it forms, flecks swirl in (nothing bigger: a snowflake there hides the chunk growing in the hands);
+# - a slight glow (Matěj: "Frostbolt may glow a little", RLM-640).
+# The snow is whiter than the ice (Matěj's school colours, RLM-29: frost is whitish and light blue). Its material is
+# art/textures/material/frost.png once it has art (art/README.md). Its impact sound is vanilla's; Frostbolt names
+# its own (RLM-445).
 id: frost
 colors: ["#B8E2F4", "#B1DFF3", "#AADCF1", "#A2D8F0", "#9BD5EF", "#94D2ED", "#8DCFEC", "#86CBEA", "#7FC7E8",
   "#78C4E6", "#71C0E4", "#6ABCE2"]
-trail: {particle: realmforge:mote, per_block: 2}
-burst: {particle: realmforge:shard, count: 16}
-swirl: {particle: realmforge:fleck, per_tick: 6}
+trail:
+  - {particle: realmforge:mote, per_block: 2}
+  - {particle: realmforge:flake, per_block: 1, colors: ["#F4FBFF", "#E2F3FB", "#D0EBF8"]}
+burst:
+  - {particle: realmforge:shard, count: 14}
+  - {particle: realmforge:flake, count: 10, colors: ["#F4FBFF", "#E2F3FB", "#D0EBF8"]}
+swirl:
+  - {particle: realmforge:fleck, per_tick: 6}
 light: glow
 impact_sound: minecraft:block.glass.break

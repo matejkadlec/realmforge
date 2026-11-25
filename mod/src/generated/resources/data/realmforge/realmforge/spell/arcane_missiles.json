@@ -52,7 +52,7 @@
           "penetration_per_level": 0.05
         }
       ],
-      "model": "realmforge:orb",
+      "model": "realmforge:crystal",
       "trajectory": "realmforge:straight",
       "splash": {
         "radius": 1.0,
