@@ -172,9 +172,11 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   RLM-640, RLM-641, ADR 0073, ADR 0075, ADR 0077): looks (frost, fire, arcane, stone), models, trajectories and particles are
   content of their own (`content/spell_looks/`, `spell_models/`, `spell_trajectories/`, `particles/`), which a spell
   names in its `visuals` and on its projectile; a projectile is drawn with its look's material, as the orb or as a
-  GeckoLib model of cubes from `art/models/spell/` (the placeholder chunk for Frostbolt and Fireball), flies its
-  trajectory (only straight), trails its look's particles and bursts into them where it hits, from one entity
-  event; while a cast time runs, the model grows cube by cube in the caster's hands in a swirl of the look's
+  GeckoLib model of cubes from `art/models/spell/` (RLM-440 to RLM-442: Frostbolt's ice chunk, Fireball's round fire
+  ball and Arcane Missiles' crystal, each written by a script; the looks' materials are placeholders until their art,
+  `art/textures/material/`), flies its trajectory (only straight), trails its look's particles and bursts into them
+  where it hits, from one entity event (a look's trail, burst and swirl are each up to three emitters with colours of
+  their own: frost's shards and snow, fire's embers, flames and black smoke, arcane's motes, sparkles and a ring); while a cast time runs, the model grows cube by cube in the caster's hands in a swirl of the look's
   particles, for players (at one size in first and third person) and mobs alike, fades when the cast is interrupted
   and leaves the hands when it ends. A casting player's arms play one of four animations (RLM-641): `cast` for a cast
   time, `channel` for a channel, the short `release` as a formed projectile leaves, and `instant`, a half-second push
@@ -261,6 +263,7 @@ uv run rf ids vanilla                     # re-extract the vanilla ID universe (
 uv run rf ids apotheosis                  # re-snapshot Apotheosis's data (only when the pack updates Apotheosis)
 uv run rf pack-boot                       # boot the whole pack + our jars (build/libs) on a server and a client
 uv run rf art clean SRC DST               # snap a generated texture to the grid and art/palette/realmforge.gpl
+                                          # (--ramp NAME: into that ramp alone, e.g. rime for the frost material)
 uv run rf art gallery DIR                 # review gallery for DIR/<subject>/<candidate>.png -> .cache/art/
 uv run rf rooms import SRC --to DIR       # .nbt/.schem/.litematic -> rooms with draft sidecars (tools/README.md)
 uv run rf rooms gallery [DIR]             # render rooms (default content/rooms) -> .cache/rooms/gallery/ (Vulkan)
