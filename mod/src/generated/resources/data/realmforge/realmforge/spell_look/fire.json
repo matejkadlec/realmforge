@@ -9,18 +9,86 @@
     "#5C1F0A",
     "#1F1410"
   ],
-  "trail": {
-    "particle": "realmforge:ember",
-    "per_block": 3.0
-  },
-  "burst": {
-    "particle": "realmforge:ember",
-    "count": 20
-  },
-  "swirl": {
-    "particle": "realmforge:fleck",
-    "per_tick": 6.0
-  },
+  "trail": [
+    {
+      "particle": "realmforge:ember",
+      "colors": [
+        "#FFD27F",
+        "#FFB347",
+        "#FF9A1F",
+        "#FF7F1F",
+        "#E85D04"
+      ],
+      "per_block": 1.5
+    },
+    {
+      "particle": "realmforge:flame",
+      "colors": [
+        "#FFB347",
+        "#FF9A1F",
+        "#FF7F1F",
+        "#E85D04"
+      ],
+      "per_block": 0.5
+    },
+    {
+      "particle": "realmforge:smoke",
+      "colors": [
+        "#3A2A24",
+        "#2A1C18",
+        "#1F1410"
+      ],
+      "per_block": 1.0
+    }
+  ],
+  "burst": [
+    {
+      "particle": "realmforge:ember",
+      "colors": [
+        "#FFD27F",
+        "#FFB347",
+        "#FF9A1F",
+        "#FF7F1F",
+        "#E85D04"
+      ],
+      "count": 10,
+      "spread": 1.0
+    },
+    {
+      "particle": "realmforge:flame",
+      "colors": [
+        "#FFB347",
+        "#FF9A1F",
+        "#FF7F1F",
+        "#E85D04"
+      ],
+      "count": 6,
+      "spread": 1.0
+    },
+    {
+      "particle": "realmforge:smoke",
+      "colors": [
+        "#3A2A24",
+        "#2A1C18",
+        "#1F1410"
+      ],
+      "count": 8,
+      "spread": 1.0
+    }
+  ],
+  "swirl": [
+    {
+      "particle": "realmforge:fleck",
+      "colors": [
+        "#FFD27F",
+        "#FFB347",
+        "#FF9A1F",
+        "#FF7F1F",
+        "#E85D04"
+      ],
+      "per_tick": 6.0
+    }
+  ],
   "light": "emit",
   "impact_sound": "minecraft:entity.generic.extinguish_fire"
 }

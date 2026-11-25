@@ -59,7 +59,7 @@
           ]
         }
       ],
-      "model": "realmforge:chunk",
+      "model": "realmforge:ice_chunk",
       "trajectory": "realmforge:straight",
       "splash": {
         "radius": 1.0,

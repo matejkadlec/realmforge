@@ -224,8 +224,8 @@ there while the game runs. The handoff gives the commands
   -PleanClient` makes the QA mod create a superflat world from the title screen, build a wall 8 blocks ahead and cast
   a few spells along the player's look: the twin test spells at a villager and at the wall, Arcane Missiles at the
   wall, one bolt in first person, Frostbolt and Fireball forming in the player's hands (from a camera on the hands,
-  and through the player's eyes at a field of view of 70 and of 110), a cast cancelled half way, Arcane Missiles'
-  hands, a Frostbolt that kills a villager, and a Hewn Chanter's Stoneform at a villager. It saves frames of each
+  and through the player's eyes at a field of view of 70 and of 110) and flying to the wall, a cast cancelled half
+  way, Arcane Missiles' hands, a Frostbolt that kills a villager, and a Hewn Chanter's Stoneform at a villager. It saves frames of each
   scene, without the HUD, most from a still camera beside the flight, to
   `run/client/screenshots/<label>-<scene>-t<tick>.png`, and quits, in about five minutes. Agents use it to look at a
   projectile's model and material, its trail, the burst of its impact, and what forms in a caster's hands: a model

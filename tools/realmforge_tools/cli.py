@@ -34,7 +34,7 @@ from pathlib import Path
 
 from realmforge_tools import apotheosis, gamelog, packboot, vanilla
 from realmforge_tools.art import gallery
-from realmforge_tools.art.palette import DEFAULT_PALETTE, PaletteError, load_gpl
+from realmforge_tools.art.palette import DEFAULT_PALETTE, PaletteError, load_gpl, only
 from realmforge_tools.art.texture import DEFAULT_SIZE, Image, TextureError, clean
 from realmforge_tools.content import load_content
 from realmforge_tools.formats.png import PngError, decode_rgba
@@ -112,6 +112,13 @@ def main(argv: list[str] | None = None) -> int:
     )
     art_clean.add_argument("source", type=Path, help="generated PNG")
     art_clean.add_argument("target", type=Path, help="where to write the cleaned PNG")
+    art_clean.add_argument(
+        "--ramp",
+        action="append",
+        default=[],
+        metavar="NAME",
+        help="snap to this ramp of the palette alone, e.g. rime for the frost material (may be given more than once)",
+    )
     art_gallery = art_commands.add_parser(
         "gallery", help="build an HTML review gallery from <dir>/<subject>/<candidate>.png"
     )
@@ -908,6 +915,8 @@ def _art(args: argparse.Namespace, paths: RepoPaths) -> int:
         palette = load_gpl(args.palette or paths.root / DEFAULT_PALETTE)
         if args.art_command == "clean":
             width, height, pixels = decode_rgba(args.source.read_bytes())
+            if args.ramp:
+                palette = only(palette, args.ramp)
             cleaned, report = clean(Image(width, height, tuple(pixels)), palette, args.size)
             args.target.parent.mkdir(parents=True, exist_ok=True)
             args.target.write_bytes(cleaned.png())

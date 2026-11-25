@@ -1676,7 +1676,7 @@ def _check_visuals(source: str, spell: BaseModel, content: Content, universe: Id
     problems: list[Problem] = []
     looks = {f"{MOD_ID}:{entry.model.id}": entry.model for entry in content.spell_looks}
     look = looks.get(visuals.look)
-    if look is not None and look.trail is None:
+    if look is not None and not look.trail:
         problems += [
             Problem(
                 source,
@@ -1784,33 +1784,36 @@ def _check_player_animation(
 
 def _check_spell_looks(content: Content, universe: IdUniverse) -> list[Problem]:
     """A look's trail, burst and swirl are particles of ours (content/particles/): only those carry a colour, which a
-    look gives each spawn. Its swirl keeps to the particle budget: its rate times its particle's longest life is at
-    most 80 alive per caster. Its impact sound exists."""
+    look gives each spawn. Its swirl keeps to the particle budget: each emitter's rate times its particle's longest
+    life, summed, is at most 80 alive per caster. Its impact sound exists."""
     problems: list[Problem] = []
     ours = {f"{MOD_ID}:{entry.model.id}" for entry in content.particles}
     longest = {f"{MOD_ID}:{entry.model.id}": entry.model.lifetime_ticks[1] for entry in content.particles}
     for entry in content.spell_looks:
         look = entry.model
-        swirl = look.swirl
-        if swirl is not None and swirl.per_tick * longest.get(swirl.particle, 0) > MAX_SWIRL_ALIVE:
+        alive = sum(swirl.per_tick * longest.get(swirl.particle, 0) for swirl in look.swirl)
+        if alive > MAX_SWIRL_ALIVE:
+            rates = ", ".join(
+                f"{swirl.per_tick:g} a tick of {swirl.particle} (up to {longest.get(swirl.particle, 0)} ticks)"
+                for swirl in look.swirl
+            )
             problems.append(
                 Problem(
                     entry.source,
-                    "swirl.per_tick",
-                    f"{swirl.per_tick:g} a tick of {swirl.particle}, which lives up to "
-                    f"{longest[swirl.particle]} ticks, keeps more than {MAX_SWIRL_ALIVE} alive per caster: lower the "
-                    "rate or use a shorter-lived particle",
+                    "swirl",
+                    f"{rates} keeps about {alive:g} alive per caster, more than {MAX_SWIRL_ALIVE}: lower a rate or "
+                    "use a shorter-lived particle",
                 )
             )
         for name in ("trail", "burst", "swirl"):
-            emitter = getattr(look, name)
-            if emitter is None or emitter.particle in ours:
-                continue
-            message = f"{emitter.particle} is not one of our particles (content/particles/)"
-            close = difflib.get_close_matches(emitter.particle, ours, n=3)
-            if close:
-                message += f" (did you mean: {', '.join(close)}?)"
-            problems.append(Problem(entry.source, f"{name}.particle", message))
+            for index, emitter in enumerate(getattr(look, name)):
+                if emitter.particle in ours:
+                    continue
+                message = f"{emitter.particle} is not one of our particles (content/particles/)"
+                close = difflib.get_close_matches(emitter.particle, ours, n=3)
+                if close:
+                    message += f" (did you mean: {', '.join(close)}?)"
+                problems.append(Problem(entry.source, f"{name}.{index}.particle", message))
         if look.impact_sound is not None and not universe.contains(SOUND_EVENT_REGISTRY, look.impact_sound):
             problems.append(
                 Problem(

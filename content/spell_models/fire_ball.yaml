@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../tools/schemas/spell_models.schema.json
+# The fire ball (RLM-441, Matěj's sketch of 2026-10-29): a round ball of fire, not Frostbolt's shape. 41 cubes: a
+# core of boxes turned against each other, so that no side of it is flat, and lumps all over it, which roil as it
+# turns over in flight. Fireball forms and flies with it. Its source is art/models/spell/fire_ball.geo.json, written
+# by a script. At 0.8 of a half-block bolt it is 0.4 blocks across; in a player's hands three quarters of that.
+id: fire_ball
+shape: cubes
+scale: 0.8

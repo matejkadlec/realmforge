@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.gson.JsonParser;
+import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
 import io.github.matejkadlec.realmforge.combat.CritRule;
 import java.util.List;
@@ -22,11 +23,13 @@ class SpellVisualsTest {
     private static final double CLOSE = 1e-6;
     private static final Identifier SHATTER = Identifier.parse("minecraft:block.glass.break");
     private static final Identifier BOULDER = Identifier.parse("realmforge:spell.astone_boulder.impact");
+    private static final List<Integer> SNOW = List.of(0xFFF4FBFF, 0xFFE2F3FB);
     private static final SpellLook FROST = new SpellLook(List.of(0xFFB8E2F4, 0xFF6ABCE2),
-            Optional.of(new SpellLook.Trail(Identifier.parse("realmforge:mote"), 2)),
-            Optional.of(new SpellLook.Burst(Identifier.parse("realmforge:shard"), 16)),
-            Optional.of(new SpellLook.Swirl(Identifier.parse("realmforge:mote"), 4)), SpellLook.Light.GLOW,
-            Optional.of(SHATTER));
+            List.of(new SpellLook.Trail(Identifier.parse("realmforge:mote"), 2, Optional.empty())),
+            List.of(new SpellLook.Burst(Identifier.parse("realmforge:shard"), 14, 1, Optional.empty()),
+                    new SpellLook.Burst(Identifier.parse("realmforge:flake"), 10, 0, Optional.of(SNOW))),
+            List.of(new SpellLook.Swirl(Identifier.parse("realmforge:mote"), 4, Optional.empty())),
+            SpellLook.Light.GLOW, Optional.of(SHATTER));
     private static final SpellModel ORB = new SpellModel(SpellModel.Shape.ORB, 1, SpellModel.Orientation.TUMBLE, 0);
 
     private static ProjectileEffect projectile(boolean withModel) {
@@ -45,20 +48,27 @@ class SpellVisualsTest {
     @Test
     void aLookReadsItsColoursParticlesAndSound() {
         SpellLook look = SpellLook.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString("{\"colors\": "
-                + "[\"#B8E2F4\", \"#6ABCE2\"], \"trail\": {\"particle\": \"realmforge:mote\", \"per_block\": 2.0}, "
-                + "\"burst\": {\"particle\": \"realmforge:shard\", \"count\": 16}, "
-                + "\"swirl\": {\"particle\": \"realmforge:mote\", \"per_tick\": 4.0}, \"light\": \"glow\", "
+                + "[\"#B8E2F4\", \"#6ABCE2\"], \"trail\": [{\"particle\": \"realmforge:mote\", \"per_block\": 2.0}], "
+                + "\"burst\": [{\"particle\": \"realmforge:shard\", \"count\": 14}, {\"particle\": "
+                + "\"realmforge:flake\", \"count\": 10, \"spread\": 0.0, \"colors\": [\"#F4FBFF\", \"#E2F3FB\"]}], "
+                + "\"swirl\": [{\"particle\": \"realmforge:mote\", \"per_tick\": 4.0}], \"light\": \"glow\", "
                 + "\"impact_sound\": \"minecraft:block.glass.break\"}")).getOrThrow();
         assertEquals(FROST, look);
+        assertEquals(1, look.burst().getFirst().spread(), "a burst's particles fill it unless it says otherwise");
         SpellLook plain = SpellLook.CODEC.parse(JsonOps.INSTANCE,
                 JsonParser.parseString("{\"colors\": [\"#FFFFFF\"]}")).getOrThrow();
-        assertEquals(Optional.empty(), plain.swirl(), "a look need not swirl");
+        assertEquals(List.of(), plain.swirl(), "a look need not swirl");
+        assertEquals(List.of(), plain.trail(), "a look need not leave a trail");
         assertEquals(SpellLook.Light.WORLD, plain.light(), "a look is lit by the world unless it says otherwise");
         assertEquals(look, SpellLook.CODEC.parse(JsonOps.INSTANCE,
                 SpellLook.CODEC.encodeStart(JsonOps.INSTANCE, look).getOrThrow()).getOrThrow(), "it round-trips");
         RandomSource random = RandomSource.create(1);
         for (int n = 0; n < 32; n++) {
             assertTrue(FROST.colors().contains(FROST.color(random)), "a particle takes one of the look's colours");
+            assertTrue(FROST.colors().contains(FROST.color(random, Optional.empty())),
+                    "and so does one of an emitter without colours of its own");
+            assertTrue(SNOW.contains(FROST.color(random, Optional.of(SNOW))),
+                    "a particle of an emitter with colours of its own takes one of those");
         }
     }
 
@@ -67,16 +77,42 @@ class SpellVisualsTest {
         assertTrue(SpellLook.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString("{\"colors\": []}")).isError(),
                 "a look without a colour");
         assertTrue(SpellLook.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString("{\"colors\": [\"#FFFFFF\"], "
-                + "\"trail\": {\"particle\": \"realmforge:mote\", \"per_block\": 3.5}}")).isError(),
+                + "\"trail\": [{\"particle\": \"realmforge:mote\", \"per_block\": 3.5}]}")).isError(),
                 "a trail of more than 3 a block");
         assertTrue(SpellLook.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString("{\"colors\": [\"#FFFFFF\"], "
-                + "\"burst\": {\"particle\": \"realmforge:shard\", \"count\": 25}}")).isError(),
+                + "\"burst\": [{\"particle\": \"realmforge:shard\", \"count\": 25}]}")).isError(),
                 "a burst of more than 24");
         assertTrue(SpellLook.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString("{\"colors\": [\"#FFFFFF\"], "
-                + "\"swirl\": {\"particle\": \"realmforge:mote\", \"per_tick\": 8.5}}")).isError(),
+                + "\"swirl\": [{\"particle\": \"realmforge:mote\", \"per_tick\": 8.5}]}")).isError(),
                 "a swirl of more than 8 a tick");
         assertTrue(SpellLook.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString("{\"colors\": [\"#FFFFFF\"], "
                 + "\"light\": \"blinding\"}")).isError(), "an unknown light");
+    }
+
+    @Test
+    void aLooksEmittersShareTheBudget() {
+        String mote = "{\"particle\": \"realmforge:mote\", ";
+        assertTrue(look("\"trail\": [" + mote + "\"per_block\": 2.0}, " + mote + "\"per_block\": 1.0}]").isSuccess(),
+                "two emitters, 3 a block together");
+        assertTrue(look("\"trail\": [" + mote + "\"per_block\": 2.0}, " + mote + "\"per_block\": 1.5}]").isError(),
+                "two emitters, more than 3 a block together");
+        assertTrue(look("\"burst\": [" + mote + "\"count\": 12}, " + mote + "\"count\": 12}]").isSuccess(),
+                "two emitters, 24 together");
+        assertTrue(look("\"burst\": [" + mote + "\"count\": 12}, " + mote + "\"count\": 13}]").isError(),
+                "two emitters, more than 24 together");
+        assertTrue(look("\"swirl\": [" + mote + "\"per_tick\": 4.0}, " + mote + "\"per_tick\": 4.5}]").isError(),
+                "two emitters, more than 8 a tick together");
+        assertTrue(look("\"burst\": [" + mote + "\"count\": 1}, " + mote + "\"count\": 1}, " + mote
+                + "\"count\": 1}, " + mote + "\"count\": 1}]").isError(), "more than 3 emitters");
+        assertTrue(look("\"burst\": [" + mote + "\"count\": 1, \"spread\": 1.5}]").isError(),
+                "a spread beyond the burst");
+        assertTrue(look("\"burst\": [" + mote + "\"count\": 1, \"colors\": []}]").isError(),
+                "an emitter's own colours, but none");
+    }
+
+    private static DataResult<SpellLook> look(String fields) {
+        return SpellLook.CODEC.parse(JsonOps.INSTANCE,
+                JsonParser.parseString("{\"colors\": [\"#FFFFFF\"], " + fields + "}"));
     }
 
     @Test
@@ -99,9 +135,9 @@ class SpellVisualsTest {
         assertEquals(new SpellModel(SpellModel.Shape.CUBES, 0.6F, SpellModel.Orientation.FORWARD, 0),
                 SpellModel.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString("{\"shape\": \"cubes\", "
                         + "\"scale\": 0.6, \"orientation\": \"forward\"}")).getOrThrow());
-        // assets/realmforge/geckolib/models/spell/chunk.geo.json, as GeckoLib's cache names it.
-        assertEquals(Identifier.parse("realmforge:spell/chunk"),
-                SpellModel.geometry(Identifier.parse("realmforge:chunk")));
+        // assets/realmforge/geckolib/models/spell/ice_chunk.geo.json, as GeckoLib's cache names it.
+        assertEquals(Identifier.parse("realmforge:spell/ice_chunk"),
+                SpellModel.geometry(Identifier.parse("realmforge:ice_chunk")));
     }
 
     @Test

@@ -99,6 +99,7 @@ public final class QaSpellShots {
     private static final String NO_MOBS =
             "tp @e[type=!minecraft:player,type=!minecraft:armor_stand,distance=..24] ~ ~ ~-200";
     private static final String FROSTBOLT = "qa spell cast realmforge:frostbolt";
+    private static final String FIREBALL = "qa spell cast realmforge:fireball";
     private static final String ICE_BARRIER = "qa spell cast realmforge:ice_barrier";
     /** A quarter of the game's speed, for the scenes of the arms' animations; they come last, so nothing resets it. */
     private static final String SLOW = "tick rate 5";
@@ -115,11 +116,15 @@ public final class QaSpellShots {
             new Scene("frost-first-person", List.of(NO_MOBS), "qa spell cast realmforge:test_twin_frost", 14, true),
             // Forming (RLM-640): a 1.5 s cast grows cube by cube in the hands, then leaves them.
             new Scene("forming-frost-hands", List.of(NO_MOBS), FROSTBOLT, 40, 2, View.HANDS, 70, 0),
-            new Scene("forming-fire-hands", List.of(NO_MOBS), "qa spell cast realmforge:fireball", 40, 2, View.HANDS,
-                    70, 0),
+            new Scene("forming-fire-hands", List.of(NO_MOBS), FIREBALL, 40, 2, View.HANDS, 70, 0),
             new Scene("forming-frost-eyes-fov70", List.of(NO_MOBS), FROSTBOLT, 36, 2, View.EYES, 70, 0),
             new Scene("forming-frost-eyes-fov110", List.of(NO_MOBS), FROSTBOLT, 36, 2, View.EYES, 110, 0),
             new Scene("forming-frost-flight", List.of(NO_MOBS), FROSTBOLT, 44, 2, View.FLIGHT, 70, 0),
+            // The fire ball is wider than the ice chunk (RLM-441): how much of the caster's own view it takes, and
+            // its flight.
+            new Scene("forming-fire-eyes-fov70", List.of(NO_MOBS), FIREBALL, 36, 2, View.EYES, 70, 0),
+            new Scene("forming-fire-eyes-fov110", List.of(NO_MOBS), FIREBALL, 36, 2, View.EYES, 110, 0),
+            new Scene("forming-fire-flight", List.of(NO_MOBS), FIREBALL, 44, 2, View.FLIGHT, 70, 0),
             new Scene("forming-interrupted", List.of(NO_MOBS), FROSTBOLT, 30, 1, View.HANDS, 70, 18),
             new Scene("forming-interrupted-eyes", List.of(NO_MOBS), FROSTBOLT, 30, 1, View.EYES, 70, 18),
             new Scene("arcane-hands", List.of(NO_MOBS), "qa spell cast realmforge:arcane_missiles", 34, 2, View.HANDS,

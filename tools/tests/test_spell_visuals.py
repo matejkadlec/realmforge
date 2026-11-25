@@ -64,17 +64,91 @@ def spell(repo: RepoPaths, body: str, name: str = "test_shot") -> None:
 # The repository's kit
 
 
-def test_the_repository_has_the_first_looks_two_models_and_one_trajectory() -> None:
+def test_the_repository_has_the_first_looks_four_models_and_one_trajectory() -> None:
     content, _ = load_and_validate(RepoPaths())
     assert {entry.model.id for entry in content.spell_looks} == {"frost", "fire", "arcane", "stone"}
     assert {entry.model.id: entry.model.shape for entry in content.spell_models} == {
         "orb": "orb",
-        "chunk": "cubes",
+        "ice_chunk": "cubes",
+        "fire_ball": "cubes",
+        "crystal": "cubes",
     }
     assert {entry.model.id: entry.model.kind for entry in content.spell_trajectories} == {
         "straight": "straight"
     }
-    assert {entry.model.id for entry in content.particles} == {"mote", "shard", "ember", "fleck"}
+    assert {entry.model.id for entry in content.particles} == {
+        "mote",
+        "shard",
+        "ember",
+        "fleck",
+        "flake",
+        "flame",
+        "smoke",
+        "sparkle",
+        "ring",
+    }
+
+
+def test_the_first_spells_fly_their_own_models_and_differ_in_look_and_model_only() -> None:
+    # RLM-440, RLM-441, RLM-442: the ice chunk, the fire ball and the crystal take the placeholders' place.
+    content, _ = load_and_validate(RepoPaths())
+    spells = {entry.model.id: entry.model for entry in content.spells}
+    models = {entry.model.id: entry.model for entry in content.spell_models}
+    assert spells["frostbolt"].effects[0].model == "realmforge:ice_chunk"
+    assert spells["fireball"].effects[0].model == "realmforge:fire_ball"
+    assert spells["arcane_missiles"].effects[0].model == "realmforge:crystal"
+    assert (spells["frostbolt"].visuals.look, spells["frostbolt"].visuals.forming) == (
+        "realmforge:frost",
+        "grow",
+    )
+    assert (spells["fireball"].visuals.look, spells["fireball"].visuals.forming) == (
+        "realmforge:fire",
+        "grow",
+    )
+    assert (spells["arcane_missiles"].visuals.look, spells["arcane_missiles"].visuals.forming) == (
+        "realmforge:arcane",
+        "hands",
+    )
+    # RLM-441's "Done when": Fireball's visual data differs from Frostbolt's in its look and its model only.
+    frost, fire = spells["frostbolt"], spells["fireball"]
+    assert frost.effects[0].trajectory == fire.effects[0].trajectory
+    assert (frost.effects[0].speed, frost.effects[0].size) == (fire.effects[0].speed, fire.effects[0].size)
+    assert (frost.cast.type, frost.cast.duration_seconds) == (fire.cast.type, fire.cast.duration_seconds)
+    assert frost.cast.player_animation == fire.cast.player_animation
+    # The ice chunk points along its flight, the ball turns over, the crystal spins about its flight.
+    assert (models["ice_chunk"].orientation, models["ice_chunk"].spin_degrees_per_second) == ("forward", 0)
+    assert models["fire_ball"].orientation == "tumble"
+    assert (models["crystal"].orientation, models["crystal"].spin_degrees_per_second) == ("forward", 360)
+
+
+def test_each_look_mixes_its_particles_within_the_budget() -> None:
+    # RLM-440 to RLM-442: shards and a puff of snow, embers with flames and black smoke, motes with sparkles and a ring.
+    content, _ = load_and_validate(RepoPaths())
+    looks = {entry.model.id: entry.model for entry in content.spell_looks}
+    longest = {f"realmforge:{entry.model.id}": entry.model.lifetime_ticks[1] for entry in content.particles}
+
+    def particles(emitters: list) -> list[str]:
+        return [emitter.particle.removeprefix("realmforge:") for emitter in emitters]
+
+    assert particles(looks["frost"].trail) == ["mote", "flake"]
+    assert particles(looks["frost"].burst) == ["shard", "flake"]
+    assert particles(looks["fire"].trail) == ["ember", "flame", "smoke"]
+    assert particles(looks["fire"].burst) == ["ember", "flame", "smoke"]
+    # Only flecks swirl round a forming model: anything bigger hides it growing in the caster's hands.
+    assert particles(looks["frost"].swirl) == particles(looks["fire"].swirl) == ["fleck"]
+    assert particles(looks["arcane"].trail) == ["mote", "sparkle"]
+    assert particles(looks["arcane"].burst) == ["mote", "sparkle", "ring"]
+    ring = looks["arcane"].burst[2]
+    assert (ring.count, ring.spread) == (1, 0), "one ring, still at the middle of the hit"
+    # Fire is orange and black (Matěj, RLM-29): its smoke is dark, its embers and flames are not.
+    for emitter in [*looks["fire"].trail, *looks["fire"].burst]:
+        brightest = max(int(color[1:3], 16) for color in emitter.colors)
+        assert (brightest < 0x60) == (emitter.particle == "realmforge:smoke"), emitter.particle
+    for look in looks.values():
+        assert sum(emitter.per_block for emitter in look.trail) <= 3, look.id
+        assert sum(emitter.count for emitter in look.burst) <= 24, look.id
+        assert sum(emitter.per_tick for emitter in look.swirl) <= 8, look.id
+        assert sum(emitter.per_tick * longest[emitter.particle] for emitter in look.swirl) <= 80, look.id
 
 
 def test_the_frost_look_is_inside_matejs_range() -> None:
@@ -134,26 +208,32 @@ def test_a_look_becomes_a_datapack_entry_and_a_placeholder_material(repo: RepoPa
         repo.content / "spell_looks" / "shadow.yaml",
         "id: shadow\n"
         "colors: ['#2a1a3a', '#120818']\n"
-        "trail: {particle: realmforge:mote, per_block: 1.5}\n"
-        "burst: {particle: realmforge:shard, count: 8}\n"
+        "trail:\n  - {particle: realmforge:mote, per_block: 1.5}\n"
+        "burst:\n"
+        "  - {particle: realmforge:shard, count: 8}\n"
+        "  - {particle: realmforge:mote, count: 2, spread: 0, colors: ['#ffffff']}\n"
         "impact_sound: minecraft:block.glass.break\n",
     )
     files = generate(repo)
     assert json.loads(files[f"{DATA}/spell_look/shadow.json"]) == {
         "colors": ["#2A1A3A", "#120818"],
-        "trail": {"particle": "realmforge:mote", "per_block": 1.5},
-        "burst": {"particle": "realmforge:shard", "count": 8},
+        "trail": [{"particle": "realmforge:mote", "per_block": 1.5}],
+        "burst": [
+            {"particle": "realmforge:shard", "count": 8, "spread": 1.0},
+            {"particle": "realmforge:mote", "colors": ["#FFFFFF"], "count": 2, "spread": 0.0},
+        ],
+        "swirl": [],
         "light": "world",
         "impact_sound": "minecraft:block.glass.break",
     }
     # Frost swirls while it forms and glows a little; fire is drawn at full brightness (RLM-640).
     frost = json.loads(files[f"{DATA}/spell_look/frost.json"])
-    assert frost["swirl"] == {"particle": "realmforge:fleck", "per_tick": 6.0}
+    assert frost["swirl"] == [{"particle": "realmforge:fleck", "per_tick": 6.0}]
     assert frost["light"] == "glow"
     assert json.loads(files[f"{DATA}/spell_look/fire.json"])["light"] == "emit"
     width, height, pixels = decode_rgba(files[f"{ASSETS}/textures/spell/material/shadow.png"])
     assert (width, height) == (16, 16)
-    # Noise in the look's colours, opaque, so it tiles and reads as the element.
+    # Soft patches in the look's colours, opaque, so it tiles and reads as the element.
     assert set(pixels) == {(0x2A, 0x1A, 0x3A, 255), (0x12, 0x08, 0x18, 255)}
     assert (
         files[f"{ASSETS}/textures/spell/material/shadow.png"]
@@ -205,7 +285,7 @@ def test_a_particle_becomes_a_registration_a_sprite_set_and_its_frames(repo: Rep
         '            register("spark",\n'
         "                    new TintedParticles.Motion(4, 9, 0.05F, 0.25F, 0.9F, false));\n"
     ) in java
-    assert "ALL = List.of(EMBER, FLECK, MOTE, SHARD, SPARK);" in java
+    assert "ALL = List.of(EMBER, FLAKE, FLAME, FLECK, MOTE, RING, SHARD, SMOKE, SPARK, SPARKLE);" in java
     assert 'new ParticleExpectation("realmforge:spark", 2, 4, 9)' in files[EXPECTATIONS].decode()
 
 
@@ -215,17 +295,19 @@ def test_the_expectations_hold_every_part(repo: RepoPaths) -> None:
         "            new LookExpectation(\n"
         '                    "realmforge:stone",\n'
         '                    List.of("#B4B0A8", "#A09C94", "#8D9094", "#8B8579", "#74706A", "#5E5B57"),\n'
-        "                    Optional.empty(),\n"
-        "                    0.0,\n"
-        '                    Optional.of("realmforge:shard"),\n'
-        "                    14,\n"
-        '                    Optional.of("realmforge:shard"),\n'
-        "                    3.0,\n"
+        "                    List.of(),\n"
+        '                    List.of(new EmitterExpectation("realmforge:shard", 14.0, 1.0, List.of())),\n'
+        '                    List.of(new EmitterExpectation("realmforge:shard", 3.0, 1.0, List.of())),\n'
         '                    "world",\n'
         '                    Optional.of("realmforge:spell.stoneform.impact"))'
     ) in expectations
     assert 'new ModelExpectation("realmforge:orb", "orb", 1.0, "tumble", 0.0)' in expectations
-    assert 'new ModelExpectation("realmforge:chunk", "cubes", 0.6, "forward", 0.0)' in expectations
+    assert 'new ModelExpectation("realmforge:ice_chunk", "cubes", 0.6, "forward", 0.0)' in expectations
+    assert 'new ModelExpectation("realmforge:crystal", "cubes", 0.45, "forward", 360.0)' in expectations
+    # An emitter with colours of its own, and a burst's spread.
+    assert (
+        'new EmitterExpectation("realmforge:ring", 1.0, 0.0, List.of("#D6A2FF", "#C77DFF"))' in expectations
+    )
     assert 'new TrajectoryExpectation("realmforge:straight", "straight")' in expectations
 
 
@@ -268,8 +350,8 @@ def test_a_spells_visuals_reach_its_data_and_its_expectations(repo: RepoPaths) -
         ),
         (
             "cast: {type: instant}\nvisuals: {look: realmforge:frost}\n"
-            + PROJECTILE.replace("realmforge:orb", "realmforge:ice_chunk"),
-            "effects.0.model: unknown id 'realmforge:ice_chunk' in registry realmforge:spell_model",
+            + PROJECTILE.replace("realmforge:orb", "realmforge:icicle"),
+            "effects.0.model: unknown id 'realmforge:icicle' in registry realmforge:spell_model",
         ),
         (
             "cast: {type: instant}\nvisuals: {look: realmforge:frost}\n"
@@ -401,11 +483,11 @@ def test_a_passive_spell_names_no_visuals() -> None:
     [
         (
             ("realmforge:mote", "minecraft:flame"),
-            "trail.particle: minecraft:flame is not one of our particles (content/particles/)",
+            "trail.0.particle: minecraft:flame is not one of our particles (content/particles/)",
         ),
         (
             ("realmforge:shard", "realmforge:shards"),
-            "burst.particle: realmforge:shards is not one of our particles (content/particles/) "
+            "burst.0.particle: realmforge:shards is not one of our particles (content/particles/) "
             "(did you mean: realmforge:shard",
         ),
         (
@@ -413,16 +495,18 @@ def test_a_passive_spell_names_no_visuals() -> None:
             "impact_sound: unknown id 'minecraft:block.glass.shatter' in registry minecraft:sound_event",
         ),
         (
-            ("swirl: {particle: realmforge:fleck", "swirl: {particle: minecraft:snowflake"),
-            "swirl.particle: minecraft:snowflake is not one of our particles (content/particles/)",
+            ("- {particle: realmforge:fleck", "- {particle: minecraft:snowflake"),
+            "swirl.0.particle: minecraft:snowflake is not one of our particles (content/particles/)",
         ),
-        # The particle budget: a mote lives up to 12 ticks, so 7 a tick would keep 84 alive per caster.
+        # The particle budget: a mote lives up to 12 ticks, so 6 a tick keep 72 alive per caster, and a flake a
+        # tick (up to 18 ticks) beside them brings the swirl to 90.
         (
             (
-                "swirl: {particle: realmforge:fleck, per_tick: 6}",
-                "swirl: {particle: realmforge:mote, per_tick: 7}",
+                "- {particle: realmforge:fleck, per_tick: 6}",
+                "- {particle: realmforge:mote, per_tick: 6}\n  - {particle: realmforge:flake, per_tick: 1}",
             ),
-            "swirl.per_tick: 7 a tick of realmforge:mote, which lives up to 12 ticks, keeps more than 80 alive",
+            "swirl: 6 a tick of realmforge:mote (up to 12 ticks), 1 a tick of realmforge:flake (up to 18 ticks) "
+            "keeps about 90 alive per caster, more than 80",
         ),
     ],
 )
@@ -447,13 +531,57 @@ def look(**fields: object) -> SpellLookDef:
         ({"colors": ["#B8E2F4", "#b8e2f4"]}, "colors: each colour once"),
         ({"colors": ["blue"]}, "String should match pattern"),
         # The particle budget (docs/design/spell-visuals.md).
-        ({"trail": {"particle": "realmforge:mote", "per_block": 3.5}}, "less than or equal to 3"),
-        ({"trail": {"particle": "realmforge:mote", "per_block": 0}}, "greater than 0"),
-        ({"burst": {"particle": "realmforge:shard", "count": 25}}, "less than or equal to 24"),
-        ({"burst": {"particle": "realmforge:shard", "count": 0}}, "greater than or equal to 1"),
-        ({"swirl": {"particle": "realmforge:mote"}}, "Field required"),
-        ({"swirl": {"particle": "realmforge:mote", "per_tick": 8.5}}, "less than or equal to 8"),
-        ({"swirl": {"particle": "realmforge:mote", "per_tick": 0}}, "greater than 0"),
+        ({"trail": [{"particle": "realmforge:mote", "per_block": 3.5}]}, "less than or equal to 3"),
+        ({"trail": [{"particle": "realmforge:mote", "per_block": 0}]}, "greater than 0"),
+        ({"burst": [{"particle": "realmforge:shard", "count": 25}]}, "less than or equal to 24"),
+        ({"burst": [{"particle": "realmforge:shard", "count": 0}]}, "greater than or equal to 1"),
+        ({"swirl": [{"particle": "realmforge:mote"}]}, "Field required"),
+        ({"swirl": [{"particle": "realmforge:mote", "per_tick": 8.5}]}, "less than or equal to 8"),
+        ({"swirl": [{"particle": "realmforge:mote", "per_tick": 0}]}, "greater than 0"),
+        # A trail, a burst or a swirl is a list of emitters (RLM-440), at most 3, which share the budget.
+        ({"trail": {"particle": "realmforge:mote", "per_block": 1}}, "Input should be a valid list"),
+        ({"burst": [{"particle": "realmforge:mote", "count": 1}] * 4}, "at most 3 items"),
+        (
+            {
+                "trail": [
+                    {"particle": "realmforge:mote", "per_block": 2},
+                    {"particle": "realmforge:shard", "per_block": 1.5},
+                ]
+            },
+            "trail: 3.5 a block flown; its emitters together at most 3",
+        ),
+        (
+            {
+                "burst": [
+                    {"particle": "realmforge:mote", "count": 12},
+                    {"particle": "realmforge:shard", "count": 13},
+                ]
+            },
+            "burst: 25 at once; its emitters together at most 24",
+        ),
+        (
+            {
+                "swirl": [
+                    {"particle": "realmforge:mote", "per_tick": 4},
+                    {"particle": "realmforge:shard", "per_tick": 4.5},
+                ]
+            },
+            "swirl: 8.5 a tick; its emitters together at most 8",
+        ),
+        ({"burst": [{"particle": "realmforge:mote", "count": 1, "spread": 1.5}]}, "less than or equal to 1"),
+        (
+            {"burst": [{"particle": "realmforge:mote", "count": 1, "spread": -0.5}]},
+            "greater than or equal to 0",
+        ),
+        (
+            {"trail": [{"particle": "realmforge:mote", "per_block": 1, "spread": 0}]},
+            "Extra inputs are not permitted",
+        ),
+        ({"burst": [{"particle": "realmforge:mote", "count": 1, "colors": []}]}, "at least 1 item"),
+        (
+            {"burst": [{"particle": "realmforge:mote", "count": 1, "colors": ["#FFFFFF", "#ffffff"]}]},
+            "colors: each colour once",
+        ),
         ({"light": "blinding"}, "Input should be 'world', 'glow' or 'emit'"),
         ({"aura": {"particle": "realmforge:mote"}}, "Extra inputs are not permitted"),
     ],
@@ -466,16 +594,23 @@ def test_invalid_looks_are_rejected(fields: dict[str, object], expected: str) ->
 def test_a_look_keeps_to_the_caps_at_their_edges() -> None:
     full = look(
         colors=[f"#0000{n:02X}" for n in range(16)],
-        trail={"particle": "realmforge:mote", "per_block": 3},
-        burst={"particle": "realmforge:shard", "count": 24},
-        swirl={"particle": "realmforge:mote", "per_tick": 8},
+        trail=[
+            {"particle": "realmforge:mote", "per_block": 2},
+            {"particle": "realmforge:shard", "per_block": 1},
+        ],
+        burst=[{"particle": "realmforge:shard", "count": 23}, {"particle": "realmforge:mote", "count": 1}],
+        swirl=[{"particle": "realmforge:mote", "per_tick": 8}],
     )
     assert len(full.colors) == 16
-    assert full.trail.per_block == 3
-    assert full.burst.count == 24
-    assert full.swirl.per_tick == 8
+    assert sum(emitter.per_block for emitter in full.trail) == 3
+    assert sum(emitter.count for emitter in full.burst) == 24
+    assert full.swirl[0].per_tick == 8
+    assert full.burst[0].spread == 1, "a burst's particles fill it unless it says otherwise"
+    assert full.burst[0].colors is None, (
+        "an emitter's particles take the look's colours unless it names its own"
+    )
     assert full.light == "world", "lit by the world unless it says otherwise"
-    assert look().swirl is None
+    assert look().swirl == []
 
 
 # Validation: models, trajectories, particles
@@ -582,11 +717,47 @@ def cube_model(repo: RepoPaths, source: str | None, name: str = "dart") -> None:
         write(repo.root / "art" / "models" / "spell" / f"{name}.geo.json", source)
 
 
-def test_the_repositorys_chunk_is_a_model_of_cubes_within_the_cap() -> None:
+def test_the_repositorys_models_are_models_of_cubes_within_the_cap() -> None:
     paths = RepoPaths()
-    assert spell_models.ids(paths) == ("chunk",)
-    source = spell_models.read(spell_models.source_path(paths, "chunk"))
-    assert 12 <= len(source.cubes) <= spell_models.MAX_CUBES, "dozens of small cubes, at most 64"
+    assert spell_models.ids(paths) == ("crystal", "fire_ball", "ice_chunk")
+    # The design's counts (docs/design/spell-visuals.md): 30 to 50 cubes for the ice chunk and the fire ball, 12 to
+    # 20 for the crystal; never more than 64.
+    for model_id, (fewest, most) in {
+        "ice_chunk": (30, 50),
+        "fire_ball": (30, 50),
+        "crystal": (12, 20),
+    }.items():
+        source = spell_models.read(spell_models.source_path(paths, model_id))
+        assert fewest <= len(source.cubes) <= most <= spell_models.MAX_CUBES, model_id
+
+
+def _extent(source: spell_models.Source) -> tuple[float, float, float]:
+    """A source's size along x, y and z, from its cubes' own corners (their turns left out: close enough for its
+    proportions)."""
+    low = [min(cube.origin[axis] for cube in source.cubes) for axis in range(3)]
+    high = [max(cube.origin[axis] + cube.size[axis] for cube in source.cubes) for axis in range(3)]
+    return (high[0] - low[0], high[1] - low[1], high[2] - low[2])
+
+
+def test_the_models_have_the_shapes_matej_sketched() -> None:
+    paths = RepoPaths()
+    sources = {
+        model_id: spell_models.read(spell_models.source_path(paths, model_id))
+        for model_id in spell_models.ids(paths)
+    }
+    # The ice chunk: thick, longer than wide, its point first (Matěj, 2026-10-29): about twice as long as wide, and
+    # the cubes at its front (-z) end are the thin ones.
+    x, y, z = _extent(sources["ice_chunk"])
+    assert 1.6 <= z / max(x, y) <= 2.4
+    front = min(sources["ice_chunk"].cubes, key=lambda cube: cube.origin[2])
+    assert max(front.size[0], front.size[1]) <= 1, "it ends in a point"
+    # The fire ball: round, not Frostbolt's shape.
+    x, y, z = _extent(sources["fire_ball"])
+    assert max(x, y, z) / min(x, y, z) <= 1.15
+    # The crystal: straighter and more cut than the ice chunk: slimmer, with fewer cubes.
+    x, y, z = _extent(sources["crystal"])
+    assert z / max(x, y) >= 2
+    assert len(sources["crystal"].cubes) < len(sources["ice_chunk"].cubes) / 2
 
 
 def test_a_model_of_cubes_becomes_a_geckolib_model_mapped_onto_the_material(repo: RepoPaths) -> None:
@@ -626,8 +797,9 @@ def test_a_model_of_cubes_becomes_a_geckolib_model_mapped_onto_the_material(repo
             assert u >= 0 and u + width <= 16 and v >= 0 and v + height <= 16, face
     assert first["uv"] != second["uv"], "each cube takes another patch of the tile"
     assert files == generate(repo), "the same on every run"
-    # The chunk the repository ships is written too.
-    assert f"{ASSETS}/geckolib/models/spell/chunk.geo.json" in files
+    # The models the repository ships are written too.
+    for model_id in ("ice_chunk", "fire_ball", "crystal"):
+        assert f"{ASSETS}/geckolib/models/spell/{model_id}.geo.json" in files
 
 
 def test_a_face_longer_than_the_material_takes_the_whole_tile(repo: RepoPaths) -> None:

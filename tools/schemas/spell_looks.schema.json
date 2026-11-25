@@ -2,20 +2,48 @@
   "$defs": {
     "BurstDef": {
       "additionalProperties": false,
-      "description": "The particles a projectile of the look bursts into where it hits, spread over its splash.",
+      "description": "Particles a projectile of the look bursts into where it hits, spread over its splash.",
       "properties": {
+        "colors": {
+          "anyOf": [
+            {
+              "items": {
+                "description": "An RGB colour, \"#RRGGBB\".",
+                "pattern": "^#[0-9A-Fa-f]{6}$",
+                "type": "string"
+              },
+              "maxItems": 16,
+              "minItems": 1,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The colours its particles take instead of the look's, \"#RRGGBB\": fire's smoke is black, its embers orange. Without them, the look's colours.",
+          "title": "Colors"
+        },
         "count": {
-          "description": "How many at once, at most 24.",
+          "description": "How many at once; a burst's emitters together at most 24.",
           "maximum": 24,
           "minimum": 1,
           "title": "Count",
           "type": "integer"
         },
         "particle": {
-          "description": "One of our particles, e.g. realmforge:shard (content/particles/).",
+          "description": "One of our particles, e.g. realmforge:mote (content/particles/).",
           "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
           "title": "Particle",
           "type": "string"
+        },
+        "spread": {
+          "default": 1.0,
+          "description": "How far from the middle of the hit they appear and how fast they fly out, as a share of the burst's own: 1 fills it, 0 leaves them still at its middle (a ring that widens where a missile hit).",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Spread",
+          "type": "number"
         }
       },
       "required": [
@@ -27,8 +55,28 @@
     },
     "SwirlDef": {
       "additionalProperties": false,
-      "description": "The particles that swirl in toward a projectile of the look while it forms in a caster's hands, spawned by\nthe clients; a ``hands`` forming shows them alone.",
+      "description": "Particles that swirl in toward a projectile of the look while it forms in a caster's hands, spawned by the\nclients; a ``hands`` forming shows them alone.",
       "properties": {
+        "colors": {
+          "anyOf": [
+            {
+              "items": {
+                "description": "An RGB colour, \"#RRGGBB\".",
+                "pattern": "^#[0-9A-Fa-f]{6}$",
+                "type": "string"
+              },
+              "maxItems": 16,
+              "minItems": 1,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The colours its particles take instead of the look's, \"#RRGGBB\": fire's smoke is black, its embers orange. Without them, the look's colours.",
+          "title": "Colors"
+        },
         "particle": {
           "description": "One of our particles, e.g. realmforge:mote (content/particles/).",
           "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
@@ -36,7 +84,7 @@
           "type": "string"
         },
         "per_tick": {
-          "description": "How many a tick while the cast runs, at most 8; times its particle's longest life, at most 80.",
+          "description": "How many a tick while the cast runs; a swirl's emitters together at most 8, and each one's rate times its particle's longest life, summed, at most 80.",
           "exclusiveMinimum": 0,
           "maximum": 8,
           "title": "Per Tick",
@@ -52,8 +100,28 @@
     },
     "TrailDef": {
       "additionalProperties": false,
-      "description": "The particles a projectile of the look leaves behind as it flies, spawned by its clients.",
+      "description": "Particles a projectile of the look leaves behind as it flies, spawned by its clients.",
       "properties": {
+        "colors": {
+          "anyOf": [
+            {
+              "items": {
+                "description": "An RGB colour, \"#RRGGBB\".",
+                "pattern": "^#[0-9A-Fa-f]{6}$",
+                "type": "string"
+              },
+              "maxItems": 16,
+              "minItems": 1,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The colours its particles take instead of the look's, \"#RRGGBB\": fire's smoke is black, its embers orange. Without them, the look's colours.",
+          "title": "Colors"
+        },
         "particle": {
           "description": "One of our particles, e.g. realmforge:mote (content/particles/).",
           "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
@@ -61,7 +129,7 @@
           "type": "string"
         },
         "per_block": {
-          "description": "How many a block flown, at most 3.",
+          "description": "How many a block flown; a trail's emitters together at most 3.",
           "exclusiveMinimum": 0,
           "maximum": 3,
           "title": "Per Block",
@@ -81,16 +149,13 @@
   "description": "An element's look, shared by every spell of it: frost reads as frost on Frostbolt and on Ice Lance.",
   "properties": {
     "burst": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/BurstDef"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "description": "What its projectiles burst into where they hit."
+      "description": "What its projectiles burst into where they hit: at most 3 emitters.",
+      "items": {
+        "$ref": "#/$defs/BurstDef"
+      },
+      "maxItems": 3,
+      "title": "Burst",
+      "type": "array"
     },
     "colors": {
       "description": "Its colours, lightest first, \"#RRGGBB\": each particle takes one at random, and its placeholder material is noise in them. At most 16.",
@@ -138,28 +203,22 @@
       "type": "string"
     },
     "swirl": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/SwirlDef"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "description": "What swirls in toward its projectile while it forms in a caster's hands (the storm of a grow or storm forming, and all a hands forming shows)."
+      "description": "What swirls in toward its projectile while it forms in a caster's hands (the storm of a grow or storm forming, and all a hands forming shows): at most 3 emitters. The first one's particle also sparks at the growing edge of a model that forms cube by cube.",
+      "items": {
+        "$ref": "#/$defs/SwirlDef"
+      },
+      "maxItems": 3,
+      "title": "Swirl",
+      "type": "array"
     },
     "trail": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/TrailDef"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "description": "What its projectiles leave behind in flight."
+      "description": "What its projectiles leave behind in flight: at most 3 emitters.",
+      "items": {
+        "$ref": "#/$defs/TrailDef"
+      },
+      "maxItems": 3,
+      "title": "Trail",
+      "type": "array"
     }
   },
   "required": [

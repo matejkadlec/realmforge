@@ -7,6 +7,7 @@ never depends on dict or set order.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -100,6 +101,21 @@ def ramps(palette: Palette) -> dict[str, tuple[PaletteColor, ...]]:
         name: tuple(color for _, color in sorted(colors, key=lambda member: member[0]))
         for name, colors in members.items()
     }
+
+
+def only(palette: Palette, ramp_names: Sequence[str]) -> Palette:
+    """The colours of the ramps ``ramp_names`` alone, as a palette of their own, in the palette's order: what a
+    texture is snapped to when it must stay inside a range (the frost material, in Matěj's ``rime`` ramp, RLM-440).
+    Raises ``PaletteError`` for a ramp the palette does not have."""
+    known = ramps(palette)
+    missing = [name for name in ramp_names if name not in known]
+    if missing:
+        raise PaletteError(
+            f"palette {palette.name!r} has no ramp {', '.join(repr(name) for name in missing)} "
+            f"(its ramps: {', '.join(sorted(known))})"
+        )
+    wanted = {color.name for name in ramp_names for color in known[name]}
+    return Palette(palette.name, tuple(color for color in palette.colors if color.name in wanted))
 
 
 def oklab(rgb: Rgb) -> tuple[float, float, float]:

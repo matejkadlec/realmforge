@@ -117,7 +117,38 @@ and docs.
   eyes as this design assumed. The first 4 ticks of the flight are drawn blended from the hands onto that path.
 - **Light:** a look's `light` is `world`, `glow` (frost) or `emit` (fire). `emit` is full brightness now; the light
   on the blocks round a Fireball waits for LambDynamicLights in the pack (M4, RLM-326).
-- **The first cube model** is the `chunk`, a placeholder for Frostbolt and Fireball until RLM-440 and RLM-441.
+- **The first cube model** was the `chunk`, a placeholder for Frostbolt and Fireball until RLM-440 and RLM-441.
+
+**As built by RLM-440, RLM-441 and RLM-442** (the first three spells' own visuals,
+[ADR 0080](../decisions/0080-a-looks-trail-burst-and-swirl-are-emitters-with-colours-of-their-own.md); the picks
+are an agent's until Matěj has played them,
+[ADR 0074](../decisions/0074-an-agent-picks-the-art-of-a-batch-whose-review-matej-deferred.md)):
+
+- **The models** are the `ice_chunk` (38 cubes: an eight-sided body, widest behind its middle, tapering to a thin
+  point, with a broken back and splinters along it), the `fire_ball` (41 cubes: a core of boxes turned against each
+  other and lumps all over it; it turns over as it flies) and the `crystal` (15 cubes: a six-sided shaft with a long
+  point in front and a short one behind, two small crystals on its side; it spins about its flight once a second).
+  Each was written by a script, as the design allows; the placeholder `chunk` is gone.
+- **Sizes:** the ice chunk is 0.3 blocks thick and about 0.6 long, the fire ball 0.4 across (not the table's 0.5: at
+  three quarters of that in the hands it already takes as much of the caster's own view as it should), the crystal
+  0.18 thick and about 0.4 long (not 0.3: at 35 blocks a second a smaller one is hard to see).
+- **A look mixes its particles:** its trail, burst and swirl are each up to three emitters, with colours of their own
+  where they need them, sharing the [particle budget](#particle-budget). Frost: motes and a little snow behind the
+  bolt, shards and a puff of snow where it shatters. Fire: embers, flames and black smoke behind the ball and where
+  it bursts. Arcane: motes and sparkles behind a crystal, and where it hits, with one ring that widens from the
+  middle of the hit; flecks and sparkles at the channelling hands. New shapes: flake, flame, smoke, sparkle, ring.
+- **Round a forming model only flecks swirl:** snowflakes and embers there hid the model in the screenshots, and
+  smoke would hang in front of the caster's own eyes.
+- **A trail stays behind the model:** its particles appear along the step before the newest one, since the model is
+  drawn between its last two positions.
+- **Materials:** a look's material is its art in `art/textures/material/<look>.png`, cleaned like every texture;
+  until it has one, the placeholder is soft patches in the look's colours. The frost material is cleaned into the
+  palette's `rime` ramp alone (`rf art clean --ramp rime`), the look's twelve colours inside Matěj's range. No
+  material has art yet: the batch ran in a session without the Retro Diffusion server, so the three materials are a
+  ticket of their own (RLM-679).
+- **Not built here:** the auras of Slowness and Burning on a target (the engine draws no aura yet: RLM-676) and a model's
+  `tail` and `core` locators (no model needed one). Fire's light on the blocks round it still waits for dynamic
+  lights (ADR 0075, RLM-326).
 
 ### Looks
 
@@ -157,9 +188,11 @@ smoke on its target, Frostbolt's Slowness drifting snowflakes, instead of vanill
 - **One material per look, mapped onto every model** (Matěj, 2026-10-29: one material per element for every spell of
   it). A model's cubes take their faces from one tileable 16 x 16 material, as blocks do. So Frostbolt's ice chunk and
   Ice Lance's lance literally share the frost texture, Fireball's ball takes the fire material, and a new model needs
-  no new texture. This fits the texture pipeline as it is:
+  no new texture. This fits the texture pipeline with one addition:
   Retro Diffusion Fast already makes tileable 16 x 16 block textures, and `rf art clean` snaps them to the grid and
-  the palette. A unique spell may still name a texture painted for its model.
+  the palette. Matěj's frost range was not in the palette (its `frost` ramp has one colour inside it), so the palette
+  got the `rime` ramp, the look's twelve colours, and the frost material is cleaned into that ramp alone
+  (`rf art clean --ramp rime`, RLM-440). A unique spell may still name a texture painted for its model.
 - **Shape from many small cubes:** Matěj wants "dozens of rectangles". A model has 12 to 64 cubes, rotated freely, so
   the ice chunk reads as a jagged piece of ice and not as a box. The cap keeps rendering cheap.
 - **Points forward, spins if it says so:** a model is drawn along its flight (the ice chunk's point first, as in
@@ -471,8 +504,8 @@ Fireball's data is the same with `look: realmforge:fire` and `model: realmforge:
 
 | Asset | Made with | Source in the repository | Where |
 | --- | --- | --- | --- |
-| Models | Blockbench, GeckoLib's model format; an agent may also write a model's cubes from a script (a teardrop of jagged cubes is geometry, not painting) | `art/models/spell/<id>.bbmodel` and its exported `.geo.json`; `rf gen` checks and copies it, splitting cubes for `grow` | local (Blockbench) or cloud (scripted) |
-| Materials | Retro Diffusion Fast, tileable 16 x 16, then `rf art gallery` and `rf art clean` ([art pipeline](../../art/README.md)) | `art/spell-materials/` | local only (Retro Diffusion's MCP server) |
+| Models | Blockbench, GeckoLib's model format; an agent may also write a model's cubes from a script (a teardrop of jagged cubes is geometry, not painting) | `art/models/spell/<id>.geo.json` (a Blockbench export, or a script's output); `rf gen` checks it and maps its faces onto the material | local (Blockbench) or cloud (scripted) |
+| Materials | Retro Diffusion Fast, tileable 16 x 16, then `rf art gallery` and `rf art clean` ([art pipeline](../../art/README.md)) | candidates in `art/spell-materials/`, the pick in `art/textures/material/<look>.png` | local only (Retro Diffusion's MCP server) |
 | Particle sprites | pixel rows in the pipeline, greyscale | `tools/realmforge_tools/generate/` | cloud or local |
 | Player animations | Emotecraft keyframes (Blockbench's Emotecraft plugin, or written by hand), checked with the cast screenshots (`REALMFORGE_QA_CAST_SHOTS`) | `mod/src/main/resources/assets/realmforge/player_animations/` | written anywhere; the screenshots need a rendered client, local |
 | Sounds | ElevenLabs through `rf sound gen` (RLM-126), mono OGG | `art/sounds/`, wired in `content/sounds/` | local only (the API key) |

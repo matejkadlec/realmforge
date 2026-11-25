@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=../../tools/schemas/particles.schema.json
+# A sparkle (RLM-442): a four-pointed star that flashes once and is gone. Arcane's glitter: behind a crystal, where it
+# bursts, and round the hands that channel it.
+id: sparkle
+frames:
+  - - "........"
+    - "........"
+    - "...f...."
+    - "..fff..."
+    - "...f...."
+    - "........"
+    - "........"
+    - "........"
+  - - "...b...."
+    - "...f...."
+    - "...f...."
+    - "bfffffb."
+    - "...f...."
+    - "...f...."
+    - "...b...."
+    - "........"
+  - - "........"
+    - "...b...."
+    - "...f...."
+    - ".bfffb.."
+    - "...f...."
+    - "...b...."
+    - "........"
+    - "........"
+  - - "........"
+    - "........"
+    - "........"
+    - "...f...."
+    - "........"
+    - "........"
+    - "........"
+    - "........"
+lifetime_ticks: [6, 10]
+size: 0.08
+friction: 0.9

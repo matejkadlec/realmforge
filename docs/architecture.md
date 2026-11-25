@@ -398,7 +398,7 @@ Java class, the way vanilla handles loot functions. The types are entries of sta
 | --- | --- | --- |
 | `items/` (exists), `stats/` (exists: attributes, [8.1](#81-the-attribute-set)), `blocks/` (exists: blocks with their items, loot tables, mining tags and recipes; a block's kind picks its class, below), `effects/` (exists: status effects, [11.4](#114-status-effects)), `mobs/` (exists: entity types of an archetype with their attributes, loot tables, tags and placeholder GeckoLib models, [14.2](#142-custom-mobs)), `sounds/` (exists: our sound events `realmforge:<category>.<subject>.<name>` playing vanilla sounds by reference with their own pitch and volume, [ADR 0007](decisions/0007-asset-pipeline.md); `GeneratedSounds` belongs to `core`), `particles/` (exists: our particle types, greyscale frames that a spawn's colour tints, with how they move; `GeneratedParticles` belongs to `spell`, [11.3](#113-spell-entities)) | `Generated*.java` registrations; models, blockstates, textures (placeholders until art exists), lang, `sounds.json`; QA expectations | static registries |
 | `races/`, `classes/`, `spells/`, `spell_looks/`, `spell_models/`, `spell_trajectories/`, `spell_schools/`, `stat_rules/`, `curves/`, `chapters/`, `dimensions/`, `realms/`, `bosses/`, `dungeons/`, `netherite_upgrades/` | `data/realmforge/realmforge/<registry>/<id>.json`, lang, `ResourceKey` constants where needed, QA expectations | datapack registries |
-| `spell_looks/` (also), `particles/` (also) | a look's placeholder material `assets/realmforge/textures/spell/material/<look>.png` (16 x 16 noise in the look's colours, until its art exists); a particle's sprite set `assets/realmforge/particles/<id>.json` and its frames `textures/particle/<id>_<n>.png` (`generate/spell_visuals.py`) | textures; the particle atlas |
+| `spell_looks/` (also), `particles/` (also) | a look's material `assets/realmforge/textures/spell/material/<look>.png` (its art from `art/textures/material/<look>.png`, or a placeholder of soft patches in the look's colours until it has one); a particle's sprite set `assets/realmforge/particles/<id>.json` and its frames `textures/particle/<id>_<n>.png` (`generate/spell_visuals.py`) | textures; the particle atlas |
 | `spell_schools/` (also) | `data/realmforge/damage_type/<school>.json` (death messages `death.attack.realmforge.<school>`), the tag entries in `#minecraft:bypasses_cooldown` and, for magic schools, `#minecraft:bypasses_armor` and `#realmforge:is_magic`, for physical ones `#neoforge:is_physical` ([9.1](#91-damage-pipeline)); the school's power and resistance are stats in `content/stats/` that it names | vanilla damage types, tags |
 | `dungeons/` (also) | the entry carries its pool's rooms resolved (template, size, role, weight, and the connectors read from the templates' jigsaw blocks; `generate/dungeons.py`), so the planner needs no template, each room's container loot table and its set-piece spots, and the type's set pieces ([15.4](#154-rooms)); a biome per type, `worldgen/biome/dungeon_<id>.json`, named like it (`generate/instance_biomes.py`, [15.5](#155-instances)) | the planner ([15.3](#153-generation-pure-first-then-minecraft)); the builder's loot containers and set pieces |
 | `loot/`, tags; the `recipe` of an item or block (exists, W4d); an item's `dropped_by` (RLM-172) | `data/realmforge/loot_table/`, `recipe/<id>.json` (vanilla's `crafting_shaped`, `crafting_shapeless` or `smithing_transform`, with item or tag ingredients, the result the entry itself), `tags/`; per `dropped_by` mob a loot table `loot_table/item_drops/<item>/<ns>/<entity>.json` and a NeoForge `neoforge:add_table` loot modifier `loot_modifiers/item_drops/<item>/<ns>/<entity>.json` that adds it to the mob's own table ([13](#13-items-gear-and-loot)) | reloadable vanilla data; global loot modifiers |
@@ -1930,10 +1930,21 @@ the `release` and `channel` animations (RLM-641, [11.2](#112-casting-server-auth
   (`count`, at most 24) and of the `swirl` round a forming one (`per_tick`, at most 8, and at most 80 alive: its rate
   times its particle's longest life), its `light` (`world`, the light where a model is; `glow`, five light levels
   above it, frost's; `emit`, full brightness, fire's, which lights the blocks round it once the pack has dynamic
-  lights, ADR 0075) and its `impact_sound`. Its **material** is one tileable 16 x 16 texture,
-  `textures/spell/material/<look>.png` (`SpellLook#material`), that every model of the look is drawn with, as a
-  block's faces take a block texture; `rf gen` writes a placeholder, noise in the look's colours, until its art
-  exists (RLM-440 and the per-spell tickets).
+  lights, ADR 0075) and its `impact_sound`.
+  - **Each of the three is a list of emitters** (RLM-440,
+    [ADR 0080](decisions/0080-a-looks-trail-burst-and-swirl-are-emitters-with-colours-of-their-own.md), at most
+    `SpellLook.MAX_EMITTERS`, 3), which share that budget (the pipeline's validation and the codec both add them up): frost trails motes and a little snow and
+    shatters into shards and a puff of snow; fire trails embers, flames and black smoke and bursts into them; arcane
+    trails motes and sparkles and bursts into them round one widening ring. An emitter may name `colors` of its
+    own, which its particles take instead of the look's (`SpellLook#color(random, own)`): fire's smoke is black, its
+    embers orange. A burst emitter's `spread` scales how far from the middle of the hit its particles appear and how
+    fast they fly out; at 0 they stay still there (arcane's ring).
+  - **Its material** is one tileable 16 x 16 texture, `textures/spell/material/<look>.png`
+    (`SpellLook#material`), that every model of the look is drawn with, as a block's faces take a block texture: its
+    art from `art/textures/material/<look>.png` (`art/approved.py`, [art/README.md](../art/README.md)), or a
+    placeholder that `rf gen` writes until it has one, soft patches in the look's colours on a lattice that wraps
+    round the tile (`generate/textures.py`). No look has art yet: the three materials wait for the texture
+    generator (RLM-679).
 - **A model** (`realmforge:spell_model`, `spell/SpellModel`, `content/spell_models/`) is a projectile's shape: its
   `shape`, its `scale` (its width as a share of the hitbox) and how it turns in flight (`tumble`, or `forward` along
   the flight with a spin). Its shape is the `orb`, three crossed slabs (`client/render/SpellOrbs`, a model layer of
@@ -1945,8 +1956,12 @@ the `release` and `channel` animations (RLM-641, [11.2](#112-casting-server-auth
   cap, a size above 0 on every side, no rotated bones, since the game draws the cubes and not the bones) and with
   every face of every cube mapped onto the 16 x 16 material pixel for pixel, each cube from another corner of the
   tile, so a model needs no texture of its own. Validation refuses a `cubes` model without its source and a source
-  no `cubes` model names. The first is the `chunk`, a rough pointed lump of 26 cubes, Frostbolt's and Fireball's
-  until their own models (RLM-440, RLM-441).
+  no `cubes` model names. The first three, each written by a script (RLM-440, RLM-441, RLM-442, after Matěj's
+  sketches of 2026-10-29): the `ice_chunk`, Frostbolt's, a short fat icicle of 38 cubes, its point first; the
+  `fire_ball`, Fireball's, a round lumpy ball of 41 cubes that turns over; and the `crystal`, Arcane Missiles', a
+  six-sided shaft of 15 cubes with a long point, which spins about its flight. They took the place of the
+  placeholder `chunk`; the orb stays for the projectiles without a model of their own (Ice Lance, Stoneform, Astone's
+  boulder).
 - **A trajectory** (`realmforge:spell_trajectory`, `spell/SpellTrajectory`, `content/spell_trajectories/`) is how a
   projectile flies, and it is gameplay: `SpellTrajectory#velocity(aim, tick, seed)` gives a tick's step and
   `#position` adds the steps up, a pure function of the launch point, the aim, the ticks flown and the seed.
@@ -1956,8 +1971,8 @@ the `release` and `channel` animations (RLM-641, [11.2](#112-casting-server-auth
   offset to that line. The only kind is `straight` ([ADR 0052](decisions/0052-spells-aim-with-the-crosshair.md)): its
   step is the aim, whatever the seed. A projectile that names no trajectory gets `realmforge:straight` (the pipeline
   writes it into the data).
-- **A particle** of ours (`content/particles/`: mote, shard, ember, and the fleck of the swirls) is a shape, one to eight greyscale 8 x 8 frames
-  written as pixel rows, with how it moves (`lifetime_ticks`, `size`, `gravity`, `friction`, `glows`).
+- **A particle** of ours (`content/particles/`: mote, shard, ember, the fleck of the swirls, and since RLM-440 flake,
+  flame, smoke, sparkle and ring) is a shape, one to eight greyscale 8 x 8 frames written as pixel rows, with how it moves (`lifetime_ticks`, `size`, `gravity`, `friction`, `glows`).
   `GeneratedParticles` registers a particle type per shape whose options are a colour, vanilla's
   `ColorParticleOption` (`spell/TintedParticles`), and the client's provider (`client/particle/TintedParticle`,
   `RegisterParticleProvidersEvent#registerSpriteSet`) tints it, plays its frames over its life and fades it out. They
@@ -1974,13 +1989,15 @@ the `release` and `channel` animations (RLM-641, [11.2](#112-casting-server-auth
 - **A projectile's spawn data** carries what its clients need: its spell's look and its model (each optional), its
   trajectory, its aim, its seed, the ticks it has flown (for a client that starts to track it mid-flight) and how
   far its impact bursts (its splash's radius with the caster's passive bonus, or a small puff).
-- **Trail:** every client tick the projectile spawns its look's trail along the step it just flew, `per_block`
-  particles a block, each in one of the look's colours. It starts after the projectile's second tick of flight: a
-  bolt leaves from its caster's eyes, and a particle spawned there would fill the caster's own screen.
+- **Trail:** every client tick the projectile spawns its look's trail, each emitter's `per_block` particles a
+  block, each in one of its emitter's colours, along the step before the one it just flew: its client draws it
+  between its last two positions, so a particle on the newest step would hang in front of the model (RLM-440). It
+  starts after the projectile's second tick of flight: a bolt leaves from its caster's eyes, and a particle spawned
+  there would fill the caster's own screen.
 - **Impact:** the server plays the impact's sound (the spell's own `impact_sound`, or its look's) and sends one
   entity event, `SpellProjectile.EVENT_HIT_ENTITY` or `EVENT_HIT_BLOCK`, before the projectile is gone, as a snowball
-  does. Each client bursts the look's `burst` from it (`SpellProjectile#handleEntityEvent`): round the creature it
-  hit, over the burst radius, or off the block's face, never into it. A client's projectile is a tick or two off the
+  does. Each client bursts the look's `burst` from it, emitter by emitter (`SpellProjectile#handleEntityEvent`):
+  round the creature it hit, over the burst radius, or off the block's face, never into it. A client's projectile is a tick or two off the
   server's, so the client finds the point itself: where the last two ticks of its own flight meet a creature or a
   block, or its own middle when they meet nothing.
 - **Tests:** `test_spell_visuals.py` (the content types, the references a spell and a look may name, the caps, what
@@ -2399,8 +2416,9 @@ submit it), as the target circle does:
   growing from nothing to its size over a fifth of the cast, the first with the cast's start and the last whole at
   its end; `storm`, and any forming of the orb, which has no cubes to grow one by one, scales the whole model up
   from 15 % of its size. Both run in the look's `swirl`, particles that appear round the hands and fly in
-  (`ClientTickEvent`), one of them at the growing edge; `hands` shows the swirl alone. Only a cast time forms a
-  model; a channel shows a swirl.
+  (`ClientTickEvent`), one of its first emitter's at the growing edge; `hands` shows the swirl alone. Only a cast
+  time forms a model; a channel shows a swirl. Round a forming model only flecks swirl (frost's and fire's): a
+  bigger particle hides the model growing in the hands (RLM-440's screenshots); arcane's `hands` add sparkles.
 - **Where** (`HandPoints`, covered by `HandPointsTest`): a player's hands meet 0.7 blocks along the look. In the
   caster's own first person the whole arms turn about the eye with the camera (`client/animation/CastArms`), so the
   point is 0.7 ahead of the eye and 0.3 below the line of sight: fixed on the screen, below its middle and off the

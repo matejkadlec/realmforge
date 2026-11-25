@@ -289,37 +289,40 @@ public final class SpellForming {
      */
     private static void swirl(ClientLevel level, Hands hands, boolean firstPerson) {
         SpellLook look = hands.look().value();
-        if (look.swirl().isEmpty()) {
-            return;
-        }
-        SpellLook.Swirl swirl = look.swirl().get();
         RandomSource random = level.getRandom();
-        float rate = swirl.perTick() * (firstPerson ? FIRST_PERSON_SWIRL : 1);
-        int count = Mth.floor(rate) + (random.nextFloat() < rate - Mth.floor(rate) ? 1 : 0);
         double radius = Math.max(SWIRL_RADIUS, hands.pose().width());
         Vec3 point = hands.point();
-        for (int n = 0; n < count; n++) {
-            Vec3 at;
-            Vec3 speed;
-            if (n == 0 && hands.model().isPresent() && hands.pose().cubeByCube() && hands.pose().formed() < 1) {
-                at = point.add(SpellModels.edge(hands.model().get(), hands.pose()));
-                speed = new Vec3(random.triangle(0, 0.01), random.triangle(0, 0.01), random.triangle(0, 0.01));
-            } else {
-                Vec3 out = new Vec3(random.triangle(0, 1), random.triangle(0, 1), random.triangle(0, 1));
-                if (out.lengthSqr() < 1e-4) {
-                    continue;
+        boolean first = true;
+        for (SpellLook.Swirl swirl : look.swirl()) {
+            float rate = swirl.perTick() * (firstPerson ? FIRST_PERSON_SWIRL : 1);
+            int count = Mth.floor(rate) + (random.nextFloat() < rate - Mth.floor(rate) ? 1 : 0);
+            for (int n = 0; n < count; n++) {
+                Vec3 at;
+                Vec3 speed;
+                // The spark at the growing edge is one of the look's first emitter.
+                if (first && n == 0 && hands.model().isPresent() && hands.pose().cubeByCube()
+                        && hands.pose().formed() < 1) {
+                    at = point.add(SpellModels.edge(hands.model().get(), hands.pose()));
+                    speed = new Vec3(random.triangle(0, 0.01), random.triangle(0, 0.01), random.triangle(0, 0.01));
+                } else {
+                    Vec3 out = new Vec3(random.triangle(0, 1), random.triangle(0, 1), random.triangle(0, 1));
+                    if (out.lengthSqr() < 1e-4) {
+                        continue;
+                    }
+                    out = out.normalize();
+                    if (firstPerson && out.y > 0) {
+                        out = new Vec3(out.x, -out.y, out.z);
+                    }
+                    at = point.add(out.scale(radius));
+                    speed = out.scale(-radius / SWIRL_TICKS);
                 }
-                out = out.normalize();
-                if (firstPerson && out.y > 0) {
-                    out = new Vec3(out.x, -out.y, out.z);
-                }
-                at = point.add(out.scale(radius));
-                speed = out.scale(-radius / SWIRL_TICKS);
+                Vec3 where = at;
+                Vec3 velocity = speed;
+                TintedParticles.of(swirl.particle(), look.color(random, swirl.colors())).ifPresent(
+                        particle -> level.addParticle(particle, where.x, where.y, where.z, velocity.x, velocity.y,
+                                velocity.z));
             }
-            Vec3 where = at;
-            Vec3 velocity = speed;
-            TintedParticles.of(swirl.particle(), look.color(random)).ifPresent(particle -> level.addParticle(
-                    particle, where.x, where.y, where.z, velocity.x, velocity.y, velocity.z));
+            first = false;
         }
     }
 

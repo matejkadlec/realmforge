@@ -9,18 +9,62 @@
     "#4E1A8F",
     "#35106B"
   ],
-  "trail": {
-    "particle": "realmforge:mote",
-    "per_block": 2.0
-  },
-  "burst": {
-    "particle": "realmforge:mote",
-    "count": 16
-  },
-  "swirl": {
-    "particle": "realmforge:fleck",
-    "per_tick": 6.0
-  },
+  "trail": [
+    {
+      "particle": "realmforge:mote",
+      "per_block": 2.0
+    },
+    {
+      "particle": "realmforge:sparkle",
+      "colors": [
+        "#F3E2FF",
+        "#E7C6FF",
+        "#D6A2FF"
+      ],
+      "per_block": 1.0
+    }
+  ],
+  "burst": [
+    {
+      "particle": "realmforge:mote",
+      "count": 12,
+      "spread": 1.0
+    },
+    {
+      "particle": "realmforge:sparkle",
+      "colors": [
+        "#F3E2FF",
+        "#E7C6FF",
+        "#D6A2FF"
+      ],
+      "count": 8,
+      "spread": 1.0
+    },
+    {
+      "particle": "realmforge:ring",
+      "colors": [
+        "#D6A2FF",
+        "#C77DFF"
+      ],
+      "count": 1,
+      "spread": 0.0
+    }
+  ],
+  "swirl": [
+    {
+      "particle": "realmforge:fleck",
+      "per_tick": 4.0
+    },
+    {
+      "particle": "realmforge:sparkle",
+      "colors": [
+        "#F3E2FF",
+        "#E7C6FF",
+        "#D6A2FF"
+      ],
+      "per_tick": 2.0
+    }
+  ],
   "light": "world",
   "impact_sound": "minecraft:block.amethyst_cluster.break"
 }

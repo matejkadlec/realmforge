@@ -13,18 +13,44 @@
     "#71C0E4",
     "#6ABCE2"
   ],
-  "trail": {
-    "particle": "realmforge:mote",
-    "per_block": 2.0
-  },
-  "burst": {
-    "particle": "realmforge:shard",
-    "count": 16
-  },
-  "swirl": {
-    "particle": "realmforge:fleck",
-    "per_tick": 6.0
-  },
+  "trail": [
+    {
+      "particle": "realmforge:mote",
+      "per_block": 2.0
+    },
+    {
+      "particle": "realmforge:flake",
+      "colors": [
+        "#F4FBFF",
+        "#E2F3FB",
+        "#D0EBF8"
+      ],
+      "per_block": 1.0
+    }
+  ],
+  "burst": [
+    {
+      "particle": "realmforge:shard",
+      "count": 14,
+      "spread": 1.0
+    },
+    {
+      "particle": "realmforge:flake",
+      "colors": [
+        "#F4FBFF",
+        "#E2F3FB",
+        "#D0EBF8"
+      ],
+      "count": 10,
+      "spread": 1.0
+    }
+  ],
+  "swirl": [
+    {
+      "particle": "realmforge:fleck",
+      "per_tick": 6.0
+    }
+  ],
   "light": "glow",
   "impact_sound": "minecraft:block.glass.break"
 }

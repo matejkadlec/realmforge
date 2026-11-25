@@ -25,6 +25,16 @@ public final class GeneratedParticles {
             register("ember",
                     new TintedParticles.Motion(8, 16, 0.09F, -0.1F, 0.92F, true));
 
+    /** {@code realmforge:flake} from {@code content/particles/flake.yaml}. */
+    public static final TintedParticles.Entry FLAKE =
+            register("flake",
+                    new TintedParticles.Motion(10, 18, 0.06F, 0.08F, 0.9F, true));
+
+    /** {@code realmforge:flame} from {@code content/particles/flame.yaml}. */
+    public static final TintedParticles.Entry FLAME =
+            register("flame",
+                    new TintedParticles.Motion(6, 11, 0.11F, -0.2F, 0.9F, true));
+
     /** {@code realmforge:fleck} from {@code content/particles/fleck.yaml}. */
     public static final TintedParticles.Entry FLECK =
             register("fleck",
@@ -35,13 +45,28 @@ public final class GeneratedParticles {
             register("mote",
                     new TintedParticles.Motion(6, 12, 0.07F, 0.0F, 0.9F, true));
 
+    /** {@code realmforge:ring} from {@code content/particles/ring.yaml}. */
+    public static final TintedParticles.Entry RING =
+            register("ring",
+                    new TintedParticles.Motion(6, 8, 0.25F, 0.0F, 1.0F, true));
+
     /** {@code realmforge:shard} from {@code content/particles/shard.yaml}. */
     public static final TintedParticles.Entry SHARD =
             register("shard",
                     new TintedParticles.Motion(8, 14, 0.1F, 0.6F, 0.96F, false));
 
+    /** {@code realmforge:smoke} from {@code content/particles/smoke.yaml}. */
+    public static final TintedParticles.Entry SMOKE =
+            register("smoke",
+                    new TintedParticles.Motion(12, 22, 0.13F, -0.06F, 0.9F, false));
+
+    /** {@code realmforge:sparkle} from {@code content/particles/sparkle.yaml}. */
+    public static final TintedParticles.Entry SPARKLE =
+            register("sparkle",
+                    new TintedParticles.Motion(6, 10, 0.08F, 0.0F, 0.9F, true));
+
     /** Every particle above, in id order. */
-    public static final List<TintedParticles.Entry> ALL = List.of(EMBER, FLECK, MOTE, SHARD);
+    public static final List<TintedParticles.Entry> ALL = List.of(EMBER, FLAKE, FLAME, FLECK, MOTE, RING, SHARD, SMOKE, SPARKLE);
 
     private GeneratedParticles() {
     }

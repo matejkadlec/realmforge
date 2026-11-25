@@ -22,6 +22,10 @@ Two more kinds are the tiles of an armor look's worn textures, which ``generate/
 texture on every side, and for the Gatewright Bricks the tile every look of the realm portal's frame is made from
 (``generate/portal_frame.py``). Blocks of other kinds draw their own textures (``BLOCK_TILE_KINDS``).
 
+``material`` (``art/textures/material/<look>.png``, 16 x 16 and tileable, RLM-440) is a spell look's material: the
+one tile every model of the look is drawn with (``generate/spell_visuals.py``, ADR 0073). A look without one keeps
+its placeholder, noise in the look's colours.
+
 ``art/textures/variants.yaml`` names the item textures that are scripted from another one instead of having a file
 (``art/variants.py``, ADR 0007: an armor tier's icon recoloured from its base's): ``rf gen`` computes them from the
 base's file.
@@ -51,6 +55,7 @@ APPROVED_DIR = Path("art") / "textures"
 ITEM, SPELL, EFFECT, GUI = "item", "spell", "effect", "gui"
 ARMOR, ARMOR_TRIM = "armor", "armor_trim"
 BLOCK = "block"
+MATERIAL = "material"
 # The block kinds whose texture is one tile: a full cube with it on every side, and the realm portal frame's bricks,
 # whose looks are made from it. The other kinds' textures are drawn or composed by their generators.
 BLOCK_TILE_KINDS = ("simple", "gatewright_bricks")
@@ -66,10 +71,11 @@ _SIZES: dict[str, tuple[tuple[int, int], ...]] = {
     ARMOR: ((ICON_SIZE, ICON_SIZE),),
     ARMOR_TRIM: ((ICON_SIZE, ICON_SIZE),),
     BLOCK: ((ICON_SIZE, ICON_SIZE),),
+    MATERIAL: ((ICON_SIZE, ICON_SIZE),),
 }
-KINDS = (ITEM, SPELL, EFFECT, GUI, ARMOR, ARMOR_TRIM, BLOCK)
+KINDS = (ITEM, SPELL, EFFECT, GUI, ARMOR, ARMOR_TRIM, BLOCK, MATERIAL)
 # The kinds whose textures are tiles: every pixel opaque.
-TILE_KINDS = (GUI, ARMOR, ARMOR_TRIM, BLOCK)
+TILE_KINDS = (GUI, ARMOR, ARMOR_TRIM, BLOCK, MATERIAL)
 TRANSPARENT: Rgba = (0, 0, 0, 0)
 
 
@@ -182,6 +188,7 @@ def problems(paths: RepoPaths, content: Content) -> list[Problem]:
         ARMOR: looks,
         ARMOR_TRIM: looks,
         BLOCK: {entry.model.id for entry in content.blocks if entry.model.kind in BLOCK_TILE_KINDS},
+        MATERIAL: {entry.model.id for entry in content.spell_looks},
     }
     found: list[Problem] = []
     colours = None
@@ -198,7 +205,12 @@ def problems(paths: RepoPaths, content: Content) -> list[Problem]:
             continue
         kind, art_id = parts[0], file.stem
         if art_id not in known[kind]:
-            what = {GUI: "GUI part", ARMOR: "armor look", ARMOR_TRIM: "armor look"}.get(kind, kind)
+            what = {
+                GUI: "GUI part",
+                ARMOR: "armor look",
+                ARMOR_TRIM: "armor look",
+                MATERIAL: "spell look",
+            }.get(kind, kind)
             if kind == BLOCK and art_id in {entry.model.id for entry in content.blocks}:
                 found.append(
                     Problem(
@@ -235,7 +247,9 @@ def problems(paths: RepoPaths, content: Content) -> list[Problem]:
         elif any(pixel[3] == 255 and pixel[:3] not in colours for pixel in art.pixels):
             found.append(Problem(rel, "", _unclean("it has colours outside the project palette")))
         elif kind in TILE_KINDS and not art.is_opaque():
-            what = {GUI: "a GUI part", BLOCK: "a block's tile"}.get(kind, "an armor look's cloth or trim")
+            what = {GUI: "a GUI part", BLOCK: "a block's tile", MATERIAL: "a spell look's material"}.get(
+                kind, "an armor look's cloth or trim"
+            )
             found.append(Problem(rel, "", f"{what} is a tile without transparent pixels"))
     return found
 

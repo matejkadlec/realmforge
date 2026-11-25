@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/spell_models.schema.json
+# The ice chunk (RLM-440, Matěj's sketch of 2026-10-29): a thick, irregular chunk of ice, longer than wide, like a
+# short fat icicle, its point first. 38 cubes: an eight-sided body that is widest behind its middle and tapers to a
+# thin point, a broken back, and splinters and knobs of frost lying along it. Frostbolt forms and flies with it. Its
+# source is art/models/spell/ice_chunk.geo.json, written by a script. At 0.6 of a half-block bolt it is 0.3 blocks
+# thick and about 0.6 long, the size the design gives it; in a player's hands three quarters of that.
+id: ice_chunk
+shape: cubes
+scale: 0.6
+orientation: forward

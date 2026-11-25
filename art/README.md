@@ -28,7 +28,10 @@ Texture pipeline ([ADR 0007](../docs/decisions/0007-asset-pipeline.md),
    cleanup, tiled when it is opaque. Matěj picks. A subject's `pick` in `gallery.yaml` names the candidate that is
    in the game, which the gallery marks; its `size` is its texture's width when that is not the gallery's 16.
 3. `uv run rf art clean <candidate>.png <texture>.png` produces the texture: reduced to the 16x16 grid, alpha
-   hardened, colors snapped to the palette.
+   hardened, colors snapped to the palette. `--ramp <name>` (once or more) snaps it to those ramps of the palette
+   alone, for a texture that must stay inside a range: the frost material in `rime`, Matěj's frost range (RLM-440).
+   A gallery subject's `ramps` in `gallery.yaml` cleans its candidates the same way, so the gallery shows what will
+   be installed.
 4. **Install it:** clean the pick straight into `art/textures/<kind>/<id>.png` and run `uv run rf gen`, which from
    then on writes it instead of the placeholder (RLM-642, `tools/realmforge_tools/art/approved.py`):
 
@@ -41,6 +44,7 @@ Texture pipeline ([ADR 0007](../docs/decisions/0007-asset-pipeline.md),
    | `armor` | `art/textures/armor/<look>.png`, 16 x 16, tileable | the cloth of an armor look (an item's `gear.look`): the pipeline composes the look's two worn textures from it (`generate/worn_armor.py`, below); a look without one keeps its woven placeholder |
    | `armor_trim` | `art/textures/armor_trim/<look>.png`, 16 x 16, tileable | the look's trim, for the bands of its worn textures; it needs the cloth, and a look without one has its bands in darker cloth |
    | `block` | `art/textures/block/<block id>.png`, 16 x 16, tileable | the tile of a block whose kind takes one: a `simple` block's texture on every side, and for the Gatewright Bricks the tile every look of the realm portal's frame is made from (below); a block without one keeps its speckled placeholder |
+   | `material` | `art/textures/material/<look id>.png`, 16 x 16, tileable | a spell look's material (`content/spell_looks/`): the one tile every model of the look is drawn with, each face a patch of it (RLM-440, ADR 0073); a look without one keeps its placeholder, soft patches in the look's colours. None has art yet (RLM-679) |
 
    `uv run rf validate` refuses a file there that names no content, has another size, or that the cleanup step did
    not write (half-transparent pixels, colours outside the palette). A texture touched up by hand must still be in
@@ -90,8 +94,12 @@ review. The spell icon batch's ticket is RLM-648, the robes batch's RLM-652.
 entry `content/spell_models/<id>.yaml` with `shape: cubes`.
 
 - **Make it** in Blockbench (a "GeckoLib Animated Model" or a Bedrock model; export the geometry as `.geo.json`), or
-  write its cubes from a script: a jagged lump is geometry, not painting. The `chunk` was written by a script, 26
-  cubes round an axis that taper to a point.
+  write its cubes from a script: a jagged lump is geometry, not painting. The three models were written by a script
+  (RLM-440 to RLM-442): the `ice_chunk`, an eight-sided body of pairs of boxes a quarter turn apart that tapers to
+  a point, with splinters along it; the `fire_ball`, a core of boxes turned against each other with lumps spread
+  evenly over it; the `crystal`, a six-sided shaft (three boxes of 1 : √3, a sixth of a turn apart) with a stepped
+  point.
+- **Sides in half pixels,** so a face takes whole and half texels of the material, never a sliver.
 - **At most 64 cubes,** each side of each above 0. Rotate cubes freely; do not rotate groups (bones): the game draws
   the cubes, not the bones, and validation refuses a rotated bone.
 - **No inflate:** a cube is drawn at its own size, so Blockbench's `inflate` on a cube or a group would be lost and

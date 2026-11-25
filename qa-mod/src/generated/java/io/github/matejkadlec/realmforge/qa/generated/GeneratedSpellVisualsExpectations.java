@@ -12,13 +12,20 @@ import java.util.Optional;
  */
 public final class GeneratedSpellVisualsExpectations {
     /**
-     * A look: its colours as {@code "#RRGGBB"}, lightest first; its trail's particle and how many a block
-     * flown, its burst's particle and how many at once, its swirl's particle and how many a tick (0 without
-     * one); how its models are lit; its impact sound.
+     * An emitter of a look: its particle; its rate (a trail's a block flown, a burst's count, a swirl's a
+     * tick); a burst's spread (1 for the others); its own colours as {@code "#RRGGBB"}, empty when its
+     * particles take the look's.
      */
-    public record LookExpectation(String id, List<String> colors, Optional<String> trailParticle,
-            double trailPerBlock, Optional<String> burstParticle, int burstCount, Optional<String> swirlParticle,
-            double swirlPerTick, String light, Optional<String> impactSound) {
+    public record EmitterExpectation(String particle, double rate, double spread, List<String> colors) {
+    }
+
+    /**
+     * A look: its colours as {@code "#RRGGBB"}, lightest first; the emitters of its trail, its burst and its
+     * swirl; how its models are lit; its impact sound.
+     */
+    public record LookExpectation(String id, List<String> colors, List<EmitterExpectation> trail,
+            List<EmitterExpectation> burst, List<EmitterExpectation> swirl, String light,
+            Optional<String> impactSound) {
     }
 
     /** A model: its shape, its scale, how it turns in flight and its spin in degrees per second. */
@@ -39,50 +46,40 @@ public final class GeneratedSpellVisualsExpectations {
             new LookExpectation(
                     "realmforge:arcane",
                     List.of("#E7C6FF", "#D6A2FF", "#C77DFF", "#A85CF0", "#8B3FD9", "#6A28B8", "#4E1A8F", "#35106B"),
-                    Optional.of("realmforge:mote"),
-                    2.0,
-                    Optional.of("realmforge:mote"),
-                    16,
-                    Optional.of("realmforge:fleck"),
-                    6.0,
+                    List.of(new EmitterExpectation("realmforge:mote", 2.0, 1.0, List.of()), new EmitterExpectation("realmforge:sparkle", 1.0, 1.0, List.of("#F3E2FF", "#E7C6FF", "#D6A2FF"))),
+                    List.of(new EmitterExpectation("realmforge:mote", 12.0, 1.0, List.of()), new EmitterExpectation("realmforge:sparkle", 8.0, 1.0, List.of("#F3E2FF", "#E7C6FF", "#D6A2FF")), new EmitterExpectation("realmforge:ring", 1.0, 0.0, List.of("#D6A2FF", "#C77DFF"))),
+                    List.of(new EmitterExpectation("realmforge:fleck", 4.0, 1.0, List.of()), new EmitterExpectation("realmforge:sparkle", 2.0, 1.0, List.of("#F3E2FF", "#E7C6FF", "#D6A2FF"))),
                     "world",
                     Optional.of("minecraft:block.amethyst_cluster.break")),
             new LookExpectation(
                     "realmforge:fire",
                     List.of("#FFD27F", "#FFB347", "#FF9A1F", "#FF7F1F", "#E85D04", "#B23A05", "#5C1F0A", "#1F1410"),
-                    Optional.of("realmforge:ember"),
-                    3.0,
-                    Optional.of("realmforge:ember"),
-                    20,
-                    Optional.of("realmforge:fleck"),
-                    6.0,
+                    List.of(new EmitterExpectation("realmforge:ember", 1.5, 1.0, List.of("#FFD27F", "#FFB347", "#FF9A1F", "#FF7F1F", "#E85D04")), new EmitterExpectation("realmforge:flame", 0.5, 1.0, List.of("#FFB347", "#FF9A1F", "#FF7F1F", "#E85D04")), new EmitterExpectation("realmforge:smoke", 1.0, 1.0, List.of("#3A2A24", "#2A1C18", "#1F1410"))),
+                    List.of(new EmitterExpectation("realmforge:ember", 10.0, 1.0, List.of("#FFD27F", "#FFB347", "#FF9A1F", "#FF7F1F", "#E85D04")), new EmitterExpectation("realmforge:flame", 6.0, 1.0, List.of("#FFB347", "#FF9A1F", "#FF7F1F", "#E85D04")), new EmitterExpectation("realmforge:smoke", 8.0, 1.0, List.of("#3A2A24", "#2A1C18", "#1F1410"))),
+                    List.of(new EmitterExpectation("realmforge:fleck", 6.0, 1.0, List.of("#FFD27F", "#FFB347", "#FF9A1F", "#FF7F1F", "#E85D04"))),
                     "emit",
                     Optional.of("minecraft:entity.generic.extinguish_fire")),
             new LookExpectation(
                     "realmforge:frost",
                     List.of("#B8E2F4", "#B1DFF3", "#AADCF1", "#A2D8F0", "#9BD5EF", "#94D2ED", "#8DCFEC", "#86CBEA", "#7FC7E8", "#78C4E6", "#71C0E4", "#6ABCE2"),
-                    Optional.of("realmforge:mote"),
-                    2.0,
-                    Optional.of("realmforge:shard"),
-                    16,
-                    Optional.of("realmforge:fleck"),
-                    6.0,
+                    List.of(new EmitterExpectation("realmforge:mote", 2.0, 1.0, List.of()), new EmitterExpectation("realmforge:flake", 1.0, 1.0, List.of("#F4FBFF", "#E2F3FB", "#D0EBF8"))),
+                    List.of(new EmitterExpectation("realmforge:shard", 14.0, 1.0, List.of()), new EmitterExpectation("realmforge:flake", 10.0, 1.0, List.of("#F4FBFF", "#E2F3FB", "#D0EBF8"))),
+                    List.of(new EmitterExpectation("realmforge:fleck", 6.0, 1.0, List.of())),
                     "glow",
                     Optional.of("minecraft:block.glass.break")),
             new LookExpectation(
                     "realmforge:stone",
                     List.of("#B4B0A8", "#A09C94", "#8D9094", "#8B8579", "#74706A", "#5E5B57"),
-                    Optional.empty(),
-                    0.0,
-                    Optional.of("realmforge:shard"),
-                    14,
-                    Optional.of("realmforge:shard"),
-                    3.0,
+                    List.of(),
+                    List.of(new EmitterExpectation("realmforge:shard", 14.0, 1.0, List.of())),
+                    List.of(new EmitterExpectation("realmforge:shard", 3.0, 1.0, List.of())),
                     "world",
                     Optional.of("realmforge:spell.stoneform.impact")));
 
     public static final List<ModelExpectation> MODELS = List.of(
-            new ModelExpectation("realmforge:chunk", "cubes", 0.6, "forward", 0.0),
+            new ModelExpectation("realmforge:crystal", "cubes", 0.45, "forward", 360.0),
+            new ModelExpectation("realmforge:fire_ball", "cubes", 0.8, "tumble", 0.0),
+            new ModelExpectation("realmforge:ice_chunk", "cubes", 0.6, "forward", 0.0),
             new ModelExpectation("realmforge:orb", "orb", 1.0, "tumble", 0.0));
 
     public static final List<TrajectoryExpectation> TRAJECTORIES = List.of(
@@ -90,9 +87,14 @@ public final class GeneratedSpellVisualsExpectations {
 
     public static final List<ParticleExpectation> PARTICLES = List.of(
             new ParticleExpectation("realmforge:ember", 3, 8, 16),
+            new ParticleExpectation("realmforge:flake", 3, 10, 18),
+            new ParticleExpectation("realmforge:flame", 3, 6, 11),
             new ParticleExpectation("realmforge:fleck", 2, 5, 9),
             new ParticleExpectation("realmforge:mote", 3, 6, 12),
-            new ParticleExpectation("realmforge:shard", 2, 8, 14));
+            new ParticleExpectation("realmforge:ring", 4, 6, 8),
+            new ParticleExpectation("realmforge:shard", 2, 8, 14),
+            new ParticleExpectation("realmforge:smoke", 4, 12, 22),
+            new ParticleExpectation("realmforge:sparkle", 4, 6, 10));
 
     private GeneratedSpellVisualsExpectations() {
     }

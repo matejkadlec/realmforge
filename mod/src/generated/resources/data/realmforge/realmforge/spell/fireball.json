@@ -59,7 +59,7 @@
           ]
         }
       ],
-      "model": "realmforge:chunk",
+      "model": "realmforge:fire_ball",
       "trajectory": "realmforge:straight",
       "splash": {
         "radius": 1.0,

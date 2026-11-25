@@ -163,16 +163,46 @@ def _effect_mark(category: str) -> set[tuple[int, int]]:
     return marks
 
 
+# A placeholder material's patches: the tile is this many cells across, each cell a patch of one shade.
+_MATERIAL_CELLS = 4
+
+
 def placeholder_material_texture(seed: str, colors: list[int]) -> bytes:
-    """A spell look's 16x16 material (``textures/spell/material/<look>.png``) until real art exists: noise in the
-    look's ``colors`` (0xRRGGBB each), the pixels from a hash of ``seed`` (the look's id), so it is the same on every
-    machine. Noise has no seam, so it tiles as a material must."""
+    """A spell look's 16x16 material (``textures/spell/material/<look>.png``) until real art exists: soft patches in
+    the look's ``colors`` (0xRRGGBB each, lightest first), from a hash of ``seed`` (the look's id), so it is the same
+    on every machine. The patches are value noise on a lattice that wraps round the tile, with a little grain, so
+    the tile has no seam and tiles as a material must (RLM-440: plain per-pixel noise read as static on a model)."""
+
+    def unit(*parts: object) -> float:
+        digest = hashlib.sha256("/".join(str(part) for part in (seed, *parts)).encode()).digest()
+        return int.from_bytes(digest[:4], "big") / 2**32
+
+    def lattice(cells: int, x: float, y: float) -> float:
+        """Value noise of ``cells`` cells across the tile at pixel (x, y), smooth between the lattice's points."""
+        size = SIZE / cells
+        cell_x, cell_y = int(x // size), int(y // size)
+        along_x, along_y = (x % size) / size, (y % size) / size
+        along_x, along_y = along_x * along_x * (3 - 2 * along_x), along_y * along_y * (3 - 2 * along_y)
+        corners = [
+            unit(cells, (cell_x + dx) % cells, (cell_y + dy) % cells) for dy in (0, 1) for dx in (0, 1)
+        ]
+        top = corners[0] + (corners[1] - corners[0]) * along_x
+        bottom = corners[2] + (corners[3] - corners[2]) * along_x
+        return top + (bottom - top) * along_y
+
+    values = [
+        0.6 * lattice(_MATERIAL_CELLS, x, y)
+        + 0.25 * lattice(_MATERIAL_CELLS * 2, x, y)
+        + 0.15 * unit("grain", x, y)
+        for y in range(SIZE)
+        for x in range(SIZE)
+    ]
+    low, high = min(values), max(values)
     pixels: list[Rgba] = []
-    for y in range(SIZE):
-        for x in range(SIZE):
-            cell = hashlib.sha256(f"{seed}/{x}/{y}".encode()).digest()[0]
-            color = colors[cell % len(colors)]
-            pixels.append(((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, 255))
+    for value in values:
+        share = (value - low) / (high - low) if high > low else 0.0
+        color = colors[min(len(colors) - 1, int(share * len(colors)))]
+        pixels.append(((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, 255))
     return encode_rgba(SIZE, SIZE, pixels)
 
 
