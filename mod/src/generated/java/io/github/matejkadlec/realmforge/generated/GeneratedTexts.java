@@ -809,6 +809,9 @@ public final class GeneratedTexts {
     /** {@code stat_tooltip.realmforge.resistance_projectile} from {@code content/texts/stat_tooltip.yaml}: "How much less damage you take from arrows, tridents and other projectiles, from Physical and Projectile Resistance and your protection enchantments together. Armor is not counted." */
     public static final String STAT_TOOLTIP_RESISTANCE_PROJECTILE = "stat_tooltip.realmforge.resistance_projectile";
 
+    /** {@code stat_tooltip.realmforge.spell_penetration} from {@code content/texts/stat_tooltip.yaml}: "Your magic spells ignore this share of the resistances of mobs and bosses. At most 50%." */
+    public static final String STAT_TOOLTIP_SPELL_PENETRATION = "stat_tooltip.realmforge.spell_penetration";
+
     /** {@code stat_tooltip.realmforge.spell_power} from {@code content/texts/stat_tooltip.yaml}: "Adds to the damage and healing of your magic spells. Each spell adds its own share of it." */
     public static final String STAT_TOOLTIP_SPELL_POWER = "stat_tooltip.realmforge.spell_power";
 

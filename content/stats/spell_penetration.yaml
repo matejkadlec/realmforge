@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../tools/schemas/stats.schema.json
+# The share of a target's resistance that the caster's magic hits ignore (Matěj, 2026-10-30, RLM-535): Spell Resistance
+# and the school's resistance, capped at 75 % together, then less this share, and less a spell's own penetration
+# (Arcane Missiles) on top (architecture 9.1). A physical hit is untouched. Players have no resistances (mob-only stats,
+# RLM-233), so it only ever cuts a mob's or a boss's. Capped at 50 %, so the Arcane specialization keeps penetration as
+# its identity: Matěj's proposal, his playtest's call.
+id: spell_penetration
+name: {en_us: Spell Penetration}
+kind: secondary
+max_percent: 50

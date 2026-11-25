@@ -87,6 +87,24 @@ class DamageCalculatorTest {
     }
 
     /**
+     * RLM-535: a magic hit's penetration is the caster's Spell Penetration plus the spell's own, and it cuts the
+     * resistances after their 75 % cap: 20 % against a dummy's 50 % frost resistance leaves 40 %.
+     */
+    @Test
+    void spellPenetrationAddsToTheSpellsOwnAndCutsTheCappedResistance() {
+        assertEquals(0.2, DamageCalculator.penetration(0.2, 0), EPSILON, "the stat alone");
+        assertEquals(0.45, DamageCalculator.penetration(0.2, 0.25), EPSILON, "with Arcane Missiles' 25 %");
+        assertEquals(1, DamageCalculator.penetration(0.5, 0.75), EPSILON, "never more than the whole resistance");
+        assertEquals(0.25, DamageCalculator.penetration(-0.3, 0.25), EPSILON, "a negative stat counts as 0");
+        assertEquals(0.4, DamageCalculator.penetrated(DamageCalculator.resistance(0.5, 0, true),
+                DamageCalculator.penetration(0.2, 0)), EPSILON, "20 % against 50 % frost resistance");
+        assertEquals(0.6, DamageCalculator.penetrated(DamageCalculator.resistance(0.5, 0.5, true),
+                DamageCalculator.penetration(0.2, 0)), EPSILON, "the 75 % cap applies first, then 20 % of it");
+        assertEquals(0.5, DamageCalculator.penetrated(DamageCalculator.resistance(0.5, 0, true),
+                DamageCalculator.penetration(0, 0)), EPSILON, "no penetration, the whole resistance");
+    }
+
+    /**
      * RLM-233: Physical, Projectile, Explosion and Fall Resistance on one hit multiply, each at most 75 %, and their
      * whole stops at 75 %.
      */

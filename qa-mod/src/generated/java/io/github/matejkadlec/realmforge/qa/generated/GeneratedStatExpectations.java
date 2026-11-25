@@ -306,6 +306,16 @@ public final class GeneratedStatExpectations {
                     0.0,
                     "minecraft:is_projectile"),
             new StatExpectation(
+                    "realmforge:spell_penetration",
+                    "attribute.realmforge.spell_penetration",
+                    false,
+                    true,
+                    0.0,
+                    0.5,
+                    0.0,
+                    0.0,
+                    null),
+            new StatExpectation(
                     "realmforge:spell_power",
                     "attribute.realmforge.spell_power",
                     false,

@@ -4,12 +4,21 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import dev.shadowsoffire.apotheosis.Apoth;
 import dev.shadowsoffire.apotheosis.tiers.WorldTier;
 import io.github.matejkadlec.realmforge.combat.MagicShields;
+import io.github.matejkadlec.realmforge.generated.GeneratedSpells;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.qa.combat.TrainingDummy;
 import io.github.matejkadlec.realmforge.qa.command.StatsCommands;
+import io.github.matejkadlec.realmforge.spell.DamageEffect;
+import io.github.matejkadlec.realmforge.spell.EffectContext;
+import io.github.matejkadlec.realmforge.spell.ProjectileEffect;
+import io.github.matejkadlec.realmforge.spell.Spell;
+import io.github.matejkadlec.realmforge.spell.SpellTarget;
+import io.github.matejkadlec.realmforge.spell.Spells;
 import java.util.List;
+import java.util.Optional;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -128,6 +137,43 @@ public final class TrainingDummyGameTests {
     }
 
     /**
+     * RLM-535: with 20 % Spell Penetration, a Frostbolt meets 40 % of the dummy's 50 % frost resistance: it deals 0.6 of
+     * its damage, where it dealt 0.5 without, and the damage command's 10 frost by the player deals 6. A physical hit
+     * meets its whole resistance: penetration counts for magic hits only.
+     */
+    @QaGameTest
+    public static void spellPenetrationCutsTheDummysResistance(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        ServerPlayer player = QaPlayers.loginOnPlatform(helper, "qa-dummy-penetration", EDGE);
+        StatsCommands.setBase(player, GeneratedStats.CRIT_CHANCE, 0);
+        StatsCommands.setBase(player, GeneratedStats.SPELL_POWER, 10);
+        run(server, player, "qa dummy");
+        LivingEntity dummy = only(helper);
+        run(server, player, "qa dummy resistance frost 50");
+        Holder.Reference<Spell> frostbolt = Spells.get(helper.getLevel().registryAccess(), GeneratedSpells.FROSTBOLT)
+                .orElseThrow();
+        DamageEffect bolt = (DamageEffect) ((ProjectileEffect) frostbolt.value().effects().getFirst()).effects()
+                .getFirst();
+        Runnable hit = () -> bolt.applyTo(EffectContext.of(helper.getLevel(), player, frostbolt, 1, Optional.empty()),
+                dummy, SpellTarget.of(player, dummy));
+
+        double resisted = dealt(dummy, hit);
+        StatsCommands.setBase(player, GeneratedStats.SPELL_PENETRATION, 0.2);
+        double penetrated = dealt(dummy, hit);
+        helper.assertTrue(resisted > 0 && Math.abs(penetrated - resisted / 0.5 * 0.6) <= TOLERANCE,
+                "a Frostbolt meets 40 % instead of 50 %: " + resisted + " without, " + penetrated + " with 20 %");
+        assertDealt(helper, server, player, dummy, "damage " + DUMMY + " 10 realmforge:frost by @s", 6,
+                "10 frost against 50 % frost resistance with 20 % Spell Penetration");
+
+        run(server, player, "qa dummy resistance physical 30");
+        assertDealt(helper, server, player, dummy, "damage " + DUMMY + " 10 realmforge:physical by @s", 7,
+                "10 physical against 30 % Physical Resistance, untouched by Spell Penetration");
+        TrainingDummy.remove(dummy);
+        logout(player);
+        helper.succeed();
+    }
+
+    /**
      * {@code /qa dummy shield} fills the dummy's magic shield; broken, it refills 5 s after the last damage. The test
      * posts the dummy's ticks itself, as {@code /qa dummy remove} in another test removes every dummy of the level
      * between ticks.
@@ -194,6 +240,15 @@ public final class TrainingDummyGameTests {
         TrainingDummy.Session session = TrainingDummy.session(dummy);
         double dealt = session != null ? session.total() : 0;
         helper.assertTrue(Math.abs(dealt - expected) <= TOLERANCE, what + ": " + expected + " expected, dealt " + dealt);
+    }
+
+    /** What {@code hit} deals the dummy, its session's total from a fresh start. */
+    private static double dealt(LivingEntity dummy, Runnable hit) {
+        TrainingDummy.reset(dummy);
+        CombatGameTests.settle(dummy);
+        hit.run();
+        TrainingDummy.Session session = TrainingDummy.session(dummy);
+        return session != null ? session.total() : 0;
     }
 
     /** The dummy {@code /qa dummy} spawned three blocks in front of the player. */

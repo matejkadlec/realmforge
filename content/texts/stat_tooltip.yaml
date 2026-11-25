@@ -62,6 +62,8 @@ texts:
     en_us: Mana you regain per second.
   spell_power:
     en_us: Adds to the damage and healing of your magic spells. Each spell adds its own share of it.
+  spell_penetration:
+    en_us: Your magic spells ignore this share of the resistances of mobs and bosses. At most 50%.
   cast_time_reduction:
     en_us: Shortens your spells' cast times. 50% halves a cast. At most 75%.
   cooldown_reduction:

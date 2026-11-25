@@ -160,6 +160,11 @@ public final class GeneratedStats {
             ATTRIBUTES.register("projectile_resistance",
                     () -> new PercentageAttribute("attribute.realmforge.projectile_resistance", 0.0, 0.0, 0.75).setSyncable(true));
 
+    /** {@code realmforge:spell_penetration} from {@code content/stats/spell_penetration.yaml}: secondary, "Spell Penetration". */
+    public static final DeferredHolder<Attribute, Attribute> SPELL_PENETRATION =
+            ATTRIBUTES.register("spell_penetration",
+                    () -> new PercentageAttribute("attribute.realmforge.spell_penetration", 0.0, 0.0, 0.5).setSyncable(true));
+
     /** {@code realmforge:spell_power} from {@code content/stats/spell_power.yaml}: secondary, "Spell Power". */
     public static final DeferredHolder<Attribute, Attribute> SPELL_POWER =
             ATTRIBUTES.register("spell_power",
@@ -194,7 +199,7 @@ public final class GeneratedStats {
     public static final List<DeferredHolder<Attribute, Attribute>> PRIMARY = List.of(DEXTERITY, INTELLECT, STRENGTH, VITALITY);
 
     /** Every stat above, in id order. */
-    public static final List<DeferredHolder<Attribute, Attribute>> ALL = List.of(ARCANE_POWER, ARCANE_RESISTANCE, ARMOR_PIERCE, ARMOR_SHRED, ARMOR_WEAR_REDUCTION, CAST_TIME_REDUCTION, COOLDOWN_REDUCTION, CRIT_CHANCE, CRIT_DAMAGE, DEXTERITY, DODGE_CHANCE, EXPLOSION_RESISTANCE, FALL_RESISTANCE, FIRE_POWER, FIRE_RESISTANCE, FROST_POWER, FROST_RESISTANCE, HEALTH_REGENERATION, INTELLECT, LIFESTEAL, MAGIC_SHIELD, MAGIC_SHIELD_DAMAGE, MANA_REGENERATION, MAX_MANA, OVERHEAL, PHYSICAL_RESISTANCE, PROJECTILE_RESISTANCE, SPELL_POWER, SPELL_RESISTANCE, STAMINA, STRENGTH, VITALITY, XP_MULTIPLIER);
+    public static final List<DeferredHolder<Attribute, Attribute>> ALL = List.of(ARCANE_POWER, ARCANE_RESISTANCE, ARMOR_PIERCE, ARMOR_SHRED, ARMOR_WEAR_REDUCTION, CAST_TIME_REDUCTION, COOLDOWN_REDUCTION, CRIT_CHANCE, CRIT_DAMAGE, DEXTERITY, DODGE_CHANCE, EXPLOSION_RESISTANCE, FALL_RESISTANCE, FIRE_POWER, FIRE_RESISTANCE, FROST_POWER, FROST_RESISTANCE, HEALTH_REGENERATION, INTELLECT, LIFESTEAL, MAGIC_SHIELD, MAGIC_SHIELD_DAMAGE, MANA_REGENERATION, MAX_MANA, OVERHEAL, PHYSICAL_RESISTANCE, PROJECTILE_RESISTANCE, SPELL_PENETRATION, SPELL_POWER, SPELL_RESISTANCE, STAMINA, STRENGTH, VITALITY, XP_MULTIPLIER);
 
     /** The stats that lower the food exhaustion players gain ({@code lowers_exhaustion}), in id order. */
     public static final List<ExhaustionReduction> LOWER_EXHAUSTION = List.of(new ExhaustionReduction(STAMINA, 0.01, 0.5));
