@@ -238,6 +238,36 @@ class CastQueueTest {
     }
 
     /**
+     * RLM-671: without spell queueing (the default) the queue holds only the latest press, an aura's included, so
+     * RLM-666's rule holds with queueing only. A stance pressed while nova waits out the global cooldown drops nova;
+     * nova pressed while the stance waits for the server's answer to bolt drops the stance.
+     */
+    @Test
+    void withoutQueueingAnAurasPressIsTheOnlyWaitingPressToo() {
+        state.auras.add(STANCE);
+        state.globalCooldown = true;
+        queue.press(1, NOVA, state, Options.DEFAULT);
+        assertEquals(Optional.empty(), queue.tick(0, NOTHING_HELD, state, Options.DEFAULT), "nova waits");
+        queue.press(2, STANCE, state, Options.DEFAULT);
+        assertEquals(1, queue.waiting(), "the stance takes nova's place");
+        assertEquals(Optional.of(new Send(STANCE, true)), queue.tick(1, NOTHING_HELD, state, Options.DEFAULT),
+                "off the global cooldown, the stance goes");
+        state.globalCooldown = false;
+        assertEquals(Optional.empty(), queue.tick(1 + CastQueue.AWAIT_TICKS, NOTHING_HELD, state, Options.DEFAULT),
+                "and nova never does");
+
+        queue.press(0, BOLT, state, Options.DEFAULT);
+        assertEquals(Optional.of(new Send(BOLT, true)), queue.tick(100, NOTHING_HELD, state, Options.DEFAULT));
+        queue.press(2, STANCE, state, Options.DEFAULT);
+        queue.press(1, NOVA, state, Options.DEFAULT);
+        assertEquals(1, queue.waiting(), "nova takes the stance's place");
+        assertEquals(Optional.of(new Send(NOVA, true)), queue.tick(100 + CastQueue.AWAIT_TICKS, NOTHING_HELD, state,
+                Options.DEFAULT));
+        assertEquals(Optional.empty(), queue.tick(100 + 2 * CastQueue.AWAIT_TICKS, NOTHING_HELD, state,
+                Options.DEFAULT), "and the stance never goes");
+    }
+
+    /**
      * RLM-666: at Spells Queue Size 2, nova and blink fill the queue during a cast; a stance swap pressed then takes no
      * place in it, so blink is not dropped for it: the stance goes past both, and both still cast after bolt.
      */
