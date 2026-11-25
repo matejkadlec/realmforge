@@ -3,12 +3,7 @@
   "bonuses": [
     {
       "type": "apotheosis:mageslayer",
-      "gem_class": {
-        "key": "realmforge.robe_head",
-        "types": [
-          "realmforge:robe_head"
-        ]
-      },
+      "gem_class": "realmforge:robe_head",
       "values": {
         "normal": 0.15,
         "flawless": 0.225,

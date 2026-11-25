@@ -43,7 +43,7 @@
               "$ref": "#/$defs/GemClassDef"
             }
           ],
-          "description": "The loot categories it is for: one, e.g. realmforge:wand (named in tooltips by its path: wand), or a gem class of ours over several, {key, types}.",
+          "description": "The loot categories it is for: one, e.g. realmforge:wand (named in tooltips by its loot category's plural, \"Wands\"), or a gem class of ours over several, {key, types}.",
           "title": "Gem Class"
         },
         "like": {
@@ -132,7 +132,7 @@
     },
     "GemClassDef": {
       "additionalProperties": false,
-      "description": "A gem class of ours over several loot categories, e.g. the robe chest and legs as Apotheosis's ``core_armor``\ncovers the chestplate and the leggings.",
+      "description": "A gem class of ours over several loot categories, e.g. the robe chest and legs as Apotheosis's ``core_armor``\ncovers the chestplate and the leggings. One category is written as the category instead: Apotheosis would sync a\none-category class without its key (``GEM_CLASS_TEXTS``).",
       "properties": {
         "key": {
           "description": "The gem class's name in tooltips, gem_class.realmforge.<key> in content/texts/gem_class.yaml.",
@@ -142,13 +142,13 @@
           "type": "string"
         },
         "types": {
-          "description": "The loot categories it covers, e.g. [realmforge:robe_chest, realmforge:robe_legs].",
+          "description": "The loot categories it covers, at least two, e.g. [realmforge:robe_chest, realmforge:robe_legs]. For one, write gem_class: <the category>.",
           "items": {
             "description": "Namespaced id, e.g. minecraft:stone. Validated against the ID universe.",
             "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
             "type": "string"
           },
-          "minItems": 1,
+          "minItems": 2,
           "title": "Types",
           "type": "array",
           "uniqueItems": true

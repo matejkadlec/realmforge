@@ -1,17 +1,24 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
 import dev.shadowsoffire.apotheosis.Apoth;
+import com.google.gson.JsonElement;
+import com.mojang.serialization.JsonOps;
 import dev.shadowsoffire.apotheosis.socket.SocketHelper;
+import dev.shadowsoffire.apotheosis.socket.gem.ExtraGemBonusRegistry;
 import dev.shadowsoffire.apotheosis.socket.gem.Gem;
+import dev.shadowsoffire.apotheosis.socket.gem.GemClass;
 import dev.shadowsoffire.apotheosis.socket.gem.GemRegistry;
 import dev.shadowsoffire.apotheosis.socket.gem.Purity;
+import dev.shadowsoffire.apotheosis.socket.gem.bonus.GemBonus;
 import io.github.matejkadlec.realmforge.generated.GeneratedItems;
 import io.github.matejkadlec.realmforge.generated.GeneratedSpellSchools;
 import io.github.matejkadlec.realmforge.generated.GeneratedStats;
 import io.github.matejkadlec.realmforge.qa.command.StatsCommands;
 import java.util.List;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.locale.Language;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.RegistryOps;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -241,6 +248,31 @@ final class ApotheosisGems {
         helper.assertTrue(SocketHelper.canSocketGemInItem(player.getMainHandItem(), given),
                 "the given Ballast fits the wand");
         ApotheosisGameTests.logout(player);
+        helper.succeed();
+    }
+
+    /**
+     * RLM-547: Apotheosis syncs each extra gem bonus to a client of a dedicated server through its codec
+     * ({@code RegistrySerializer.synced}), which writes a one-category gem class as the category alone. Every loaded
+     * bonus's gem class comes back from that round trip with the key it has on the server, and the game's language
+     * names {@code gem_class.<key>}, so a gem's tooltip reads "Wands", never a raw key, on either side.
+     */
+    static void extraBonusGemClassesKeepTheirNamesThroughTheSync(GameTestHelper helper) {
+        RegistryOps<JsonElement> ops = helper.getLevel().registryAccess().createSerializationContext(JsonOps.INSTANCE);
+        int checked = 0;
+        for (ExtraGemBonusRegistry.ExtraGemBonus extra : ExtraGemBonusRegistry.INSTANCE.getValues()) {
+            for (GemBonus bonus : extra.bonuses()) {
+                GemClass sent = bonus.getGemClass();
+                GemClass received = GemClass.CODEC.parse(ops, GemClass.CODEC.encodeStart(ops, sent).getOrThrow())
+                        .getOrThrow();
+                String where = extra.gem().getId() + "'s bonus for " + sent.key();
+                helper.assertValueEqual(received.key(), sent.key(), where + ": the key after the sync");
+                helper.assertTrue(Language.getInstance().has("gem_class." + received.key()),
+                        where + ": gem_class." + received.key() + " has a name");
+                checked++;
+            }
+        }
+        helper.assertTrue(checked > 0, "the extra gem bonuses loaded");
         helper.succeed();
     }
 

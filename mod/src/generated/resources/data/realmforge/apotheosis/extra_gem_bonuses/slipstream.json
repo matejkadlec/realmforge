@@ -4,12 +4,7 @@
     {
       "type": "apotheosis:attribute",
       "attribute": "realmforge:mana_regeneration",
-      "gem_class": {
-        "key": "realmforge.wand",
-        "types": [
-          "realmforge:wand"
-        ]
-      },
+      "gem_class": "realmforge:wand",
       "operation": "add_value",
       "values": {
         "cracked": 1.0,
@@ -23,12 +18,7 @@
     {
       "type": "apotheosis:attribute",
       "attribute": "realmforge:dodge_chance",
-      "gem_class": {
-        "key": "realmforge.robe_feet",
-        "types": [
-          "realmforge:robe_feet"
-        ]
-      },
+      "gem_class": "realmforge:robe_feet",
       "operation": "add_value",
       "values": {
         "cracked": 0.025,

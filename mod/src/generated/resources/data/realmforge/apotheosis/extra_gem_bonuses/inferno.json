@@ -4,12 +4,7 @@
     {
       "type": "apotheosis:enchantment",
       "enchantment": "apothic_enchanting:berserkers_fury",
-      "gem_class": {
-        "key": "realmforge.robe_chest",
-        "types": [
-          "realmforge:robe_chest"
-        ]
-      },
+      "gem_class": "realmforge:robe_chest",
       "values": {
         "flawed": 1,
         "normal": 1,
@@ -20,12 +15,7 @@
     {
       "type": "apotheosis:attribute",
       "attribute": "realmforge:fire_power",
-      "gem_class": {
-        "key": "realmforge.robe_head",
-        "types": [
-          "realmforge:robe_head"
-        ]
-      },
+      "gem_class": "realmforge:robe_head",
       "operation": "add_value",
       "values": {
         "flawed": 0.1,

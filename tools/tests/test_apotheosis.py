@@ -1261,8 +1261,13 @@ def extra_bonuses(files: dict[str, bytes], gem: str) -> list[dict]:
     return generated_json(files, EXTRA_BONUSES + gem + ".json")["bonuses"]
 
 
+def class_types(bonus: dict) -> list[str]:
+    gem_class = bonus["gem_class"]
+    return [gem_class] if isinstance(gem_class, str) else gem_class["types"]
+
+
 def bonus_for(bonuses: list[dict], category: str) -> dict | None:
-    return next((b for b in bonuses if category in b["gem_class"]["types"]), None)
+    return next((b for b in bonuses if category in class_types(b)), None)
 
 
 def gem_bonuses(repo: RepoPaths, file: str, body: str) -> None:
@@ -1277,7 +1282,7 @@ def test_rf_gen_writes_a_file_of_extra_bonuses_per_gem(files: dict[str, bytes]) 
     assert ballast["bonuses"][0] == {
         "type": "apotheosis:attribute",
         "attribute": "realmforge:spell_power",
-        "gem_class": {"key": "realmforge.wand", "types": ["realmforge:wand"]},
+        "gem_class": "realmforge:wand",
         "operation": "add_value",
         "values": {
             "cracked": 1.0,
@@ -1362,12 +1367,56 @@ def test_robes_take_the_armor_bonus_or_its_swap(files: dict[str, bytes]) -> None
 
 
 def bonus_for_class(bonuses: list[dict], category: str) -> dict:
-    for bonus in bonuses:
-        gem_class = bonus["gem_class"]
-        types = [gem_class] if isinstance(gem_class, str) else gem_class["types"]
-        if category in types:
-            return bonus
-    raise AssertionError(category)
+    bonus = bonus_for(bonuses, category)
+    if bonus is None:
+        raise AssertionError(category)
+    return bonus
+
+
+def test_a_one_category_gem_class_survives_the_sync(files: dict[str, bytes]) -> None:
+    """PR review round 1: Apotheosis syncs a gem class through its codec, which sends a one-category class as the
+    category alone (``GemClass#toEither``), and a client of a dedicated server keys it by the category's path. So such
+    a bonus is written as the category, and our lang names ``gem_class.<path>`` by the loot category's plural; a class
+    of several categories keeps ``realmforge.<key>``, named by ``texts/gem_class.yaml``."""
+    lang = generated_json(files, "mod/src/generated/resources/assets/realmforge/lang/en_us.json")
+    keys: set[str] = set()
+    for path in files:
+        if not path.startswith(EXTRA_BONUSES):
+            continue
+        for bonus in generated_json(files, path)["bonuses"]:
+            gem_class = bonus["gem_class"]
+            if isinstance(gem_class, str):
+                keys.add(f"gem_class.{gem_class.split(':', 1)[1]}")
+            else:
+                assert len(gem_class["types"]) > 1, (path, gem_class)
+                assert gem_class["key"].startswith("realmforge."), (path, gem_class)
+                keys.add(f"gem_class.{gem_class['key']}")
+    ours = {
+        key
+        for key in keys
+        if key.split(".", 1)[1] in {"wand", "robe_head", "robe_chest", "robe_legs", "robe_feet"}
+    }
+    assert ours == {f"gem_class.{c}" for c in ("wand", "robe_head", "robe_chest", "robe_legs", "robe_feet")}
+    assert lang["gem_class.wand"] == "Wands"
+    assert lang["gem_class.robe_head"] == "Caster Caps"
+    assert lang["gem_class.realmforge.robe_core"] == "Caster Robes and Pants"
+    assert keys <= set(lang), sorted(keys - set(lang))
+
+
+def test_a_gem_class_of_one_category_is_written_as_the_category() -> None:
+    with pytest.raises(ValidationError, match="at least 2 items"):
+        ApotheosisGemBonusesDef.model_validate(
+            {
+                "id": "test",
+                "gem": "apotheosis:core/ballast",
+                "bonuses": [
+                    {
+                        "gem_class": {"key": "staff", "types": ["realmforge:wand"]},
+                        "like": "apotheosis:melee_weapon",
+                    }
+                ],
+            }
+        )
 
 
 def test_royalty_s_all_stats_raise_our_caster_stats_on_helmets_and_robe_heads(
@@ -1465,7 +1514,7 @@ def test_royalty_s_all_stats_raise_our_caster_stats_on_helmets_and_robe_heads(
         ),
         (
             "ballast",
-            "gem: apotheosis:core/ballast\nbonuses:\n  - gem_class: {key: staff, types: [realmforge:staff]}\n"
+            "gem: apotheosis:core/ballast\nbonuses:\n  - gem_class: {key: staff, types: [realmforge:staff, realmforge:wand]}\n"
             "    like: apotheosis:melee_weapon\n",
             "unknown loot category 'realmforge:staff'",
         ),
@@ -1476,9 +1525,14 @@ def test_royalty_s_all_stats_raise_our_caster_stats_on_helmets_and_robe_heads(
         ),
         (
             "ballast",
-            "gem: apotheosis:core/ballast\nbonuses:\n  - gem_class: {key: nameless, types: [apotheosis:bow]}\n"
+            "gem: apotheosis:core/ballast\nbonuses:\n  - gem_class: {key: nameless, types: [apotheosis:bow, apotheosis:shield]}\n"
             "    like: apotheosis:melee_weapon\n",
             "gem class nameless has no name",
+        ),
+        (
+            "guardian",
+            "gem: apotheosis:core/guardian\nbonuses:\n  - gem_class: apotheosis:shears\n    like: apotheosis:shield\n",
+            "Apotheosis's lang names no gem class gem_class.shears",
         ),
         (
             "endersurge",

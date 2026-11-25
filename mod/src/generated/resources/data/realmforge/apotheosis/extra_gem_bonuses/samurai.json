@@ -4,12 +4,7 @@
     {
       "type": "apotheosis:attribute",
       "attribute": "realmforge:crit_chance",
-      "gem_class": {
-        "key": "realmforge.wand",
-        "types": [
-          "realmforge:wand"
-        ]
-      },
+      "gem_class": "realmforge:wand",
       "operation": "add_value",
       "values": {
         "cracked": 0.05,
@@ -23,12 +18,7 @@
     {
       "type": "apotheosis:attribute",
       "attribute": "apothic_attributes:arrow_velocity",
-      "gem_class": {
-        "key": "realmforge.robe_head",
-        "types": [
-          "realmforge:robe_head"
-        ]
-      },
+      "gem_class": "realmforge:robe_head",
       "operation": "add_multiplied_total",
       "values": {
         "cracked": 0.075,

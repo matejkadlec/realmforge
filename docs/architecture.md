@@ -4966,13 +4966,20 @@ NeoForge stacks the mods' data packs in that order, so a file of ours replaces t
   (`GemInstance#isValid`), so until these no gem fit a wand or a robe. `apotheosis_gem_bonuses/` writes Apotheosis's
   own extra gem bonuses, `data/realmforge/apotheosis/extra_gem_bonuses/<id>.json` (`ExtraGemBonusRegistry`: the gem and
   a list of bonuses in its gem format), which `GemRegistry#onReload` appends to each gem after loading it, so no gem
-  file of Apotheosis's is replaced. Both registries sync to clients, which append them too, except an integrated
-  client, which shares the server's gems; so a gem's tooltip lists Wands ("Fits In:") and its wand bonus on a client
-  of a dedicated server as in single player. A bonus for a category the gem already covers would fail with only a
+  file of Apotheosis's is replaced. Both registries sync to clients through their codecs (Placebo's
+  `RegistrySerializer.synced`), and a remote client appends them too; an integrated client shares the server's
+  gems. A bonus for a category the gem already covers would fail with only a
   warning (`Gem#validateBonus`: "categories overlap"), so validation refuses one, against the fitted gem, and the
-  GameTest log and the pack boot fail on that warning (`gamelog.APOTHEOSIS_FAILING_WARNINGS`). Our gem
-  classes are written as `{"key": "realmforge.<key>", "types": [...]}`: the tooltip reads `gem_class.<key>`, so their
-  names are our texts `gem_class.realmforge.<key>`. A `like` bonus is a copy of the fitted gem's own bonus for another
+  GameTest log and the pack boot fail on that warning (`gamelog.APOTHEOSIS_FAILING_WARNINGS`). **Gem class names:** a gem's tooltip
+  names each bonus's class by `gem_class.<key>`, and the sync's codec writes a class of one loot category as the
+  category alone (`GemClass#toEither`), so a client of a dedicated server rebuilds its key from the category's path. A
+  bonus for one category is therefore written as the category (`"gem_class": "realmforge:wand"`), keyed `wand` on
+  every side, and the pipeline names it `gem_class.wand` by the loot category's plural ("Wands",
+  `texts/loot_category.yaml`); one of Apotheosis's categories is named by its lang. A class of several categories keeps
+  its key: ours are written as `{"key": "realmforge.<key>", "types": [...]}`, named by the texts
+  `gem_class.realmforge.<key>` (`texts/gem_class.yaml`). `ApotheosisGemGameTests` run every loaded extra bonus's class
+  through that codec and find its name in the game's language; RLM-672 looks at the tooltip on a dedicated server's
+  client. A `like` bonus is a copy of the fitted gem's own bonus for another
   category with our gem class, which keeps the robes' bonuses the armor's through Apotheosis updates and the stat
   remaps, and gives a wand the "as its weapons" ones (Samurai's crit chance, Warlord's crit damage, Splendor's
   Experience Gained). A gem bonus's modifiers apply in the category's slots (`LootCategory#getSlots`): a wand's in the

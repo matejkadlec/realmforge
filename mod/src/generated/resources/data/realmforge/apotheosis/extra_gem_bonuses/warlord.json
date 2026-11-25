@@ -4,12 +4,7 @@
     {
       "type": "apotheosis:attribute",
       "attribute": "realmforge:crit_damage",
-      "gem_class": {
-        "key": "realmforge.wand",
-        "types": [
-          "realmforge:wand"
-        ]
-      },
+      "gem_class": "realmforge:wand",
       "operation": "add_value",
       "values": {
         "cracked": 0.15,
@@ -23,12 +18,7 @@
     {
       "type": "apotheosis:attribute",
       "attribute": "minecraft:max_health",
-      "gem_class": {
-        "key": "realmforge.robe_chest",
-        "types": [
-          "realmforge:robe_chest"
-        ]
-      },
+      "gem_class": "realmforge:robe_chest",
       "operation": "add_multiplied_base",
       "values": {
         "cracked": 0.05,
@@ -42,12 +32,7 @@
     {
       "type": "apotheosis:attribute",
       "attribute": "realmforge:spell_power",
-      "gem_class": {
-        "key": "realmforge.robe_head",
-        "types": [
-          "realmforge:robe_head"
-        ]
-      },
+      "gem_class": "realmforge:robe_head",
       "operation": "add_multiplied_base",
       "values": {
         "cracked": 0.05,

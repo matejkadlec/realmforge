@@ -4,12 +4,7 @@
     {
       "type": "apotheosis:attribute",
       "attribute": "realmforge:spell_power",
-      "gem_class": {
-        "key": "realmforge.wand",
-        "types": [
-          "realmforge:wand"
-        ]
-      },
+      "gem_class": "realmforge:wand",
       "operation": "add_multiplied_base",
       "values": {
         "cracked": 0.05,

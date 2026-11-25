@@ -65,6 +65,12 @@ public final class ApotheosisGemGameTests {
         ApotheosisGems.thePlaytestsCommandsGiveAPerfectGemAndASocket(helper);
     }
 
+    /** RLM-547: every extra bonus's gem class keeps its key and its name through the client sync's codec. */
+    @QaGameTest
+    public static void extraBonusGemClassesKeepTheirNamesThroughTheSync(GameTestHelper helper) {
+        ApotheosisGems.extraBonusGemClassesKeepTheirNamesThroughTheSync(helper);
+    }
+
     /** Done when of RLM-548: Royalty's all-stats raise Spell Power. */
     @QaGameTest
     public static void royaltysAllStatsRaiseSpellPower(GameTestHelper helper) {

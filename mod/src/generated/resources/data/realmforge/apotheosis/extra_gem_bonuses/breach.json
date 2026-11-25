@@ -4,12 +4,7 @@
     {
       "type": "apotheosis:attribute",
       "attribute": "realmforge:spell_penetration",
-      "gem_class": {
-        "key": "realmforge.wand",
-        "types": [
-          "realmforge:wand"
-        ]
-      },
+      "gem_class": "realmforge:wand",
       "operation": "add_value",
       "values": {
         "cracked": 0.05,

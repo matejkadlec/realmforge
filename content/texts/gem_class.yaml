@@ -1,21 +1,12 @@
 # yaml-language-server: $schema=../../tools/schemas/texts.schema.json
-# The gem classes of our extra gem bonuses (content/apotheosis_gem_bonuses/, RLM-547, RLM-548). A gem's tooltip lists
-# each bonus as "<class>: <bonus>", reading gem_class.<key>, and the pipeline writes our classes with the key
-# realmforge.<key>, so their names are gem_class.realmforge.<key>. Apotheosis names its own in the plural ("Core Armor",
-# "Lower Armor", "Helmets"); ours follow the robe categories' plurals (loot_category.yaml: Caster Caps, Robes, Pants,
-# Sandals).
+# The gem classes of our extra gem bonuses over several loot categories (content/apotheosis_gem_bonuses/, RLM-547,
+# RLM-548). A gem's tooltip lists each bonus as "<class>: <bonus>", reading gem_class.<key>, and the pipeline writes
+# these classes with the key realmforge.<key>, so their names are gem_class.realmforge.<key>. A bonus for one category
+# needs none here: Apotheosis syncs it by its category alone, so its key is the category's path on a client of a
+# dedicated server too, and the pipeline names it gem_class.<path> by the category's plural (loot_category.yaml: Wands,
+# Caster Caps, Robes, Pants, Sandals). Apotheosis names its own in the plural ("Core Armor", "Lower Armor", "Helmets").
 id: gem_class
 texts:
-  wand:
-    en_us: Wands
-  robe_head:
-    en_us: Caster Caps
-  robe_chest:
-    en_us: Caster Robes
-  robe_legs:
-    en_us: Caster Pants
-  robe_feet:
-    en_us: Caster Sandals
   # Chest and legs, as Apotheosis's core_armor.
   robe_core:
     en_us: Caster Robes and Pants

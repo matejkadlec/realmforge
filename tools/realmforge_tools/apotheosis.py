@@ -297,10 +297,21 @@ def extra_bonus_path(model: ApotheosisGemBonusesDef) -> str:
     return f"{MOD_ID}/apotheosis/{EXTRA_GEM_BONUSES}/{model.id}.json"
 
 
-def gem_class_json(bonus: ExtraGemBonusDef) -> dict[str, Any]:
-    """An extra bonus's gem class in Apotheosis's explicit form, keyed ``realmforge.<key>``, so a gem's tooltip names
-    it by our text ``gem_class.realmforge.<key>`` (``GEM_CLASS_TEXTS``)."""
+def gem_class_json(bonus: ExtraGemBonusDef) -> str | dict[str, Any]:
+    """An extra bonus's gem class as Apotheosis writes it: one loot category as its id, keyed by its path on the server
+    and, after the sync, on a client alike; several in the explicit form, keyed ``realmforge.<key>``
+    (``GEM_CLASS_TEXTS``)."""
+    if isinstance(bonus.gem_class, str):
+        return bonus.gem_class
     return {"key": f"{MOD_ID}.{bonus.class_key}", "types": list(bonus.categories)}
+
+
+def gem_class_name(bonus: ExtraGemBonusDef) -> str:
+    """The translation key a gem's tooltip names an extra bonus's gem class by: ``gem_class.<path>`` for one loot
+    category, ``gem_class.realmforge.<key>`` for several."""
+    if isinstance(bonus.gem_class, str):
+        return f"gem_class.{bonus.class_key}"
+    return f"gem_class.{MOD_ID}.{bonus.class_key}"
 
 
 def gem_class_categories(gem_class: Any) -> set[str] | None:

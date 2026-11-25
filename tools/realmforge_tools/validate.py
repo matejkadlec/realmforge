@@ -39,12 +39,16 @@ from realmforge_tools.rooms.structure import BlockState, StructureError, count_s
 from realmforge_tools.rooms.walk import walk_problems
 from realmforge_tools.schema import CONTENT_TYPES, DATAPACK_TYPES, WORLDGEN_DIR
 from realmforge_tools.schema.apotheosis import (
+    APOTHEOSIS_NAMED_GEM_CLASSES,
     CURIOS_LOOT_CATEGORIES,
     GEM_CLASS_TEXTS,
     LOOT_CATEGORIES,
+    LOOT_CATEGORY_TEXTS,
     OUR_LOOT_CATEGORIES,
     RARITIES,
     ApotheosisEntryDef,
+    ExtraGemBonusDef,
+    GemClassDef,
 )
 from realmforge_tools.schema.block import ITEMLESS_KINDS, REALM_PORTAL_KINDS, SINGLE_BLOCK_KINDS
 from realmforge_tools.schema.chapter import advancement_id as chapter_advancement
@@ -3789,25 +3793,21 @@ def _check_new_affixes(content: Content, stats: dict[str, StatDef]) -> list[Prob
 def _check_gem_bonuses(content: Content, attributes: set[str], stats: dict[str, StatDef]) -> list[Problem]:
     """A gem's extra bonuses of our own (RLM-547) name stats that exist, a stat of ours as architecture 8.2 counts it
     (``add_value`` for flat points and for a share, ``add_multiplied_base`` for a percent on points; a share's values
-    are fractions), and every gem class has its name in ``content/texts/gem_class.yaml``. A ``like`` copy is
-    Apotheosis's own bonus, which ``fit`` checks."""
+    are fractions), and every gem class has a name (``_gem_class_unnamed``). A ``like`` copy is Apotheosis's own
+    bonus, which ``fit`` checks."""
     problems: list[Problem] = []
-    names = {
-        name for entry in content.texts if entry.model.id == GEM_CLASS_TEXTS for name in entry.model.texts
-    }
+
+    def names(group: str) -> set[str]:
+        return {name for entry in content.texts if entry.model.id == group for name in entry.model.texts}
+
+    classes = names(GEM_CLASS_TEXTS)
+    plurals = names(LOOT_CATEGORY_TEXTS)
     for entry in content.apotheosis_gem_bonuses:
         for n, bonus in enumerate(entry.model.bonuses):
             location = f"bonuses.{n}"
-            if bonus.class_key not in names:
-                problems.append(
-                    Problem(
-                        entry.source,
-                        f"{location}.gem_class",
-                        f"gem class {bonus.class_key} has no name: {bonus.class_key} in "
-                        f"content/texts/{GEM_CLASS_TEXTS}.yaml (gem tooltips read "
-                        f"gem_class.{MOD_ID}.{bonus.class_key})",
-                    )
-                )
+            name = _gem_class_unnamed(bonus, classes, plurals)
+            if name is not None:
+                problems.append(Problem(entry.source, f"{location}.gem_class", name))
             for m, modifier in enumerate(bonus.modifier_list):
                 where = f"{location}.modifiers.{m}" if bonus.modifiers is not None else location
                 if modifier.attribute not in attributes:
@@ -3845,6 +3845,33 @@ def _check_gem_bonuses(content: Content, attributes: set[str], stats: dict[str, 
                             )
                         )
     return problems
+
+
+def _gem_class_unnamed(bonus: ExtraGemBonusDef, classes: set[str], plurals: set[str]) -> str | None:
+    """Why the tooltip would show an extra bonus's gem class by its raw key, or None when it has a name: one category of
+    ours is named by its loot category's plural, one of Apotheosis's by Apotheosis's lang, several by our text
+    (``schema/apotheosis.py``, ``GEM_CLASS_TEXTS``)."""
+    key = bonus.class_key
+    if isinstance(bonus.gem_class, GemClassDef):
+        if key in classes:
+            return None
+        return (
+            f"gem class {key} has no name: {key} in content/texts/{GEM_CLASS_TEXTS}.yaml (gem tooltips read "
+            f"gem_class.{MOD_ID}.{key})"
+        )
+    if bonus.gem_class.startswith(f"{MOD_ID}:"):
+        if f"{key}.plural" in plurals:
+            return None
+        return (
+            f"{bonus.gem_class} has no plural to name its gem class by: {key}.plural in "
+            f"content/texts/{LOOT_CATEGORY_TEXTS}.yaml (gem tooltips read gem_class.{key})"
+        )
+    if bonus.gem_class in APOTHEOSIS_NAMED_GEM_CLASSES:
+        return None
+    return (
+        f"Apotheosis's lang names no gem class gem_class.{key}: give {bonus.gem_class} a gem class of ours with "
+        "another category, {key, types}"
+    )
 
 
 def _snapshot_attributes(snapshot: Snapshot) -> set[str]:

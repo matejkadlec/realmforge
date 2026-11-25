@@ -4,12 +4,7 @@
     {
       "type": "apotheosis:attribute",
       "attribute": "realmforge:arcane_power",
-      "gem_class": {
-        "key": "realmforge.wand",
-        "types": [
-          "realmforge:wand"
-        ]
-      },
+      "gem_class": "realmforge:wand",
       "operation": "add_value",
       "values": {
         "cracked": 0.05,
@@ -43,12 +38,7 @@
     {
       "type": "apotheosis:multi_attribute",
       "desc": "bonus.apotheosis:multi_attr.desc.and",
-      "gem_class": {
-        "key": "realmforge.robe_feet",
-        "types": [
-          "realmforge:robe_feet"
-        ]
-      },
+      "gem_class": "realmforge:robe_feet",
       "modifiers": [
         {
           "attribute": "minecraft:max_health",

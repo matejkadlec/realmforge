@@ -144,8 +144,10 @@ Rules:
     the bonus), a category that does not exist or needs Curios, a stat the ID universe and Apotheosis's data lack, a stat
     of ours with an operation architecture 8.2 does not allow (`add_value` for flat points and for a share, whose values
     are fractions, `add_multiplied_base` for a percent on points, never `add_multiplied_total`), and a gem class without
-    its name: the pipeline writes our classes with the key `realmforge.<key>`, and a gem's tooltip reads
-    `gem_class.realmforge.<key>`, a text of `texts/gem_class.yaml`. A stat remap applies to our bonuses too; one that
+    its name. A gem's tooltip names a class by `gem_class.<key>`, and Apotheosis syncs a class of one category as the
+    category alone, so a one-category `gem_class` is written as the category and named `gem_class.<path>` by its loot
+    category's plural (`texts/loot_category.yaml`; Apotheosis's own by its lang), and a `{key, types}` of two or more
+    keeps the key `realmforge.<key>`, named by a text of `texts/gem_class.yaml`. A stat remap applies to our bonuses too; one that
     switches the stat off is refused.
   - `apotheosis_stat_remaps/` replaces an Apothic Attributes stat (`source`) with ours (`target`) wherever an affix, a
     gem bonus or a tier augment grants it, or switches it off there (`off: true`): an attribute affix or tier augment

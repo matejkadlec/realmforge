@@ -265,9 +265,27 @@ MULTI_ATTRIBUTE_DESCS: dict[str, int] = {
     "bonus.apotheosis:multi_attr.desc.and_but": 3,
     "bonus.apotheosis:multi_attr.desc.but_and": 3,
 }
-# The text group that names our gem classes: a gem's tooltip reads ``gem_class.<key>``, and ours are written with the
-# key ``realmforge.<key>``, so their names are ``gem_class.realmforge.<key>`` (content/texts/gem_class.yaml).
+# How a gem's tooltip names a bonus's gem class: ``gem_class.<key>``. Apotheosis syncs a gem class through its codec
+# (Placebo's ``RegistrySerializer.synced``), which sends a class of one loot category as the category alone
+# (``GemClass#toEither``), so a client of a dedicated server rebuilds its key from the category's path. So a bonus for
+# one category is written as the category, keyed by its path on every side, and named ``gem_class.<path>``: one of ours
+# by its loot category's plural (``loot_category.yaml``, ``<path>.plural``), one of Apotheosis's by Apotheosis's lang.
+# A class of several categories keeps its key through the sync; ours are written as ``realmforge.<key>`` and named by
+# the texts ``gem_class.realmforge.<key>`` (content/texts/gem_class.yaml).
 GEM_CLASS_TEXTS = "gem_class"
+LOOT_CATEGORY_TEXTS = "loot_category"
+# The loot categories of Apotheosis 9.1.0 whose single-category gem class its lang names (``gem_class.<path>``).
+APOTHEOSIS_NAMED_GEM_CLASSES = (
+    "apotheosis:bow",
+    "apotheosis:breaker",
+    "apotheosis:helmet",
+    "apotheosis:chestplate",
+    "apotheosis:leggings",
+    "apotheosis:boots",
+    "apotheosis:shield",
+    "apotheosis:trident",
+    "apotheosis:melee_weapon",
+)
 
 GemClassKey = Annotated[
     str,
@@ -290,11 +308,15 @@ PurityValues = Annotated[
 
 class GemClassDef(StrictModel):
     """A gem class of ours over several loot categories, e.g. the robe chest and legs as Apotheosis's ``core_armor``
-    covers the chestplate and the leggings."""
+    covers the chestplate and the leggings. One category is written as the category instead: Apotheosis would sync a
+    one-category class without its key (``GEM_CLASS_TEXTS``)."""
 
     key: GemClassKey
-    types: Annotated[UniqueResourceIds, Field(min_length=1)] = Field(
-        description="The loot categories it covers, e.g. [realmforge:robe_chest, realmforge:robe_legs]."
+    types: Annotated[UniqueResourceIds, Field(min_length=2)] = Field(
+        description=(
+            "The loot categories it covers, at least two, e.g. [realmforge:robe_chest, realmforge:robe_legs]. For one, "
+            "write gem_class: <the category>."
+        )
     )
 
 
@@ -320,8 +342,8 @@ class ExtraGemBonusDef(StrictModel):
 
     gem_class: ResourceId | GemClassDef = Field(
         description=(
-            "The loot categories it is for: one, e.g. realmforge:wand (named in tooltips by its path: wand), or a gem "
-            "class of ours over several, {key, types}."
+            "The loot categories it is for: one, e.g. realmforge:wand (named in tooltips by its loot category's plural, "
+            '"Wands"), or a gem class of ours over several, {key, types}.'
         )
     )
     like: ResourceId | None = Field(

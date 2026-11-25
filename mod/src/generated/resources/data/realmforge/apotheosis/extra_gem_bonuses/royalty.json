@@ -44,12 +44,7 @@
         "realmforge:frost_power",
         "realmforge:arcane_power"
       ],
-      "gem_class": {
-        "key": "realmforge.robe_head",
-        "types": [
-          "realmforge:robe_head"
-        ]
-      },
+      "gem_class": "realmforge:robe_head",
       "operation": "add_multiplied_total",
       "values": {
         "flawed": 0.05,
