@@ -59,6 +59,12 @@ public final class ApotheosisGemGameTests {
         ApotheosisGems.aSlipstreamInAHelmetGivesDodgeChance(helper);
     }
 
+    /** The deferred playtest's commands give a Perfect gem and a wand's socket as written (RLM-673). */
+    @QaGameTest
+    public static void thePlaytestsCommandsGiveAPerfectGemAndASocket(GameTestHelper helper) {
+        ApotheosisGems.thePlaytestsCommandsGiveAPerfectGemAndASocket(helper);
+    }
+
     /** Done when of RLM-548: Royalty's all-stats raise Spell Power. */
     @QaGameTest
     public static void royaltysAllStatsRaiseSpellPower(GameTestHelper helper) {

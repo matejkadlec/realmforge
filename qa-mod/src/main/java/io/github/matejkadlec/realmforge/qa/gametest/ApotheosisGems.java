@@ -1,5 +1,6 @@
 package io.github.matejkadlec.realmforge.qa.gametest;
 
+import dev.shadowsoffire.apotheosis.Apoth;
 import dev.shadowsoffire.apotheosis.socket.SocketHelper;
 import dev.shadowsoffire.apotheosis.socket.gem.Gem;
 import dev.shadowsoffire.apotheosis.socket.gem.GemRegistry;
@@ -216,6 +217,29 @@ final class ApotheosisGems {
                     + head.getHoverName().getString() + " raises Spell Power " + power + " by " + ROYALTY_PERFECT
                     + ": " + raised);
         }
+        ApotheosisGameTests.logout(player);
+        helper.succeed();
+    }
+
+    /**
+     * The deferred playtest's commands (RLM-673) work as written: {@code /give} with the gem's two components makes a
+     * Perfect Ballast, and {@code /apoth set_sockets 1} gives the held wand a socket.
+     */
+    static void thePlaytestsCommandsGiveAPerfectGemAndASocket(GameTestHelper helper) {
+        ServerPlayer player = ApotheosisGameTests.player(helper, "qa-apoth-give-gem");
+        player.getInventory().clearContent();
+        ApotheosisGameTests.run(player,
+                "give @s apotheosis:gem[apotheosis:gem=\"apotheosis:core/ballast\",apotheosis:purity=\"perfect\"]");
+        ItemStack given = player.getInventory().getItem(0);
+        helper.assertTrue(given.is(Apoth.Items.GEM.value()), "a gem was given: " + given);
+        helper.assertValueEqual(given.get(Apoth.Components.GEM).getId().toString(), "apotheosis:core/ballast",
+                "the gem");
+        helper.assertValueEqual(given.get(Apoth.Components.PURITY), Purity.PERFECT, "its purity");
+        player.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(GeneratedItems.IRON_WAND.get()));
+        ApotheosisGameTests.run(player, "apoth set_sockets 1");
+        helper.assertValueEqual(SocketHelper.getSockets(player.getMainHandItem()), 1, "the wand's sockets");
+        helper.assertTrue(SocketHelper.canSocketGemInItem(player.getMainHandItem(), given),
+                "the given Ballast fits the wand");
         ApotheosisGameTests.logout(player);
         helper.succeed();
     }
