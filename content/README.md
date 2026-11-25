@@ -294,7 +294,7 @@ Rules:
   trajectory and differ only in their look.
   - `spell_looks/` holds an element's look (`frost`, `fire`, `arcane`, `stone`): its `colors` (`"#RRGGBB"`, lightest
     first, at most 16) and its particles, all of ours from `particles/`. Each of the three moments is a list of at
-    most 3 emitters (RLM-440), which share its budget:
+    most 3 emitters (RLM-440, ADR 0080), which share its budget:
     - `trail`, what its projectiles leave behind: `{particle, per_block}`, together at most 3 a block flown;
     - `burst`, what they burst into where they hit: `{particle, count, spread}`, together at most 24; `spread` (1 by
       default) is how far from the middle of the hit an emitter's particles appear and how fast they fly out, and 0

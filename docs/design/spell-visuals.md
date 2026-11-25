@@ -119,8 +119,10 @@ and docs.
   on the blocks round a Fireball waits for LambDynamicLights in the pack (M4, RLM-326).
 - **The first cube model** was the `chunk`, a placeholder for Frostbolt and Fireball until RLM-440 and RLM-441.
 
-**As built by RLM-440, RLM-441 and RLM-442** (the first three spells' own visuals; the picks are an agent's until
-Matěj has played them, [ADR 0074](../decisions/0074-an-agent-picks-the-art-of-a-batch-whose-review-matej-deferred.md)):
+**As built by RLM-440, RLM-441 and RLM-442** (the first three spells' own visuals,
+[ADR 0080](../decisions/0080-a-looks-trail-burst-and-swirl-are-emitters-with-colours-of-their-own.md); the picks
+are an agent's until Matěj has played them,
+[ADR 0074](../decisions/0074-an-agent-picks-the-art-of-a-batch-whose-review-matej-deferred.md)):
 
 - **The models** are the `ice_chunk` (38 cubes: an eight-sided body, widest behind its middle, tapering to a thin
   point, with a broken back and splinters along it), the `fire_ball` (41 cubes: a core of boxes turned against each

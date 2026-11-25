@@ -1931,8 +1931,9 @@ the `release` and `channel` animations (RLM-641, [11.2](#112-casting-server-auth
   times its particle's longest life), its `light` (`world`, the light where a model is; `glow`, five light levels
   above it, frost's; `emit`, full brightness, fire's, which lights the blocks round it once the pack has dynamic
   lights, ADR 0075) and its `impact_sound`.
-  - **Each of the three is a list of emitters** (RLM-440, at most `SpellLook.MAX_EMITTERS`, 3), which share that
-    budget (the pipeline's validation and the codec both add them up): frost trails motes and a little snow and
+  - **Each of the three is a list of emitters** (RLM-440,
+    [ADR 0080](decisions/0080-a-looks-trail-burst-and-swirl-are-emitters-with-colours-of-their-own.md), at most
+    `SpellLook.MAX_EMITTERS`, 3), which share that budget (the pipeline's validation and the codec both add them up): frost trails motes and a little snow and
     shatters into shards and a puff of snow; fire trails embers, flames and black smoke and bursts into them; arcane
     trails motes and sparkles and bursts into them round one widening ring. An emitter may name `colors` of its
     own, which its particles take instead of the look's (`SpellLook#color(random, own)`): fire's smoke is black, its

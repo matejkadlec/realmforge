@@ -169,7 +169,7 @@ dungeons and their mobs may come from mods too; instanced dungeons stay ours
   heals, projectiles, areas, status effects, teleports, dashes and knockback; rage that hits fill and that drops 5 a
   second once out of combat (RLM-594), procs that never trigger procs, and mobs choosing their target (their current
   target, a random or the farthest player). A spell's look comes from the spell visuals kit (RLM-439: RLM-639,
-  RLM-640, RLM-641, ADR 0073, ADR 0075, ADR 0077): looks (frost, fire, arcane, stone), models, trajectories and particles are
+  RLM-640, RLM-641, ADR 0073, ADR 0075, ADR 0077, ADR 0080): looks (frost, fire, arcane, stone), models, trajectories and particles are
   content of their own (`content/spell_looks/`, `spell_models/`, `spell_trajectories/`, `particles/`), which a spell
   names in its `visuals` and on its projectile; a projectile is drawn with its look's material, as the orb or as a
   GeckoLib model of cubes from `art/models/spell/` (RLM-440 to RLM-442: Frostbolt's ice chunk, Fireball's round fire
