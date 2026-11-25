@@ -144,7 +144,7 @@ Matěj has played them, [ADR 0074](../decisions/0074-an-agent-picks-the-art-of-a
   palette's `rime` ramp alone (`rf art clean --ramp rime`), the look's twelve colours inside Matěj's range. No
   material has art yet: the batch ran in a session without the Retro Diffusion server, so the three materials are a
   ticket of their own.
-- **Not built here:** the auras of Slowness and Burning on a target (the engine draws no aura yet) and a model's
+- **Not built here:** the auras of Slowness and Burning on a target (the engine draws no aura yet: RLM-676) and a model's
   `tail` and `core` locators (no model needed one). Fire's light on the blocks round it still waits for dynamic
   lights (ADR 0075, RLM-326).
 

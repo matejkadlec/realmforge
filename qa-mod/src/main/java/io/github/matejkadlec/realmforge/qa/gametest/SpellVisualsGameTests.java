@@ -31,8 +31,10 @@ import io.github.matejkadlec.realmforge.spell.SpellTrajectory;
 import io.github.matejkadlec.realmforge.spell.Spells;
 import io.github.matejkadlec.realmforge.spell.TintedParticles;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -193,6 +195,43 @@ public final class SpellVisualsGameTests {
                 logout(player);
                 helper.succeed();
             });
+        });
+    }
+
+    /**
+     * The first three spells fly their own models (RLM-440, RLM-441, RLM-442): Frostbolt's ice chunk in the frost
+     * look, Fireball's fire ball in the fire look, and each of Arcane Missiles' three crystals in the arcane look. A
+     * bolt crosses the platform in a few ticks, so every projectile is noted in the tick it is first seen.
+     */
+    @QaGameTest(template = QaGameTests.PLATFORM_9X9, timeoutTicks = 200)
+    public static void theFirstSpellsFlyTheirOwnModels(GameTestHelper helper) {
+        ServerPlayer player = SwingAndSplashGameTests.mage(helper, "qa-visuals-first");
+        Husk target = SwingAndSplashGameTests.husk(helper, new Vec3(4.5, 1, 6.5));
+        for (ResourceKey<Spell> spell : List.of(GeneratedSpells.FROSTBOLT, GeneratedSpells.FIREBALL,
+                GeneratedSpells.ARCANE_MISSILES)) {
+            learn(helper, player, spell);
+        }
+        Map<Integer, String> seen = new LinkedHashMap<>();
+        helper.onEachTick(() -> {
+            // The player's own: the tests on the platforms beside this one shoot bolts too.
+            for (SpellProjectile bolt : helper.getLevel().getEntitiesOfClass(SpellProjectile.class,
+                    player.getBoundingBox().inflate(12), bolt -> bolt.getOwner() == player)) {
+                seen.putIfAbsent(bolt.getId(), name(bolt.model()) + " in " + name(bolt.look()));
+            }
+        });
+        // Frostbolt and Fireball are 1.5 s casts, Arcane Missiles a 1.5 s channel of three missiles.
+        SwingAndSplashGameTests.assertCast(helper, player, GeneratedSpells.FROSTBOLT, target);
+        helper.runAfterDelay(45,
+                () -> SwingAndSplashGameTests.assertCast(helper, player, GeneratedSpells.FIREBALL, target));
+        helper.runAfterDelay(90,
+                () -> SwingAndSplashGameTests.assertCast(helper, player, GeneratedSpells.ARCANE_MISSILES, target));
+        helper.runAfterDelay(140, () -> {
+            helper.assertValueEqual(List.copyOf(seen.values()), List.of("realmforge:ice_chunk in realmforge:frost",
+                    "realmforge:fire_ball in realmforge:fire", "realmforge:crystal in realmforge:arcane",
+                    "realmforge:crystal in realmforge:arcane", "realmforge:crystal in realmforge:arcane"),
+                    "the projectiles of Frostbolt, Fireball and Arcane Missiles, in the order they launched");
+            logout(player);
+            helper.succeed();
         });
     }
 
