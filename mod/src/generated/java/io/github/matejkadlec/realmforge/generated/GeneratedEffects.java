@@ -74,6 +74,12 @@ public final class GeneratedEffects {
                     Optional.empty())
                     .modifier("realmforge:magic_shield", "realmforge:effect.ice_barrier.realmforge.magic_shield", 10.0, AttributeModifier.Operation.ADD_VALUE));
 
+    /** {@code realmforge:icy_veins} from {@code content/effects/icy_veins.yaml}: beneficial, "Icy Veins". */
+    public static final DeferredHolder<MobEffect, MobEffect> ICY_VEINS =
+            EFFECTS.register("icy_veins", () -> new StatusEffect(MobEffectCategory.BENEFICIAL, 0x4FA8E8,
+                    Optional.empty())
+                    .modifier("realmforge:spell_power", "realmforge:effect.icy_veins.realmforge.spell_power", 0.1, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL, 0.05));
+
     /** {@code realmforge:rend} from {@code content/effects/rend.yaml}: harmful, "Rend". */
     public static final DeferredHolder<MobEffect, MobEffect> REND =
             EFFECTS.register("rend", () -> new StatusEffect(MobEffectCategory.HARMFUL, 0x8A0303,
@@ -113,7 +119,7 @@ public final class GeneratedEffects {
                     .modifier("realmforge:spell_power", "realmforge:effect.test_sapped.realmforge.spell_power", -1.0, AttributeModifier.Operation.ADD_VALUE));
 
     /** Every effect above, in id order. */
-    public static final List<DeferredHolder<MobEffect, MobEffect>> ALL = List.of(BATTLE_SHOUT, BURNING, CRACKED_STONE, DEEP_WOUNDS, FROZEN, FROZEN_IMMUNITY, ICE_BARRIER, REND, STUN_IMMUNITY, STUNNED, TEST_BURNING, TEST_REGROWTH, TEST_SAPPED);
+    public static final List<DeferredHolder<MobEffect, MobEffect>> ALL = List.of(BATTLE_SHOUT, BURNING, CRACKED_STONE, DEEP_WOUNDS, FROZEN, FROZEN_IMMUNITY, ICE_BARRIER, ICY_VEINS, REND, STUN_IMMUNITY, STUNNED, TEST_BURNING, TEST_REGROWTH, TEST_SAPPED);
 
     private GeneratedEffects() {
     }

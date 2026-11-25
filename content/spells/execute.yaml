@@ -1,11 +1,11 @@
 # yaml-language-server: $schema=../../tools/schemas/spells.schema.json
-# The Arms Warrior's tree, row 4 (level 18) (RLM-543; Matěj, 2026-10-30, "Spell Trees to Level 18", chosen for M1): a
-# finishing blow, usable only on an enemy below 20 % of its health (RLM-540), of 10/12/14 + 190/210/230 % of Attack
-# Damage. It costs 10/20/30 rage and spends up to 30 more, 3 % more damage for each point (Matěj's rebalance of
-# 2026-11-03, RLM-604); a kill refunds 5/10/15 rage, so a Warrior can chain it through a pack (Matěj, 2026-11-03,
-# RLM-543's Confluence comments). No cooldown but the global one, as in WoW: the rage paces it. Its slot lights up while
-# the Warrior's current target is below 20 % (Matěj's playtest of 2026-11-03). It needs a melee weapon (RLM-499), and
-# its target must be in the Warrior's melee swing (melee: true). Placeholder look until RLM-545.
+# The Arms Warrior's tree, row 4 (after 15 points), middle (RLM-543; Matěj, 2026-10-30, "Spell Trees to Level 18",
+# chosen for M1): a finishing blow, usable only on an enemy below 20 % of its health (RLM-540), of 10/12/14 +
+# 190/210/230 % of Attack Damage. It costs 10/20/30 rage and spends up to 30 more, 3 % more damage for each point
+# (Matěj's rebalance of 2026-11-03, RLM-604); a kill refunds 5/10/15 rage, so a Warrior can chain it through a pack
+# (Matěj, 2026-11-03, RLM-543's Confluence comments). No cooldown but the global one, as in WoW: the rage paces it. Its
+# slot lights up while the Warrior's current target is below 20 % (Matěj's playtest of 2026-11-03). It needs a melee
+# weapon (RLM-499), and its target must be in the Warrior's melee swing (melee: true). Placeholder look until RLM-545.
 id: execute
 name: {en_us: Execute}
 description:

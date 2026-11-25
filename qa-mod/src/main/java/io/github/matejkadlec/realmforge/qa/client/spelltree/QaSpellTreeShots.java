@@ -33,7 +33,7 @@ import org.lwjgl.glfw.GLFW;
  * environment variable {@code REALMFORGE_QA_SPELL_TREE_SHOTS} set, the dev client creates a superflat world and a Mage,
  * so the window opens by itself, clicks Choose and spells as a player would (real clicks on the screen, real payloads
  * to the server), closes it and casts Frostbolt for the HUD's spell bar and cast bar with their icons (A1, RLM-642),
- * repeats it with a Warrior for Bloodthirst's arrow, saves each state to
+ * repeats it with a Warrior for Bloodthirst's two arrows (rows open by points spent, RLM-631), saves each state to
  * {@code run/client/screenshots/<value>-spelltree-<state>.png}, and quits. It logs an error for a click that did not do
  * what it should, as a GameTest's fake player has no client. It needs no input, so it runs headless under Xvfb.
  */
@@ -133,18 +133,28 @@ public final class QaSpellTreeShots {
             command(minecraft, "qa level 18");
         });
         when(() -> Characters.level(minecraft.player) == 18, () -> shot(minecraft, "3-frost-level-18"));
+        // RLM-631: 5 points in row 1 open row 2, where Shatter needs Frost Nova first.
         then(() -> clickCell(minecraft, 0, 0, 1));
         then(() -> clickCell(minecraft, 0, 0, 1));
+        then(() -> clickCell(minecraft, 0, 0, 2));
+        then(() -> clickCell(minecraft, 0, 0, 2));
+        then(() -> clickCell(minecraft, 0, 0, 2));
         then(() -> clickCell(minecraft, 0, 1, 0));
-        then(() -> clickCell(minecraft, 0, 0, 0));
-        then(() -> clickCell(minecraft, 0, 2, 1));
+        then(() -> {
+            check(Spells.knownLevel(minecraft.player, GeneratedSpells.SHATTER).isEmpty(),
+                    "Shatter waits for Frost Nova");
+            clickCell(minecraft, 0, 1, 1);
+        });
+        then(() -> clickCell(minecraft, 0, 1, 0));
         then(() -> {
             check(Spells.knownLevel(minecraft.player, GeneratedSpells.FROSTBOLT).orElse(0) == 3,
                     "two clicks rank Frostbolt up");
-            check(Spells.knownLevel(minecraft.player, GeneratedSpells.ICE_LANCE).orElse(0) == 1,
-                    "a click teaches Ice Lance");
-            check(SpellTrees.unspent(minecraft.player) == 12, "five clicks spend five of 17 points");
-            hover(minecraft, 0, 1, 0);
+            check(Spells.knownLevel(minecraft.player, GeneratedSpells.CONE_OF_COLD).orElse(0) == 3,
+                    "three clicks teach Cone of Cold to its highest rank");
+            check(Spells.knownLevel(minecraft.player, GeneratedSpells.SHATTER).orElse(0) == 1,
+                    "Frost Nova opens Shatter");
+            check(SpellTrees.unspent(minecraft.player) == 10, "seven clicks spend seven of 17 points");
+            hover(minecraft, 0, 2, 1);
         });
         then(() -> shot(minecraft, "4-frost-spent-tooltip"));
         // The HUD with the window closed (A1, RLM-642): the spell bar's icons, and the cast bar's during a cast.
@@ -156,18 +166,27 @@ public final class QaSpellTreeShots {
                 "qa character create realmforge:human realmforge:warrior"));
         when(() -> minecraft.screen instanceof SpellbookScreen && Characters.exists(minecraft.player),
                 () -> clickChoose(minecraft, 0));
-        when(() -> SpellTrees.chosen(minecraft.player).isPresent(), () -> command(minecraft, "qa level 12"));
-        when(() -> Characters.level(minecraft.player) == 12, () -> hover(minecraft, 0, 2, 0));
-        then(() -> shot(minecraft, "5-arms-arrow-locked"));
-        then(() -> clickCell(minecraft, 0, 1, 0));
+        when(() -> SpellTrees.chosen(minecraft.player).isPresent(), () -> command(minecraft, "qa level 13"));
+        when(() -> Characters.level(minecraft.player) == 13, () -> hover(minecraft, 0, 2, 2));
+        then(() -> shot(minecraft, "5-arms-arrows-locked"));
+        // RLM-631: Slam 5 and Victory Rush 1 open row 2, Rend 3 and Charge 2 row 3; Bloodthirst needs Overpower and
+        // Rend.
+        for (int[] cell : new int[][] {{0, 1}, {0, 1}, {0, 1}, {0, 1}, {0, 2}, {1, 1}, {1, 1}, {1, 1}, {1, 0}, {1, 0},
+                {2, 2}, {2, 1}}) {
+            then(() -> clickCell(minecraft, 0, cell[0], cell[1]));
+        }
         then(() -> {
-            check(Spells.knownLevel(minecraft.player, GeneratedSpells.REND).orElse(0) == 1, "a click teaches Rend");
-            hover(minecraft, 0, 2, 0);
+            check(Spells.knownLevel(minecraft.player, GeneratedSpells.REND).orElse(0) == 3, "clicks teach Rend");
+            check(Spells.knownLevel(minecraft.player, GeneratedSpells.BLOODTHIRST).isEmpty(),
+                    "Bloodthirst waits for Overpower");
+            check(Spells.knownLevel(minecraft.player, GeneratedSpells.OVERPOWER).orElse(0) == 1,
+                    "ten points open row 3");
+            hover(minecraft, 0, 2, 2);
         });
-        then(() -> shot(minecraft, "6-arms-arrow-open"));
-        then(() -> clickCell(minecraft, 0, 2, 0));
+        then(() -> shot(minecraft, "6-arms-arrows-open"));
+        then(() -> clickCell(minecraft, 0, 2, 2));
         then(() -> check(Spells.knownLevel(minecraft.player, GeneratedSpells.BLOODTHIRST).orElse(0) == 1,
-                "Rend opens Bloodthirst"));
+                "Overpower and Rend open Bloodthirst"));
         then(() -> minecraft.screen.keyPressed(new KeyEvent(GLFW.GLFW_KEY_2, 0, 0)));
         then(() -> shot(minecraft, "7-spell-bar-tab"));
         then(() -> learn(minecraft, "fireball", "frostbolt", "charge", "slam", "deep_wounds", "battle_shout"));

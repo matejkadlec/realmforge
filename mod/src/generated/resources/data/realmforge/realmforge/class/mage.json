@@ -64,49 +64,66 @@
       "first_spell": "realmforge:frostbolt",
       "spells": [
         {
-          "spell": "realmforge:improved_frostbolt",
-          "level": 1,
-          "column": 1
-        },
-        {
           "spell": "realmforge:frostbolt",
-          "level": 1,
-          "column": 2
+          "row": 1,
+          "column": 2,
+          "requires": []
         },
         {
           "spell": "realmforge:cone_of_cold",
-          "level": 1,
-          "column": 3
-        },
-        {
-          "spell": "realmforge:ice_lance",
-          "level": 6,
-          "column": 1
-        },
-        {
-          "spell": "realmforge:frost_nova",
-          "level": 6,
-          "column": 2
-        },
-        {
-          "spell": "realmforge:frostbite",
-          "level": 6,
-          "column": 3
+          "row": 1,
+          "column": 3,
+          "requires": []
         },
         {
           "spell": "realmforge:shatter",
-          "level": 12,
-          "column": 1
+          "row": 2,
+          "column": 1,
+          "requires": [
+            "realmforge:frost_nova"
+          ]
+        },
+        {
+          "spell": "realmforge:frost_nova",
+          "row": 2,
+          "column": 2,
+          "requires": []
         },
         {
           "spell": "realmforge:ice_barrier",
-          "level": 12,
-          "column": 2
+          "row": 2,
+          "column": 3,
+          "requires": []
+        },
+        {
+          "spell": "realmforge:frostbite",
+          "row": 3,
+          "column": 1,
+          "requires": []
+        },
+        {
+          "spell": "realmforge:ice_lance",
+          "row": 3,
+          "column": 2,
+          "requires": []
+        },
+        {
+          "spell": "realmforge:improved_frostbolt",
+          "row": 4,
+          "column": 1,
+          "requires": []
         },
         {
           "spell": "realmforge:blizzard",
-          "level": 18,
-          "column": 1
+          "row": 4,
+          "column": 2,
+          "requires": []
+        },
+        {
+          "spell": "realmforge:icy_veins",
+          "row": 4,
+          "column": 3,
+          "requires": []
         }
       ]
     },

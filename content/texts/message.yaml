@@ -49,12 +49,16 @@ texts:
   # A character who has not picked a specialization yet, when they create it or log in (%1$s the spellbook's key).
   specialization_pick:
     en_us: "Press %1$s to choose your specialization in your spellbook."
-  # A level-up that opens a new row of the player's spell tree.
+  # A spent spell point that opens a new row of the player's spell tree (RLM-631: rows open by points spent).
   spell_tree_row_open:
     en_us: A new row of your spell tree is open.
-  # A level that fell below the spell points spent or a spell's row (%1$s the unspent points now).
+  # A level that fell below the spell points spent (%1$s the unspent points now).
   spell_points_returned:
     en_us: "Your level fell, so your spell points are unspent again. Unspent spell points: %1$s."
+  # Ranks the player's spell tree no longer allows: its layout changed, so a known spell's row or arrow no longer fits
+  # (RLM-631; %1$s the unspent points now).
+  spell_points_tree_changed:
+    en_us: "Your spell tree has changed, so your spell points are unspent again. Unspent spell points: %1$s."
   # The Scroll of Oblivion returned every spent point (%1$s the unspent points now).
   stat_points_unlearned:
     en_us: "Your stat points are unspent again. Unspent stat points: %1$s."

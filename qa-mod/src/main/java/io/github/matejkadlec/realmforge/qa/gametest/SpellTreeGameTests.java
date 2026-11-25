@@ -29,6 +29,7 @@ import java.util.Optional;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.core.Holder;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -43,19 +44,21 @@ import net.minecraft.world.entity.monster.zombie.Husk;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * The specialization spell trees (C5, RLM-333): picking a specialization gives its first spell free, every other rank
- * costs a point, a spent point changes the spell's cast, the rules refuse what they should through the same calls the
- * window's payloads make, the points come back when the level falls, and the window's view shows each state. The point
- * rules themselves are in {@code SpellPointsTest}.
+ * The specialization spell trees (C5, RLM-333, RLM-631): picking a specialization gives its first spell free, every
+ * other rank costs a point, a row opens by the points spent in the tree, a spell's arrows each need their spell, a spent
+ * point changes the spell's cast, the rules refuse what they should through the same calls the window's payloads make,
+ * the points come back when the level falls or the tree no longer allows them, and the window's view shows each state.
+ * The point rules themselves are in {@code SpellPointsTest}.
  */
 public final class SpellTreeGameTests {
     private static final double HEALTH = 1000;
     /** The playtest's setup lines: a fresh character without a specialization, past chapter 1's cap. */
     static final String MAGE_SETUP = "qa run qa character reset; qa character create realmforge:human realmforge:mage; "
             + "advancement grant @s only realmforge:chapter/chapter_1; qa level 18";
+    /** Level 14's 13 points reach row 3 and Bloodthirst through both its arrows (RLM-631). */
     static final String WARRIOR_SETUP = "qa run qa character reset; "
             + "qa character create realmforge:human realmforge:warrior; "
-            + "advancement grant @s only realmforge:chapter/chapter_1; qa level 12";
+            + "advancement grant @s only realmforge:chapter/chapter_1; qa level 14";
 
     private SpellTreeGameTests() {
     }
@@ -129,15 +132,24 @@ public final class SpellTreeGameTests {
         helper.succeed();
     }
 
-    /** A point on a passive spell gives its bonus: Improved Frostbolt raises Frostbolt's damage from its first rank. */
+    /**
+     * A point on a passive spell gives its bonus: Improved Frostbolt, in row 4, raises Frostbolt's damage from its first
+     * rank, once 15 points open its row.
+     */
     @QaGameTest
     public static void aPointOnAPassiveAppliesIt(GameTestHelper helper) {
         ServerPlayer player = ClassKitGameTests.unspecialized(helper, "qa-tree-passive", "mage");
-        reachLevel(helper, player, 2);
+        raiseCap(helper, player);
+        reachLevel(helper, player, 17);
         SpellTrees.pick(player, "frost");
+        spend(helper, player, GeneratedSpells.FROSTBOLT, 4);
+        spend(helper, player, GeneratedSpells.CONE_OF_COLD, 3);
+        spend(helper, player, GeneratedSpells.FROST_NOVA, 3);
+        spend(helper, player, GeneratedSpells.ICE_BARRIER, 3);
+        spend(helper, player, GeneratedSpells.ICE_LANCE, 2);
         helper.assertValueEqual(Passives.damageBonus(player, GeneratedSpells.FROSTBOLT), 0.0, "no bonus yet");
         helper.assertValueEqual(SpellTrees.spend(player, GeneratedSpells.IMPROVED_FROSTBOLT), SpellPoints.Result.SPENT,
-                "the point");
+                "15 points open row 4");
         helper.assertTrue(Passives.damageBonus(player, GeneratedSpells.FROSTBOLT) > 0, "the bonus applies");
         helper.assertValueEqual(player.getData(SpellAttachments.SPELLBOOK)
                 .barSlotOf(GeneratedSpells.IMPROVED_FROSTBOLT), -1, "a passive never goes onto the bar");
@@ -157,25 +169,86 @@ public final class SpellTreeGameTests {
                 "another class's spell");
         helper.assertValueEqual(SpellTrees.spend(player, GeneratedSpells.RECKLESS_STRIKE),
                 SpellPoints.Result.NOT_IN_TREE, "another specialization's spell");
-        helper.assertValueEqual(SpellTrees.spend(player, GeneratedSpells.REND), SpellPoints.Result.LEVEL_TOO_LOW,
-                "row 2 opens at 6");
+        helper.assertValueEqual(SpellTrees.spend(player, GeneratedSpells.REND), SpellPoints.Result.ROW_CLOSED,
+                "row 2 opens after 5 points");
         helper.assertValueEqual(SpellTrees.unspent(player), 1, "no refusal spent the point");
-        helper.assertValueEqual(SpellTrees.spend(player, GeneratedSpells.CHARGE), SpellPoints.Result.SPENT, "Charge");
-        helper.assertValueEqual(SpellTrees.spend(player, GeneratedSpells.CHARGE), SpellPoints.Result.NO_POINTS,
+        helper.assertValueEqual(SpellTrees.spend(player, GeneratedSpells.VICTORY_RUSH), SpellPoints.Result.SPENT,
+                "Victory Rush");
+        helper.assertValueEqual(SpellTrees.spend(player, GeneratedSpells.VICTORY_RUSH), SpellPoints.Result.NO_POINTS,
                 "no point left");
 
-        raiseCap(helper, player);
-        reachLevel(helper, player, 12);
-        helper.assertValueEqual(SpellTrees.spend(player, GeneratedSpells.BLOODTHIRST), SpellPoints.Result.NEEDS_SPELL,
-                "Bloodthirst's arrow needs Rend");
-        helper.assertValueEqual(SpellTrees.spend(player, GeneratedSpells.REND), SpellPoints.Result.SPENT, "Rend");
-        helper.assertValueEqual(SpellTrees.spend(player, GeneratedSpells.BLOODTHIRST), SpellPoints.Result.SPENT,
-                "any rank of Rend opens it");
-        helper.assertValueEqual(SpellTrees.spend(player, GeneratedSpells.CHARGE), SpellPoints.Result.SPENT,
-                "Charge's rank 2");
-        helper.assertValueEqual(SpellTrees.spend(player, GeneratedSpells.CHARGE), SpellPoints.Result.MAX_RANK,
-                "Charge has 2 ranks");
+        reachLevel(helper, player, 10);
+        spend(helper, player, GeneratedSpells.VICTORY_RUSH, 2);
+        helper.assertValueEqual(SpellTrees.spend(player, GeneratedSpells.VICTORY_RUSH), SpellPoints.Result.MAX_RANK,
+                "Victory Rush has 3 ranks");
         logout(player);
+        helper.succeed();
+    }
+
+    /**
+     * RLM-631's "Done when": a spell is refused until its row's points are spent in the tree, then learned. Slam's free
+     * rank counts as none, so Slam at its highest rank is 4 points, one short of row 2; a point on Victory Rush opens
+     * it, and the row opens nothing below it.
+     */
+    @QaGameTest
+    public static void aRowOpensByThePointsSpentInTheTree(GameTestHelper helper) {
+        ServerPlayer player = ClassKitGameTests.unspecialized(helper, "qa-tree-row-points", "warrior");
+        reachLevel(helper, player, 8);
+        SpellTrees.pick(player, "arms");
+        helper.assertValueEqual(SpellTrees.spend(player, GeneratedSpells.REND), SpellPoints.Result.ROW_CLOSED,
+                "row 2 with no point spent");
+        spend(helper, player, GeneratedSpells.SLAM, 4);
+        helper.assertValueEqual(SpellTrees.spent(player), 4, "Slam 5 is 4 points");
+        helper.assertValueEqual(SpellTrees.spend(player, GeneratedSpells.REND), SpellPoints.Result.ROW_CLOSED,
+                "one point short of row 2");
+        spend(helper, player, GeneratedSpells.VICTORY_RUSH, 1);
+        helper.assertValueEqual(SpellTrees.spend(player, GeneratedSpells.REND), SpellPoints.Result.SPENT,
+                "5 points open row 2");
+        helper.assertValueEqual(SpellTrees.spend(player, GeneratedSpells.OVERPOWER), SpellPoints.Result.ROW_CLOSED,
+                "row 3 waits for 10");
+        helper.assertValueEqual(Spells.knownLevel(player, GeneratedSpells.REND), Optional.of(1), "Rend learned");
+        logout(player);
+        helper.succeed();
+    }
+
+    /**
+     * RLM-631's "Done when": Bloodthirst is refused until both Rend and Overpower have a point, whichever comes first,
+     * and Shatter until Frost Nova, beside it in row 2, has one.
+     */
+    @QaGameTest
+    public static void severalArrowsEachNeedTheirSpell(GameTestHelper helper) {
+        ServerPlayer warrior = ClassKitGameTests.unspecialized(helper, "qa-tree-arrows", "warrior");
+        raiseCap(helper, warrior);
+        reachLevel(helper, warrior, 14);
+        SpellTrees.pick(warrior, "arms");
+        spend(helper, warrior, GeneratedSpells.SLAM, 4);
+        spend(helper, warrior, GeneratedSpells.VICTORY_RUSH, 1);
+        spend(helper, warrior, GeneratedSpells.CHARGE, 2);
+        spend(helper, warrior, GeneratedSpells.DEEP_WOUNDS, 3);
+        helper.assertValueEqual(SpellTrees.spend(warrior, GeneratedSpells.BLOODTHIRST), SpellPoints.Result.NEEDS_SPELL,
+                "neither Overpower nor Rend");
+        helper.assertValueEqual(cell(helper, SpellTreeView.of(warrior), GeneratedSpells.BLOODTHIRST).missing().stream()
+                .map(spell -> spell.unwrapKey().orElseThrow()).toList(), List.of(GeneratedSpells.OVERPOWER,
+                GeneratedSpells.REND), "the tooltip names both");
+        spend(helper, warrior, GeneratedSpells.OVERPOWER, 1);
+        helper.assertValueEqual(SpellTrees.spend(warrior, GeneratedSpells.BLOODTHIRST), SpellPoints.Result.NEEDS_SPELL,
+                "Overpower alone");
+        spend(helper, warrior, GeneratedSpells.REND, 1);
+        helper.assertValueEqual(SpellTrees.spend(warrior, GeneratedSpells.BLOODTHIRST), SpellPoints.Result.SPENT,
+                "a point in each opens it");
+
+        ServerPlayer mage = ClassKitGameTests.unspecialized(helper, "qa-tree-arrow-beside", "mage");
+        reachLevel(helper, mage, 8);
+        SpellTrees.pick(mage, "frost");
+        spend(helper, mage, GeneratedSpells.FROSTBOLT, 2);
+        spend(helper, mage, GeneratedSpells.CONE_OF_COLD, 3);
+        helper.assertValueEqual(SpellTrees.spend(mage, GeneratedSpells.SHATTER), SpellPoints.Result.NEEDS_SPELL,
+                "Shatter needs Frost Nova");
+        spend(helper, mage, GeneratedSpells.FROST_NOVA, 1);
+        helper.assertValueEqual(SpellTrees.spend(mage, GeneratedSpells.SHATTER), SpellPoints.Result.SPENT,
+                "the arrow beside it");
+        logout(warrior);
+        logout(mage);
         helper.succeed();
     }
 
@@ -206,33 +279,45 @@ public final class SpellTreeGameTests {
         ServerPlayer player = ClassKitGameTests.unspecialized(helper, "qa-tree-fall", "mage");
         reachLevel(helper, player, 6);
         SpellTrees.pick(player, "frost");
-        SpellTrees.spend(player, GeneratedSpells.FROSTBOLT);
-        SpellTrees.spend(player, GeneratedSpells.ICE_LANCE);
-        SpellTrees.spend(player, GeneratedSpells.IMPROVED_FROSTBOLT);
+        spend(helper, player, GeneratedSpells.FROSTBOLT, 1);
+        spend(helper, player, GeneratedSpells.CONE_OF_COLD, 2);
         helper.assertValueEqual(SpellTrees.spent(player), 3, "three points spent");
         reachLevel(helper, player, 3);
         Spellbook book = player.getData(SpellAttachments.SPELLBOOK);
         helper.assertValueEqual(SpellTrees.spent(player), 0, "every point came back");
         helper.assertValueEqual(SpellTrees.unspent(player), 2, "as level 3's two points");
         helper.assertValueEqual(book.level(GeneratedSpells.FROSTBOLT), Optional.of(1), "Frostbolt back at rank 1");
-        helper.assertValueEqual(book.level(GeneratedSpells.ICE_LANCE), Optional.empty(), "Ice Lance forgotten");
-        helper.assertValueEqual(book.barSlotOf(GeneratedSpells.ICE_LANCE), -1, "and off the bar");
+        helper.assertValueEqual(book.level(GeneratedSpells.CONE_OF_COLD), Optional.empty(), "Cone of Cold forgotten");
+        helper.assertValueEqual(book.barSlotOf(GeneratedSpells.CONE_OF_COLD), -1, "and off the bar");
         helper.assertValueEqual(Characters.data(player).specialization(), Optional.of("frost"), "Frost stays");
         logout(player);
         helper.succeed();
     }
 
-    /** A level that keeps paying for the points but no longer opens a spell's row returns them too. */
+    /**
+     * Ranks the tree no longer allows return every point, as a changed layout leaves them (RLM-631): Ice Lance known in
+     * row 3 with no point above it, or Shatter without Frost Nova. The level still pays for them.
+     */
     @QaGameTest
-    public static void aRowClosedByAFallenLevelReturnsThePoints(GameTestHelper helper) {
-        ServerPlayer player = ClassKitGameTests.unspecialized(helper, "qa-tree-row-fall", "mage");
-        reachLevel(helper, player, 6);
+    public static void ranksTheTreeNoLongerAllowsReturnThePoints(GameTestHelper helper) {
+        ServerPlayer player = ClassKitGameTests.unspecialized(helper, "qa-tree-changed", "mage");
+        reachLevel(helper, player, 7);
         SpellTrees.pick(player, "frost");
-        SpellTrees.spend(player, GeneratedSpells.ICE_LANCE);
-        reachLevel(helper, player, 5);
+        Spells.learn(player, spellHolder(helper, GeneratedSpells.ICE_LANCE), 1);
+        reachLevel(helper, player, 8);
         helper.assertValueEqual(Spells.knownLevel(player, GeneratedSpells.ICE_LANCE), Optional.empty(),
-                "Ice Lance's row is closed again");
-        helper.assertValueEqual(SpellTrees.unspent(player), 4, "and its point came back");
+                "Ice Lance's row was never open");
+        helper.assertValueEqual(SpellTrees.unspent(player), 7, "and its point came back");
+
+        spend(helper, player, GeneratedSpells.FROSTBOLT, 2);
+        spend(helper, player, GeneratedSpells.CONE_OF_COLD, 3);
+        Spells.learn(player, spellHolder(helper, GeneratedSpells.SHATTER), 1);
+        reachLevel(helper, player, 9);
+        Spellbook book = player.getData(SpellAttachments.SPELLBOOK);
+        helper.assertValueEqual(book.level(GeneratedSpells.SHATTER), Optional.empty(), "Shatter without Frost Nova");
+        helper.assertValueEqual(book.level(GeneratedSpells.CONE_OF_COLD), Optional.empty(), "every point came back");
+        helper.assertValueEqual(book.level(GeneratedSpells.FROSTBOLT), Optional.of(1), "but Frostbolt's free rank");
+        helper.assertValueEqual(SpellTrees.unspent(player), 8, "level 9's eight points");
         logout(player);
         helper.succeed();
     }
@@ -243,12 +328,12 @@ public final class SpellTreeGameTests {
         ServerPlayer player = ClassKitGameTests.unspecialized(helper, "qa-tree-reset", "warrior");
         reachLevel(helper, player, 3);
         SpellTrees.pick(player, "arms");
-        SpellTrees.spend(player, GeneratedSpells.SLAM);
-        SpellTrees.spend(player, GeneratedSpells.CHARGE);
+        spend(helper, player, GeneratedSpells.SLAM, 1);
+        spend(helper, player, GeneratedSpells.VICTORY_RUSH, 1);
         helper.assertValueEqual(SpellTrees.reset(player), 2, "two points came back");
         Spellbook book = player.getData(SpellAttachments.SPELLBOOK);
         helper.assertValueEqual(book.level(GeneratedSpells.SLAM), Optional.of(1), "Slam at its free rank");
-        helper.assertValueEqual(book.level(GeneratedSpells.CHARGE), Optional.empty(), "Charge forgotten");
+        helper.assertValueEqual(book.level(GeneratedSpells.VICTORY_RUSH), Optional.empty(), "Victory Rush forgotten");
         helper.assertValueEqual(book.level(GeneratedSpells.WILL_TO_SURVIVE), Optional.of(1), "the racial spell stays");
         helper.assertValueEqual(SpellTrees.unspent(player), 2, "both points unspent");
         helper.assertValueEqual(SpellTrees.reset(player), 0, "nothing more to return");
@@ -277,41 +362,50 @@ public final class SpellTreeGameTests {
         helper.assertValueEqual(List.of(slam.rank(), slam.row(), slam.column()), List.of(1, 0, 1),
                 "Slam: rank 1, the first row's middle");
         helper.assertValueEqual(slam.state(), State.LEARNABLE, "and it takes a point");
-        helper.assertValueEqual(cell(helper, after, GeneratedSpells.REND).state(), State.LEARNABLE, "row 2 is open");
-        helper.assertValueEqual(cell(helper, after, GeneratedSpells.OVERPOWER).state(), State.NEEDS_LEVEL,
-                "row 3 is not");
+        Cell rend = cell(helper, after, GeneratedSpells.REND);
+        helper.assertValueEqual(List.of(rend.state().name(), String.valueOf(rend.rowPoints())),
+                List.of(State.ROW_CLOSED.name(), "5"), "row 2 opens after 5 points");
 
-        raiseCap(helper, player);
-        reachLevel(helper, player, 12);
-        helper.assertValueEqual(cell(helper, SpellTreeView.of(player), GeneratedSpells.BLOODTHIRST).state(),
-                State.NEEDS_SPELL, "the arrow");
+        spend(helper, player, GeneratedSpells.SLAM, 4);
+        spend(helper, player, GeneratedSpells.VICTORY_RUSH, 1);
+        SpellTreeView spent = SpellTreeView.of(player);
+        helper.assertValueEqual(spent.trees().getFirst().spent(), 5, "5 points spent in Arms");
+        helper.assertValueEqual(cell(helper, spent, GeneratedSpells.REND).state(), State.LEARNABLE, "row 2 is open");
+        helper.assertValueEqual(cell(helper, spent, GeneratedSpells.OVERPOWER).state(), State.ROW_CLOSED,
+                "row 3 is not");
+        spend(helper, player, GeneratedSpells.REND, 1);
+        helper.assertValueEqual(cell(helper, SpellTreeView.of(player), GeneratedSpells.VICTORY_RUSH).state(),
+                State.NO_POINTS, "all six points spent");
         logout(player);
         helper.succeed();
     }
 
     /**
-     * The two M1 trees stand in the rows and columns of Matěj's decision of 2026-10-30, with Bloodthirst's arrow, and
-     * Battle Stance in the Arms tree's free place at level 18 (RLM-596) until RLM-631's layout.
+     * The two M1 trees stand in the rows and columns of Matěj's layout of 2026-11-04 (RLM-631), with Bloodthirst's two
+     * arrows and Shatter's, Battle Stance at R3, left, and Icy Veins at R4, right (RLM-597); a row opens every 5 points.
      */
     @QaGameTest
     public static void theTreesStandAsDecided(GameTestHelper helper) {
         ServerPlayer warrior = ClassKitGameTests.unspecialized(helper, "qa-tree-arms", "warrior");
         assertTree(helper, warrior, List.of(
-                List.of(GeneratedSpells.CHARGE, GeneratedSpells.SLAM, GeneratedSpells.DEEP_WOUNDS),
-                List.of(GeneratedSpells.REND, GeneratedSpells.BATTLE_SHOUT,
-                        GeneratedSpells.TWO_HANDED_WEAPON_SPECIALIZATION),
-                List.of(GeneratedSpells.BLOODTHIRST, GeneratedSpells.OVERPOWER, GeneratedSpells.VICTORY_RUSH),
-                List.of(GeneratedSpells.EXECUTE, GeneratedSpells.BATTLE_STANCE)));
-        helper.assertTrue(cell(helper, SpellTreeView.of(warrior), GeneratedSpells.BLOODTHIRST).requires()
-                .filter(required -> required.is(GeneratedSpells.REND)).isPresent(), "Bloodthirst needs Rend");
+                List.of("-", "slam", "victory_rush"),
+                List.of("charge", "rend", "deep_wounds"),
+                List.of("battle_stance", "overpower", "bloodthirst"),
+                List.of("battle_shout", "execute", "two_handed_weapon_specialization")));
+        helper.assertValueEqual(cell(helper, SpellTreeView.of(warrior), GeneratedSpells.BLOODTHIRST).requires().stream()
+                .map(required -> required.unwrapKey().orElseThrow()).toList(), List.of(GeneratedSpells.OVERPOWER,
+                GeneratedSpells.REND), "Bloodthirst needs Overpower and Rend");
         ServerPlayer mage = ClassKitGameTests.unspecialized(helper, "qa-tree-frost", "mage");
         assertTree(helper, mage, List.of(
-                List.of(GeneratedSpells.IMPROVED_FROSTBOLT, GeneratedSpells.FROSTBOLT, GeneratedSpells.CONE_OF_COLD),
-                List.of(GeneratedSpells.ICE_LANCE, GeneratedSpells.FROST_NOVA, GeneratedSpells.FROSTBITE),
-                List.of(GeneratedSpells.SHATTER, GeneratedSpells.ICE_BARRIER),
-                List.of(GeneratedSpells.BLIZZARD)));
-        helper.assertValueEqual(SpellTreeView.of(mage).trees().getFirst().rowLevels(), List.of(1, 6, 12, 18),
-                "a row every 6 levels");
+                List.of("-", "frostbolt", "cone_of_cold"),
+                List.of("shatter", "frost_nova", "ice_barrier"),
+                List.of("frostbite", "ice_lance", "-"),
+                List.of("improved_frostbolt", "blizzard", "icy_veins")));
+        helper.assertValueEqual(cell(helper, SpellTreeView.of(mage), GeneratedSpells.SHATTER).requires().stream()
+                .map(required -> required.unwrapKey().orElseThrow()).toList(), List.of(GeneratedSpells.FROST_NOVA),
+                "Shatter needs Frost Nova");
+        helper.assertValueEqual(SpellTreeView.of(mage).trees().getFirst().rowPoints(), List.of(0, 5, 10, 15),
+                "a row every 5 points");
         logout(warrior);
         logout(mage);
         helper.succeed();
@@ -325,7 +419,7 @@ public final class SpellTreeGameTests {
         CommandSourceStack source = player.createCommandSourceStack().withPermission(PermissionSet.ALL_PERMISSIONS);
         Commands commands = helper.getLevel().getServer().getCommands();
         commands.performPrefixedCommand(source, WARRIOR_SETUP);
-        helper.assertValueEqual(Characters.level(player), 12, "a level 12 Warrior");
+        helper.assertValueEqual(Characters.level(player), 14, "a level 14 Warrior");
         helper.assertValueEqual(Characters.data(player).specialization(), Optional.empty(), "who has not picked");
         commands.performPrefixedCommand(source, MAGE_SETUP);
         helper.assertValueEqual(Characters.level(player), 18, "a level 18 Mage");
@@ -360,17 +454,33 @@ public final class SpellTreeGameTests {
                 .map(part -> part.name().getString()).toList();
     }
 
-    private static void assertTree(GameTestHelper helper, ServerPlayer player, List<List<ResourceKey<Spell>>> rows) {
+    /** The tree's rows as the spells' paths by column, "-" for an empty place. */
+    private static void assertTree(GameTestHelper helper, ServerPlayer player, List<List<String>> rows) {
         Tree tree = SpellTreeView.of(player).trees().stream().filter(entry -> !entry.cells().isEmpty()).findFirst()
                 .orElseThrow();
-        List<List<ResourceKey<Spell>>> got = new ArrayList<>();
-        for (int row = 0; row < tree.rowLevels().size(); row++) {
-            int current = row;
-            got.add(tree.cells().stream().filter(cell -> cell.row() == current)
-                    .sorted(java.util.Comparator.comparingInt(Cell::column))
-                    .map(cell -> cell.spell().unwrapKey().orElseThrow()).toList());
+        List<List<String>> got = new ArrayList<>();
+        for (int row = 0; row < tree.rowPoints().size(); row++) {
+            List<String> places = new ArrayList<>(List.of("-", "-", "-"));
+            for (Cell cell : tree.cells()) {
+                if (cell.row() == row) {
+                    places.set(cell.column(), cell.spell().unwrapKey().orElseThrow().identifier().getPath());
+                }
+            }
+            got.add(places);
         }
         helper.assertValueEqual(got, rows, tree.specialization().id() + "'s rows");
+    }
+
+    /** Spends {@code times} points on {@code spell}, each of which the rules must allow. */
+    private static void spend(GameTestHelper helper, ServerPlayer player, ResourceKey<Spell> spell, int times) {
+        for (int n = 0; n < times; n++) {
+            helper.assertValueEqual(SpellTrees.spend(player, spell), SpellPoints.Result.SPENT,
+                    spell.identifier() + "'s point " + (n + 1) + " of " + times);
+        }
+    }
+
+    private static Holder.Reference<Spell> spellHolder(GameTestHelper helper, ResourceKey<Spell> key) {
+        return Spells.get(helper.getLevel().registryAccess(), key).orElseThrow();
     }
 
     private static Cell cell(GameTestHelper helper, SpellTreeView view, ResourceKey<Spell> spell) {

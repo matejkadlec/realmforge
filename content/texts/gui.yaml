@@ -152,12 +152,16 @@ texts:
     en_us: You have no spell points left.
   spell_tree_max_rank:
     en_us: Highest rank reached.
-  # %1$s the level.
-  spell_tree_needs_level:
-    en_us: Opens at level %1$s.
-  # %1$s the spell its arrow names.
+  # A spell whose row is still closed (RLM-631): %1$s the points it needs spent in the tree, %2$s the specialization's
+  # name, %3$s the points spent there so far.
+  spell_tree_needs_points:
+    en_us: "Opens after %1$s points spent in %2$s (%3$s so far)."
+  # %1$s the spells its arrows name that the player does not know yet ("Rend and Overpower").
   spell_tree_needs_spell:
     en_us: Learn %1$s first.
+  # Two spells of that line: "Rend and Overpower" (%1$s and %2$s the names).
+  spell_tree_and:
+    en_us: "%1$s and %2$s"
   spell_tree_needs_pick:
     en_us: Choose this specialization to learn it.
   spell_tree_other_tree:

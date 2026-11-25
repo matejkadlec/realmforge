@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=../../tools/schemas/spells.schema.json
-# The Frost Mage's tree, row 3 (level 12), left (Matěj, 2026-10-30, "Spell Trees to Level 18", chosen for M1; RLM-541,
-# RLM-542): 10/20/30 % more crit chance for your spells against Frozen targets (Frost Nova and Frostbite freeze them).
-# Above 100 % in all it turns into crit damage, as every crit chance does (C4), which its tooltip says (Matěj's
+# The Frost Mage's tree, row 2 (after 5 points), left (Matěj, 2026-10-30, "Spell Trees to Level 18", chosen for M1;
+# RLM-541, RLM-542): 10/20/30 % more crit chance for your spells against Frozen targets (Frost Nova and Frostbite freeze
+# them). Above 100 % in all it turns into crit damage, as every crit chance does (C4), which its tooltip says (Matěj's
 # rebalance of 2026-11-01, RLM-572).
 id: shatter
 name: {en_us: Shatter}

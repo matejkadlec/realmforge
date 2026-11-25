@@ -64,6 +64,7 @@ def test_repository_effects_are_the_engine_tests() -> None:
         "frozen",
         "frozen_immunity",
         "ice_barrier",
+        "icy_veins",
         "rend",
         "stun_immunity",
         "stunned",
@@ -199,7 +200,7 @@ def test_registrations(repo: RepoPaths) -> None:
     ) in java
     assert (
         "ALL = List.of(BATTLE_SHOUT, BURNING, CRACKED_STONE, DEEP_WOUNDS, FROZEN, FROZEN_IMMUNITY, ICE_BARRIER, "
-        "REND, STUN_IMMUNITY, STUNNED, TEST_BURNING, TEST_REGROWTH, TEST_SAPPED);"
+        "ICY_VEINS, REND, STUN_IMMUNITY, STUNNED, TEST_BURNING, TEST_REGROWTH, TEST_SAPPED);"
     ) in java
 
 
@@ -257,6 +258,7 @@ def test_no_effects_still_compile(repo: RepoPaths) -> None:
         "battle_shout",
         "fireball",
         "ice_barrier",
+        "icy_veins",
         "shield_bash",
         "shatter",
         "test_rend",

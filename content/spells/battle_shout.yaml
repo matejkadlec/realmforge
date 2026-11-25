@@ -1,8 +1,8 @@
 # yaml-language-server: $schema=../../tools/schemas/spells.schema.json
-# The Warrior's self-buff (C4), the Arms Warrior's tree, row 2 (level 6), middle (RLM-543; Matěj, 2026-10-30, "Spell
-# Trees to Level 18", chosen for M1): a war cry that raises the attack damage and attack speed of the Warrior and every
-# ally within 10 blocks by +5 % and +10 % for 10 minutes, twice that at rank 2, its highest; free, a 1 minute cooldown
-# (Matěj, 2026-11-03, RLM-543's Confluence comments: rank 2 at most, the attack speed, 600 s; no rage since his
+# The Warrior's self-buff (C4), the Arms Warrior's tree, row 4 (after 15 points), left (RLM-543; Matěj, 2026-10-30,
+# "Spell Trees to Level 18", chosen for M1): a war cry that raises the attack damage and attack speed of the Warrior and
+# every ally within 10 blocks by +5 % and +10 % for 10 minutes, twice that at rank 2, its highest; free, a 1 minute
+# cooldown (Matěj, 2026-11-03, RLM-543's Confluence comments: rank 2 at most, the attack speed, 600 s; no rage since his
 # rebalance of that evening, RLM-604). Its effect is a flat share that nothing raises, spell power included; Cooldown
 # Reduction shortens its cooldown, and a second shout, the Warrior's own or another's, refreshes the effect instead of
 # stacking it.

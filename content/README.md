@@ -461,11 +461,14 @@ Rules:
   gives `modifiers` and a `starting_kit` (items with a `count` of 1 to 64, given once, when the player's first character is created; every class's kit
   holds Bread ×32, Matěj, 2026-10-14, which validation checks), and its `specializations` (C5, RLM-333), each with an
   `id` unique in the class, a `name` and a `description`. One without `spells` comes later (M3): the window names it,
-  and nobody can pick it. One with `spells` sets `first_spell`, an active spell of its level 1 row, free at rank 1 with the pick
-  (decision D4), and lists `{spell, level, column, requires}`: each spell once, `level` the row's (1, then every 6
-  levels), `column` 1 to 3 with no place taken twice, and `requires` an optional arrow to a spell of an earlier row of
-  the tree. The class's resource must pay for them, and a tree holds at most 4 × N active spells by the end of chapter
-  N's level cap: passive spells never go on the bar, so they do not count, Matěj, 2026-10-30. A modifier is the stat
+  and nobody can pick it. One with `spells` sets `first_spell`, an active spell of its first row, free at rank 1 with the
+  pick (decision D4), and lists `{spell, row, column, requires}`: each spell once, `row` from 1 at the top (1 to 12;
+  row N opens once 5 × (N − 1) points are spent in the tree, the free rank aside, Matěj, 2026-11-04, RLM-631),
+  `column` 1 to 3 with no place taken twice, and `requires` a list of arrows, spells of the tree in an earlier row or
+  beside it in the same one, each needed at any rank (none an arrow to itself or in a circle). Every row must be able to
+  open: the rows above it hold at least the points it needs by their spells' highest ranks, less the free one. The
+  class's resource must pay for them, and the rows chapter N's last level opens (its cap's points) hold at most 4 × N
+  active spells: passive spells never go on the bar, so they do not count, Matěj, 2026-10-30. A modifier is the stat
   rules' shape (`attribute`,
   `operation`, `amount` or `amount_percent`, in the same units) and gives the same at every level: levels give stat
   points to spend instead (Matěj, 2026-10-15, RLM-196), so `per_level` is refused. A race's or class's `name` is a

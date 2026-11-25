@@ -1,9 +1,9 @@
 # yaml-language-server: $schema=../../tools/schemas/spells.schema.json
-# The Arms Warrior's tree, row 1 (level 1), right (RLM-543; Matěj, 2026-10-30, "Spell Trees to Level 18", chosen for
-# M1): a passive whose proc (RLM-540) makes every enemy the Warrior crits, with a weapon or a spell, bleed for 20/40/60
-# % of the crit's damage over 6 s (the Deep Wounds effect, RLM-601, whose ticks ignore armor). A new crit refreshes the
-# bleed and adds what the old one had left, so every crit's share is dealt. Procs never trigger procs, so the bleed's
-# ticks crit nothing into a new bleed.
+# The Arms Warrior's tree, row 2 (after 5 points), right (RLM-543; Matěj, 2026-10-30, "Spell Trees to Level 18", chosen
+# for M1): a passive whose proc (RLM-540) makes every enemy the Warrior crits, with a weapon or a spell, bleed for
+# 20/40/60 % of the crit's damage over 6 s (the Deep Wounds effect, RLM-601, whose ticks ignore armor). A new crit
+# refreshes the bleed and adds what the old one had left, so every crit's share is dealt. Procs never trigger procs, so
+# the bleed's ticks crit nothing into a new bleed.
 id: deep_wounds
 name: {en_us: Deep Wounds}
 description:

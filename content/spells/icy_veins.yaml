@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=../../tools/schemas/spells.schema.json
+# The Frost Mage's tree, row 4 (after 15 points), right (RLM-597; Matěj, 2026-11-03, placed by his layout of 2026-11-04,
+# RLM-631): a self-buff that raises the Mage's Spell Power by 10/15/20 % for 10/15/20 s by rank, for 20/30/40 mana, on a
+# 3 minute cooldown at every rank. It buffs Spell Power rather than Cast Time Reduction, which is capped for a reason
+# (Matěj). The share multiplies the Mage's whole Spell Power (gear, Intellect and every other bonus); Spell Power
+# raises nothing of the buff itself. Like Ice Barrier and Battle Shout, it is on the global cooldown, Cooldown Reduction
+# shortens its cooldown, and a second cast refreshes the buff instead of stacking it.
+id: icy_veins
+name: {en_us: Icy Veins}
+description: {en_us: "Fills your veins with ice that raises your Spell Power by {bonus}% for {duration} sec."}
+school: realmforge:frost
+scales_with: spell_power
+targeting: {type: realmforge:self}
+cast: {type: instant, sound: realmforge:spell.cast.instant}
+cost: {resource: realmforge:mana, amount: 20, per_level: 10}
+cooldown_seconds: 180
+max_level: 3
+effects:
+  - type: realmforge:apply_effect
+    effect: realmforge:icy_veins
+    duration_seconds: 10
+    duration_per_level_seconds: 5
+    stronger_at_levels: [2, 3]

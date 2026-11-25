@@ -6,8 +6,7 @@
 # any other main hand pauses it without turning it off. No Attack Damage: RLM-392's draft "+ % Attack Damage" is
 # replaced. Named after WoW's (earlier drafts called it "Fighter"); Berserker Stance (Fury) and Defensive Stance
 # (Protection) come with their trees. Max rank 1. Physical, so its frame is the physical school's, as Two-Handed
-# Specialization's is. In the tree: row 4 (level 18), middle, the free place until RLM-631's layout puts it at R3, left
-# (Matěj, 2026-11-04, RLM-333's comment 23656).
+# Specialization's is. In the tree: row 3 (after 10 points), left (Matěj, 2026-11-04, RLM-631).
 id: battle_stance
 name: {en_us: Battle Stance}
 description:

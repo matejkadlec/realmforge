@@ -22,8 +22,10 @@ import net.minecraft.resources.ResourceKey;
  *   global cooldown ends is not refused. With spell queueing, a press waits for the cast in progress to end too, and
  *   up to {@code Spells Queue Size} presses wait in order: at size 1 a new press replaces the waiting one, above 1 it
  *   waits after them (when the queue is full, the newest waiting press gives way to it). Pressing the spell being cast
- *   does nothing. An aura's press counts toward no size (RLM-666): it never makes a waiting press give way, nor gives
- *   way to one.</li>
+ *   does nothing. With spell queueing an aura's press counts toward no size (RLM-666): it never makes a waiting press
+ *   give way, nor gives way to one. Without it, the aura's press is the latest press like any other (RLM-671): it
+ *   drops a spell that waits out the global cooldown, and a spell's press drops it while it waits for the server's
+ *   answer.</li>
  *   <li><b>A held key</b> casts its spell again and again, as its cooldown and cast time allow, at most every
  *   {@value #REPEAT_TICKS} ticks (half a second), and never cancels a cast.</li>
  *   <li><b>An aura</b> (RLM-595) is toggled by a press only, never by a held key; it is off the global cooldown, and

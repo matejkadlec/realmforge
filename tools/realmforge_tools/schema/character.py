@@ -26,13 +26,14 @@ RESOURCE_TYPES: tuple[str, ...] = (f"{MOD_ID}:mana", f"{MOD_ID}:rage")
 ResourceType = Literal["realmforge:mana", "realmforge:rage"]
 RAGE = f"{MOD_ID}:rage"
 
-# The highest level a spell tree's row may open at: far beyond today's caps (30), within the chapters' levels.
-MAX_TREE_SPELL_LEVEL = 1000
-
-# A spell tree's shape (Matěj, 2026-10-30, RLM-333, like WotLK's talent trees): rows of 1 to 3 spells in three columns,
-# the first row at level 1 and a new one every 6 levels (1, 6, 12, 18, ...).
+# A spell tree's shape (Matěj, 2026-10-30, RLM-333, like WotLK's talent trees): rows of 1 to 3 spells in three columns.
+# A row opens once this many points per row above it are spent in the tree, so row 2 after 5, row 3 after 10, row 4
+# after 15; the first spell's free rank counts as none (Matěj, 2026-11-04, RLM-631). Java's SpellPoints.POINTS_PER_ROW
+# is the same number, which a GameTest compares with the generated expectations.
 TREE_COLUMNS = 3
-TREE_ROW_STEP = 6
+TREE_ROW_POINTS = 5
+# The most rows a tree may have: far beyond M1's 4 (17 points at level 18 open row 4).
+MAX_TREE_ROWS = 12
 
 # Every class's starting kit holds this much bread (Matěj, 2026-10-14: "for both classes and any future classes").
 STARTING_BREAD: tuple[str, int] = ("minecraft:bread", 32)
@@ -186,15 +187,17 @@ class TreeSpellDef(StrictModel):
     """One spell of a specialization's spell tree (C5, RLM-333): where it stands, and what it needs besides points."""
 
     spell: ResourceId = Field(description="The spell, e.g. realmforge:slam.")
-    level: int = Field(
+    row: int = Field(
         ge=1,
-        le=MAX_TREE_SPELL_LEVEL,
-        description="The character level that opens its row: 1, then every 6 levels (6, 12, 18, ...).",
+        le=MAX_TREE_ROWS,
+        description=f"Its row, from 1 at the top. Row N opens once {TREE_ROW_POINTS} x (N - 1) points are spent in the "
+        "tree: row 1 from the start, row 2 after 5, row 3 after 10 (Matěj, 2026-11-04, RLM-631).",
     )
     column: int = Field(ge=1, le=TREE_COLUMNS, description="Its column in the row: 1 (left), 2 or 3 (right).")
-    requires: ResourceId | None = Field(
-        default=None,
-        description="The arrow: a spell of an earlier row of this tree that the player must know at any rank first.",
+    requires: UniqueResourceIds = Field(
+        default_factory=list,
+        description="The arrows: spells of this tree, in an earlier row or beside it in the same one, that the player "
+        "must each know at any rank first.",
     )
 
 
@@ -212,7 +215,7 @@ class SpecializationDef(StrictModel):
     description: LocalizedText = Field(description="One short sentence on how it plays, in its tooltip.")
     first_spell: ResourceId | None = Field(
         default=None,
-        description="The tree's first spell, in its level 1 row: free at rank 1 when the player picks the "
+        description="The tree's first spell, in its first row: free at rank 1 when the player picks the "
         "specialization (decision D4: every class starts with one spell; Matěj, 2026-11-04). Set exactly when the "
         "tree has spells.",
     )
@@ -223,8 +226,8 @@ class SpecializationDef(StrictModel):
 
     @model_validator(mode="after")
     def _tree(self) -> SpecializationDef:
-        levels = {taught.spell: taught.level for taught in self.spells}
-        if len(levels) != len(self.spells):
+        rows = {taught.spell: taught.row for taught in self.spells}
+        if len(rows) != len(self.spells):
             names = [taught.spell for taught in self.spells]
             repeated = sorted({name for name in names if names.count(name) > 1})
             raise ValueError(f"a tree holds each spell once: {', '.join(repeated)}")
@@ -234,26 +237,72 @@ class SpecializationDef(StrictModel):
             return self
         if self.first_spell is None:
             raise ValueError("every class starts with one spell (decision D4): set first_spell")
-        if levels.get(self.first_spell) != 1:
-            raise ValueError(f"first_spell {self.first_spell} must be in the tree's level 1 row")
-        places = [(taught.level, taught.column) for taught in self.spells]
+        if rows.get(self.first_spell) != 1:
+            raise ValueError(f"first_spell {self.first_spell} must be in the tree's first row")
+        places = [(taught.row, taught.column) for taught in self.spells]
         if len(set(places)) != len(places):
             repeated_places = sorted({place for place in places if places.count(place) > 1})
-            raise ValueError(f"two spells share a place (level, column): {repeated_places}")
+            raise ValueError(f"two spells share a place (row, column): {repeated_places}")
         for taught in self.spells:
-            if taught.level != 1 and taught.level % TREE_ROW_STEP != 0:
-                raise ValueError(
-                    f"{taught.spell}: a row opens at level 1 or every {TREE_ROW_STEP} levels, not {taught.level}"
-                )
-            if taught.requires is not None:
-                needed = levels.get(taught.requires)
+            for required in taught.requires:
+                if required == taught.spell:
+                    raise ValueError(f"{taught.spell} requires itself")
+                needed = rows.get(required)
                 if needed is None:
-                    raise ValueError(f"{taught.spell} requires {taught.requires}, which is not in this tree")
-                if needed >= taught.level:
+                    raise ValueError(f"{taught.spell} requires {required}, which is not in this tree")
+                if needed > taught.row:
                     raise ValueError(
-                        f"{taught.spell} requires {taught.requires}, which is not in an earlier row"
+                        f"{taught.spell} requires {required}, which is in a later row: an arrow points down or "
+                        "across its row"
                     )
+        cycle = _requirement_cycle(self.spells)
+        if cycle:
+            raise ValueError(
+                f"the arrows run in a circle, so none of them can be learned: {' -> '.join(cycle)}"
+            )
         return self
+
+    def row_ranks(self, max_ranks: dict[str, int]) -> dict[int, int]:
+        """The ranks each row holds, by its spells' highest ranks in ``max_ranks``; a spell missing there counts none."""
+        ranks: dict[int, int] = {}
+        for taught in self.spells:
+            ranks[taught.row] = ranks.get(taught.row, 0) + max_ranks.get(taught.spell, 0)
+        return ranks
+
+
+def row_points(row: int) -> int:
+    """The points that must be spent in a tree before ``row`` opens (RLM-631)."""
+    return TREE_ROW_POINTS * (row - 1)
+
+
+def open_rows(points: int) -> int:
+    """How many rows ``points`` spent in a tree open: 1 with none, 2 from 5, 3 from 10 (RLM-631)."""
+    return points // TREE_ROW_POINTS + 1
+
+
+def _requirement_cycle(spells: list[TreeSpellDef]) -> list[str]:
+    """A circle of arrows, as the spells along it, or an empty list. Arrows only point down or across a row, so a
+    circle can only run within one row."""
+    requires = {taught.spell: taught.requires for taught in spells}
+    done: set[str] = set()
+
+    def walk(spell: str, path: list[str]) -> list[str]:
+        if spell in path:
+            return [*path[path.index(spell) :], spell]
+        if spell in done:
+            return []
+        for required in requires.get(spell, []):
+            found = walk(required, [*path, spell])
+            if found:
+                return found
+        done.add(spell)
+        return []
+
+    for taught in spells:
+        found = walk(taught.spell, [])
+        if found:
+            return found
+    return []
 
 
 class ClassDef(StrictModel):

@@ -52,7 +52,8 @@ final class SpecCommands {
         ServerPlayer player = context.getSource().getPlayerOrException();
         String text = "Specialization " + Characters.data(player).specialization().orElse("none") + ", level "
                 + Characters.level(player) + ": " + SpellPoints.earned(Characters.level(player)) + " points earned, "
-                + SpellTrees.spent(player) + " spent, " + SpellTrees.unspent(player) + " unspent";
+                + SpellTrees.spent(player) + " spent, " + SpellTrees.unspent(player) + " unspent, rows 1 to "
+                + SpellPoints.openRows(SpellTrees.spent(player)) + " open";
         context.getSource().sendSuccess(() -> Component.literal(text), false);
         return 1;
     }

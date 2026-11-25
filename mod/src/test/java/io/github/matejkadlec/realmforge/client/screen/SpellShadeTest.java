@@ -19,7 +19,7 @@ class SpellShadeTest {
     @Test
     void onlyASpellAClickWouldTeachPulses() {
         assertEquals(SpellShade.LEARNABLE, SpellShade.of(0, State.LEARNABLE));
-        for (State state : new State[] {State.NO_POINTS, State.NEEDS_LEVEL, State.NEEDS_SPELL, State.NEEDS_PICK,
+        for (State state : new State[] {State.NO_POINTS, State.ROW_CLOSED, State.NEEDS_SPELL, State.NEEDS_PICK,
                 State.FIRST_FREE, State.OTHER_TREE}) {
             assertEquals(SpellShade.LOCKED, SpellShade.of(0, state), state.name());
         }

@@ -377,21 +377,26 @@ def test_the_arms_tree_stands_in_its_rows() -> None:
     arms = next(entry for entry in warrior.specializations if entry.id == "arms")
     assert arms.first_spell == "realmforge:slam"
     assert [
-        (taught.spell.removeprefix("realmforge:"), taught.level, taught.column) for taught in arms.spells
+        (taught.spell.removeprefix("realmforge:"), taught.row, taught.column) for taught in arms.spells
     ] == [
-        ("charge", 1, 1),
+        # Matěj's layout of 2026-11-04 (RLM-631).
         ("slam", 1, 2),
-        ("deep_wounds", 1, 3),
-        ("rend", 6, 1),
-        ("battle_shout", 6, 2),
-        ("two_handed_weapon_specialization", 6, 3),
-        ("bloodthirst", 12, 1),
-        ("overpower", 12, 2),
-        ("victory_rush", 12, 3),
-        ("execute", 18, 1),
-        ("battle_stance", 18, 2),
+        ("victory_rush", 1, 3),
+        ("charge", 2, 1),
+        ("rend", 2, 2),
+        ("deep_wounds", 2, 3),
+        ("battle_stance", 3, 1),
+        ("overpower", 3, 2),
+        ("bloodthirst", 3, 3),
+        ("battle_shout", 4, 1),
+        ("execute", 4, 2),
+        ("two_handed_weapon_specialization", 4, 3),
     ]
-    assert [taught.requires for taught in arms.spells if taught.requires] == ["realmforge:rend"]
+    assert {taught.spell: taught.requires for taught in arms.spells if taught.requires} == {
+        "realmforge:bloodthirst": ["realmforge:overpower", "realmforge:rend"]
+    }
+    highest = {f"realmforge:{entry.model.id}": entry.model.max_level for entry in content.spells}
+    assert sum(highest[taught.spell] for taught in arms.spells) == 32
     assert [entry.id for entry in warrior.specializations if not entry.spells] == ["fury", "protection"]
     ranks = {entry.model.id: entry.model.max_level for entry in content.spells}
     assert {

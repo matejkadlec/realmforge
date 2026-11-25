@@ -110,6 +110,8 @@ def test_repository_spells_are_the_class_kits_engine_tests_stoneform_and_astones
         "frost_nova",
         "frostbite",
         "blizzard",
+        # Its Spell Power self-buff (RLM-597).
+        "icy_veins",
         # Astone's (W5b, RLM-491).
         "astone_boulder",
         "astone_cracked_stone",
@@ -474,7 +476,7 @@ def test_keys_and_expectations(repo: RepoPaths) -> None:
     assert (
         "ALL = List.of(ARCANE_MISSILES, ASTONE_BOULDER, ASTONE_CRACKED_STONE, ASTONE_QUAKE, ASTONE_ROCKFALL, "
         "ASTONE_SHOCKWAVE, BATTLE_SHOUT, BATTLE_STANCE, BLIZZARD, BLOODTHIRST, CHARGE, CONE_OF_COLD, DEEP_WOUNDS, EXECUTE, FIREBALL, FROST_NOVA, "
-        "FROSTBITE, FROSTBOLT, ICE_BARRIER, ICE_LANCE, IMPROVED_FROSTBOLT, OVERPOWER, RECKLESS_STRIKE, REND, "
+        "FROSTBITE, FROSTBOLT, ICE_BARRIER, ICE_LANCE, ICY_VEINS, IMPROVED_FROSTBOLT, OVERPOWER, RECKLESS_STRIKE, REND, "
         "SHATTER, SHIELD_BASH, SLAM, STONEFORM, TEST_BLINK, TEST_BLOODTHIRST, TEST_BOLT, TEST_CHARGE, TEST_CHILL, "
         "TEST_CLEANSE, "
         "TEST_CLEAVE, TEST_DEEP_WOUND, TEST_DEEP_WOUNDS, TEST_DRAIN, TEST_EMBER_FIELD, TEST_EXECUTE, "

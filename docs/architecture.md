@@ -1243,14 +1243,23 @@ the playtest covers it.
     [11.7](#117-class-spells-and-stances). M1's trees are Frost for the Mage and Arms for the Warrior (Matěj,
     2026-10-29).
 - **Spell trees (C5, RLM-333):**
-  - **Shape** (Matěj, 2026-10-30): rows of 1 to 3 spells in three columns, a new row at levels 1, 6, 12, 18 and every 6
-    levels on. A row needs only the character's level and its arrows. Matěj has since decided that rows open by points
-    spent in the tree instead, and reordered both trees (2026-11-04): RLM-631 brings that. The only arrow so far is
-    Bloodthirst's, which needs Rend at any rank.
+  - **Shape** (Matěj, 2026-10-30): rows of 1 to 3 spells in three columns. **A row opens by the points spent in the
+    tree**, WotLK style (Matěj, 2026-11-04, RLM-631): row N once 5 × (N − 1) are spent, so row 2 after 5, row 3 after
+    10 and row 4 after 15, at levels 6, 11 and 16 at the earliest. The first spell's free rank counts as none, and a
+    saved point opens nothing: spending is what opens the next row. A spell's arrows (`requires`, any number) each need
+    their spell at any rank, from an earlier row or beside it in its own: Bloodthirst needs Overpower beside it and Rend
+    above it, Shatter needs Frost Nova beside it. Validation refuses a row the rows above it cannot open (they hold fewer
+    ranks to spend than it needs, the free one aside), an arrow from a later row or to itself, and arrows in a circle.
+    M1's layouts are Matěj's of 2026-11-04: Arms R1 Slam and Victory Rush, R2 Charge, Rend and Deep Wounds, R3 Battle
+    Stance, Overpower and Bloodthirst, R4 Battle Shout, Execute and Two-Handed Specialization (32 ranks); Frost R1
+    Frostbolt and Cone of Cold, R2 Shatter, Frost Nova and Ice Barrier, R3 Frostbite and Ice Lance, R4 Improved
+    Frostbolt, Blizzard and Icy Veins (34 ranks, RLM-597).
   - **Points:** exactly 1 per level from level 2 on, so 17 at level 18 (Matěj, 2026-11-03 and 2026-11-04). **A pick
     gives the tree's first spell free at rank 1** (decision D4: every class starts with one spell), and every other rank
-    costs a point, rank 1 included (Matěj, 2026-11-04). So a level 18 character has 18 ranks of the tree's 31, and class
-    spells no longer come by level. Astone was tuned with builds of 26 and 27 ranks but no Apotheosis affixes, gems or
+    costs a point, rank 1 included (Matěj, 2026-11-04). So a level 18 character has 18 ranks of the tree's 32 or 34,
+    and class spells no longer come by level. Decision D4's 4 × N active spells by the end of chapter N counts the rows
+    its cap's points open: chapter 1's 9 points open rows 1 and 2, with 4 actives in each M1 tree, chapter 2's 17 all
+    four. Astone was tuned with builds of 26 and 27 ranks but no Apotheosis affixes, gems or
     curios, and Matěj expects those to match the missing ranks (2026-11-04, RLM-503).
   - **In code:** `character/Specialization` and `character/TreeSpell` are the class's `specializations`. A
     specialization without spells comes later (M3): the window names it, and nobody can pick it.
@@ -1258,15 +1267,22 @@ the playtest covers it.
     (spent: the tree's ranks less the free one), so they can never disagree. `character/SpellTrees` applies the rules:
     `pick` and `spend`, each from a payload (`PickSpecializationPayload`, `SpendSpellPointPayload`) that it checks
     again, `reset` (the Scroll of Respec's effect to come, RLM-226; `/qa spec reset` until then), and `fit`, which
-    returns every point when the level no longer pays for them or no longer opens a known spell's row, as stat points
-    do.
+    returns every point, as stat points do, when the level no longer pays for them ("Your level fell") or the known
+    ranks no longer follow the tree's rules ("Your spell tree has changed": a spell in a row the points above it do not
+    open, or without one of its arrows' spells), as a changed layout leaves them (RLM-631's own reorder does that once
+    to every existing character). `spend` says when its point opens a new row. `SpellPoints.POINTS_PER_ROW` and the
+    pipeline's `TREE_ROW_POINTS` are the same 5, which `ContentCharacterGameTests` compares.
   - **The window** (Matěj's playtest of 2026-11-04): one size on both tabs, with the unspent points at the end of its
     top line. A spell's square is as big as the bar's, holds its rank in its corner, and has one of three shades
     (`client/screen/SpellShade`): full light once known, a little darker and pulsing, a second each way, while a click
     would teach it, and very dark while it cannot be learned. The Spell Bar tab's spells fill one column, then the
-    other, then both in turn with a scrollbar (`client/screen/SpellColumns`).
-  - **Tested by:** `SpellPointsTest` (the rules and refusals), `SpellTreeGameTests` (a spent point changing a cast, each
-    refusal, a fallen level, the window's states). `/qa spec show|pick|spend|reset` reach any state.
+    other, then both in turn with a scrollbar (`client/screen/SpellColumns`). An arrow runs down from a row above, or
+    straight across from the spell beside it; a closed row's tooltip says how many points open it and how many are
+    spent, and an arrow's names the spells still missing.
+  - **Tested by:** `SpellPointsTest` (the rules and refusals: a row's threshold, the free rank, several arrows, a legal
+    history), `SpellTreeGameTests` (a row opening by points spent, Bloodthirst's and Shatter's arrows, a spent point
+    changing a cast, each refusal, a fallen level, a tree that no longer allows the ranks, the window's states and both
+    layouts), `test_class_kits.py`, `test_arms_tree.py` and `test_frost_tree.py` (the format, the validation, D4). `/qa spec show|pick|spend|reset` reach any state.
 - **Changing race or class:** a QA command in M1, an in-game way later.
 - **In code (C1):** `character/Race` and `character/PlayerClass` are the entries of `realmforge:race` and
   `realmforge:class` (`CharacterRegistries`, both synced). A race names its classes by id, so a missing class fails
@@ -2240,9 +2256,11 @@ show each of the four on a real cast.
   never cast at once. An aura (RLM-595) is toggled by a press only, never by a held key, is off the global cooldown on
   the client too, and with queueing its press does not wait for a cast in progress, which its toggle leaves running,
 nor for the waiting presses ahead of it, which it goes past at Spells Queue Size 2 or 3 and which keep their places
-(RLM-637; `CastQueueTest` covers an aura's press and its held key). An aura's press counts toward no queue size
-(RLM-666): pressed into a full queue it drops none of the waiting presses, and a spell press into a full queue drops
-the newest waiting spell, never an aura's press. `client/spell/SpellBarInput` sends `CastSpellPayload` (the spell, the living entity under the
+(RLM-637; `CastQueueTest` covers an aura's press and its held key). With queueing an aura's press counts toward no
+queue size (RLM-666): pressed into a full queue it drops none of the waiting presses, and a spell press into a full
+queue drops the newest waiting spell, never an aura's press. Without queueing the queue holds only the latest press, an
+aura's too (RLM-671): a stance pressed while a spell waits out the global cooldown drops that spell, and a spell
+pressed while the stance waits for the server's answer drops the stance. `client/spell/SpellBarInput` sends `CastSpellPayload` (the spell, the living entity under the
   crosshair within its range, `client/spell/SpellTargetPicker`, none for a direction spell, which flies where the
   crosshair points, and `replaceCast`); `spell/SpellBar` picks a targeted spell's target by aim assistance when it names
   none ([11.2](#112-casting-server-authoritative)) and casts it through `SpellCaster`, which with `replaceCast` skips
@@ -2534,23 +2552,25 @@ stance, a little later in its tree, as an aura spell of the group `stance` ([11.
 - Berserker Stance and Defensive Stance come with the Fury and Protection trees (M3, RLM-218).
 
 **C4's first balance pass** (RLM-27; the numbers are in `content/spells/`, each file's comment says why; the playtest
-tunes them). A tree opens four active spells by level 10, chapter 1's cap ([10.1](#101-races-and-classes)). The M1
+tunes them). A tree opens four active spells by level 10, chapter 1's cap: its 9 points open rows 1 and 2
+([10.1](#101-races-and-classes)). The M1
 specializations' first spells are free with the pick (Arms's Slam, Frost's Frostbolt), and each class's kit is its M1
 tree (below): the Mage's since RLM-542, the Warrior's since RLM-543. Before its tree, the other trees' first spells
 stood in for the Warrior (Reckless Strike at 3, Shield Bash at 5, Battle Shout at 8; Matěj,
 2026-10-30).
 
 **The Frost Mage's "Shatter" tree** (RLM-542; Matěj, 2026-10-30, RLM-333's comment and the "Spell Trees to Level 18"
-document, chosen for M1, version 1 of every spell, balanced by Claude): WotLK-like rows, a new one every 6 levels,
-about one passive for every two actives. Points buy its ranks in the spell trees window (C5, RLM-333,
-[10.1](#101-races-and-classes)). Fireball and Arcane Missiles come back with their trees in M3 (RLM-218).
+document, chosen for M1, version 1 of every spell, balanced by Claude): WotLK-like rows, about one passive for every
+two actives, in Matěj's layout of 2026-11-04 (RLM-631), whose rows open by the points spent in the tree. Points buy
+its ranks in the spell trees window (C5, RLM-333, [10.1](#101-races-and-classes)). Shatter needs Frost Nova beside it.
+Fireball and Arcane Missiles come back with their trees in M3 (RLM-218).
 
-| Row (level) | Left | Middle | Right |
+| Row (points to open it) | Left | Middle | Right |
 | --- | --- | --- | --- |
-| 1 | Improved Frostbolt (passive, 3) | Frostbolt (5) | Cone of Cold (3) |
-| 6 | Ice Lance (5) | Frost Nova (3) | Frostbite (passive, 3) |
-| 12 | Shatter (passive, 3) | Ice Barrier (3) | |
-| 18 | Blizzard (3) | | |
+| 1 (0) | | Frostbolt (5) | Cone of Cold (3) |
+| 2 (5) | Shatter (passive, 3) | Frost Nova (3) | Ice Barrier (3) |
+| 3 (10) | Frostbite (passive, 3) | Ice Lance (5) | |
+| 4 (15) | Improved Frostbolt (passive, 3) | Blizzard (3) | Icy Veins (3) |
 
 - **The loop:** slow (Frostbolt, Cone of Cold, Blizzard), freeze (Frost Nova; Frostbite on a Slowness), then Ice Lance,
   × 2 to × 4 against a Frozen target, with Shatter's crit chance against it.
@@ -2567,7 +2587,10 @@ about one passive for every two actives. Points buy its ranks in the spell trees
   blocks instead of the document's "its Slowness also hits the enemies its splash damages", which the splash already
   does (Matěj, 2026-10-31). **Frostbite** a 5/10/15 % chance on the Mage's Slowness to Freeze for 4/6/8 s, once every
   5 s on each target. **Shatter** +10/20/30 % crit chance against Frozen targets; its tooltip says that crit chance
-  above 100 % turns into crit damage. Damage ends Frozen at a 50 % chance ([11.4](#114-status-effects)).
+  above 100 % turns into crit damage. **Icy Veins** (Matěj, 2026-11-03, RLM-597) instant, on the Mage, +10/15/20 % of
+  the Mage's whole Spell Power for 10/15/20 s (a multiplied total, `content/effects/icy_veins.yaml`), 20/30/40 mana,
+  3 minutes at every rank: a Spell Power buff rather than Cast Time Reduction, which is capped for a reason; like Ice
+  Barrier, Cooldown Reduction shortens it and a second cast refreshes it. Damage ends Frozen at a 50 % chance ([11.4](#114-status-effects)).
 - **Matěj's playtest of 2026-11-01** set Blizzard's 6 s, its 4 blocks and its cost, Frostbite's and Frost Nova's
   Frozen at their top ranks (5 s and 10 s; the lower ranks scaled by Claude, Frostbite 3 s, Frost Nova × 2.5), every
   cost per rank and Frozen's break on damage; Astone died too fast with little effort, and his rebalance of the same day
@@ -2583,19 +2606,19 @@ about one passive for every two actives. Points buy its ranks in the spell trees
   rows.
 
 **The Arms Warrior's "Bloodletter" tree** (RLM-543; Matěj, 2026-10-30, RLM-333's comment and the "Spell Trees to Level
-18" document, chosen for M1, version 1 of every spell, balanced by Claude): the same rows, a new one every 6 levels,
-the first two holding four actives (D4). Points buy its ranks in the spell trees window (C5, RLM-333,
-[10.1](#101-races-and-classes)). Reckless Strike and Shield Bash come back with their trees in M3. Bloodthirst needs
-Rend in the tree. Battle Stance (RLM-596, an aura, above) takes the free place at level 18, middle, until RLM-631's
-layout of rows by points spent puts it at R3, left (Matěj, 2026-11-04, RLM-333's comment 23656); that layout keeps
-Overpower at R3, middle, so RLM-596's earlier move of Overpower to level 18 is dropped.
+18" document, chosen for M1, version 1 of every spell, balanced by Claude): the same kind of rows, in Matěj's layout of
+2026-11-04 (RLM-631), the first two holding four actives (D4). Points buy its ranks in the spell trees window (C5,
+RLM-333, [10.1](#101-races-and-classes)). Reckless Strike and Shield Bash come back with their trees in M3. Bloodthirst
+needs a point in Overpower and one in Rend: it procs on Rend's ticks and opens Overpower's window. Battle Stance
+(RLM-596, an aura, above) stands at R3, left, and Overpower stays at R3, middle, so RLM-596's earlier move of Overpower
+to level 18 is dropped.
 
-| Row (level) | Left | Middle | Right |
+| Row (points to open it) | Left | Middle | Right |
 | --- | --- | --- | --- |
-| 1 | Charge (2) | Slam (5) | Deep Wounds (passive, 3) |
-| 6 | Rend (3) | Battle Shout (2) | Two-Handed Specialization (passive, 3) |
-| 12 | Bloodthirst (passive, 2) | Overpower (5) | Victory Rush (3) |
-| 18 | Execute (3) | Battle Stance (aura, 1) | |
+| 1 (0) | | Slam (5) | Victory Rush (3) |
+| 2 (5) | Charge (2) | Rend (3) | Deep Wounds (passive, 3) |
+| 3 (10) | Battle Stance (aura, 1) | Overpower (5) | Bloodthirst (passive, 2) |
+| 4 (15) | Battle Shout (2) | Execute (3) | Two-Handed Specialization (passive, 3) |
 
 - **The loop:** Charge in for rage, Rend to bleed and Slam on cooldown; blocks and Bloodthirst's procs on Rend's
   ticks open Overpower, crits bleed through Deep Wounds, kills open Victory Rush, and Execute finishes, refunding rage

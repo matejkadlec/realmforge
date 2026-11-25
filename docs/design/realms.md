@@ -116,7 +116,8 @@ to drop borrowed mythology (RLM-357,
   diamonds, Overworld's most precious gem, and stone into the Signet of the Undervault (RLM-395).
 - 1 stat point (Matěj, 2026-10-15, RLM-196) and about 1 skill point per level; spell limits per chapter as in D4
   (RLM-54), only a rough guide for active spells since 2026-11-04 (RLM-624): the real guide is the tree's shape, 2–3
-  spells a row, a row every 6 levels, about 5–6 spells (active and passive) a chapter.
+  spells a row, a row for every 5 points spent in the tree (RLM-631; it was a row every 6 levels), about 5–6 spells
+  (active and passive) a chapter.
 - Each chapter ends in a short main quest chain whose last step opens the next band (PR-1); everything else is
   optional.
 
@@ -808,7 +809,8 @@ For Matěj; each has a proposal so the design can go on.
 23. **Spell limits by the eight chapters.** **Answered** (Matěj, 2026-11-04, RLM-624): "4 × N spells by the end of
     chapter N" is only a rough guide for active spells, so validation warns instead of failing (RLM-627). The real
     guide is the tree's shape: 2–3 spells a row, a row every 6 levels, about 5–6 spells (active and passive) a chapter;
-    the Arms tree has 11 spells and the Frost tree 10 across chapters 1 and 2. The question as it stood: validation's
+    the Arms tree has 11 spells and the Frost tree 10 across chapters 1 and 2. (Since RLM-631 a row opens for every 5
+    points spent in the tree instead of every 6 levels, Matěj's decision of the same day.) The question as it stood: validation's
     D4 rule allows 4 × N active spells by the end of chapter N
     (`_check_class_spells`, RLM-333). With the twins as chapters 3 and 4, both ending at level 30, the limit at level 30
     stays 12 (chapter 3's), but every later chapter allows 4 more than under the seven: 20 by level 40 instead of 16,
